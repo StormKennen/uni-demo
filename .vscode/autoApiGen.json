@@ -1,0 +1,21 @@
+{
+    "appName": "apifox",
+    "Authorization": "Y-HMYWX0PwqXk3x-pcUqu7vaf3abyOMWIWKgvS2XIhM",
+    "Cookie": "abflag=1756739329; AGL_USER_ID=bc04878e-2f30-4dc7-a576-7b069c416e43; projectCid=2JjuPHeO-DzoI-hzb8-cyEG-J2lio98aJNQ6; _ga=GA1.1.1889018482.1756739332; _gcl_au=1.1.866594844.1756739333; isTracking=true; ab_testing_group=20240105b; Hm_lvt_34be24cd47c1c8849a4b4a87748e6979=1761238427; Hm_lpvt_34be24cd47c1c8849a4b4a87748e6979=1761238427; HMACCOUNT=915BA3DDA7F276FF; _uetsid=d7ad73a0b03011f0895c032b29b7457a; _uetvid=926eb560874511f0aec037eb21b2ac69; _ga_NTLDK3J296=GS2.1.s1761238427$o5$g1$t1761238428$j59$l0$h0; ph_phc_PvgN6cgc8pLNnxkqzZL41dS0h5SMEoFfM0OcDv7QNYY_posthog=%7B%22distinct_id%22%3A%2244484378393388940%22%2C%22%24sesid%22%3A%5B1761238429180%2C%22019a11fd-a879-7d20-85e8-c54cd279c99e%22%2C1761238427766%5D%2C%22%24epp%22%3Atrue%2C%22%24initial_person_info%22%3A%7B%22r%22%3A%22%24direct%22%2C%22u%22%3A%22https%3A%2F%2Fapifox.com%2F%22%7D%7D; acw_tc=0a03837d17612384300845775e5ed63ca0dfc754dd9305553aede5731b3040; Authorization=Bearer ePtF0hPcuQ-VdRpa-fdBOA3zK63FbAPb; Authorization.sig=Y-HMYWX0PwqXk3x-pcUqu7vaf3abyOMWIWKgvS2XIhM; userToken=; _ga_QC4DQKHR9V=GS2.1.s1761238428$o1$g1$t1761238471$j17$l0$h0",
+    "path": "/src/services",
+    "projectId": [
+        3119237,
+        7048425
+    ],
+    "head": "import http from '@/services/http'\nimport type { ParticalUniAppRequestOptions }   from '@/services/interface'\nconst baseURL = undefined\ntype Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never",
+    "customReturn": "// 在此输入自定义内容\r\nfunction fun () {\r\n  const args = []\r\n  const buildParams = () => {\r\n      if (options.pathParams.length) {\r\n          if (options.pathParams.length > 1) {\r\n              args.push(`pathParams: Expand<${options.pathParamsType}>`);\r\n          } else {\r\n              // 如果只有一个路径参数，直接传递其值\r\n              args.push(\r\n                  `${options.pathParams[0].name}: ${options.buildParameters(options.pathParams[0])}`\r\n              );\r\n          }\r\n      }\r\n      if (options.queryParams.length) {\r\n          args.push(`params: Expand<${options.queryParamsType}>`);\r\n      }\r\n      if (![\"get\", \"delete\", \"head\", \"options\"].includes(options.apiMethod || \"get\") && options.haveReqBody) {\r\n          args.push(`data: Expand<${options.dataParamsType}>`);\r\n      }\r\n      args.push('config?: Expand<ParticalUniAppRequestOptions>')\r\n  }\r\n  buildParams()\r\n  const url = `'${options.apiPath}'`;\r\n  let bodyParams = ''\r\n  if ([\"get\", \"delete\", \"head\", \"options\"].includes(options.apiMethod)) {\r\n    bodyParams = options.queryParams.length ? `params, ` : '{}, '\r\n  } else {\r\n    bodyParams = options.haveReqBody ? 'data, ' : '{}, '\r\n  }\r\n\r\n  return `export const ${options.apiFunctionName} = async (${args.join(\", \")}): Promise<Expand<${options.apiFunctionName}Res>> => {${'\\n'}    const _config= baseURL ? { baseURL, ...config } : config ${'\\n'}    return http.${options.apiMethod}(${url}, ${bodyParams}_config);${'\\n'}}`\r\n}\r\nfun()",
+    "customExtraFunction": "",
+    "model": "custom",
+    "prettierSetting": "{\n    \"semi\": false, \n    \"singleQuote\": true,\n    \"parser\": \"typescript\"\n}",
+    "axiosPath": "",
+    "axiosReturnKey": "data",
+    "useProjectName": true,
+    "alias": "src: @",
+    "useProjectId": false,
+    "useTypeExtension": false
+}

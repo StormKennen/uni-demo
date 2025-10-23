@@ -1,0 +1,169 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "kai",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50,
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/introduce/introduce",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+
+    {
+      "path": "pages/mall/mall",
+      "style": {
+        "navigationBarTitleText": "商品列表",
+        "enablePullDownRefresh": true,
+        "onReachBottomDistance": 50
+      }
+    },
+    {
+      "path": "pages/mall/goods/goods-detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/company/company",
+      "style": {
+        "navigationBarTitleText": "公司信息表单"
+      }
+    },
+    {
+      "path": "pages/mine/mine",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mine/order/order",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/middle/index",
+      "style": {
+        "navigationBarTitleText": "银河E签"
+      }
+    },
+    {
+      "path": "pages/middle/pay",
+      "style": {
+        "navigationBarTitleText": "支付"
+      }
+    },
+    {
+      "path": "pages/middle/app",
+      "style": {
+        "navigationBarTitleText": "银河港生活APP"
+      }
+    },
+    {
+      "path": "pages/mine/setting/setting",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    },
+    {
+      "path": "pages/webview/webview"
+    },
+    {
+      "path": "pages/webview/h5"
+    },
+    {
+      "path": "pages/mine/login/login",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/tax-calculator/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/calculator/tax-calculator-result/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": ""
+      }
+    },
+    {
+      "path": "pages/country-search/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/exchange-search/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/pagesServices/recipe/index",
+      "style": {
+        "navigationBarTitleText": "食谱大全",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/pagesServices/recipe/detail",
+      "style": {
+        "navigationBarTitleText": "食谱详情",
+        "navigationStyle": "custom"
+      }
+    },
+
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "kai",
+    "navigationBarBackgroundColor": "#fff",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#121A26",
+    "selectedColor": "#121A26",
+    // #ifdef MP-WEIXIN
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/image/index.png",
+        "selectedIconPath": "static/image/index_on.png",
+        "text": "首頁"
+      },
+      {
+        "pagePath": "pages/mall/mall",
+        "iconPath": "static/image/mall.png",
+        "selectedIconPath": "static/image/mall_on.png",
+        "text": "商城"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "iconPath": "static/image/mine.png",
+        "selectedIconPath": "static/image/mine_on.png",
+        "text": "我的"
+      }
+    ]
+    // #endif
+  }
+}

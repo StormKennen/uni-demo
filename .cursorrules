@@ -1,0 +1,15 @@
+# 项目介绍
+这是一个基于 uniapp 的 H5 和微信小程序的项目，编码需要同时兼容H5和微信小程序。技术栈为 uniapp,vue3,uni-ui，typescript。
+
+
+# 项目结构
+- src
+  - services // 接口
+  - static // 静态资源
+  - components // 封装的组件
+  - pages // 主包
+  - utils // 工具函数
+
+# 项目规范
+
+- 组件命名规范：组件名称为大驼峰命名，例如：GaConfirmPopup.vue

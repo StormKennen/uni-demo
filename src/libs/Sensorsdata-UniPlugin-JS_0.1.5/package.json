@@ -1,0 +1,25 @@
+{
+    "id": "Sensorsdata-UniPlugin-JS",
+    "name": "神策分析 JS 插件",
+    "displayName": "神策分析 JS 插件",
+    "version": "0.1.5",
+    "description": "神策分析通用 JS SDK",
+    "keywords": [
+        "SensorsData",
+        "SensorsAnalytics",
+        "神策数据",
+        "神策分析",
+        "神策智能运营"
+    ],
+    "dcloudext": {
+        "type": "js_sdk",
+        "sale": {
+            "regular": {
+                "price": "0.00"
+            },
+            "sourcecode": {
+                "price": "0.00"
+            }
+        }
+    }
+}

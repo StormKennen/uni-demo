@@ -1,0 +1,218 @@
+.circle-progress-container {
+  width: 160rpx;
+  height: 160rpx;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .out-circle {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .outer {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #ebf2ff 0%, #fafcff 100%);
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 100%;
+      // background: conic-gradient(#3570dc 0% 50%, transparent 50% 100%);
+      background: conic-gradient(#0046B4 0% var(--progress), transparent var(--progress) 100%);
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    .mid {
+      width: 148rpx;
+      height: 148rpx;
+      background: linear-gradient(145deg, #ebf2ff 0%, #fafcff 100%);
+      border-radius: 50%;
+      position: absolute;
+    }
+  }
+
+  .inner-circle {
+    width: 112rpx;
+    height: 112rpx;
+    position: absolute;
+    background: white;
+    filter: drop-shadow(4rpx 8rpx 54rpx rgba(148, 163, 184, 0.10));
+    border-radius: 50%;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .progress-value {
+      color: #121A26;
+      font-family: D-DIN-PRO-700;
+      font-size: 48rpx;
+    }
+    .progress-unit {
+      color: rgba(18, 26, 38, 0.30);
+      font-size: 20rpx;
+      font-weight: 500;
+      position: relative;
+      left: 4rpx;
+      top: 4rpx;
+    }
+  }
+
+  &.progress-0 {
+    .out-circle {
+      .outer {
+        background: linear-gradient(145deg, #FAFAFA 12.91%, #FDFDFD 86.35%);;
+      }
+      .progress-bar {
+        background: conic-gradient(transparent 0%, transparent 100%);
+      }
+      .mid {
+        background: linear-gradient(145deg, #FAFAFA 12.91%, #FDFDFD 86.35%);;
+      }
+    }
+    .inner-circle {
+      .progress-value {
+        color: $ga-gray-4;
+        font-family: D-DIN-PRO-500;
+      }
+      .progress-unit {
+        color: $ga-gray-4;
+      }
+    }
+  }
+
+  &.progress-100 {
+    .out-circle {
+      .outer {
+        background: linear-gradient(145deg, #EBFFF8 12.91%, #FCFFFE 86.35%);
+      }
+      .progress-bar {
+        background: conic-gradient(#55CBA0 0% var(--progress), transparent var(--progress) 100%);
+      }
+      .mid {
+        background: linear-gradient(145deg, #EBFFF8 12.91%, #FCFFFE 86.35%);
+      }
+    }
+  }
+}
+
+.fixed-footer-btn {
+  padding: 16rpx 32rpx 72rpx 32rpx;
+  position: fixed;
+  // bottom: 40rpx;
+  bottom: 0;
+  height: 168rpx;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
+  z-index: 1;
+
+  button {
+    height: 96rpx;
+    line-height: 96rpx;
+    background: #0046B4;
+    border-radius: 6rpx;
+    color: white;
+    font-size: 32rpx;
+    
+    &[disabled][type='default'],
+    &[disabled]:not([type]) {
+      color: white;
+      background-color: #B3C8E9;
+
+      &::after {
+        border: 0;
+      }
+    }
+  }
+}
+
+.ga-province{
+  .uni-data-tree-input{
+    display: none;
+  }
+}
+
+.interview-info-item-content .uni-easyinput__content-textarea{
+  margin:0 !important;
+  color:#121A26 !important;
+}
+
+.my-info-textarea .uni-easyinput__content-textarea{
+  background: #fff !important;
+  min-height: 80rpx !important;
+}
+
+.my-info-textarea .uni-textarea-textarea{
+  //background: #fff !important;
+}
+
+.business-form-item .uni-forms-item .my-info-textarea .uni-easyinput__content.is-textarea{
+  background: #fff !important;
+}
+.my-info-label{
+  margin-top: 34rpx !important;
+}
+
+.download-popup {
+  .uni-easyinput__content-input {
+    background-color: #f8f9fb;
+  }
+} 
+
+.uni-calendar-item--before-checked,.uni-calendar-item--after-checked{
+  background-color: #0046B4 !important;
+  color: #fff !important;
+}
+
+.uni-calendar-item--multiple.uni-calendar-item--before-checked{
+  background-color: #0046B4 !important;
+  color: #fff !important;
+}
+
+.uni-calendar-item--multiple.uni-calendar-item--after-checked{
+  background-color: #0046B4 !important;
+  color: #fff !important;
+}
+
+.uni-calendar-item--multiple{
+  background-color: #EBF0F9 !important;
+  color:#121A26 !important;
+  font-weight: 500 !important;
+}
+
+.mandatory-provident .layout-page-header{
+  position: relative;
+  background-image: url('https://cdn-public.galaxy-immi.com/business/company-open/match-header-bg.png');
+  background-size: cover;
+}
+
+.ga-picker-popup{
+  .uni-picker-view-indicator{
+    &::after, &::before{
+      display: none;
+    }
+  }
+}
+
+.download-popup .email-item {
+  .uni-easyinput__content-input {
+    height: 96rpx;
+  }
+  .uni-forms-item__error.msg--active {
+    padding-top: 16rpx !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+}

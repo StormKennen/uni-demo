@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "mcp-feedback-enhanced": {
+      "command": "uvx",
+      "args": [
+        "mcp-feedback-enhanced@latest"
+      ],
+      "env": {
+        "MCP_DESKTOP_MODE": "true",
+        "MCP_WEB_HOST": "127.0.0.1",
+        "MCP_WEB_PORT": "8765",
+        "MCP_DEBUG": "false",
+        "MCP_LANGUAGE": "zh-CN"
+      }
+    }
+  },
+  "_notes": {
+    "installation_requirements": [
+      "需要安装uv包管理器: https://docs.astral.sh/uv/getting-started/installation/",
+      "Windows安装命令: powershell -c 'irm https://astral.sh/uv/install.ps1 | iex'",
+      "或者下载二进制文件: https://github.com/astral-sh/uv/releases"
+    ],
+    "alternative_setup": {
+      "description": "如果无法安装uv，可以考虑使用本地node服务器或其他MCP实现",
+      "local_server_example": {
+        "command": "node",
+        "args": ["./local-mcp-server.js"],
+        "env": {
+          "MCP_LANGUAGE": "zh-CN"
+        }
+      }
+    }
+  }
+}

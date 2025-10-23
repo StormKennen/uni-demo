@@ -1,0 +1,14 @@
+@font-face {
+  font-family: DIN-Alternate-700;
+  src: url("./DINAlternateBold.ttf");
+}
+
+@font-face {
+  font-family: "D-DIN-PRO-500";
+  src: url("./D-DIN-PRO-500.otf") format("woff2");
+}
+
+@font-face {
+  font-family: "D-DIN-PRO-700";
+  src: url("./D-DIN-PRO-700.otf") format("woff2");
+}

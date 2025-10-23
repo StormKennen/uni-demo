@@ -1,0 +1,13 @@
+*.stories.jsx
+build/
+scripts/
+commitlint.config.js
+babel.config.js
+node_modules/
+ios/
+android/
+libs/
+dist
+src/uni_modules/*
+src/unpackage/*
+src/uniCloud-aliyun/*

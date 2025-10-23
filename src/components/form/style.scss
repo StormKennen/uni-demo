@@ -1,0 +1,141 @@
+.business-form-item .uni-forms-item {
+  margin-bottom: 0 !important;
+  // display: flex;
+  // align-items: center;
+  // border-bottom: 1px solid #e9ecf0;
+  // &:last-child {
+  //   border-bottom: none;
+  // }
+  .uni-forms-item__label {
+    height: 104rpx;
+    line-height: 104rpx;
+    align-self: flex-start;
+    padding: 0;
+  }
+  .uni-forms-item__content {
+    align-items: center;
+    flex-direction: row;
+    min-height: 104rpx;
+    line-height: 104rpx;
+  }
+  .uni-forms-item__error {
+    transition: none;
+    line-height: 14px;
+    &.msg--active {
+      position: static;
+      padding-top: 0;
+      padding-bottom: 32rpx;
+      padding-left: 0;
+      margin-top: -19rpx;
+    }
+  }
+  .business-form-item-box {
+   
+    &.top+.uni-forms-item__error{
+      &.msg--active{
+        margin-top: -16rpx;
+      }
+    }
+  }
+
+  .uni-easyinput {
+    color: #121a26 !important;
+  }
+
+  .uni-easyinput__placeholder-class {
+    color: #b9c1cc !important;
+    font-size: 28rpx !important;
+  }
+  .uni-easyinput__content.is-textarea {
+    background-color: #f8f9fb !important;
+    padding: 20rpx;
+  }
+
+  .uni-easyinput__content.is-disabled:not(.is-textarea) {
+    color: #121a26 !important;
+    background-color: transparent !important;
+  }
+
+  .uni-easyinput__content.is-disabled.is-textarea {
+    color: #121a26 !important;
+  }
+
+  // todo: 不能像下面这样修改全局picker样式，uni里面很多组件用到的picker,不同场景，比如日历弹窗
+  button-item,
+  uni-picker,
+  picker,
+  ga-picker,
+  ga-checkbox,
+  ga-province,
+  ga-textarea {
+    width: 100%;
+  }
+  .business-form-item-content {
+    > radio-select {
+      margin-left: auto;
+    }
+    > .radio-select {
+      margin-left: auto;
+    }
+  }
+
+  .uni-easyinput__content-input,
+  .uni-easyinput__content-textarea {
+    font-size: 28rpx !important;
+    font-weight: 400;
+  }
+}
+
+.certificate-card-form-item .uni-forms-item__error {
+  margin-top: -13rpx;
+}
+
+
+.tax-base-info-item{
+  min-height:auto !important;
+}
+.tax-base-info-item2{
+  min-height:auto !important;
+  margin:0rpx 0 0 0 !important;
+}
+
+// label 文字超过两行让输入框顶部对齐
+.form-text-line2{
+  .form-item-label{
+    margin:0 !important;
+  }
+  .uni-input-wrapper, .uni-input-form{
+    height:auto !important;
+  }
+
+  .business-form-item-box{
+    min-height:auto !important;
+    line-height:normal !important;
+    align-items:flex-start !important;
+  }
+
+  .uni-easyinput__content-input{
+    height:auto !important;
+  }
+
+  .uni-forms-item__label{
+    height:auto !important;
+    line-height:normal !important;
+  }
+
+
+  .uni-forms-item__content{
+    min-height:auto !important;
+    line-height:normal !important;
+    padding:32rpx 0;
+  }
+
+  .uni-forms-item .uni-forms-item__error.msg--active{
+    padding-bottom:0 !important;
+    margin-top:12rpx !important;
+  }
+}
+
+.tax-materials-desc .form-item-label{
+  min-height:auto !important;
+}
