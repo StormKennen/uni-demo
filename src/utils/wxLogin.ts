@@ -1,7 +1,7 @@
 import { postAuthLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
 
 import { PostBizUserCode2session } from "@/services/apifox/3903128/shangWuXiaoChengXu/apifox"
-import { getToken, setStorageSync, setWxSession } from "./storage"
+import { getToken, setStorageSync, setWxSession, setToken, setWxUserInfo } from "./storage"
 
 
 
@@ -28,18 +28,22 @@ export const wxCode2Session = async () => {
     const code = await wxLogin()
     console.log('wxCode2Session-code:', code);
     
-    // const res = await PostBizUserCode2session({
-    //   js_code: code as string
-    // })
-    // setWxSession(res)
-    const kRes = await postAuthLogin({
-      email: 'root@admin.com',
-      password: 'Admin7877169900'
+    // 使用微信code进行静默登录
+    const res = await postAuthLogin({
+      code: code as string,
+      type: 'wx'
     })
-    console.log('wxCode2Session-kRes:', kRes);
+    console.log('wxCode2Session-res:', res);
+    
+    // 保存登录信息
+    if (res.data) {
+      setWxSession(res.data.user)
+      return res
+    }
     
   } catch (error) {
     console.log("🚀 ~ wxCode2Session ~ error:", error)
+    throw error
   }
 }
 
@@ -74,4 +78,52 @@ export const checkLoginBeforeNavigator = (url?: string) => {
     })
   }
   return true
+}
+
+/**
+ * 微信静默登录 - 在应用启动时自动调用
+ * 适用于微信小程序环境，H5环境会跳过
+ */
+export const wxSilentLogin = async () => {
+  try {
+    // 检查是否已经登录
+    if (getToken()) {
+      console.log('用户已登录，跳过静默登录')
+      return true
+    }
+
+    // 检查是否在微信环境
+    // #ifdef MP-WEIXIN
+    console.log('开始微信静默登录...')
+    
+    // 获取微信code
+    const code = await wxLogin()
+    console.log('获取微信code成功:', code)
+    
+    // 使用code进行登录
+    const res = await postAuthLogin({
+      code: code as string,
+      type: 'wx'
+    })
+    
+    if (res.data) {
+      // 保存登录信息
+      setToken(res.data.tokens.access.token)
+      setWxUserInfo(res.data.user)
+      setWxSession(res.data.user)
+      
+      console.log('微信静默登录成功:', res.data.user)
+      return true
+    }
+    // #endif
+    
+    // #ifdef H5
+    console.log('H5环境，跳过微信静默登录')
+    // #endif
+    
+    return false
+  } catch (error) {
+    console.log('微信静默登录失败:', error)
+    return false
+  }
 }

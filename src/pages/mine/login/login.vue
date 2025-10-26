@@ -1,18 +1,21 @@
 <script setup lang="ts">
+import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
+
   import { nextTick, ref, watch } from 'vue'
   import LoginHeaderText from '../components/login-header-text.vue'
   import ReadDialog from '../components/read-dialog.vue'
   import { PostBizUserLogin, PostBizUserSendSmsCode } from '@/services/apifox/3903128/shangWuXiaoChengXu/apifox'
-  import { getStorageSync, getWxSession, setIsGoChatCoze, setStorageSync, setToken, setWxUserInfo } from '@/utils/storage'
-  import { wxCode2Session, wxGetUserInfo } from '@/utils/wxLogin'
+  import { getStorageSync, getWxSession, setIsGoChatCoze, setStorageSync, setToken, setRefreshToken, setWxUserInfo, setWxEncryptedData, setUserInfo, clearLoginData, setTokenExpiresAt, setRefreshTokenExpiresAt } from '@/utils/storage'
+  import { wxCode2Session, wxGetUserInfo, wxLogin } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
   import { useOrderStore } from '@/stores/order'
+  import { autoLogin } from '@/utils/autoLogin'
 
-  type LoginType = 'weixin' | 'mobile'
+  type LoginType = 'mobile' | 'register'
   const isRead = ref(false)
   const readDialogRef = ref(null)
-  const loginType = ref<LoginType>('weixin')
+  const loginType = ref<LoginType>('mobile')
   const redirectUrl = ref()
 
   const orderStore = useOrderStore()
@@ -21,89 +24,101 @@
     loginType.value = type
   }
 
-  onLoad((option: any) => {
+  onLoad(async (option: any) => {
     console.log('🚀 ~ onLoad ~ option:', option)
     redirectUrl.value = option.redirectUrl
+    
+    // 尝试自动登录
+    await checkAutoLogin()
   })
-
-  const weixinLogin = async () => {
-    changeLoginType('weixin')
-
-    if (!isRead.value) {
-      console.log('tanchuang')
-      readDialogRef.value?.open()
-      return
-    }
-  }
-
-  const loginSuccess = async res => {
-    console.log('🚀 ~ getphonenumber ~ res:', res)
-    const { token, ...rest } = res
-    setIsGoChatCoze(true)
-    setToken(token)
-    setWxUserInfo(rest)
-    // await app.initData()
-    // app.globalData.isLoginOut = true
-
-    orderStore.getOrderList()
-
-    if (redirectUrl.value) {
-      const url = { url: redirectUrl.value }
-      console.log('url', url)
-      if (
-        redirectUrl.value === '/pages/index/index' ||
-        redirectUrl.value === '/pages/chat/chat' ||
-        redirectUrl.value === '/pages/mall/mall' ||
-        redirectUrl.value === '/pages/mine/mine'
-      ) {
-        return uni.switchTab(url)
-      } else {
-        return uni.redirectTo(url)
-      }
-    } else {
-      return uni.navigateBack()
-    }
-  }
-
-  const getphonenumber = async (e: any) => {
-    if (e.detail.errMsg === 'getPhoneNumber:ok') {
-      try {
-        uni.showLoading()
-        const wxUserInfo = await wxGetUserInfo()
-        // 用户切换手机号码，需要获取最新信息 wxCode2Session
-        await wxCode2Session()
-        console.log('🚀 ~ getphonenumber ~ userInfo:', wxUserInfo)
-        const userInfo = wxUserInfo.userInfo
-        const wxSession = getWxSession()
-        const params = {
-          mobile_js_code: e.target?.code as string,
-          unionid: wxSession.unionid as string,
-          avatar_url: userInfo.avatarUrl,
-          nickname: userInfo.nickName,
-          gender: `${userInfo.gender}`,
-          city: userInfo.city,
-          province: userInfo.province,
-          country: userInfo.country,
+  
+  /** 检查自动登录 */
+  const checkAutoLogin = async () => {
+    try {
+      uni.showLoading({ title: '检查登录状态...' })
+      
+      const { isLoggedIn, user, needManualLogin } = await autoLogin()
+      
+      if (isLoggedIn && user) {
+        console.log('🚀 ~ checkAutoLogin ~ 自动登录成功:', user)
+        
+        // 自动登录成功，模拟loginSuccess的跳转逻辑
+        orderStore.getOrderList()
+        
+        uni.hideLoading()
+        
+        if (redirectUrl.value) {
+          const url = { url: redirectUrl.value }
+          console.log('Auto login redirect url:', url)
+          if (
+            redirectUrl.value === '/pages/index/index' ||
+            redirectUrl.value === '/pages/chat/chat' ||
+            redirectUrl.value === '/pages/mall/mall' ||
+            redirectUrl.value === '/pages/mine/mine'
+          ) {
+            return uni.switchTab(url)
+          } else {
+            return uni.redirectTo(url)
+          }
+        } else {
+          return uni.navigateBack()
         }
-        console.log('🚀 ~ getphonenumber ~ params:', params)
-        const res = await PostBizUserLogin(params)
-        loginSuccess(res)
+      } else {
+        console.log('🚀 ~ checkAutoLogin ~ 需要手动登录')
         uni.hideLoading()
-      } catch (error) {
-        console.log('error', error)
-        uni.hideLoading()
-        uni.showToast({
-          title: '登录失败，请稍后重试！',
-          icon: 'none',
-        })
+        // 继续显示登录页面
       }
-    } else {
-      console.log('getPhoneNumber error', e)
-      uni.showToast({
-        title: '登录失败，请稍后重试！',
-        icon: 'none',
-      })
+    } catch (error) {
+      console.warn('🚀 ~ checkAutoLogin ~ error:', error)
+      uni.hideLoading()
+      // 出错时继续显示登录页面
     }
+  }
+
+
+
+  const loginSuccess = async (data: any) => {
+    console.log('🚀 ~ loginSuccess ~ data:', data)
+    // 处理token - 支持新旧两种数据结构
+    if (data?.tokens?.access) {
+      // 新的token结构：{ tokens: { access: { token: "...", expires: "..." }, refresh: { token: "...", expires: "..." } } }
+      setToken(data.tokens.access.token)
+      setRefreshToken(data.tokens.refresh.token)
+      
+      // 保存token过期时间
+      if (data.tokens.access.expires) {
+        setTokenExpiresAt(data.tokens.access.expires)
+      } else if (data.tokens.access.expiresIn) {
+        // 如果返回的是相对时间（秒），转换为绝对时间
+        const expires = Date.now() + (data.tokens.access.expiresIn * 1000)
+        setTokenExpiresAt(expires)
+      }
+      
+      if (data.tokens.refresh.expires) {
+        setRefreshTokenExpiresAt(data.tokens.refresh.expires)
+      } else if (data.tokens.refresh.expiresIn) {
+        // 如果返回的是相对时间（秒），转换为绝对时间
+        const expires = Date.now() + (data.tokens.refresh.expiresIn * 1000)
+        setRefreshTokenExpiresAt(expires)
+      }
+    }
+    
+    // 处理用户信息
+    if (data.user) {
+      setUserInfo(data.user)
+      setWxUserInfo(data.user) // 保持兼容性
+    }
+    
+    uni.showToast({
+      title: '登录成功',
+      icon: 'success'
+    })
+    
+    setTimeout(() => {
+      uni.switchTab({
+        url: '/pages/index/index'
+      })
+    }, 1000)
   }
 
   const popup = ref(null)
@@ -118,75 +133,26 @@
 
   const mobileNumber = ref()
   // const mobileNumberError = ref(true)
-  const code = ref()
-  const count = ref(0)
+  const password = ref()
+  const confirmPassword = ref()
   const inputMobile = (val: string) => {
     console.log('🚀 ~ inputMobile ~ val:', val)
+    mobileNumber.value = val
   }
-  const inputCode = (val: string) => {
-    console.log('🚀 ~ inputCode ~ val:', val)
+  const inputPassword = (val: string) => {
+    console.log('🚀 ~ inputPassword ~ val:', val)
+    password.value = val
   }
-
-  const getCode = async () => {
-    console.log('getCode ', isRead.value)
-
-    if (!isRead.value) {
-      readDialogRef.value?.open()
-      return
-    }
-    if (!mobileNumber.value) {
-      uni.showToast({
-        title: '请输入手机号！',
-        icon: 'none',
-      })
-      return
-    }
-    uni.showLoading()
-    try {
-      const res = await PostBizUserSendSmsCode({
-        mobile: mobileNumber.value,
-        code: '+86',
-      })
-      console.log('res', res)
-      count.value = 60
-      countDown()
-      uni.hideLoading()
-    } catch (error: any) {
-      console.log('🚀 ~ getCode ~ error:', error)
-      if (error?.indexOf('频繁') > 0) {
-        count.value = 60
-        countDown()
-      } else {
-        count.value = 0
-      }
-      uni.hideLoading()
-      uni.showToast({
-        title: typeof error === 'string' ? error : '发送验证码失败，请稍后再试！',
-        icon: 'none',
-      })
-    }
-  }
-
-  const countDown = () => {
-    if (count.value < 1) {
-      count.value = 0
-      return
-    }
-    setTimeout(() => {
-      count.value--
-      countDown()
-    }, 1000)
+  const inputConfirmPassword = (val: string) => {
+    console.log('🚀 ~ inputConfirmPassword ~ val:', val)
+    confirmPassword.value = val
   }
 
   /** 手机号登录 */
   const mobileLogin = async () => {
-    if (!isRead.value) {
-      readDialogRef.value?.open()
-      return
-    }
-    if (!mobileNumber.value || !code.value) {
+    if (!mobileNumber.value || !password.value) {
       uni.showToast({
-        title: '请输入手机号和验证码！',
+        title: '请输入手机号和密码！',
         icon: 'none',
       })
       return
@@ -194,28 +160,103 @@
     try {
       uni.showLoading()
       const wxUserInfo = await wxGetUserInfo()
-      console.log('🚀 ~ getphonenumber ~ userInfo:', userInfo)
+      console.log('🚀 ~ mobileLogin ~ userInfo:', wxUserInfo)
       const userInfo = wxUserInfo.userInfo
       const wxSession = getWxSession()
-      const params = {
-        unionid: wxSession.unionid as string,
-        avatar_url: userInfo.avatarUrl,
-        nickname: userInfo.nickName,
-        gender: `${userInfo.gender}`,
-        city: userInfo.city,
-        province: userInfo.province,
-        country: userInfo.country,
-        mobile: mobileNumber.value,
-        sms_code: code.value,
+      // const params = {
+      //   unionid: wxSession.unionid as string,
+      //   avatar_url: userInfo.avatarUrl,
+      //   nickname: userInfo.nickName,
+      //   gender: `${userInfo.gender}`,
+      //   city: userInfo.city,
+      //   province: userInfo.province,
+      //   country: userInfo.country,
+      //   mobile: mobileNumber.value,
+      //   sms_code: password.value, // 暂时使用password作为sms_code传递
+      //   mobile_js_code: '', // 设置为空字符串，表示使用手机号+密码登录
+      // }
+      const loginParams = {
+        phone: mobileNumber.value,
+        password: password.value,
       }
-      const res = await PostBizUserLogin(params)
+      const res = await postAuthLogin(loginParams)
       loginSuccess(res)
       uni.hideLoading()
     } catch (error) {
       console.warn('🚀 ~ mobileLogin ~ error:', error)
       uni.hideLoading()
       uni.showToast({
-        title: '验证码错误',
+        title: '手机号或密码错误',
+        icon: 'none',
+      })
+    }
+  }
+
+  /** 用户注册 */
+  const userRegister = async () => {
+    if (!isRead.value) {
+      readDialogRef.value?.open()
+      return
+    }
+    if (!mobileNumber.value || !password.value || !confirmPassword.value) {
+      uni.showToast({
+        title: '请填写完整信息！',
+        icon: 'none',
+      })
+      return
+    }
+    if (password.value !== confirmPassword.value) {
+      uni.showToast({
+        title: '两次密码输入不一致！',
+        icon: 'none',
+      })
+      return
+    }
+    try {
+      uni.showLoading()
+      
+      // 获取微信用户信息
+      const wxUserInfo = await wxGetUserInfo()
+      console.log('🚀 ~ userRegister ~ wxUserInfo:', wxUserInfo)
+      
+      // 存储微信加密数据到本地，便于后续使用
+       if (wxUserInfo.iv) {
+         setWxEncryptedData({
+           cloudID: wxUserInfo.cloudID,
+           encryptedData: wxUserInfo.encryptedData,
+           iv: wxUserInfo.iv,
+           signature: wxUserInfo.signature,
+           rawData: wxUserInfo.rawData,
+           userInfo: wxUserInfo.userInfo || {},
+         })
+       }
+      
+      // 使用标准注册API
+      const registerParams = {
+        // email: mobileNumber.value + '@temp.com', // 使用手机号生成唯一邮箱，避免重复
+        phone: mobileNumber.value,
+        name: wxUserInfo.userInfo?.nickName || '微信用户',
+        password: password.value,
+      }
+      
+      const registerRes = await postAuthRegister(registerParams)
+      console.log('🚀 ~ userRegister ~ registerRes:', registerRes)
+      
+      // 注册成功后，可以调用登录API获取完整的用户信息和token
+      const wxSession = getWxSession()
+      const loginParams = {
+        phone: mobileNumber.value,
+        password: password.value,
+      }
+      
+      const loginRes = await postAuthLogin(loginParams)
+      loginSuccess(loginRes)
+      uni.hideLoading()
+    } catch (error) {
+      console.warn('🚀 ~ userRegister ~ error:', error)
+      uni.hideLoading()
+      uni.showToast({
+        title: error?.data?.message || '注册失败，请稍后重试',
         icon: 'none',
       })
     }
@@ -257,12 +298,8 @@
   <view class="login">
     <uni-nav-bar @clickLeft="onBack" left-icon="left" backgroundColor="none" title="" statusBar :border="false"></uni-nav-bar>
     <LoginHeaderText />
-    <view v-if="loginType === 'weixin'" class="btns">
-      <button v-if="isRead" class="btn btn-weixin" open-type="getPhoneNumber" @getphonenumber="getphonenumber">快捷登录</button>
-      <button v-else class="btn btn-weixin" @click="weixinLogin">快捷登录</button>
-      <button class="btn btn-mobile" @click="changeLoginType('mobile')">手机验证码登录</button>
-    </view>
-    <view v-else class="mobile">
+    <!-- 登录界面 -->
+    <view v-if="loginType === 'mobile'" class="mobile">
       <view class="mobile-number">
         <uni-easyinput
           :clearable="false"
@@ -273,27 +310,63 @@
           placeholder="请输入手机号"
           @input="inputMobile"></uni-easyinput>
       </view>
-      <view class="mobile-code">
+      <view class="mobile-password">
+        <uni-easyinput
+          :clearable="false"
+          type="password"
+          :inputBorder="false"
+          :styles="inputStyles"
+          v-model="password"
+          placeholder="请输入密码"
+          @input="inputPassword">
+        </uni-easyinput>
+      </view>
+      <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
+      <view class="login-btns">
+        <button class="btn btn-login" @click="mobileLogin">登录</button>
+      </view>
+    </view>
+    <!-- 注册界面 -->
+    <view v-else-if="loginType === 'register'" class="mobile">
+      <view class="mobile-number">
         <uni-easyinput
           :clearable="false"
           type="number"
           :inputBorder="false"
           :styles="inputStyles"
-          v-model="code"
-          placeholder="验证码"
-          @input="inputCode">
-          <template #right>
-            <view v-if="count === 0" @click="getCode" class="code-right">获取验证码</view>
-            <view v-else class="code-right">{{ count }}s</view>
-          </template>
+          v-model="mobileNumber"
+          placeholder="请输入手机号"
+          @input="inputMobile"></uni-easyinput>
+      </view>
+      <view class="mobile-password">
+        <uni-easyinput
+          :clearable="false"
+          type="password"
+          :inputBorder="false"
+          :styles="inputStyles"
+          v-model="password"
+          placeholder="请输入密码"
+          @input="inputPassword">
         </uni-easyinput>
       </view>
-      <view class="change-weixin" @click="changeLoginType('weixin')">切换微信一键登录</view>
+      <view class="mobile-confirm-password">
+        <uni-easyinput
+          :clearable="false"
+          type="password"
+          :inputBorder="false"
+          :styles="inputStyles"
+          v-model="confirmPassword"
+          placeholder="请确认密码"
+          @input="inputConfirmPassword">
+        </uni-easyinput>
+      </view>
+      <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
       <view class="login-btns">
-        <button class="btn btn-login" @click="mobileLogin">登录</button>
+        <button class="btn btn-register" @click="userRegister">注册</button>
       </view>
     </view>
-    <view class="read-protocol">
+    <!-- 协议确认只在注册时显示 -->
+    <view v-if="loginType === 'register'" class="read-protocol">
       <!-- <ReadProtocol v-model="isRead" /> -->
       <view class="read-protocol">
         <label class="radio" @click="onConfirmRead">
@@ -325,18 +398,6 @@
         display: none;
       }
     }
-    .btns {
-      padding: 0 48rpx 48rpx;
-      .btn-weixin {
-        background: $ga-brand-4;
-        color: $ga-gray-0;
-      }
-      .btn-mobile {
-        margin-top: 32rpx;
-        background: #f4f8ff;
-        color: $ga-brand-4;
-      }
-    }
     .mobile {
       padding: 0 48rpx 48rpx 48rpx;
       .mobile-input {
@@ -355,26 +416,30 @@
         background: $ga-gray-2;
         font-size: 26rpx;
       }
-      .mobile-code {
+      .mobile-password {
+        height: 92rpx;
+        line-height: 92rpx;
+        margin-bottom: 24rpx;
+        background: $ga-gray-2;
+        font-size: 26rpx;
+      }
+      .mobile-confirm-password {
         height: 92rpx;
         line-height: 92rpx;
         background: $ga-gray-2;
         font-size: 26rpx;
-        .code-right {
-          width: 194rpx;
-          // padding: 28rpx;
-          text-align: center;
-          color: $ga-brand-4;
-          font-size: 26rpx;
-        }
       }
-      .change-weixin {
+      .change-register,
+      .change-login {
         margin: 32rpx 0;
         color: $ga-brand-4;
         font-size: 26rpx;
+        text-align: center;
+        cursor: pointer;
       }
       .login-btns {
-        .btn-login {
+        .btn-login,
+        .btn-register {
           background: $ga-brand-4;
           color: $ga-gray-0;
         }

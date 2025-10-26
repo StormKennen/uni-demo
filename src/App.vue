@@ -1,18 +1,16 @@
 <script setup lang="ts">
   import { onLaunch, onShow, onHide, onTabItemTap, onNavigationBarButtonTap, onShareAppMessage, onError } from '@dcloudio/uni-app'
   import { storeToRefs } from 'pinia'
-  import { mySensors } from './utils/sensors-utils' 
   import { watchRouter} from '@/utilsH5/router'
 
   watchRouter()
-  mySensors.watchRouter('/pages/index/index','init')
   onLaunch(()=>{
     uni.addInterceptor('navigateTo', {
       //监听跳转
       invoke(e) {
         console.log('navigateTo', e)
         watchRouter()
-        mySensors.watchRouter(e.url, 'navigateTo')
+
       },
     })
     uni.addInterceptor('redirectTo', {
@@ -20,7 +18,7 @@
       invoke(e) {
         console.log('redirectTo', e)
         watchRouter()
-        mySensors.watchRouter(e.url, 'redirectTo')
+
       },
     })
     uni.addInterceptor('switchTab', {
@@ -28,7 +26,7 @@
       invoke(e) {
         console.log('switchTab', e)
         watchRouter()
-        mySensors.watchRouter(e.url, 'switchTab')
+
       },
     })
     uni.addInterceptor('navigateBack', {
@@ -36,7 +34,7 @@
       invoke(e) {
         console.log('navigateBack', e)
         watchRouter()
-        mySensors.watchRouter(e.url, 'navigateBack')
+
       },
     })
   })
@@ -86,10 +84,10 @@
   // #endif
 
   // #ifdef MP-WEIXIN
-  import { wxCode2Session } from '@/utils/wxLogin'
+  // import { wxCode2Session } from '@/utils/wxLogin'
 
 
-  wxCode2Session()
+  // wxCode2Session()
   // #endif
 
   onTabItemTap(e => {

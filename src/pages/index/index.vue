@@ -159,6 +159,7 @@
 <script setup lang="ts">
 // @ts-ignore
 import { ref, onMounted } from 'vue'
+import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
 
 // 定义类型
 interface Banner {
@@ -265,7 +266,12 @@ const quickActions = ref([
   },
   {
     id: 7,
-}
+    name: 'Token测试',
+    desc: '测试Token过期逻辑',
+    icon: 'gear',
+    bgColor: '#6B7280',
+    link: '/pages/test-token'
+  }
 ])
 
 // 热门服务
@@ -333,9 +339,17 @@ const businessCategories = ref([
 const hasNotification = ref(false)
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   // 检查是否有通知
   checkNotifications()
+  
+  // 执行自动登录检查
+  try {
+    const result = await autoLogin()
+    console.log('首页自动登录检查结果:', result)
+  } catch (error) {
+    console.log('首页自动登录检查失败:', error)
+  }
 })
 
 // 方法
@@ -350,17 +364,108 @@ const handleBannerClick = (banner: any) => {
   })
 }
 
-const handleActionClick = (action: any) => {
+const handleActionClick = async (action: any) => {
+  // 定义需要登录的服务列表
+  const needLoginServices = [
+    '/pages/calculator/tax-calculator/index',
+    '/pages/pagesServices/business/company-account-open/index',
+    '/pages/mall/mall',
+    '/pages/mine/order/order'
+  ]
+  
+  // 检查是否需要登录
+  if (needLoginServices.includes(action.link)) {
+    if (!isUserLoggedIn()) {
+      // 需要登录，跳转到登录页面
+      uni.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      
+      try {
+        const result = await autoLogin()
+        if (result.isLoggedIn) {
+          // 自动登录成功，继续跳转
+          uni.navigateTo({
+            url: action.link
+          })
+        } else {
+          // 自动登录失败，跳转登录页面
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages/mine/login/login'
+            })
+          }, 1000);
+        }
+      } catch (error) {
+        console.log('自动登录检查失败:', error)
+        setTimeout(() => {
+          uni.navigateTo({
+            url: '/pages/mine/login/login'
+          })
+        }, 1000);
+      }
+      return
+    }
+  }
+  
+  // 不需要登录或已登录，直接跳转
   uni.navigateTo({
     url: action.link
   })
 }
 
-const handleServiceClick = (service: any) => {
+const handleServiceClick = async (service: any) => {
+  // 定义需要登录的服务列表
+  const needLoginServices = [
+    '/pages/pagesServices/business/mandatory-provident-fund/home',
+    '/pages/pagesPersonalTax/home',
+    '/pages/pagesSalaryTax/home/index'
+  ]
+  
+  // 检查是否需要登录
+  if (needLoginServices.includes(service.link)) {
+    if (!isUserLoggedIn()) {
+      // 需要登录，跳转到登录页面
+      uni.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      // 跳转前，触发自动登录。无法自动登录，再跳转页面
+      try {
+        const result = await autoLogin()
+        if (result.isLoggedIn) {
+          // 自动登录成功，继续跳转
+          uni.navigateTo({
+            url: service.link
+          })
+        } else {
+          // 自动登录失败，跳转登录页面
+          setTimeout(() => {
+            uni.navigateTo({
+              url: '/pages/mine/login/login'
+            })
+          }, 1000);
+        }
+      } catch (error) {
+        console.log('自动登录检查失败:', error)
+        setTimeout(() => {
+          uni.navigateTo({
+            url: '/pages/mine/login/login'
+          })
+        }, 1000);
+      }
+      return
+    }
+  }
+  
+  // 不需要登录或已登录，直接跳转
   uni.navigateTo({
     url: service.link
   })
 }
+
+
 
 const handleCategoryClick = (category: any) => {
   uni.navigateTo({

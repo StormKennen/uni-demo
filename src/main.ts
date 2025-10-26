@@ -8,9 +8,7 @@ import '@/static/style/iconfont.scss'
 // import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 
-import { sensorsCreated, sensorsClickTrack } from "@/utils/sensors";
 // #ifdef WEB
-// import { sensorsCreated } from "@/utilsH5/sensors";
 // #endif
 // // #ifdef MP-WEIXIN
 // // #endif
@@ -22,13 +20,10 @@ export function createApp() {
 
   app.use(pinia);
   
-  sensorsCreated()
-  sensorsClickTrack()
   // #ifdef MP-WEIXIN
   // #endif
   
   // #ifdef WEB
-  sensorsCreated()
   if (import.meta.env.VITE_APP_ENV === 'development' || import.meta.env.VITE_APP_ENV === 'test') {
     import('vconsole').then(({ default: VConsole }) => {
       // eslint-disable-next-line no-new

@@ -6,8 +6,6 @@ const CDN_URL  = 'https://cdn-public.galaxy-immi.com/business'
 
 const props = withDefaults(defineProps<{
   hideWrap?: boolean
-  sensorsChinaName?: string // 埋点事件中文名
-  sensorsEventName?: string // 埋点事件名
   headerBtnText?: string
   headerBtnUrl?: string
   hideHeaderBtn?: boolean
@@ -17,8 +15,6 @@ const props = withDefaults(defineProps<{
   hideHeaderBtn: false,
   headerBtnText: '打开APP',
   headerBtnUrl: '',
-  sensorsEventName: '',
-  sensorsChinaName: '',
   goDefault: false,
 })
 
@@ -67,8 +63,6 @@ const onClickHeaderBtn = () => {
       <view
         v-if="hideHeaderBtn === false"
         class="right-btn"
-        :data-sensors-china-event-name="sensorsChinaName"
-        :data-sensors-event-name="sensorsEventName"
         @click="onClickHeaderBtn"
       >
         {{ props.headerBtnText }}
@@ -78,8 +72,6 @@ const onClickHeaderBtn = () => {
   <view v-if="!hideWrap" class="go-app-wrap">
     <view
       class="go-app-btn"
-      :data-sensors-china-event-name="sensorsChinaName"
-      :data-sensors-event-name="sensorsEventName"
       @click="openApp"
     >
       打开APP

@@ -1,7 +1,7 @@
 // request.js
 
 // lodash 合并函数，也可以自己实现
-import { getToken, getWxUserInfo } from "@/utils/storage";
+import { getToken, getWxUserInfo, clearLoginData } from "@/utils/storage";
 import { merge } from "lodash-es"
 import type { Options, ParticalUniAppRequestOptions } from "./interface";
 import { getAppTokenFromQuery } from "@/utilsH5/env";
@@ -13,6 +13,7 @@ type Methods = 'OPTIONS' | 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'TRACE' 
 enum RES_CODE {
   Success = 200,
   InvalidToken = 20003,
+  Unauthorized = 401,
 }
 
 const getTokenByPlatform = () =>{
@@ -81,8 +82,42 @@ export class Request {
   // 响应拦截，这里只是做了示例，可以根据自己情况进行扩展
   async responseInterceptor(res: any) {
     console.log("🚀 ~ Request ~ responseInterceptor ~ res:", res)
-    const { data: _data } = res;
+    const { data: _data, statusCode } = res;
+    
+    // 处理HTTP状态码401 - 未授权
+    if (statusCode === RES_CODE.Unauthorized) {
+      console.log('收到401响应，清除登录数据并跳转到登录页')
+      clearLoginData()
+      uni.showToast({
+        title: '登录已过期，请重新登录',
+        icon: 'none'
+      })
+      setTimeout(() => {
+        uni.navigateTo({
+          url: '/pages/mine/login/login'
+        })
+      }, 1500)
+      return Promise.reject('登录已过期')
+    }
+    
     const { code, msg, data } = _data;
+    
+    // 处理业务层面的token失效
+    if (code === RES_CODE.InvalidToken) {
+      console.log('Token失效，清除登录数据并跳转到登录页')
+      clearLoginData()
+      uni.showToast({
+        title: '登录已过期，请重新登录',
+        icon: 'none'
+      })
+      setTimeout(() => {
+        uni.navigateTo({
+          url: '/pages/mine/login/login'
+        })
+      }, 1500)
+      return Promise.reject('Token失效')
+    }
+    
     // todo: 删除code!==0判断
     if (code !== RES_CODE.Success) {
       return Promise.reject(msg);

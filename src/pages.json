@@ -37,16 +37,17 @@
         "navigationStyle": "custom"
       }
     },
-    {
-      "path": "pages/company/company",
-      "style": {
-        "navigationBarTitleText": "公司信息表单"
-      }
-    },
+
     {
       "path": "pages/mine/mine",
       "style": {
         "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/test-token",
+      "style": {
+        "navigationBarTitleText": "Token测试"
       }
     },
     {
@@ -106,18 +107,8 @@
         "navigationBarTitleText": ""
       }
     },
-    {
-      "path": "pages/country-search/index",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/exchange-search/index",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
+
+
     {
       "path": "pages/pagesServices/recipe/index",
       "style": {

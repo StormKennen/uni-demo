@@ -144,8 +144,7 @@
         </view>
         </view>
         <view class="bottom-wrap" :style="{zIndex: bottomIndex}" v-if="!isH5">
-            <view class="btn" @click="submit($event); handleSensorsClick($event)" data-sensors-event-name="Business_TaxCalculator_Calculate"
-            data-sensors-china-event-name="商务_税务计算器_计算">
+            <view class="btn" @click="submit($event)">
                 立即计算
             </view>
         </view>
@@ -168,7 +167,7 @@ import { getSystemInfo } from '@/utils/env';
 import { onShow } from '@dcloudio/uni-app';
 import NavBar from '@/components/nav-bar-base.vue';
 import info from '@/static/image/info.svg'
-import { handleSensorsClick } from '@/utils/public'
+
 
 const labelWidth = '120rpx';
 const labelWidth2 = '180rpx'

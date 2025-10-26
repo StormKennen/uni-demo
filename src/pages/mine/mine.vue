@@ -1,18 +1,19 @@
 <script setup>
+  import { ref, computed } from 'vue'
   import defaultAvator from '@/static/image/default_avator.svg'
   import rightArrow from '@/static/image/right_arrow.svg'
   import MineListItem from '@/components/mine-list-item.vue'
-  import { getToken, getWxUserInfo } from '@/utils/storage'
+  import { getToken, getWxUserInfo, getUserInfo, clearLoginData } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
-
-  const wxUserInfo = getWxUserInfo()
 
   const token = ref()
   const avatar = ref()
+  const userInfo = ref()
 
   onShow(() => {
     token.value = getToken()
-    avatar.value = token.value ? wxUserInfo.avatarUrl : defaultAvator
+    userInfo.value = getUserInfo() || getWxUserInfo()
+    avatar.value = token.value ? (userInfo.value?.avatarUrl || userInfo.value?.avatar) : defaultAvator
   })
 
   const onLogin = () => {
@@ -24,10 +25,62 @@
     })
   }
 
+  const onLogout = () => {
+    uni.showModal({
+      title: '提示',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除用户数据
+          clearLoginData()
+          
+          // 更新页面状态
+          token.value = null
+          userInfo.value = null
+          avatar.value = defaultAvator
+          
+          uni.showToast({
+            title: '已退出登录',
+            icon: 'success'
+          })
+        }
+      }
+    })
+  }
+
   const list = ref([
-    { icon: '/static/image/mine/order.svg', name: '我的订单', to: '/pages/mine/order/order', needToken: true },
+    // { icon: '/static/image/mine/order.svg', name: '我的订单', to: '/pages/mine/order/order', needToken: true },
     { icon: '/static/image/mine/setting.svg', name: '设置', to: '/pages/mine/setting/setting', needToken: true },
   ])
+
+  // 动态计算显示的列表项
+  const displayList = computed(() => {
+    const baseList = [...list.value]
+    
+    // 如果已登录，添加登出选项
+    if (token.value) {
+      baseList.push({
+        icon: '/static/image/mine/logout.svg',
+        name: '退出登录',
+        action: 'logout',
+        needToken: true
+      })
+    }
+    
+    return baseList
+  })
+
+  // 处理列表项点击事件
+  const handleItemClick = (item) => {
+    if (item.action === 'logout') {
+      onLogout()
+    } else if (item.to) {
+      // 原有的跳转逻辑
+      uni.navigateTo({
+        url: item.to
+      })
+    }
+  }
 </script>
 
 <template>
@@ -38,20 +91,20 @@
       <view class="mine-user" hover-class="none" hover-stop-propagation="false">
         <view class="mine-user-avator" hover-class="none" hover-stop-propagation="false">
           <image
-            :class="`${token && wxUserInfo.avatarUrl ? 'border avator-image' : 'avator-image'}`"
+            :class="`${token && (userInfo?.avatarUrl || userInfo?.avatar) ? 'border avator-image' : 'avator-image'}`"
             :src="avatar || defaultAvator"></image>
         </view>
         <view class="mine-user-name" @click="onLogin" hover-class="none" hover-stop-propagation="false">
           <text class="user-name-text">{{
-            token ? wxUserInfo?.nickname || 'kai用户' : '请登录'
+            token ? (userInfo?.nickname || userInfo?.name || 'kai用户') : '请登录'
           }}</text>
           <image v-if="!token" class="user-name-right-arrow" :src="rightArrow" />
         </view>
       </view>
     </view>
     <view class="mine-list" hover-class="none" hover-stop-propagation="false">
-      <view v-for="item in list" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
-        <MineListItem :data="item" />
+      <view v-for="item in displayList" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+        <MineListItem :data="item" @click="handleItemClick(item)" />
       </view>
     </view>
   </view>

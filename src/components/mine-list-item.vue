@@ -16,23 +16,31 @@
 
 <script setup lang="ts">
   import rightArrow1 from '@/static/image/mine/arrow_right_1.svg'
-import { customizeTrack } from '@/utils/sensors'
+
   import { checkLoginBeforeNavigator } from '@/utils/wxLogin'
   type Data = {
     icon: string
     name: string
     to?: string
     needToken?: boolean
+    action?: string
   }
   type Props = {
     data: Data
   }
   const props = defineProps<Props>()
+  const emit = defineEmits(['click'])
+  
   const onClick = () => {
     const { data } = props
-    if(data.to==='/pages/mine/order/order'){
-      customizeTrack('Business_MyOrders', '商务_我的订单')
+    
+    // 如果有自定义action，触发父组件的点击事件
+    if (data.action) {
+      emit('click', data)
+      return
     }
+    
+
     if (data.to) {
       if (data.needToken) {
         checkLoginBeforeNavigator(data.to)

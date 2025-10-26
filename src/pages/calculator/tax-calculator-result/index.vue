@@ -10,7 +10,7 @@
   import appDsBridge from '@/utilsH5/appDsBridge'
   import NavBar from '@/components/nav-bar.vue'
   import { onShow } from '@dcloudio/uni-app'
-import { handleSensorsClick } from '@/utils/public'
+
 
   const isYinheApp = ref(false)
 
@@ -192,8 +192,7 @@ import { handleSensorsClick } from '@/utils/public'
         </template>
       </SimpleTable>
     </view>
-    <view class="bottom-wrap" data-sensors-event-name="Business_TaxCalculationResults_Share"
-    data-sensors-china-event-name="商务_税务计算结果_分享" @click="handleSensorsClick($event)">
+    <view class="bottom-wrap">
       <view class="bottom-tips">只会分享工具不会分享数据</view>
       <button class="btn" v-if="isYinheApp" @click="openShareView"> 分享工具给好友 </button>
       <button class="btn" open-type="share" v-else> 分享工具给好友 </button>

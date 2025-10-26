@@ -37,7 +37,7 @@
   import defaultImage from '@/static/image/default_image.svg'
   import appDsBridge from '@/utilsH5/appDsBridge'
   import { isYinheAppEnv } from '@/utilsH5/env'
-  import { customizeTrack } from '@/utils/sensors'
+
   console.log('🚀 ~ defaultImage:', defaultImage)
   type Props = {
     data: any
@@ -46,12 +46,6 @@
   }
   const props = defineProps<Props>()
   const onClick = () => {
-    customizeTrack('Business_HomePage_ProductList', '商务_首页商品列表', {
-      product_name: props.data.name,
-      product_url: `${import.meta.env.VITE_HKLIFE_H5_HOST}/goods/sales-detail?id=${props.data.id}`,
-      product_price: props.data.linePrice,
-      product_sort: props.index
-    })
     // #ifdef WEB
     if (isYinheAppEnv()) {
       appDsBridge.goH5UISyn({
