@@ -44,12 +44,7 @@
         "navigationStyle": "custom"
       }
     },
-    {
-      "path": "pages/test-token",
-      "style": {
-        "navigationBarTitleText": "Token测试"
-      }
-    },
+
     {
       "path": "pages/mine/order/order",
       "style": {
@@ -59,7 +54,7 @@
     {
       "path": "pages/middle/index",
       "style": {
-        "navigationBarTitleText": "银河E签"
+        "navigationBarTitleText": "E签"
       }
     },
     {
@@ -71,7 +66,7 @@
     {
       "path": "pages/middle/app",
       "style": {
-        "navigationBarTitleText": "银河港生活APP"
+        "navigationBarTitleText": "港生活APP"
       }
     },
     {

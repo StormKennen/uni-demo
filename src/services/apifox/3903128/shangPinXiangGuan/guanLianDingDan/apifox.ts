@@ -28,7 +28,7 @@ export function PostSuperAppPresaleAppAssociatedOrderActionableOrder(_, config?:
   return http.post('/super-app/presale/app/associated-order/actionable-order', {}, _config) as Promise<PostSuperAppPresaleAppAssociatedOrderActionableOrderRes>
 }
 
-/** 首页-商务交付服务 */
+/** 首页-交付服务 */
 export function GetSuperAppPresaleAppAssociatedOrderBusiness(config?: ParticalUniAppRequestOptions): Promise<GetSuperAppPresaleAppAssociatedOrderBusinessRes> {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get('/super-app/presale/app/associated-order/business', _config) as Promise<GetSuperAppPresaleAppAssociatedOrderBusinessRes>

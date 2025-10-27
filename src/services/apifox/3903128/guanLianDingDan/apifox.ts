@@ -13,19 +13,19 @@ import type {
     PostSuperAppAssociatedOrderServicesLinkRes,
 } from './interface'
     
-/** 商务订单主体列表 */
+/** 订单主体列表 */
 export function GetSuperAppAssociatedOrderServices(config?: ParticalUniAppRequestOptions): Promise<GetSuperAppAssociatedOrderServicesRes> {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get('/super-app/associated-order/services', _config) as Promise<GetSuperAppAssociatedOrderServicesRes>
 }
 
-/** 客户对应商务订单 */
+/** 客户对应订单 */
 export function GetSuperAppAssociatedOrderBusinessList(config?: ParticalUniAppRequestOptions): Promise<GetSuperAppAssociatedOrderBusinessListRes> {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get('/super-app/associated-order/business/list', _config) as Promise<GetSuperAppAssociatedOrderBusinessListRes>
 }
 
-/** 商务订单主体关联 */
+/** 订单主体关联 */
 export function PostSuperAppAssociatedOrderServicesLink(_, config?: ParticalUniAppRequestOptions): Promise<PostSuperAppAssociatedOrderServicesLinkRes> {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post('/super-app/associated-order/services/link', {}, _config) as Promise<PostSuperAppAssociatedOrderServicesLinkRes>

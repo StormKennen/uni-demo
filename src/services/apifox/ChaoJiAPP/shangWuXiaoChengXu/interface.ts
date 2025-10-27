@@ -1,5 +1,5 @@
 /**
- * @description /获取商务产品的周期列表 (C端通用接口)--接口请求Query参数
+ * @description /获取产品的周期列表 (C端通用接口)--接口请求Query参数
  * @url GET /biz/period/get-period-list
  */
 export interface getBizPeriodGetPeriodListQuery {
@@ -8,7 +8,7 @@ export interface getBizPeriodGetPeriodListQuery {
 }
 
 /**
- * @description /获取商务产品的周期列表 (C端通用接口)--接口返回值
+ * @description /获取产品的周期列表 (C端通用接口)--接口返回值
  * @url GET /biz/period/get-period-list
  */
 export interface getBizPeriodGetPeriodListRes {

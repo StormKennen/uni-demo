@@ -15,7 +15,7 @@ export const useMallStore = defineStore('mall', () => {
     page: 1,
     page_size: 20,
     sort_type: 0,
-    show_scene: '101', // 100 app ; 101 商务小程序
+    show_scene: '101', // 100 app ; 101 小程序
   })
 
   const recommendGoodsOne = computed(() => {

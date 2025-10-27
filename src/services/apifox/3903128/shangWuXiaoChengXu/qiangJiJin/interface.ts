@@ -530,7 +530,7 @@ export interface GetBizMpfCertificateInfoRes {
 export interface GetBizMpfWaitResultTaskQuery {
     /** 订单id example:  */
     order_id: number
-    /** 商务id  example:  */
+    /** id  example:  */
     business_order_project_id?: number
 }
 

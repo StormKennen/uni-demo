@@ -11,7 +11,7 @@ const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
- * @description /获取商务产品的周期列表 (C端通用接口)
+ * @description /获取产品的周期列表 (C端通用接口)
  * @url GET /biz/period/get-period-list
  * @host https://app.apifox.com/link/project/3903128/apis/api-289151199
  */

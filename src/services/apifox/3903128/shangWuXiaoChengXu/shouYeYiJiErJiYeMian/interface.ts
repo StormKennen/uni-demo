@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 export interface GetBizViewPosterRes {
-    /** 商务服务海报  */
+    /** 服务海报  */
     business_service: Array<string>
     /** 客户案例  */
     customer_case: Array<string>

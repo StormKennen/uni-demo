@@ -12,7 +12,7 @@ const props = defineProps<Props>()
       <text class="welcome-text">欢迎使用kai通</text>
     </view>
     <view class="service" hover-class="none" hover-stop-propagation="false">
-      <text class="service-text">登录后可享受优质商务服务</text>
+      <text class="service-text">登录后可享受优质服务</text>
     </view>
   </view>
 </template>

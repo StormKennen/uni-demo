@@ -23,7 +23,7 @@ export interface getAssociatedOrderServerListResListItem {
 }
 
 /**
- * @description /首页-商务交付服务--接口返回值
+ * @description /首页-交付服务--接口返回值
  * @url GET /super-app/presale/app/associated-order/business
  */
 export interface getAppAssociatedOrderBusinessRes {

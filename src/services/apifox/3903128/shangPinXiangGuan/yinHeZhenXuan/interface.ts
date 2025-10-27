@@ -10,7 +10,7 @@ export interface GetSuperAppGoodsListQuery {
     page_size?: number
     /** 排序类型: 0 默认排序，1 热门降序， 2 价格升序， 3 价格降序  example: undefined */
     sort_type?: number
-    /** 展示场景,100，app 101 商务小程序  example:  */
+    /** 展示场景,100，app 101 小程序  example:  */
     show_scene?: string
 }
 export interface GetSuperAppGoodsListResListItem {

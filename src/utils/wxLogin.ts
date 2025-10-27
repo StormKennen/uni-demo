@@ -43,6 +43,12 @@ export const wxCode2Session = async () => {
     
   } catch (error) {
     console.log("🚀 ~ wxCode2Session ~ error:", error)
+    
+    // 如果是401错误，说明微信code无效，不需要特殊处理
+    if (error?.code === 401) {
+      console.log('微信code验证失败，可能已过期')
+    }
+    
     throw error
   }
 }
@@ -124,6 +130,12 @@ export const wxSilentLogin = async () => {
     return false
   } catch (error) {
     console.log('微信静默登录失败:', error)
+    
+    // 如果是401错误，说明code无效或已过期，这是正常情况
+    if (error?.code === 401) {
+      console.log('微信code无效或已过期，需要用户手动登录')
+    }
+    
     return false
   }
 }

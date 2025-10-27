@@ -67,7 +67,7 @@ export interface IOpenLivePageParams {
 export interface IAgentChatParam {
   id: string // agentId  唯一  app端对应会话Id
   title: string // agent标题
-  businessType: 'saleBot' | 'educationBot' | 'businessBot' // “saleBot” 销售agent。 “educationBot” 教育agent。 “businessBot” 商务agent
+  businessType: 'saleBot' | 'educationBot' | 'businessBot' // “saleBot” 销售agent。 “educationBot” 教育agent。 “businessBot” agent
   botId: string // 智能体id
 }
 

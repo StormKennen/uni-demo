@@ -185,8 +185,20 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     } catch (error) {
       console.warn('🚀 ~ mobileLogin ~ error:', error)
       uni.hideLoading()
+      
+      // 处理不同类型的错误
+      let errorMessage = '登录失败，请稍后重试'
+      
+      if (error?.code === 401) {
+        errorMessage = '手机号或密码错误'
+      } else if (error?.message) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
       uni.showToast({
-        title: '手机号或密码错误',
+        title: errorMessage,
         icon: 'none',
       })
     }
@@ -255,8 +267,22 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     } catch (error) {
       console.warn('🚀 ~ userRegister ~ error:', error)
       uni.hideLoading()
+      
+      // 处理不同类型的错误
+      let errorMessage = '注册失败，请稍后重试'
+      
+      if (error?.code === 401) {
+        errorMessage = '注册信息验证失败'
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message
+      } else if (error?.message) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+      
       uni.showToast({
-        title: error?.data?.message || '注册失败，请稍后重试',
+        title: errorMessage,
         icon: 'none',
       })
     }

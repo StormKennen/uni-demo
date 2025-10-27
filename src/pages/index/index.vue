@@ -7,7 +7,7 @@
           <image class="logo" src="/static/logo.png" mode="aspectFit" />
           <view class="company-info">
             <text class="company-name">kai</text>
-            <text class="company-slogan">专业商务服务平台</text>
+            <text class="company-slogan">专业服务平台</text>
           </view>
         </view>
         <view class="header-actions">
@@ -35,12 +35,12 @@
     <view class="quick-actions">
       <view class="section-title">
         <text class="title-text">快捷服务</text>
-        <text class="title-desc">一站式商务解决方案</text>
+        <text class="title-desc">一站式解决方案</text>
       </view>
       
       <view class="action-grid">
         <view 
-          class="action-item" 
+          :class="['action-item', { 'action-item-disabled': action.disabled }]" 
           v-for="(action, index) in quickActions" 
           :key="index"
           @click="handleActionClick(action)"
@@ -63,7 +63,7 @@
       
       <view class="service-list">
         <view 
-          class="service-card" 
+          :class="['service-card', { 'service-card-disabled': service.disabled }]"
           v-for="(service, index) in hotServices" 
           :key="index"
           @click="handleServiceClick(service)"
@@ -97,7 +97,7 @@
       
       <view class="category-list">
         <view 
-          class="category-item" 
+          :class="['category-item', { 'category-item-disabled': category.disabled }]"
           v-for="(category, index) in businessCategories" 
           :key="index"
           @click="handleCategoryClick(category)"
@@ -118,29 +118,28 @@
       </view>
       
       <view class="recommend-content">
-        <view class="recommend-card" @click="goToCalculator">
+        <view class="recommend-card recommend-card-disabled" @click="handleDisabledClick">
           <view class="recommend-icon">
-            <uni-icons type="calculator" size="32" color="#0046B4" />
+            <image src="/static/image/home/jisuanqi.svg" mode="aspectFit" />
           </view>
           <view class="recommend-info">
-            <text class="recommend-title">税务计算器</text>
-            <text class="recommend-desc">快速计算税务，智能规划财务</text>
+            <text class="recommend-title">开发中</text>
+            <text class="recommend-desc">开发中</text>
           </view>
           <view class="recommend-arrow">
-            <uni-icons type="right" size="16" color="#999" />
+            <image src="/static/image/home/arrow-right.svg" mode="aspectFit" />
           </view>
         </view>
-        
-        <view class="recommend-card" @click="goToChat">
+        <view class="recommend-card recommend-card-disabled" @click="handleDisabledClick">
           <view class="recommend-icon">
-            <uni-icons type="chat" size="32" color="#55CBA0" />
+            <image src="/static/image/home/ai.svg" mode="aspectFit" />
           </view>
           <view class="recommend-info">
-            <text class="recommend-title">AI商务规划师</text>
-            <text class="recommend-desc">智能咨询，专业建议</text>
+            <text class="recommend-title">开发中</text>
+            <text class="recommend-desc">开发中</text>
           </view>
           <view class="recommend-arrow">
-            <uni-icons type="right" size="16" color="#999" />
+            <image src="/static/image/home/arrow-right.svg" mode="aspectFit" />
           </view>
         </view>
       </view>
@@ -150,7 +149,7 @@
     <view class="safety-tips">
       <view class="tips-content">
         <uni-icons type="info" size="16" color="#999" />
-        <text class="tips-text">银河商务平台已通过安全认证，请放心使用</text>
+        <text class="tips-text">平台已通过安全认证，请放心使用</text>
       </view>
     </view>
   </view>
@@ -203,13 +202,13 @@ const banners = ref([
   {
     id: 1,
     image: '/static/image/home/cooking.jpg',
-    title: 'AI智能商务规划',
+    title: 'AI智能规划',
     link: '/pages/introduce/introduce'
   },
   {
     id: 2,
     image: '/static/image/home/cooking.jpg',
-    title: '专业税务服务',
+    title: '专业服务',
     link: '/pages/calculator/tax-calculator/index'
   }
 ])
@@ -222,83 +221,87 @@ const quickActions = ref([
     desc: '今天我们来做菜',
     icon: 'home',
     bgColor: '#0046B4',
-    link: '/pages/pagesServices/recipe/index'
+    // link: '/pages/pagesServices/recipe/index',
+    link: 'https://eat.lz-t.top',
+    disabled: false,
+    isWebLink: true // 是外链
   },
   {
     id: 2,
-    name: '税务服务',
-    desc: '专业税务规划',
+    name: '开发中',
+    desc: '开发中',
     icon: 'wallet',
     bgColor: '#55CBA0',
-    link: '/pages/calculator/tax-calculator/index'
+    link: '/pages/calculator/tax-calculator/index',
+    disabled: true
   },
   {
     id: 3,
-    name: '银行开户',
-    desc: '便捷开户服务',
+    name: '开发中',
+    desc: '开发中',
     icon: 'credit-card',
-    bgColor: '#FF6B35',
-    link: '/pages/pagesServices/business/company-account-open/index'
+    bgColor: '#999999',
+    link: '',
+    disabled: true
   },
   {
     id: 4,
-    name: 'AI咨询',
-    desc: '智能商务咨询',
+    name: '开发中',
+    desc: '开发中',
     icon: 'chat',
-    bgColor: '#8B5CF6',
-    link: '/pages/introduce/introduce'
+    bgColor: '#999999',
+    link: '',
+    disabled: true
   },
   {
     id: 5,
-    name: '商品商城',
-    desc: '优质商品推荐',
+    name: '开发中',
+    desc: '开发中',
     icon: 'shop',
-    bgColor: '#F59E0B',
-    link: '/pages/mall/mall'
+    bgColor: '#999999',
+    link: '',
+    disabled: true
   },
   {
     id: 6,
-    name: '订单管理',
-    desc: '订单状态查询',
+    name: '开发中',
+    desc: '开发中',
     icon: 'list',
-    bgColor: '#EF4444',
-    link: '/pages/mine/order/order'
+    bgColor: '#999999',
+    link: '',
+    disabled: true
   },
-  {
-    id: 7,
-    name: 'Token测试',
-    desc: '测试Token过期逻辑',
-    icon: 'gear',
-    bgColor: '#6B7280',
-    link: '/pages/test-token'
-  }
+
 ])
 
 // 热门服务
 const hotServices = ref([
   {
     id: 1,
-    name: '强制公积金服务',
-    desc: '专业公积金开户及管理服务',
+    name: '开发中',
+    desc: '开发中',
     image: '/static/image/home/liucheng.svg',
-    tags: ['热门', '推荐'],
-    link: '/pages/pagesServices/business/mandatory-provident-fund/home'
+    tags: ['开发中'],
+    link: '',
+    disabled: true
   },
   {
     id: 2,
-    name: '个人税务服务',
-    desc: '个人税务申报及规划',
+    name: '开发中',
+    desc: '开发中',
     image: '/static/image/home/shuishou.svg',
-    tags: ['专业', '高效'],
-    link: '/pages/pagesPersonalTax/home'
+    tags: ['开发中'],
+    link: '',
+    disabled: true
   },
   {
     id: 3,
-    name: '薪俸税服务',
-    desc: '薪俸税计算及申报',
+    name: '开发中',
+    desc: '开发中',
     image: '/static/image/home/youshi.svg',
-    tags: ['精准', '快速'],
-    link: '/pages/pagesSalaryTax/home/index'
+    tags: ['开发中'],
+    link: '',
+    disabled: true
   },
 
 ])
@@ -307,31 +310,35 @@ const hotServices = ref([
 const businessCategories = ref([
   {
     id: 1,
-    name: '公司服务',
+    name: '开发中',
     icon: '/static/image/home/anli.svg',
-    count: 12,
-    link: '/pages/pagesServices/business'
+    count: 0,
+    link: '',
+    disabled: true
   },
   {
     id: 2,
-    name: '税务服务',
+    name: '开发中',
     icon: '/static/image/home/shuishou.svg',
-    count: 8,
-    link: '/pages/calculator/tax-calculator/index'
+    count: 0,
+    link: '',
+    disabled: true
   },
   {
     id: 3,
-    name: '个人服务',
+    name: '开发中',
     icon: '/static/image/home/youshi.svg',
-    count: 6,
-    link: '/pages/pagesPersonalTax/home'
+    count: 0,
+    link: '',
+    disabled: true
   },
   {
     id: 4,
-    name: '金融服务',
+    name: '开发中',
     icon: '/static/image/home/liucheng.svg',
-    count: 10,
-    link: '/pages/pagesServices/business/company-account-open/index'
+    count: 0,
+    link: '',
+    disabled: true
   }
 ])
 
@@ -365,6 +372,37 @@ const handleBannerClick = (banner: any) => {
 }
 
 const handleActionClick = async (action: any) => {
+  // 检查是否为禁用状态
+  if (action.disabled) {
+    uni.showToast({
+      title: '功能开发中，敬请期待',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+  
+  // 特殊处理使用h5页面打开外部链接
+  if (action.isWebLink) {
+    // 检查当前运行环境
+    // #ifdef MP-WEIXIN
+    // 微信小程序环境，由于web-view域名限制，提示用户
+    // uni.showModal({
+    //   title: '提示',
+    //   content: '由于微信小程序限制，食谱功能暂时无法使用。请在H5版本中体验此功能。',
+    //   showCancel: false,
+    //   confirmText: '我知道了'
+    // })
+    // return
+    // #endif
+    
+    // 其他环境（H5、App等）正常跳转
+    uni.navigateTo({
+      url: `/pages/webview/h5?path=${encodeURIComponent(action.link)}&title=${encodeURIComponent('食谱')}`
+    })
+    return
+  }
+  
   // 定义需要登录的服务列表
   const needLoginServices = [
     '/pages/calculator/tax-calculator/index',
@@ -416,6 +454,15 @@ const handleActionClick = async (action: any) => {
 }
 
 const handleServiceClick = async (service: any) => {
+  // 检查是否为禁用状态
+  if (service.disabled) {
+    uni.showToast({
+      title: '功能开发中，敬请期待',
+      icon: 'none'
+    })
+    return
+  }
+  
   // 定义需要登录的服务列表
   const needLoginServices = [
     '/pages/pagesServices/business/mandatory-provident-fund/home',
@@ -468,6 +515,15 @@ const handleServiceClick = async (service: any) => {
 
 
 const handleCategoryClick = (category: any) => {
+  // 检查是否为禁用状态
+  if (category.disabled) {
+    uni.showToast({
+      title: '功能开发中，敬请期待',
+      icon: 'none'
+    })
+    return
+  }
+  
   uni.navigateTo({
     url: category.link
   })
@@ -501,6 +557,13 @@ const goToCalculator = () => {
 const goToChat = () => {
   uni.navigateTo({
     url: '/pages/introduce/introduce'
+  })
+}
+
+const handleDisabledClick = () => {
+  uni.showToast({
+    title: '功能开发中，敬请期待',
+    icon: 'none'
   })
 }
 </script>
@@ -663,6 +726,19 @@ const goToChat = () => {
         color: #666;
         text-align: center;
       }
+      
+      &.action-item-disabled {
+        opacity: 0.6;
+        
+        &:active {
+          transform: none;
+        }
+        
+        .action-name,
+        .action-desc {
+          color: #999;
+        }
+      }
     }
   }
 }
@@ -730,6 +806,25 @@ const goToChat = () => {
       .service-arrow {
         margin-left: 16rpx;
       }
+      
+      // 禁用状态样式
+      &.service-card-disabled {
+        opacity: 0.6;
+        
+        &:active {
+          transform: none;
+        }
+        
+        .service-name,
+        .service-desc {
+          color: #999;
+        }
+        
+        .service-tag {
+          background: #f5f5f5;
+          color: #999;
+        }
+      }
     }
   }
 }
@@ -780,6 +875,20 @@ const goToChat = () => {
         color: #666;
         text-align: center;
       }
+      
+      // 禁用状态样式
+      &.category-item-disabled {
+        opacity: 0.6;
+        
+        &:active {
+          transform: none;
+        }
+        
+        .category-name,
+        .category-count {
+          color: #999;
+        }
+      }
     }
   }
 }
@@ -829,6 +938,20 @@ const goToChat = () => {
       
       .recommend-arrow {
         margin-left: 16rpx;
+      }
+      
+      // 禁用状态样式
+      &.recommend-card-disabled {
+        opacity: 0.6;
+        
+        &:active {
+          transform: none;
+        }
+        
+        .recommend-title,
+        .recommend-desc {
+          color: #999;
+        }
       }
     }
   }

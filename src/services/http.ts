@@ -2,6 +2,7 @@
 
 // lodash 合并函数，也可以自己实现
 import { getToken, getWxUserInfo, clearLoginData } from "@/utils/storage";
+import { refreshAccessToken } from "@/utils/autoLogin";
 import { merge } from "lodash-es"
 import type { Options, ParticalUniAppRequestOptions } from "./interface";
 import { getAppTokenFromQuery } from "@/utilsH5/env";
@@ -34,7 +35,7 @@ const DEFAULT_CONFIG: Options = {
   data: {},
   header: {
     app_platform: 'h5',
-    CreateSource: 3, // 2 APP; 3 商务小程序
+    CreateSource: 3, // 2 APP; 3 小程序
     Token: getTokenByPlatform(),
     Userid: getYhIdByPlatform(),
     'App-Os': getAppOsByPlatform(),
@@ -75,47 +76,143 @@ export class Request {
       url,
       data,
       method,
+      // 添加标记，用于在响应拦截器中识别登录相关接口
+      _isAuthRequest: this.isAuthRequest(url),
     };
     // 返回组装的配置
     return configs;
   }
+
+  // 判断是否为认证相关的接口
+  private isAuthRequest(url: string): boolean {
+    const authEndpoints = [
+      '/auth/login',
+      '/auth/register', 
+      '/auth/refresh-tokens',
+      '/auth/forgot-password',
+      '/auth/reset-password'
+    ];
+    return authEndpoints.some(endpoint => url.includes(endpoint));
+  }
+
+  /**
+   * 静默刷新token并重试请求
+   */
+  private async handleTokenRefreshAndRetry(originalUrl: string, originalData: any, originalConfig: ParticalUniAppRequestOptions, originalMethod: Methods): Promise<any> {
+    try {
+      console.log('尝试静默刷新token...')
+      const refreshResult = await refreshAccessToken()
+      
+      if (refreshResult.success) {
+        console.log('Token刷新成功，重试原请求')
+        // 更新请求头中的token
+        const newConfig = { ...originalConfig }
+        if (newConfig.header) {
+          newConfig.header.Token = getToken()
+        }
+        
+        // 重试原请求
+        return this.request(originalUrl, originalData, newConfig, originalMethod)
+      } else {
+        console.log('Token刷新失败')
+        throw new Error('Token刷新失败')
+      }
+    } catch (error) {
+      console.log('静默刷新token失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 显示友好的登录提示对话框
+   */
+  private showLoginDialog(): Promise<boolean> {
+    return new Promise((resolve) => {
+      uni.showModal({
+        title: '登录状态已过期',
+        content: '为了继续使用，请重新登录',
+        confirmText: '去登录',
+        cancelText: '稍后再说',
+        success: (res) => {
+          if (res.confirm) {
+            // 获取当前页面路径作为重定向URL
+            const pages = getCurrentPages()
+            const currentPage = pages[pages.length - 1]
+            const redirectUrl = currentPage ? `/${currentPage.route}` : ''
+            
+            uni.navigateTo({
+              url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(redirectUrl)}`
+            })
+            resolve(true)
+          } else {
+            resolve(false)
+          }
+        }
+      })
+    })
+  }
   // 响应拦截，这里只是做了示例，可以根据自己情况进行扩展
-  async responseInterceptor(res: any) {
+  async responseInterceptor(res: any, requestConfig?: any) {
     console.log("🚀 ~ Request ~ responseInterceptor ~ res:", res)
     const { data: _data, statusCode } = res;
     
     // 处理HTTP状态码401 - 未授权
     if (statusCode === RES_CODE.Unauthorized) {
-      console.log('收到401响应，清除登录数据并跳转到登录页')
-      clearLoginData()
-      uni.showToast({
-        title: '登录已过期，请重新登录',
-        icon: 'none'
-      })
-      setTimeout(() => {
-        uni.navigateTo({
-          url: '/pages/mine/login/login'
+      // 如果是认证相关接口的401错误，不自动跳转登录页，让调用方处理
+      if (requestConfig?._isAuthRequest) {
+        console.log('认证接口返回401，不自动跳转，由调用方处理')
+        return Promise.reject({
+          code: 401,
+          message: '认证失败',
+          data: _data
         })
-      }, 1500)
-      return Promise.reject('登录已过期')
+      }
+      
+      // 非认证接口的401错误 - 尝试静默刷新token
+      console.log('非认证接口401错误，尝试静默刷新token')
+      try {
+        // 尝试静默刷新token并重试请求
+        return await this.handleTokenRefreshAndRetry(
+          requestConfig?.url || '',
+          requestConfig?.data || {},
+          requestConfig || {},
+          requestConfig?.method || 'GET'
+        )
+      } catch (refreshError) {
+        // 静默刷新失败，显示友好的登录提示
+        console.log('静默刷新失败，显示登录提示')
+        await this.showLoginDialog()
+        return Promise.reject({
+          code: 401,
+          message: '登录已过期',
+          data: _data
+        })
+      }
     }
     
     const { code, msg, data } = _data;
     
-    // 处理业务层面的token失效
+    // 处理业务层面的token失效 - 尝试静默刷新token
     if (code === RES_CODE.InvalidToken) {
-      console.log('Token失效，清除登录数据并跳转到登录页')
-      clearLoginData()
-      uni.showToast({
-        title: '登录已过期，请重新登录',
-        icon: 'none'
-      })
-      setTimeout(() => {
-        uni.navigateTo({
-          url: '/pages/mine/login/login'
+      console.log('业务层面Token失效，尝试静默刷新token')
+      try {
+        // 尝试静默刷新token并重试请求
+        return await this.handleTokenRefreshAndRetry(
+          requestConfig?.url || '',
+          requestConfig?.data || {},
+          requestConfig || {},
+          requestConfig?.method || 'GET'
+        )
+      } catch (refreshError) {
+        // 静默刷新失败，显示友好的登录提示
+        console.log('静默刷新失败，显示登录提示')
+        await this.showLoginDialog()
+        return Promise.reject({
+          code: RES_CODE.InvalidToken,
+          message: 'Token失效',
+          data: _data
         })
-      }, 1500)
-      return Promise.reject('Token失效')
+      }
     }
     
     // todo: 删除code!==0判断
@@ -137,12 +234,21 @@ export class Request {
     // uni.showLoading();
     // 请求拦截，返回处理过的结果配置
     const _config = this.requestInterceptor(url, data, config, method);
+    
+    // 保存原始请求参数，用于重试
+    const requestParams = {
+      url,
+      data,
+      method,
+      ...config
+    }
+    
     // Promise 封装
     return new Promise((resolve, reject) => {
       uni.request({
         ..._config,
         success: (res) => {
-          this.responseInterceptor(res).then(resolve).catch(reject);
+          this.responseInterceptor(res, requestParams).then(resolve).catch(reject);
           // this.responseInterceptor(res).then(res => {
           //   resolve(res)
           // }).catch(err => {

@@ -32,7 +32,7 @@ export const getAssociatedOrderServerList = async (
 }
 
 /**
- * @description /首页-商务交付服务
+ * @description /首页-交付服务
  * @url GET /super-app/presale/app/associated-order/business
  * @host https://app.apifox.com/link/project/3903128/apis/api-315852334
  */

@@ -83,7 +83,7 @@ export interface postExpressAddressSaveRes {
 export interface getMpfWaitResultTaskQuery {
   /** 订单id */
   order_id: number
-  /** 商务id */
+  /** id */
   business_order_project_id?: number
   [key: string]: any
 }

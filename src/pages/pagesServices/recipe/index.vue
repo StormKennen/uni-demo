@@ -1,5 +1,14 @@
 <template>
   <view class="recipe-page">
+    <shareApp v-if="isH5" :goDefault="true"></shareApp>
+    <NavBar 
+        v-else
+        :custom-style="{position: 'sticky', color: '#fff'}" 
+        :custom-go-back="true"
+        title="食谱"  
+        custom-class="light"
+        @back="goBack"
+        bgColor="#062577" />
     <!-- 顶部搜索栏 -->
     <view class="search-header">
       <view class="search-container">
@@ -230,7 +239,10 @@
 <script setup lang="ts">
 // @ts-ignore
 import { ref, computed, onMounted } from 'vue'
-
+import appDsBridge from '@/utilsH5/appDsBridge'
+import { isYinheAppEnv, getAppTokenFromSession } from '@/utilsH5/env'
+import { getSystemInfo } from '@/utils/env';
+import NavBar from '@/components/nav-bar-base.vue';
 // 声明uni全局对象
 declare const uni: any
 
@@ -331,6 +343,23 @@ const filteredRecipes = computed(() => {
   
   return filtered
 })
+
+const isH5 = ref(false)
+function init() {
+    if(isYinheAppEnv()) { 
+        appDsBridge.hideNavigationBarSyn('1')
+    } else if(getSystemInfo()?.hostName !== 'WeChat'){
+        isH5.value = true;
+    }
+}
+
+const goBack = () => {
+  if(isYinheAppEnv()) {
+    appDsBridge.backToAppPreView()
+  }else {
+    uni.navigateBack()
+  }
+}
 
 // 生命周期
 onMounted(() => {
