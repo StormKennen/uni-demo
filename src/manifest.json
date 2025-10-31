@@ -52,9 +52,32 @@
     "mp-weixin" : {
         "appid" : "wx262135894a3b87c3",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : true,
+            "enhance" : true,
+            "postcss" : true,
+            "minified" : true,
+            "newFeature" : true,
+            "coverView" : true,
+            "nodeModules" : false,
+            "autoAudits" : false,
+            "showShadowRootInWxmlPanel" : true,
+            "scopeDataCheck" : false,
+            "uglifyFileName" : false,
+            "checkInvalidKey" : true,
+            "checkSiteMap" : true,
+            "uploadWithSourceMap" : true,
+            "compileHotReLoad" : false,
+            "lazyloadPlaceholderEnable" : false,
+            "preloadBackgroundData" : false,
+            "minifyWXSS" : true,
+            "minifyWXML" : true
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "optimization": {
+            "subPackages": true
+        },
+        "lazyCodeLoading": "requiredComponents"
     },
     "mp-alipay" : {
         "usingComponents" : true

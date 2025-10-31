@@ -32,6 +32,15 @@ export const removeStorageSync = (key: string)=>{
 
 export const setToken = (token: string)=>{
   setStorageSync(TokenKey, token)
+  // 设置token后立即更新HTTP headers
+  setTimeout(async () => {
+    try {
+      const { updateHttpHeaders } = await import('@/utils/httpHeaders')
+      await updateHttpHeaders()
+    } catch (error) {
+      console.error('Failed to update HTTP headers after setting token:', error)
+    }
+  }, 0)
 }
 
 export const getToken = ()=>{
@@ -203,5 +212,14 @@ export const clearLoginData = () => {
   removeRefreshTokenExpiresAt()
   removeUserInfo()
   removeWxUserInfo()
+  // 清除登录数据时也要清除HTTP headers中的Authorization
+  setTimeout(async () => {
+    try {
+      const { updateHttpHeaders } = await import('@/utils/httpHeaders')
+      await updateHttpHeaders()
+    } catch (error) {
+      console.error('Failed to update HTTP headers after clearing login data:', error)
+    }
+  }, 0)
 }
 

@@ -22,7 +22,6 @@
         "navigationStyle": "custom"
       }
     },
-
     {
       "path": "pages/mall/mall",
       "style": {
@@ -37,49 +36,11 @@
         "navigationStyle": "custom"
       }
     },
-
     {
       "path": "pages/mine/mine",
       "style": {
         "navigationStyle": "custom"
       }
-    },
-
-    {
-      "path": "pages/mine/order/order",
-      "style": {
-        "navigationBarTitleText": "我的订单"
-      }
-    },
-    {
-      "path": "pages/middle/index",
-      "style": {
-        "navigationBarTitleText": "E签"
-      }
-    },
-    {
-      "path": "pages/middle/pay",
-      "style": {
-        "navigationBarTitleText": "支付"
-      }
-    },
-    {
-      "path": "pages/middle/app",
-      "style": {
-        "navigationBarTitleText": "港生活APP"
-      }
-    },
-    {
-      "path": "pages/mine/setting/setting",
-      "style": {
-        "navigationBarTitleText": "设置"
-      }
-    },
-    {
-      "path": "pages/webview/webview"
-    },
-    {
-      "path": "pages/webview/h5"
     },
     {
       "path": "pages/mine/login/login",
@@ -87,38 +48,98 @@
         "navigationBarTitleText": "",
         "navigationStyle": "custom"
       }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "subPackages/user",
+      "name": "user",
+      "pages": [
+        {
+          "path": "order/order",
+          "style": {
+            "navigationBarTitleText": "我的订单"
+          }
+        },
+        {
+          "path": "setting/setting",
+          "style": {
+            "navigationBarTitleText": "设置"
+          }
+        }
+      ]
     },
     {
-      "path": "pages/calculator/tax-calculator/index",
-      "style": {
-        "navigationStyle": "custom",
-        "navigationBarTitleText": ""
-      }
-    },
-    {
-      "path": "pages/calculator/tax-calculator-result/index",
-      "style": {
-        "navigationStyle": "custom",
-        "navigationBarTitleText": ""
-      }
-    },
+      "root": "subPackages/tools",
+      "name": "tools",
+      "pages": [
 
-
-    {
-      "path": "pages/pagesServices/recipe/index",
-      "style": {
-        "navigationBarTitleText": "食谱大全",
-        "navigationStyle": "custom"
-      }
+        {
+          "path": "family-tree/index",
+          "style": {
+            "navigationBarTitleText": "族谱",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "image-compress/index",
+          "style": {
+            "navigationBarTitleText": "图片压缩",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
     },
     {
-      "path": "pages/pagesServices/recipe/detail",
-      "style": {
-        "navigationBarTitleText": "食谱详情",
-        "navigationStyle": "custom"
-      }
+      "root": "subPackages/services",
+      "name": "services",
+      "pages": [
+        {
+          "path": "recipe/index",
+          "style": {
+            "navigationBarTitleText": "食谱大全",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "recipe/detail",
+          "style": {
+            "navigationBarTitleText": "食谱详情",
+            "navigationStyle": "custom"
+          }
+        }
+      ]
     },
-
+    {
+      "root": "subPackages/common",
+      "name": "common",
+      "pages": [
+        {
+          "path": "middle/index",
+          "style": {
+            "navigationBarTitleText": "E签"
+          }
+        },
+        {
+          "path": "middle/pay",
+          "style": {
+            "navigationBarTitleText": "支付"
+          }
+        },
+        {
+          "path": "middle/app",
+          "style": {
+            "navigationBarTitleText": "港生活APP"
+          }
+        },
+        {
+          "path": "webview/webview"
+        },
+        {
+          "path": "webview/h5"
+        }
+      ]
+    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

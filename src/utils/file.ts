@@ -115,7 +115,7 @@ export const previewFile = (fileUrl: string, isPrivate = true) => {
       }
       resolve(true)
       uni.navigateTo({
-        url: `/pages/webview/webview?url=${publicFileUrl}&title=预览`
+        url: `/subPackages/common/webview/webview?url=${publicFileUrl}&title=预览`
       })
       return
     }

@@ -43,7 +43,7 @@
           :class="['action-item', { 'action-item-disabled': action.disabled }]" 
           v-for="(action, index) in quickActions" 
           :key="index"
-          @click="handleActionClick(action)"
+          @click.prevent.stop="handleActionClick(action)"
         >
           <view class="action-icon" :style="{ background: action.bgColor }">
             <uni-icons :type="action.icon" size="24" color="white" />
@@ -54,96 +54,10 @@
       </view>
     </view>
 
-    <!-- 热门服务 -->
-    <view class="hot-services">
-      <view class="section-title">
-        <text class="title-text">热门服务</text>
-        <text class="more-btn" @click="goToMoreServices">更多 ></text>
-      </view>
-      
-      <view class="service-list">
-        <view 
-          :class="['service-card', { 'service-card-disabled': service.disabled }]"
-          v-for="(service, index) in hotServices" 
-          :key="index"
-          @click="handleServiceClick(service)"
-        >
-          <image class="service-image" :src="service.image" mode="aspectFill" />
-          <view class="service-info">
-            <text class="service-name">{{ service.name }}</text>
-            <text class="service-desc">{{ service.desc }}</text>
-            <view class="service-tags">
-              <text 
-                class="service-tag" 
-                v-for="(tag, tagIndex) in service.tags" 
-                :key="tagIndex"
-              >
-                {{ tag }}
-              </text>
-            </view>
-          </view>
-          <view class="service-arrow">
-            <uni-icons type="right" size="16" color="#999" />
-          </view>
-        </view>
-      </view>
-    </view>
 
-    <!-- 业务分类 -->
-    <view class="business-categories">
-      <view class="section-title">
-        <text class="title-text">业务分类</text>
-      </view>
-      
-      <view class="category-list">
-        <view 
-          :class="['category-item', { 'category-item-disabled': category.disabled }]"
-          v-for="(category, index) in businessCategories" 
-          :key="index"
-          @click="handleCategoryClick(category)"
-        >
-          <view class="category-icon">
-            <image :src="category.icon" mode="aspectFit" />
-          </view>
-          <text class="category-name">{{ category.name }}</text>
-          <text class="category-count">{{ category.count }}项服务</text>
-        </view>
-      </view>
-    </view>
 
-    <!-- 底部推荐 -->
-    <view class="bottom-recommend">
-      <view class="section-title">
-        <text class="title-text">为您推荐</text>
-      </view>
-      
-      <view class="recommend-content">
-        <view class="recommend-card recommend-card-disabled" @click="handleDisabledClick">
-          <view class="recommend-icon">
-            <image src="/static/image/home/jisuanqi.svg" mode="aspectFit" />
-          </view>
-          <view class="recommend-info">
-            <text class="recommend-title">开发中</text>
-            <text class="recommend-desc">开发中</text>
-          </view>
-          <view class="recommend-arrow">
-            <image src="/static/image/home/arrow-right.svg" mode="aspectFit" />
-          </view>
-        </view>
-        <view class="recommend-card recommend-card-disabled" @click="handleDisabledClick">
-          <view class="recommend-icon">
-            <image src="/static/image/home/ai.svg" mode="aspectFit" />
-          </view>
-          <view class="recommend-info">
-            <text class="recommend-title">开发中</text>
-            <text class="recommend-desc">开发中</text>
-          </view>
-          <view class="recommend-arrow">
-            <image src="/static/image/home/arrow-right.svg" mode="aspectFit" />
-          </view>
-        </view>
-      </view>
-    </view>
+
+
 
     <!-- 底部安全提示 -->
     <view class="safety-tips">
@@ -205,35 +119,39 @@ const banners = ref([
     title: 'AI智能规划',
     link: '/pages/introduce/introduce'
   },
-  {
-    id: 2,
-    image: '/static/image/home/cooking.jpg',
-    title: '专业服务',
-    link: '/pages/calculator/tax-calculator/index'
-  }
+
 ])
 
 // 快捷功能
 const quickActions = ref([
+  // {
+  //   id: 1,
+  //   name: '食谱',
+  //   desc: '今天我们来做菜',
+  //   icon: 'home',
+  //   bgColor: '#0046B4',
+  //   // link: '/pages/pagesServices/recipe/index',
+  //   link: 'https://eat.lz-t.top',
+  //   disabled: false,
+  //   isWebLink: true // 是外链
+  // },
   {
     id: 1,
-    name: '食谱',
-    desc: '今天我们来做菜',
-    icon: 'home',
-    bgColor: '#0046B4',
-    // link: '/pages/pagesServices/recipe/index',
-    link: 'https://eat.lz-t.top',
-    disabled: false,
-    isWebLink: true // 是外链
+    name: '图片压缩',
+    desc: '智能压缩',
+    icon: 'image',
+    bgColor: '#FF6B35',
+    link: '/subPackages/tools/image-compress/index',
+    disabled: false
   },
   {
     id: 2,
-    name: '开发中',
-    desc: '开发中',
-    icon: 'wallet',
+    name: '族谱',
+    desc: '族谱',
+    icon: 'person',
     bgColor: '#55CBA0',
-    link: '/pages/calculator/tax-calculator/index',
-    disabled: true
+    link: '/subPackages/tools/family-tree/index',
+    disabled: false
   },
   {
     id: 3,
@@ -274,73 +192,7 @@ const quickActions = ref([
 
 ])
 
-// 热门服务
-const hotServices = ref([
-  {
-    id: 1,
-    name: '开发中',
-    desc: '开发中',
-    image: '/static/image/home/liucheng.svg',
-    tags: ['开发中'],
-    link: '',
-    disabled: true
-  },
-  {
-    id: 2,
-    name: '开发中',
-    desc: '开发中',
-    image: '/static/image/home/shuishou.svg',
-    tags: ['开发中'],
-    link: '',
-    disabled: true
-  },
-  {
-    id: 3,
-    name: '开发中',
-    desc: '开发中',
-    image: '/static/image/home/youshi.svg',
-    tags: ['开发中'],
-    link: '',
-    disabled: true
-  },
 
-])
-
-// 业务分类
-const businessCategories = ref([
-  {
-    id: 1,
-    name: '开发中',
-    icon: '/static/image/home/anli.svg',
-    count: 0,
-    link: '',
-    disabled: true
-  },
-  {
-    id: 2,
-    name: '开发中',
-    icon: '/static/image/home/shuishou.svg',
-    count: 0,
-    link: '',
-    disabled: true
-  },
-  {
-    id: 3,
-    name: '开发中',
-    icon: '/static/image/home/youshi.svg',
-    count: 0,
-    link: '',
-    disabled: true
-  },
-  {
-    id: 4,
-    name: '开发中',
-    icon: '/static/image/home/liucheng.svg',
-    count: 0,
-    link: '',
-    disabled: true
-  }
-])
 
 // 状态数据
 const hasNotification = ref(false)
@@ -398,17 +250,16 @@ const handleActionClick = async (action: any) => {
     
     // 其他环境（H5、App等）正常跳转
     uni.navigateTo({
-      url: `/pages/webview/h5?path=${encodeURIComponent(action.link)}&title=${encodeURIComponent('食谱')}`
+      url: `/subPackages/common/webview/h5?path=${encodeURIComponent(action.link)}&title=${encodeURIComponent('食谱')}`
     })
     return
   }
   
   // 定义需要登录的服务列表
   const needLoginServices = [
-    '/pages/calculator/tax-calculator/index',
     '/pages/pagesServices/business/company-account-open/index',
     '/pages/mall/mall',
-    '/pages/mine/order/order'
+    '/subPackages/user/order/order'
   ]
   
   // 检查是否需要登录
@@ -453,81 +304,7 @@ const handleActionClick = async (action: any) => {
   })
 }
 
-const handleServiceClick = async (service: any) => {
-  // 检查是否为禁用状态
-  if (service.disabled) {
-    uni.showToast({
-      title: '功能开发中，敬请期待',
-      icon: 'none'
-    })
-    return
-  }
-  
-  // 定义需要登录的服务列表
-  const needLoginServices = [
-    '/pages/pagesServices/business/mandatory-provident-fund/home',
-    '/pages/pagesPersonalTax/home',
-    '/pages/pagesSalaryTax/home/index'
-  ]
-  
-  // 检查是否需要登录
-  if (needLoginServices.includes(service.link)) {
-    if (!isUserLoggedIn()) {
-      // 需要登录，跳转到登录页面
-      uni.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-      // 跳转前，触发自动登录。无法自动登录，再跳转页面
-      try {
-        const result = await autoLogin()
-        if (result.isLoggedIn) {
-          // 自动登录成功，继续跳转
-          uni.navigateTo({
-            url: service.link
-          })
-        } else {
-          // 自动登录失败，跳转登录页面
-          setTimeout(() => {
-            uni.navigateTo({
-              url: '/pages/mine/login/login'
-            })
-          }, 1000);
-        }
-      } catch (error) {
-        console.log('自动登录检查失败:', error)
-        setTimeout(() => {
-          uni.navigateTo({
-            url: '/pages/mine/login/login'
-          })
-        }, 1000);
-      }
-      return
-    }
-  }
-  
-  // 不需要登录或已登录，直接跳转
-  uni.navigateTo({
-    url: service.link
-  })
-}
 
-
-
-const handleCategoryClick = (category: any) => {
-  // 检查是否为禁用状态
-  if (category.disabled) {
-    uni.showToast({
-      title: '功能开发中，敬请期待',
-      icon: 'none'
-    })
-    return
-  }
-  
-  uni.navigateTo({
-    url: category.link
-  })
-}
 
 const goToSearch = () => {
   uni.navigateTo({
@@ -542,17 +319,9 @@ const goToNotification = () => {
   })
 }
 
-const goToMoreServices = () => {
-  uni.navigateTo({
-    url: '/pages/pagesServices/business'
-  })
-}
 
-const goToCalculator = () => {
-  uni.navigateTo({
-    url: '/pages/calculator/tax-calculator/index'
-  })
-}
+
+
 
 const goToChat = () => {
   uni.navigateTo({

@@ -80,15 +80,6 @@ importers:
       qs:
         specifier: 6.5.3
         version: 6.5.3
-      sa-sdk-javascript:
-        specifier: ^1.27.1
-        version: 1.27.10
-      sa-sdk-miniprogram:
-        specifier: ^1.21.3
-        version: 1.22.1
-      uuid:
-        specifier: ^11.1.0
-        version: 11.1.0
       vconsole:
         specifier: ^3.15.1
         version: 3.15.1
@@ -4204,12 +4195,6 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
-  sa-sdk-javascript@1.27.10:
-    resolution: {integrity: sha512-cZvVpjUgKsGH/y2wN2fOdGraCjfUawNXQmVVEoedvajw5L1JBvT4lHSxU7UatI0ceWz/gsGCsSvxuY8tnWJ8Xg==}
-
-  sa-sdk-miniprogram@1.22.1:
-    resolution: {integrity: sha512-e1fwX5VbmYkk/2hO8Lu50SyKd0CoRvn/jBpQt4BYixNVEX1FCepuz3yECGVmEr700sAv3RCTMCMuPcZetZ925w==}
-
   safe-area-insets@1.4.1:
     resolution: {integrity: sha512-r/nRWTjFGhhm3w1Z6Kd/jY11srN+lHt2mNl1E/emQGW8ic7n3Avu4noibklfSM+Y34peNphHD/BSZecav0sXYQ==}
 
@@ -4682,10 +4667,6 @@ packages:
   utils-merge@1.0.1:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
-
-  uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
-    hasBin: true
 
   v8-to-istanbul@8.1.1:
     resolution: {integrity: sha512-FGtKtv3xIpR6BYhvgH8MI/y78oT7d8Au3ww4QIxymrCtZEh5b8gCw2siywE+puhEmuWKDtmfrvF5UlB298ut3w==}
@@ -10267,10 +10248,6 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
-  sa-sdk-javascript@1.27.10: {}
-
-  sa-sdk-miniprogram@1.22.1: {}
-
   safe-area-insets@1.4.1: {}
 
   safe-array-concat@1.1.3:
@@ -10808,8 +10785,6 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   utils-merge@1.0.1: {}
-
-  uuid@11.1.0: {}
 
   v8-to-istanbul@8.1.1:
     dependencies:

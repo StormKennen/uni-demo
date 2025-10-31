@@ -50,7 +50,7 @@
 
   const list = ref([
     // { icon: '/static/image/mine/order.svg', name: '我的订单', to: '/pages/mine/order/order', needToken: true },
-    { icon: '/static/image/mine/setting.svg', name: '设置', to: '/pages/mine/setting/setting', needToken: true },
+    { icon: '/static/image/mine/setting.svg', name: '设置', to: '/subPackages/user/setting/setting', needToken: true },
   ])
 
   // 动态计算显示的列表项

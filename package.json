@@ -13,7 +13,7 @@
     "dev:mp-lark": "uni -p mp-lark",
     "dev:mp-qq": "uni -p mp-qq",
     "dev:mp-toutiao": "uni -p mp-toutiao",
-    "dev:mp-weixin": "uni -p mp-weixin --mode=development",
+    "dev:mp-weixin": "uni -p mp-weixin --mode=test",
     "dev:mp-xhs": "uni -p mp-xhs",
     "dev:quickapp-webview": "uni -p quickapp-webview",
     "dev:quickapp-webview-huawei": "uni -p quickapp-webview-huawei",
@@ -64,9 +64,6 @@
     "pinia": "^2.3.0",
     "pinia-plugin-persistedstate": "^4.2.0",
     "qs": "6.5.3",
-    "sa-sdk-javascript": "^1.27.1",
-    "sa-sdk-miniprogram": "^1.21.3",
-    "uuid": "^11.1.0",
     "vconsole": "^3.15.1",
     "vue": "^3.5.13",
     "vue-i18n": "^9.14.2"

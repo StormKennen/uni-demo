@@ -57,6 +57,11 @@ export class Request {
     this.config = merge({}, DEFAULT_CONFIG, options);
     const token = getTokenByPlatform()
     this.config.header.Token = token
+    
+    // 设置Authorization header（新API标准）
+    if (token) {
+      this.config.header.Authorization = `Bearer ${token}`
+    }
   }
   // 请求拦截 主要是合并url，合并接口特定配置，可以根据自己情况进行扩展
   requestInterceptor(url: string, data: object, config: ParticalUniAppRequestOptions, method: Methods) {
@@ -67,7 +72,18 @@ export class Request {
       ...this.config,
       ...config
     }
+    
+    // 更新Token字段（兼容旧API）
     _config.header.Token = getTokenByPlatform()
+    
+    // 更新Authorization header（新API标准）
+    const token = getTokenByPlatform()
+    if (token) {
+      _config.header.Authorization = `Bearer ${token}`
+    } else {
+      delete _config.header.Authorization
+    }
+    
     if(!this.config.header.Userid){
       _config.header.Userid = getYhIdByPlatform()
     }
@@ -105,10 +121,15 @@ export class Request {
       
       if (refreshResult.success) {
         console.log('Token刷新成功，重试原请求')
-        // 更新请求头中的token
+        // 更新请求头中的token和Authorization
         const newConfig = { ...originalConfig }
         if (newConfig.header) {
           newConfig.header.Token = getToken()
+          // Authorization header已经通过updateHttpHeaders自动更新到全局config中
+          // 这里确保新请求也包含最新的Authorization header
+          if (this.config.header.Authorization) {
+            newConfig.header.Authorization = this.config.header.Authorization
+          }
         }
         
         // 重试原请求

@@ -487,7 +487,7 @@ const getCategoryTitle = () => {
 const goToRecipeDetail = (recipe: Recipe) => {
   // 跳转到食谱详情页
   uni.navigateTo({
-    url: `/pages/pagesServices/recipe/detail?id=${recipe.id}`
+    url: `/subPackages/services/recipe/detail?id=${recipe.id}`
   })
 }
 

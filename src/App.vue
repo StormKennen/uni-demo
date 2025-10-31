@@ -2,9 +2,14 @@
   import { onLaunch, onShow, onHide, onTabItemTap, onNavigationBarButtonTap, onShareAppMessage, onError } from '@dcloudio/uni-app'
   import { storeToRefs } from 'pinia'
   import { watchRouter} from '@/utilsH5/router'
+  import { updateHttpHeaders } from '@/utils/httpHeaders'
 
   watchRouter()
   onLaunch(()=>{
+    // 应用启动时初始化HTTP headers，如果已有token则设置Authorization header
+    updateHttpHeaders().catch(error => {
+      console.error('Failed to initialize HTTP headers on app launch:', error)
+    })
     uni.addInterceptor('navigateTo', {
       //监听跳转
       invoke(e) {
