@@ -295,6 +295,7 @@
 import LEchart from '@/components/l-echart/l-echart.vue';
 import { onBeforeMount, onMounted, reactive, ref } from 'vue';
 import { getFamiliesTrees, postFamiliesMembers, postFamiliesRelationshipsLink, getFamiliesMembers } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox';
+import { useShare } from '@/utils/share';
 const echarts = require('../../../static/echarts.min');
 
 // 返回上一页
@@ -386,7 +387,7 @@ const loading = ref(false);
 const defaultSurname = ref('梁');
 // 成员选择器相关
 const memberOptions = ref([]);
-const selectedMemberIndex = ref(-1);
+const selectedMemberIndex = ref(0);
 const memberLoading = ref(false);
 // 底部面板相关
 const panelExpanded = ref(false);
@@ -624,6 +625,7 @@ const loadFamilyTree = async () => {
     
     // 转换API数据为ECharts树形数据格式
     if (response && response.trees && response.trees.length > 0) {
+      delete response.trees[0];
       treeData.value = transformApiDataToTreeData(response);
     }
     // updateChartOption(transformApiDataToTreeData(response));
@@ -669,7 +671,7 @@ const loadMembers = async () => {
         gender: member.gender,
         originalData: member,
         generation: member.generation || 0
-      })) || [];
+      })).filter(item => item.fullName.includes("浚鸿")) || [];
       
       console.log('处理后的成员选项:', memberOptions.value);
       
@@ -882,6 +884,15 @@ onMounted(async () => {
   // await loadFamilyTree();
   // updateChartOption(transformApiDataToTreeData(response));
   // console.log('chartInstance.value', chartInstance.value);
+});
+
+// 分享功能
+const { onShareAppMessage, onShareTimeline } = useShare('family-tree');
+
+// 导出分享方法供微信小程序调用
+defineExpose({
+  onShareAppMessage,
+  onShareTimeline
 });
 
 // 渲染完成

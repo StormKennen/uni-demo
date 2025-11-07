@@ -80,6 +80,9 @@ importers:
       qs:
         specifier: 6.5.3
         version: 6.5.3
+      uqrcodejs:
+        specifier: ^4.0.7
+        version: 4.0.7
       vconsole:
         specifier: ^3.15.1
         version: 3.15.1
@@ -4651,6 +4654,9 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
+
+  uqrcodejs@4.0.7:
+    resolution: {integrity: sha512-84+aZmD2godCVI+93lxE3YUAPNY8zAJvNA7xRS7R7U+q57KzMDepBSfNCwoRUhWOfR6eHFoAOcHRPwsP6ka1cA==}
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -10768,6 +10774,8 @@ snapshots:
       browserslist: 4.25.3
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  uqrcodejs@4.0.7: {}
 
   uri-js@4.4.1:
     dependencies:

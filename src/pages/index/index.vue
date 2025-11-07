@@ -73,6 +73,7 @@
 // @ts-ignore
 import { ref, onMounted } from 'vue'
 import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
+import { useShare } from '@/utils/share'
 
 // 定义类型
 interface Banner {
@@ -112,15 +113,7 @@ interface BusinessCategory {
 declare const uni: any
 
 // 轮播图数据
-const banners = ref([
-  {
-    id: 1,
-    image: '/static/image/home/cooking.jpg',
-    title: 'AI智能规划',
-    link: '/pages/introduce/introduce'
-  },
-
-])
+const banners = ref([])
 
 // 快捷功能
 const quickActions = ref([
@@ -146,24 +139,33 @@ const quickActions = ref([
   },
   {
     id: 2,
-    name: '族谱',
-    desc: '族谱',
-    icon: 'person',
-    bgColor: '#55CBA0',
-    link: '/subPackages/tools/family-tree/index',
+    name: '二维码生成',
+    desc: '支持样式编辑',
+    icon: 'scan',
+    bgColor: '#FF6600',
+    link: '/subPackages/tools/qr-generator/index',
     disabled: false
   },
   {
     id: 3,
-    name: '开发中',
-    desc: '开发中',
-    icon: 'credit-card',
-    bgColor: '#999999',
-    link: '',
-    disabled: true
+    name: '族谱（快照）',
+    desc: '不可编辑',
+    icon: 'person',
+    bgColor: '#55CBA0',
+    link: '/subPackages/tools/family-tree/demo',
+    disabled: false
   },
   {
     id: 4,
+    name: '族谱（实时）',
+    desc: '数据实时更新',
+    icon: 'person',
+    bgColor: '#FF9933',
+    link: '/subPackages/tools/family-tree/index',
+    disabled: false
+  },
+  {
+    id: 5,
     name: '开发中',
     desc: '开发中',
     icon: 'chat',
@@ -172,7 +174,7 @@ const quickActions = ref([
     disabled: true
   },
   {
-    id: 5,
+    id: 6,
     name: '开发中',
     desc: '开发中',
     icon: 'shop',
@@ -181,7 +183,7 @@ const quickActions = ref([
     disabled: true
   },
   {
-    id: 6,
+    id: 7,
     name: '开发中',
     desc: '开发中',
     icon: 'list',
@@ -323,11 +325,7 @@ const goToNotification = () => {
 
 
 
-const goToChat = () => {
-  uni.navigateTo({
-    url: '/pages/introduce/introduce'
-  })
-}
+
 
 const handleDisabledClick = () => {
   uni.showToast({
@@ -335,6 +333,18 @@ const handleDisabledClick = () => {
     icon: 'none'
   })
 }
+
+// 分享功能
+const { onShareAppMessage, onShareTimeline } = useShare('index', {
+  title: 'kai - 专业服务平台',
+  path: '/pages/index/index'
+})
+
+// 导出分享方法供微信小程序调用
+defineExpose({
+  onShareAppMessage,
+  onShareTimeline
+})
 </script>
 
 <style lang="scss" scoped>

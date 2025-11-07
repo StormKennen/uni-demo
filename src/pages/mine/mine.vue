@@ -5,6 +5,7 @@
   import MineListItem from '@/components/mine-list-item.vue'
   import { getToken, getWxUserInfo, getUserInfo, clearLoginData } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
+  import { useShare } from '@/utils/share'
 
   const token = ref()
   const avatar = ref()
@@ -81,6 +82,15 @@
       })
     }
   }
+
+  // 分享功能
+  const { onShareAppMessage, onShareTimeline } = useShare('mine')
+
+  // 导出分享方法供微信小程序调用
+  defineExpose({
+    onShareAppMessage,
+    onShareTimeline
+  })
 </script>
 
 <template>

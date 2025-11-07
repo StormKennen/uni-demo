@@ -15,13 +15,7 @@
         "navigationStyle": "custom"
       }
     },
-    {
-      "path": "pages/introduce/introduce",
-      "style": {
-        "navigationBarTitleText": "",
-        "navigationStyle": "custom"
-      }
-    },
+
     {
       "path": "pages/mall/mall",
       "style": {
@@ -82,9 +76,23 @@
           }
         },
         {
+          "path": "family-tree/demo",
+          "style": {
+            "navigationBarTitleText": "族谱",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-compress/index",
           "style": {
             "navigationBarTitleText": "图片压缩",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "qr-generator/index",
+          "style": {
+            "navigationBarTitleText": "二维码生成器",
             "navigationStyle": "custom"
           }
         }

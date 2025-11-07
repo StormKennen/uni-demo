@@ -21,6 +21,7 @@
   import { onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
   import NoMore from '@/components/no-more.vue'
   import EmptyData from '@/components/empty-data.vue'
+  import { useShare } from '@/utils/share'
 
   const mallStore = useMallStore()
   const { hasMore, goodsList, goodsListLoading } = storeToRefs(mallStore)
@@ -36,6 +37,15 @@
     console.log('onPullDownRefresh....')
     await getGoodsList()
     uni.stopPullDownRefresh()
+  })
+
+  // 分享功能
+  const { onShareAppMessage, onShareTimeline } = useShare('mall')
+
+  // 导出分享方法供微信小程序调用
+  defineExpose({
+    onShareAppMessage,
+    onShareTimeline
   })
 </script>
 
