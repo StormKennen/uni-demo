@@ -7,6 +7,7 @@ import { isYinheAppEnv } from '@/utilsH5/env';
 interface Props {
   bgColor?: string;
   title?: string
+  titleColor?: string
   customStyle?: Record<string, any>
   customClass?: string
   navBack?: boolean
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   bgColor: 'transparent',
   navBack: true,
   customGoBack: false,
+  titleColor: undefined,
 })
 
 const emit = defineEmits<{
@@ -35,8 +37,8 @@ const capsule = isWeChat ? uni.getMenuButtonBoundingClientRect() : {
 }
 const navHeight = capsule.top + capsule.height + 10
 
-const onBack = () => {
-  const res = props.beforeBack?.() ?? true
+const onBack = async () => {
+  const res = props.beforeBack ? await props.beforeBack() : true
   if (!res) {
     return
   }
@@ -71,8 +73,14 @@ const onBack = () => {
         height: `${capsule.height}px`,
       }">
         <view class="nav-back-icon" @click="onBack" v-if="navBack" />
-        <view class="nav-title" v-if="!!props.title">{{ props.title }}</view>
-        <slot v-if="!props.title" />
+        <view class="nav-title" :style="props.titleColor ? { color: props.titleColor } : {}">
+          <slot name="title">
+            <template v-if="!!props.title">{{ props.title }}</template>
+          </slot>
+        </view>
+        <view class="nav-right">
+          <slot name="right" />
+        </view>
       </view>
     </view>
   </view>
@@ -80,10 +88,13 @@ const onBack = () => {
 <style scoped lang="scss">
 .nav-container {
   width: 100%;
-  z-index: 999;
-  position: fixed;
+  z-index: 9999;
+  position: sticky;
   top: 0;
   transition: background-color 0.3s ease;
+  
+  /* 定义导航栏高度CSS变量 */
+  --nav-height: calc(var(--status-bar-height, 0px) + v-bind('navHeight + "px"'));
 
   .nav-bar {
     position: absolute;
@@ -103,13 +114,26 @@ const onBack = () => {
 
     .nav-title {
       color: $ga-gray-8;
-      font-size: 34rpx;
-      font-weight: 500;
+      font-size: 36rpx; // 统一标题字号
+      font-weight: 600; // 统一标题字重
+    }
+
+    .nav-right {
+      position: absolute;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 16rpx;
+      height: 100%;
+      padding-right: 8rpx;
     }
 
     &.light {
       .nav-back-icon {
         background-image: url('@/static/image/nav-back-white.png');
+      }
+      .nav-title {
+        color: #ffffff; // 深色背景下标题为白色
       }
     }
   }

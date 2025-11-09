@@ -1,7 +1,12 @@
 <template>
   <view class="qr-generator">
-    <!-- 导航栏 -->
-    <nav-bar title="二维码生成器" />
+    <!-- 导航栏（统一样式） -->
+    <nav-bar
+      always-title
+      title="二维码生成器"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+    />
     
     <!-- 内容区域 -->
     <view class="content">
@@ -20,8 +25,6 @@
         <view class="input-counter">{{ inputContent.length }}/500</view>
       </view>
       
-
-      
       <!-- 生成按钮 -->
       <button 
         class="generate-btn" 
@@ -32,16 +35,26 @@
         {{ isGenerating ? '生成中...' : '生成二维码' }}
       </button>
       
-      <!-- 二维码显示区域 -->
-      <view v-if="qrGenerated" class="qr-display">
+      <!-- 二维码显示区域：生成中也渲染Canvas，避免DOM未挂载导致找不到元素 -->
+      <view v-show="qrGenerated || isGenerating" class="qr-display">
         <view class="section-title">生成结果</view>
+        <!-- 显示比例调节：用于微调避免右侧裁剪 -->
+        <view class="scale-control">
+          <text class="scale-label">显示比例</text>
+          <slider 
+            min="70" max="100" step="1"
+            :value="Math.round(displayScale * 100)"
+            @change="onScaleChanged"
+            activeColor="#667eea"
+          />
+        </view>
         <view class="qr-container">
           <canvas 
             id="qrcode"
             canvas-id="qrcode" 
-            width="300"
-            height="300"
-            style="width: 300px; height: 300px; max-width: 100%;"
+            :width="canvasPixelSize"
+            :height="canvasPixelSize"
+            :style="{ width: canvasDisplaySize + 'px', height: canvasDisplaySize + 'px' }"
             class="qr-canvas"
           />
         </view>
@@ -65,25 +78,64 @@
         </view>
       </view>
     </view>
-    
-
   </view>
 </template>
 
 <script>
+import NavBar from '@/components/nav-bar.vue'
 import UQRCode from 'uqrcodejs'
+
+// H5图片二维码解析：改为运行时动态加载CDN，避免本地依赖
 
 export default {
   name: 'QRGenerator',
+  components: {
+    NavBar
+  },
   data() {
     return {
       inputContent: '',
       isGenerating: false,
-      qrGenerated: false
+      qrGenerated: false,
+      // 展示与像素尺寸
+      canvasDisplaySize: 300,
+      canvasPixelSize: 300,
+      // 展示比例（70%-100%），默认95%，可通过滑块调整
+      displayScale: 0.95,
+      
     }
+  },
+  mounted() {
+    // 初始化自适应尺寸
+    this.updateCanvasDisplaySize()
+    // 监听窗口尺寸变化（H5）
+    // #ifdef H5
+    window.addEventListener('resize', this.updateCanvasDisplaySize)
+    // #endif
+  },
+  beforeUnmount() {
+    // #ifdef H5
+    window.removeEventListener('resize', this.updateCanvasDisplaySize)
+    // #endif
   },
   
   methods: {
+    // 计算Canvas展示与像素尺寸，保证整图在屏幕完整显示且清晰
+    updateCanvasDisplaySize() {
+      const sys = uni.getSystemInfoSync()
+      const vw = sys.windowWidth || sys.screenWidth || 375
+      const vh = sys.windowHeight || sys.screenHeight || 667
+      const pr = sys.pixelRatio || 2
+      // 结合页面 rpx 内边距，避免容器裁剪（content:20rpx*2 + qr-display:30rpx*2）
+      const rpxUnit = vw / 750
+      const horizontalPaddingPx = Math.floor(rpxUnit * (20 * 2 + 30 * 2))
+      const safeInset = Math.max(12, horizontalPaddingPx) // 额外留出12px安全边距
+      const base = Math.floor(Math.min(vw - safeInset, vh - safeInset))
+      const display = Math.floor(base * this.displayScale)
+      const pixel = Math.min(Math.floor(display * pr), 1024) // 防止像素过大
+      this.canvasDisplaySize = Math.max(220, display)
+      this.canvasPixelSize = Math.max(220, pixel)
+    },
     // 生成二维码
     async generateQRCode() {
       if (!this.inputContent.trim()) {
@@ -99,7 +151,7 @@ export default {
       
       // 检测是否为URL格式（包含域名特征）
       const urlPattern = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/.*)?$/
-      const domainPattern = /^[\w\-]+(\.[\w\-]+)+/
+      const domainPattern = /^[\w\-]+(\.[\w\-]+)+\.?$/
       
       if (domainPattern.test(content) && !content.startsWith('http')) {
         // 自动补全协议
@@ -132,6 +184,10 @@ export default {
       }
       
       this.isGenerating = true
+      // 生成时确保Canvas已渲染到DOM
+      await this.$nextTick()
+      // 更新自适应尺寸（防止横竖屏或窗口变化）
+      this.updateCanvasDisplaySize()
       
       try {
         // 获取canvas上下文
@@ -166,85 +222,111 @@ export default {
         }
         ctx = canvas.getContext('2d')
         console.log('Canvas上下文:', ctx)
-        // 设置canvas尺寸
-        canvas.width = 300
-        canvas.height = 300
-        console.log('Canvas尺寸设置完成: 300x300')
+        // 设置canvas像素尺寸并按设备像素比缩放，确保绘制坐标以CSS像素为基准
+        const dpr = window.devicePixelRatio || 1
+        canvas.width = Math.floor(this.canvasDisplaySize * dpr)
+        canvas.height = Math.floor(this.canvasDisplaySize * dpr)
+        // 重置变换矩阵到 dpr，避免累计缩放
+        if (ctx.setTransform) {
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+        } else {
+          ctx.scale(dpr, dpr)
+        }
+        console.log('Canvas尺寸设置完成: display=', this.canvasDisplaySize, ' dpr=', dpr, ' pixel=', canvas.width)
         // #endif
         
         // #ifndef H5
         ctx = uni.createCanvasContext('qrcode', this)
         // #endif
         
-        // 清空canvas
-        ctx.clearRect(0, 0, 300, 300)
+        // 清空canvas（以CSS尺寸为基准）
+        ctx.clearRect(0, 0, this.canvasDisplaySize, this.canvasDisplaySize)
         
         // 使用固定参数生成二维码
         console.log('创建UQRCode实例')
         const qr = new UQRCode()
         qr.data = content
-        qr.size = 300
+        // 默认按CSS尺寸绘制，H5通过dpr缩放映射到像素；小程序仍用像素尺寸
+        qr.size = this.canvasDisplaySize
         qr.margin = 10
+        // 设置颜色与纠错等级（遵循官方API命名）
+        qr.areaColor = '#FFFFFF'
         qr.backgroundColor = '#FFFFFF'
         qr.foregroundColor = '#000000'
-        qr.errorCorrectionLevel = 2
+        qr.errorCorrectLevel = UQRCode.errorCorrectLevel.M
+        // 使用动态尺寸以避免小数像素导致的细缝
+        qr.useDynamicSize = true
         
         console.log('开始生成二维码数据')
         qr.make()
         console.log('二维码数据生成完成')
         
-        // 获取二维码的模块数据
-        const modules = qr.modules
-        const moduleCount = qr.moduleCount
-        const tileW = 300 / moduleCount
-        const tileH = 300 / moduleCount
+        // 根据动态尺寸同步绘制大小（单位：CSS像素）
+        const drawSize = qr.useDynamicSize && qr.dynamicSize ? qr.dynamicSize : qr.size
+        console.log('绘制尺寸:', drawSize, '（dynamicSize:', qr.dynamicSize, '）')
         
-        console.log('二维码模块数:', moduleCount, '瓦片大小:', tileW)
-        
-        // 手动绘制二维码到canvas
+        // 使用官方 drawCanvas 绘制到canvas
         // #ifdef H5
-        // H5环境使用原生Canvas API
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillRect(0, 0, 300, 300)
-        
-        ctx.fillStyle = '#000000'
-        for (let row = 0; row < moduleCount; row++) {
-          for (let col = 0; col < moduleCount; col++) {
-            if (modules[row][col]) {
-              ctx.fillRect(col * tileW, row * tileH, tileW, tileH)
+        // H5：同步canvas像素尺寸为 CSS尺寸*dpr，并禁用平滑
+        const dpr2 = window.devicePixelRatio || 1
+        canvas.width = Math.floor(drawSize * dpr2)
+        canvas.height = Math.floor(drawSize * dpr2)
+        if (ctx.setTransform) {
+          ctx.setTransform(dpr2, 0, 0, dpr2, 0, 0)
+        } else {
+          ctx.scale(dpr2, dpr2)
+        }
+        if (ctx) {
+          ctx.imageSmoothingEnabled = false
+        }
+        qr.canvasContext = ctx
+        try {
+          await Promise.resolve(qr.drawCanvas())
+          console.log('二维码绘制完成（H5 drawCanvas）')
+          this.qrGenerated = true
+          this.isGenerating = false
+          uni.showToast({
+            title: '二维码生成成功',
+            icon: 'success'
+          })
+        } catch (err) {
+          console.warn('H5库绘制失败，回退到手绘逻辑:', err)
+          // 回退手绘（使用整数像素单元，避免真值误判）
+          const modules = qr.modules
+          const moduleCount = modules && modules.length ? modules.length : qr.moduleCount
+          const cell = Math.floor(drawSize / moduleCount)
+          const offset = Math.floor((drawSize - cell * moduleCount) / 2)
+          ctx.clearRect(0, 0, drawSize, drawSize)
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillRect(0, 0, drawSize, drawSize)
+          ctx.fillStyle = '#000000'
+          for (let row = 0; row < moduleCount; row++) {
+            for (let col = 0; col < moduleCount; col++) {
+              if (modules[row][col]) {
+                ctx.fillRect(
+                  offset + col * cell,
+                  offset + row * cell,
+                  cell,
+                  cell
+                )
+              }
             }
           }
+          console.log('二维码绘制完成（手绘回退）')
+          this.qrGenerated = true
+          this.isGenerating = false
+          uni.showToast({
+            title: '二维码生成成功',
+            icon: 'success'
+          })
         }
-        
-        console.log('二维码绘制完成')
-        
-        // H5环境直接完成
-        this.qrGenerated = true
-        this.isGenerating = false
-        uni.showToast({
-          title: '二维码生成成功',
-          icon: 'success'
-        })
         // #endif
         
         // #ifndef H5
-        // 小程序环境使用uni-app Canvas API
-        ctx.setFillStyle('#FFFFFF')
-        ctx.fillRect(0, 0, 300, 300)
-        
-        ctx.setFillStyle('#000000')
-        for (let row = 0; row < moduleCount; row++) {
-          for (let col = 0; col < moduleCount; col++) {
-            if (modules[row][col]) {
-              ctx.fillRect(col * tileW, row * tileH, tileW, tileH)
-            }
-          }
-        }
-        
-        console.log('二维码绘制完成')
-        
-        // 绘制到canvas
+        qr.canvasContext = ctx
+        qr.drawCanvas()
         ctx.draw(false, () => {
+          console.log('二维码绘制完成（小程序）')
           this.qrGenerated = true
           this.isGenerating = false
           uni.showToast({
@@ -253,18 +335,6 @@ export default {
           })
         })
         // #endif
-        
-        // 备用超时机制
-        setTimeout(() => {
-          if (this.isGenerating) {
-            this.qrGenerated = true
-            this.isGenerating = false
-            uni.showToast({
-              title: '二维码生成完成',
-              icon: 'success'
-            })
-          }
-        }, 1000)
         
       } catch (error) {
         console.error('生成二维码失败:', error)
@@ -276,38 +346,84 @@ export default {
       }
     },
     
-    // 检查颜色对比度是否足够
-
+    // 显示比例变化
+    onScaleChanged(e) {
+      this.displayScale = e.detail.value / 100
+      this.updateCanvasDisplaySize()
+      if (this.qrGenerated) {
+        this.generateQRCode()
+      }
+    },
     
     // 下载二维码
     async downloadQRCode() {
-      try {
-        uni.showLoading({
-          title: '准备下载...'
-        })
-        
-        // 将canvas转换为临时文件
-        const res = await new Promise((resolve, reject) => {
-          uni.canvasToTempFilePath({
-            canvasId: 'qrcode',
-            success: resolve,
-            fail: reject
-          }, this)
-        })
-        
-        // 保存到相册
-        await uni.saveImageToPhotosAlbum({
-          filePath: res.tempFilePath
-        })
-        
-        uni.hideLoading()
+      if (!this.qrGenerated) {
         uni.showToast({
-          title: '保存成功',
+          title: '请先生成二维码',
+          icon: 'none'
+        })
+        return
+      }
+      
+      try {
+        // #ifdef H5
+        const canvas = document.getElementById('qrcode') || 
+                     document.querySelector('#qrcode') ||
+                     document.querySelector('canvas[canvas-id="qrcode"]') ||
+                     document.querySelector('.qr-canvas') ||
+                     document.querySelector('canvas')
+        
+        if (!canvas) {
+          throw new Error('Canvas元素未找到')
+        }
+        
+        // 创建下载链接
+        const dataUrl = canvas.toDataURL('image/png')
+        const link = document.createElement('a')
+        link.download = 'qrcode.png'
+        link.href = dataUrl
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        
+        uni.showToast({
+          title: '下载成功',
           icon: 'success'
         })
+        // #endif
+        
+        // #ifndef H5
+        uni.canvasToTempFilePath({
+          canvasId: 'qrcode',
+          success: (res) => {
+            uni.saveImageToPhotosAlbum({
+              filePath: res.tempFilePath,
+              success: () => {
+                uni.showToast({
+                  title: '保存成功',
+                  icon: 'success'
+                })
+              },
+              fail: (err) => {
+                console.error('保存失败:', err)
+                uni.showToast({
+                  title: '保存失败',
+                  icon: 'none'
+                })
+              }
+            })
+          },
+          fail: (err) => {
+            console.error('生成临时文件失败:', err)
+            uni.showToast({
+              title: '下载失败',
+              icon: 'none'
+            })
+          }
+        }, this)
+        // #endif
         
       } catch (error) {
-        uni.hideLoading()
         console.error('下载失败:', error)
         uni.showToast({
           title: '下载失败',
@@ -318,22 +434,63 @@ export default {
     
     // 分享二维码
     async shareQRCode() {
+      if (!this.qrGenerated) {
+        uni.showToast({
+          title: '请先生成二维码',
+          icon: 'none'
+        })
+        return
+      }
+      
       try {
-        // 将canvas转换为临时文件
-        const res = await new Promise((resolve, reject) => {
-          uni.canvasToTempFilePath({
-            canvasId: 'qrcode',
-            success: resolve,
-            fail: reject
-          }, this)
+        // #ifdef H5
+        const canvas = document.getElementById('qrcode') || 
+                     document.querySelector('#qrcode') ||
+                     document.querySelector('canvas[canvas-id="qrcode"]') ||
+                     document.querySelector('.qr-canvas') ||
+                     document.querySelector('canvas')
+        
+        if (!canvas) {
+          throw new Error('Canvas元素未找到')
+        }
+        
+        // 生成临时文件路径
+        const dataUrl = canvas.toDataURL('image/png')
+        const res = await uni.uploadFile({
+          url: '', // 需要配置上传接口
+          filePath: dataUrl,
+          name: 'file'
         })
         
-        // 分享图片
-        await uni.share({
-          type: 'image',
-          imageUrl: res.tempFilePath,
-          title: '二维码分享'
-        })
+        if (res.statusCode === 200) {
+          const fileUrl = JSON.parse(res.data).url
+          await uni.share({
+            type: 'image',
+            imageUrl: fileUrl,
+            title: '二维码分享'
+          })
+        }
+        // #endif
+        
+        // #ifndef H5
+        uni.canvasToTempFilePath({
+          canvasId: 'qrcode',
+          success: async (res) => {
+            await uni.share({
+              type: 'image',
+              imageUrl: res.tempFilePath,
+              title: '二维码分享'
+            })
+          },
+          fail: (err) => {
+            console.error('生成临时文件失败:', err)
+            uni.showToast({
+              title: '分享失败',
+              icon: 'none'
+            })
+          }
+        }, this)
+        // #endif
         
       } catch (error) {
         console.error('分享失败:', error)
@@ -369,10 +526,15 @@ export default {
 .qr-generator {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
 }
 
 .content {
+  flex: 1;
   padding: 20rpx;
+  padding-top: calc(32rpx + var(--nav-height, 120rpx));
+  overflow-y: auto;
 }
 
 .section-title {
@@ -410,8 +572,6 @@ export default {
   margin-top: 10rpx;
 }
 
-
-
 /* 生成按钮 */
 .generate-btn {
   width: 100%;
@@ -448,7 +608,7 @@ export default {
   justify-content: center;
   margin: 30rpx 0;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .qr-canvas {
@@ -456,6 +616,7 @@ export default {
   height: auto;
   display: block;
   background: white;
+  box-sizing: content-box;
 }
 
 .action-buttons {
@@ -483,9 +644,30 @@ export default {
   color: white;
 }
 
+.parse-btn {
+  background: linear-gradient(45deg, #8E24AA, #AB47BC);
+  color: white;
+}
+
+.scan-btn {
+  background: linear-gradient(45deg, #FF7043, #FF8A65);
+  color: white;
+}
+
 .qr-info {
   border-top: 2rpx solid #f0f0f0;
   padding-top: 20rpx;
+}
+
+.scale-control {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+.scale-label {
+  font-size: 26rpx;
+  color: #666;
 }
 
 .info-item {
@@ -504,6 +686,4 @@ export default {
   color: #333;
   font-weight: bold;
 }
-
-
 </style>

@@ -147,6 +147,15 @@ const quickActions = ref([
     disabled: false
   },
   {
+    id: 8,
+    name: '解析二维码',
+    desc: '图片解析/扫码解析',
+    icon: 'scan',
+    bgColor: '#6A5ACD',
+    link: '/subPackages/tools/qr-parser/index',
+    disabled: false
+  },
+  {
     id: 3,
     name: '族谱（快照）',
     desc: '不可编辑',

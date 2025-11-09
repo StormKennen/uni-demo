@@ -8,16 +8,13 @@
 </template> -->
 <template>
   <view class="family-tree-page">
-    <!-- 顶部导航栏 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <uni-icons type="left" size="20" color="white" />
-        </view>
-        <text class="header-title">家族族谱树形图</text>
-        <view class="header-placeholder"></view>
-      </view>
-    </view>
+    <!-- 顶部导航栏（统一组件） -->
+    <nav-bar
+      always-title
+      title="家族族谱树形图（快照）"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+    />
     
 
     
@@ -54,12 +51,7 @@ import LEchart from '@/components/l-echart/l-echart.vue';
 import { onBeforeMount, onMounted, reactive, ref } from 'vue';
 const echarts = require('../../../static/echarts.min');
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack({
-    delta: 1
-  });
-};
+// 返回上一页：已由 nav-bar 默认行为提供
 
 // 缩放控制相关
 const currentZoom = ref(1); // 当前缩放比例
@@ -471,36 +463,7 @@ onMounted(async () => {
   z-index: 0;
 }
 
-.header {
-  background: linear-gradient(135deg, #0046B4 0%, #1E40AF 100%);
-  padding: 88rpx 32rpx 32rpx;
-  color: white;
-  
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .back-btn {
-      width: 64rpx;
-      height: 64rpx;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .header-title {
-      font-size: 36rpx;
-      font-weight: 600;
-    }
-    
-    .header-placeholder {
-      width: 64rpx;
-    }
-  }
-}
+/* 顶部统一使用 nav-bar 组件，移除旧 header 样式 */
 
 .action-buttons {
   display: flex;

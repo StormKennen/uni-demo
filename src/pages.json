@@ -95,6 +95,13 @@
             "navigationBarTitleText": "二维码生成器",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "qr-parser/index",
+          "style": {
+            "navigationBarTitleText": "二维码解析",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

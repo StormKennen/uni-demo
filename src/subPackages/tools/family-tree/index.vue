@@ -8,16 +8,13 @@
 </template> -->
 <template>
   <view class="family-tree-page">
-    <!-- 顶部导航栏 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <uni-icons type="left" size="20" color="white" />
-        </view>
-        <text class="header-title">家族族谱树形图</text>
-        <view class="header-placeholder"></view>
-      </view>
-    </view>
+    <!-- 顶部导航栏（统一组件） -->
+    <nav-bar
+      always-title
+      title="家族族谱树形图"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+    />
     
 
     
@@ -298,12 +295,7 @@ import { getFamiliesTrees, postFamiliesMembers, postFamiliesRelationshipsLink, g
 import { useShare } from '@/utils/share';
 const echarts = require('../../../static/echarts.min');
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack({
-    delta: 1
-  });
-};
+// 返回上一页：已由 nav-bar 默认行为提供
 
 // 缩放控制相关
 const currentZoom = ref(1); // 当前缩放比例
@@ -585,8 +577,8 @@ const transformApiDataToTreeData = (apiData) => {
     const defaultRoot = {
       id: 'root',
       originalId: 'root',
-      name: `${apiData?.surname || defaultSurname.value}氏家族`,
-      value: `${apiData?.surname || defaultSurname.value}氏家族`,
+      name: `${apiData?.surname || defaultSurname.value}氏族谱`,
+      value: `${apiData?.surname || defaultSurname.value}氏族谱`,
       children: [],
       collapsed: false
     };
@@ -612,21 +604,20 @@ const updateChartOption = (data) => {
 const loadFamilyTree = async () => {
   try {
     loading.value = true;
-        const res = {"code":200,"message":"获取姓氏家族树成功","data":{"surname":"梁","roots":["6900c968e4a8f27214f74177"],"trees":[{"id":"6900c968e4a8f27214f74177","name":"梁兆华","parentsLabel":"","value":{"fullName":"梁兆华","surname":"梁","givenName":"兆华","gender":"male","generation":27,"avatarUrl":"","spouseNames":[],"parentNames":[]},"children":[{"id":"6901a012df2e836acc1b19a6","name":"梁叶合","fatherName":"梁兆华","parentsLabel":"梁兆华","value":{"fullName":"梁叶合","surname":"梁","givenName":"叶合","gender":"male","generation":28,"avatarUrl":"","spouseNames":[],"parentNames":["梁兆华"]},"children":[{"id":"690210c2bd410f1f744d3a89","name":"梁金耀","fatherName":"梁叶合","parentsLabel":"梁叶合","value":{"fullName":"梁金耀","surname":"梁","givenName":"金耀","gender":"male","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁叶合"]},"children":[{"id":"690445af367c7f1b32070984","name":"梁瑞球","fatherName":"梁金耀","parentsLabel":"梁金耀","value":{"fullName":"梁瑞球","surname":"梁","givenName":"瑞球","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁金耀"]},"children":[{"id":"69044647367c7f55a8070a0f","name":"梁智云","fatherName":"梁瑞球","parentsLabel":"梁瑞球","value":{"fullName":"梁智云","surname":"梁","givenName":"智云","gender":"male","generation":31,"avatarUrl":"","spouseNames":[],"parentNames":["梁瑞球"]},"children":[]},{"id":"6904465c367c7fedb1070a7d","name":"梁智开","fatherName":"梁瑞球","parentsLabel":"梁瑞球","value":{"fullName":"梁智开","surname":"梁","givenName":"智开","gender":"male","generation":31,"avatarUrl":"","spouseNames":[],"parentNames":["梁瑞球"]},"children":[]}]},{"id":"6904f0a7367c7f821e070dec","name":"梁瑞庭","fatherName":"梁金耀","parentsLabel":"梁金耀","value":{"fullName":"梁瑞庭","surname":"梁","givenName":"瑞庭","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁金耀"]},"children":[{"id":"6904f0bf367c7f2664070ead","name":"梁俊杰","fatherName":"梁瑞庭","parentsLabel":"梁瑞庭","value":{"fullName":"梁俊杰","surname":"梁","givenName":"俊杰","gender":"male","generation":31,"avatarUrl":"","spouseNames":[],"parentNames":["梁瑞庭"]},"children":[]},{"id":"6904f0cf367c7fd5d0070f3f","name":"梁俊创","fatherName":"梁瑞庭","parentsLabel":"梁瑞庭","value":{"fullName":"梁俊创","surname":"梁","givenName":"俊创","gender":"male","generation":31,"avatarUrl":"","spouseNames":[],"parentNames":["梁瑞庭"]},"children":[]}]}]},{"id":"69036979dc46ee1c2cc019ab","name":"梁焕成","fatherName":"梁叶合","parentsLabel":"梁叶合","value":{"fullName":"梁焕成","surname":"梁","givenName":"焕成","gender":"unknown","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁叶合"]},"children":[{"id":"6904f0ed367c7f3a50071027","name":"梁卓敏","parentsLabel":"","value":{"fullName":"梁卓敏","surname":"梁","givenName":"卓敏","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁焕成"]},"children":[{"id":"6904f112367c7f137d0711e2","name":"梁振辉","fatherName":"梁卓敏","parentsLabel":"梁卓敏","value":{"fullName":"梁振辉","surname":"梁","givenName":"振辉","gender":"male","generation":31,"avatarUrl":"","spouseNames":[],"parentNames":["梁卓敏"]},"children":[]}]}]},{"id":"6904459e367c7fb1cc070936","name":"梁立成","fatherName":"梁叶合","parentsLabel":"梁叶合","value":{"fullName":"梁立成","surname":"梁","givenName":"立成","gender":"male","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁叶合"]},"children":[{"id":"6904f17a367c7f45350712a8","name":"梁瑞祥","fatherName":"梁立成","parentsLabel":"梁立成","value":{"fullName":"梁瑞祥","surname":"梁","givenName":"瑞祥","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁立成"]},"children":[]},{"id":"6904f28e367c7fa1cb071450","name":"梁瑞益","fatherName":"梁立成","parentsLabel":"梁立成","value":{"fullName":"梁瑞益","surname":"梁","givenName":"瑞益","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁立成"]},"children":[]},{"id":"6904f29c367c7f5c7c071530","name":"梁瑞欣","fatherName":"梁立成","parentsLabel":"梁立成","value":{"fullName":"梁瑞欣","surname":"梁","givenName":"瑞欣","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁立成"]},"children":[]}]}]},{"id":"6901a07cdf2e836acc1b19b7","name":"梁叶培","fatherName":"梁兆华","parentsLabel":"梁兆华","value":{"fullName":"梁叶培","surname":"梁","givenName":"叶培","gender":"male","generation":28,"avatarUrl":"","spouseNames":[],"parentNames":["梁兆华"]},"children":[]},{"id":"6901a0a1df2e836acc1b19d9","name":"梁庚贤","fatherName":"梁兆华","parentsLabel":"梁兆华","value":{"fullName":"梁庚贤","surname":"梁","givenName":"庚贤","gender":"male","generation":28,"avatarUrl":"","spouseNames":[],"parentNames":["梁兆华"]},"children":[{"id":"6904f2f9367c7f552907170e","name":"梁李光","fatherName":"梁庚贤","parentsLabel":"梁庚贤","value":{"fullName":"梁李光","surname":"梁","givenName":"李光","gender":"male","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁庚贤"]},"children":[{"id":"6904f341367c7f2132071ac2","name":"梁锡沿","fatherName":"梁李光","parentsLabel":"梁李光","value":{"fullName":"梁锡沿","surname":"梁","givenName":"锡沿","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁李光"]},"children":[]}]},{"id":"6904f308367c7fca75071812","name":"梁雨南","fatherName":"梁庚贤","parentsLabel":"梁庚贤","value":{"fullName":"梁雨南","surname":"梁","givenName":"雨南","gender":"male","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁庚贤"]},"children":[{"id":"6904f35e367c7f73a3071bea","name":"梁侃","fatherName":"梁雨南","parentsLabel":"梁雨南","value":{"fullName":"梁侃","surname":"梁","givenName":"侃","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁雨南"]},"children":[]}]},{"id":"6904f317367c7f76e8071920","name":"梁雨荣","fatherName":"梁庚贤","parentsLabel":"梁庚贤","value":{"fullName":"梁雨荣","surname":"梁","givenName":"雨荣","gender":"male","generation":29,"avatarUrl":"","spouseNames":[],"parentNames":["梁庚贤"]},"children":[{"id":"6904f37c367c7fe62f071d22","name":"梁显诚","fatherName":"梁雨荣","parentsLabel":"梁雨荣","value":{"fullName":"梁显诚","surname":"梁","givenName":"显诚","gender":"male","generation":30,"avatarUrl":"","spouseNames":[],"parentNames":["梁雨荣"]},"children":[]}]}]}]}]},"requestId":"6ff69e4e-086c-4930-aa68-73082fb1fbc0","timestamp":1761934265024};
-          treeData.value = transformApiDataToTreeData(res.data);
-
+    
     const response = await getFamiliesTrees({
       surname: defaultSurname.value,
       maxDepth: 10,
       format: 'echarts'
     });
     
-    console.log('家族树数据:', response);
-    
-    // 转换API数据为ECharts树形数据格式
-    if (response && response.trees && response.trees.length > 0) {
-      delete response.trees[0];
-      treeData.value = transformApiDataToTreeData(response);
+    if (response.code === 200) {
+      treeData.value = transformApiDataToTreeData(response.data);
+    } else {
+      uni.showToast({
+        title: response.message || '获取数据失败',
+        icon: 'none'
+      });
     }
     // updateChartOption(transformApiDataToTreeData(response));
     // console.log('chartInstance.value', chartInstance.value);
@@ -907,36 +898,7 @@ defineExpose({
   z-index: 0;
 }
 
-.header {
-  background: linear-gradient(135deg, #0046B4 0%, #1E40AF 100%);
-  padding: 88rpx 32rpx 32rpx;
-  color: white;
-  
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .back-btn {
-      width: 64rpx;
-      height: 64rpx;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .header-title {
-      font-size: 36rpx;
-      font-weight: 600;
-    }
-    
-    .header-placeholder {
-      width: 64rpx;
-    }
-  }
-}
+/* 顶部统一使用 nav-bar 组件，移除旧 header 样式 */
 
 .action-buttons {
   display: flex;

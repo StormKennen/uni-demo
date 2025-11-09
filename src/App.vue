@@ -47,8 +47,10 @@
   // #ifdef WEB
   import loadFile from '@/utils/loadFile'
   import appDsBridge from './utilsH5/appDsBridge'
-
-  appDsBridge.loadDsBridgeFile()
+  // 开发环境屏蔽 dsbridge 加载，避免 H5 预览报错阻塞页面渲染
+  if (import.meta.env.VITE_APP_ENV === 'production') {
+    appDsBridge.loadDsBridgeFile().catch(() => {})
+  }
   
   
   // onLaunch(() => {
@@ -142,9 +144,10 @@
     background-color: $ga-gray-1;
     font-family: "PingFang SC";
   }
-  // /* #ifdef WEB */
-  // uni-page-head {
-  //   display: none;
-  // }
-  // /* #endif */
+  /* #ifdef H5 */
+  /* 隐藏H5默认头部，避免覆盖自定义导航栏 */
+  uni-page-head {
+    display: none;
+  }
+  /* #endif */
 </style>

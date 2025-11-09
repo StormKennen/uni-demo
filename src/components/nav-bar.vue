@@ -12,9 +12,11 @@ interface Props {
 
   customStyle?: Record<string, any>
   customClass?: string
+  titleColor?: string
   navBack?: boolean
   onBack?: ()=>void
   customGoBack?: boolean
+  beforeBack?: () => boolean | Promise<boolean>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -54,6 +56,22 @@ onPageScroll((event: any) => {
 </script>
 
 <template>
-  <NavBarBase :bg-color="navBgColor" :title="navTitle" :custom-class="props.customClass"
-    :custom-style="props.customStyle" :nav-back="props.navBack"  :custom-go-back="props.customGoBack" @back="emit('back')"/>
+  <NavBarBase
+    :bg-color="navBgColor"
+    :title="navTitle"
+    :custom-class="props.customClass"
+    :custom-style="props.customStyle"
+    :nav-back="props.navBack"
+    :custom-go-back="props.customGoBack"
+    :before-back="props.beforeBack"
+    :title-color="props.titleColor"
+    @back="emit('back')"
+  >
+    <template #title>
+      <slot name="title" />
+    </template>
+    <template #right>
+      <slot name="right" />
+    </template>
+  </NavBarBase>
 </template>

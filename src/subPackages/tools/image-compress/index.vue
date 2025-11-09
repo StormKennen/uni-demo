@@ -1,15 +1,13 @@
 <template>
   <view class="image-compress-page">
-    <!-- 顶部导航栏 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <uni-icons type="left" size="20" color="white" />
-        </view>
-        <text class="header-title">图片压缩</text>
-        <view class="header-placeholder"></view>
-      </view>
-    </view>
+    <!-- 顶部导航栏（统一组件） -->
+    <NavBar
+      always-title
+      title="图片压缩"
+      custom-class="light"
+      init-bg-color="#0046B4"
+      bg-color="#0046B4"
+    />
 
     <!-- 主要内容区域 -->
     <view class="main-content">
@@ -136,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import NavBar from '@/components/nav-bar.vue'
 import { ref, computed } from 'vue'
 
 // 声明uni全局对象
@@ -163,9 +162,6 @@ const savedSpace = computed(() => {
 })
 
 // 方法
-const goBack = () => {
-  uni.navigateBack()
-}
 
 const selectImage = () => {
   uni.chooseImage({
@@ -390,41 +386,17 @@ const formatFileSize = (bytes: number): string => {
 .image-compress-page {
   min-height: 100vh;
   background: linear-gradient(180deg, #F8FCFF 0%, #FFFFFF 100%);
+  display: flex;
+  flex-direction: column;
 }
 
-.header {
-  background: linear-gradient(135deg, #0046B4 0%, #1E40AF 100%);
-  padding: 88rpx 32rpx 32rpx;
-  color: white;
-  
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .back-btn {
-      width: 64rpx;
-      height: 64rpx;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .header-title {
-      font-size: 36rpx;
-      font-weight: 600;
-    }
-    
-    .header-placeholder {
-      width: 64rpx;
-    }
-  }
-}
+/* 统一使用 nav-bar 组件，移除旧 header 样式 */
 
 .main-content {
+  flex: 1;
   padding: 32rpx;
+  padding-top: calc(32rpx + var(--nav-height, 120rpx)); /* 动态计算导航栏高度 */
+  overflow-y: auto;
 }
 
 .upload-section {
