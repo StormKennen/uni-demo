@@ -5,7 +5,6 @@
   import { ref } from 'vue'
   import { getToken, removeToken, removeWxUserInfo, setToken, setWxUserInfo } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
-  import { useOrderStore } from '@/stores/order'
 
   const isLogut = ref(!getToken())
   const appBaseInfo = uni.getAppBaseInfo()
@@ -15,7 +14,6 @@
     { icon: '/static/image/mine/version.svg', name: `版本号${appBaseInfo.appVersion}` },
   ])
   const confirmDialogRef = ref(null)
-  const orderStore = useOrderStore()
   const logout = () => {
     console.log('logout......')
     confirmDialogRef.value?.open()
@@ -24,7 +22,6 @@
     console.log('tuichu denglu')
     removeToken()
     removeWxUserInfo()
-    orderStore.clearOrderList()
     const token = getToken()
     if (token) {
       uni.showToast({

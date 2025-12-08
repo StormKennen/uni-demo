@@ -17,7 +17,7 @@
           <input 
             class="search-input" 
             v-model="searchKeyword" 
-            placeholder="搜索食谱、食材、做法..."
+            placeholder="搜索食谱、食材..."
             @input="handleSearch"
             @confirm="handleSearchConfirm"
           />
@@ -240,10 +240,10 @@
 // @ts-ignore
 import { ref, computed, onMounted } from 'vue'
 import appDsBridge from '@/utilsH5/appDsBridge'
-import { isYinheAppEnv, getAppTokenFromSession } from '@/utilsH5/env'
+import { isYinheAppEnv } from '@/utilsH5/env'
 import { getSystemInfo } from '@/utils/env';
 import NavBar from '@/components/nav-bar-base.vue';
-// 声明uni全局对象
+
 declare const uni: any
 
 // 定义类型
@@ -272,10 +272,9 @@ interface Category {
 // 响应式数据
 const searchKeyword = ref('')
 const activeCategory = ref('all')
-const recipes = ref<Recipe[]>([])
+const allRecipes = ref<Recipe[]>([]) // 所有食谱数据
 const hotRecipes = ref<Recipe[]>([])
-const hasMore = ref(true)
-const currentPage = ref(1)
+const hasMore = ref(false)
 
 // 食材筛选相关数据
 const currentIngredient = ref('')
@@ -287,18 +286,168 @@ const showMatchPercentage = ref(true)
 // 分类数据
 const categories = ref<Category[]>([
   { id: 'all', name: '全部', icon: '🍽️' },
-  { id: 'chinese', name: '中餐', icon: '🥢' },
-  { id: 'western', name: '西餐', icon: '🍴' },
-  { id: 'japanese', name: '日料', icon: '🍱' },
-  { id: 'korean', name: '韩料', icon: '🍜' },
+  { id: 'meat', name: '肉类', icon: '🥩' },
+  { id: 'seafood', name: '海鲜', icon: '🦐' },
+  { id: 'vegetable', name: '素菜', icon: '🥗' },
+  { id: 'soup', name: '汤羹', icon: '🍲' },
+  { id: 'staple', name: '主食', icon: '🍚' },
   { id: 'dessert', name: '甜点', icon: '🍰' },
-  { id: 'drink', name: '饮品', icon: '🥤' },
-  { id: 'snack', name: '小吃', icon: '🍿' }
+  { id: 'drink', name: '饮品', icon: '🥤' }
 ])
 
-// 计算属性
+// 中文静态食谱数据（使用 Unsplash 免费图片）
+const recipeData: Recipe[] = [
+  {
+    id: '1', name: '红烧肉', category: 'meat',
+    description: '经典美味的红烧肉，肥而不腻，入口即化',
+    image: 'https://images.unsplash.com/photo-1623595119708-26b1f7300075?w=400&q=80',
+    cookTime: 60, difficulty: '中等', rating: 4.8, calories: 450, servings: 4,
+    tags: ['家常菜', '肉类', '红烧'],
+    ingredients: ['五花肉 500g', '生抽 2勺', '老抽 1勺', '料酒 2勺', '冰糖 30g', '葱姜蒜'],
+    steps: ['五花肉切块焯水', '炒糖色', '放入五花肉翻炒', '加调料和水', '小火炖煮1小时', '大火收汁']
+  },
+  {
+    id: '2', name: '宫保鸡丁', category: 'meat',
+    description: '川菜经典，鸡肉嫩滑，花生香脆，麻辣鲜香',
+    image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=400&q=80',
+    cookTime: 25, difficulty: '简单', rating: 4.6, calories: 320, servings: 3,
+    tags: ['川菜', '鸡肉', '快手菜'],
+    ingredients: ['鸡胸肉 300g', '花生米 50g', '干辣椒', '花椒', '葱姜蒜', '生抽', '醋'],
+    steps: ['鸡肉切丁腌制', '炸花生米备用', '爆香辣椒花椒', '炒鸡丁', '加调料翻炒', '放花生米出锅']
+  },
+  {
+    id: '3', name: '番茄炒蛋', category: 'vegetable',
+    description: '简单易做的家常菜，酸甜可口，营养丰富',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80',
+    cookTime: 10, difficulty: '简单', rating: 4.4, calories: 180, servings: 2,
+    tags: ['家常菜', '快手菜', '下饭'],
+    ingredients: ['番茄 2个', '鸡蛋 3个', '葱花', '盐', '糖'],
+    steps: ['番茄切块', '鸡蛋打散炒熟盛出', '炒番茄出汁', '放入鸡蛋', '加盐糖调味', '撒葱花出锅']
+  },
+  {
+    id: '4', name: '糖醋排骨', category: 'meat',
+    description: '酸甜可口，外酥里嫩，色泽红亮',
+    image: 'https://images.unsplash.com/photo-1544025162-d76978e8e5e0?w=400&q=80',
+    cookTime: 40, difficulty: '中等', rating: 4.7, calories: 420, servings: 3,
+    tags: ['家常菜', '肉类', '糖醋'],
+    ingredients: ['排骨 500g', '白糖', '醋', '生抽', '料酒', '姜片'],
+    steps: ['排骨焯水', '油炸至金黄', '调糖醋汁', '倒入排骨翻炒', '收汁装盘', '撒芝麻点缀']
+  },
+  {
+    id: '5', name: '麻婆豆腐', category: 'vegetable',
+    description: '川菜代表，麻辣鲜香，豆腐嫩滑',
+    image: 'https://images.unsplash.com/photo-1582576163090-09d3b6f8a969?w=400&q=80',
+    cookTime: 20, difficulty: '简单', rating: 4.5, calories: 220, servings: 2,
+    tags: ['川菜', '豆腐', '下饭菜'],
+    ingredients: ['豆腐 1块', '肉末 100g', '豆瓣酱', '花椒粉', '葱花', '生抽'],
+    steps: ['豆腐切块焯水', '炒肉末', '加豆瓣酱炒香', '放入豆腐', '加水煮入味', '勾芡撒花椒粉']
+  },
+  {
+    id: '6', name: '清蒸鲈鱼', category: 'seafood',
+    description: '鲜嫩爽滑，原汁原味，营养健康',
+    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&q=80',
+    cookTime: 20, difficulty: '简单', rating: 4.7, calories: 180, servings: 3,
+    tags: ['海鲜', '清蒸', '健康'],
+    ingredients: ['鲈鱼 1条', '葱姜丝', '蒸鱼豉油', '料酒', '油'],
+    steps: ['鱼处理干净', '放葱姜料酒腌制', '大火蒸8分钟', '倒掉汤汁', '放葱姜丝淋热油', '浇蒸鱼豉油']
+  },
+  {
+    id: '7', name: '蒜蓉虾', category: 'seafood',
+    description: '蒜香浓郁，虾肉鲜嫩，简单美味',
+    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&q=80',
+    cookTime: 15, difficulty: '简单', rating: 4.6, calories: 200, servings: 2,
+    tags: ['海鲜', '蒜蓉', '快手菜'],
+    ingredients: ['大虾 300g', '蒜末', '葱花', '生抽', '料酒', '油'],
+    steps: ['虾开背去虾线', '蒜末炒香', '放入虾煎至变色', '加料酒生抽', '翻炒均匀', '撒葱花出锅']
+  },
+  {
+    id: '8', name: '酸辣土豆丝', category: 'vegetable',
+    description: '爽脆可口，酸辣开胃，下饭神器',
+    image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&q=80',
+    cookTime: 15, difficulty: '简单', rating: 4.4, calories: 120, servings: 2,
+    tags: ['家常菜', '素菜', '快手菜'],
+    ingredients: ['土豆 2个', '干辣椒', '醋', '花椒', '葱蒜'],
+    steps: ['土豆切丝泡水', '热锅爆香花椒辣椒', '下土豆丝快炒', '加醋调味', '翻炒断生', '出锅装盘']
+  },
+  {
+    id: '9', name: '蛋炒饭', category: 'staple',
+    description: '简单快手，粒粒分明，香气四溢',
+    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&q=80',
+    cookTime: 10, difficulty: '简单', rating: 4.3, calories: 380, servings: 1,
+    tags: ['主食', '快手菜', '家常'],
+    ingredients: ['米饭 1碗', '鸡蛋 2个', '葱花', '盐', '油'],
+    steps: ['鸡蛋打散', '热锅炒蛋', '加入米饭翻炒', '加盐调味', '炒至粒粒分明', '撒葱花出锅']
+  },
+  {
+    id: '10', name: '西红柿蛋汤', category: 'soup',
+    description: '酸甜开胃，营养丰富，老少皆宜',
+    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=80',
+    cookTime: 15, difficulty: '简单', rating: 4.5, calories: 100, servings: 3,
+    tags: ['汤羹', '快手菜', '健康'],
+    ingredients: ['番茄 2个', '鸡蛋 2个', '葱花', '盐', '香油'],
+    steps: ['番茄切块', '热锅炒番茄出汁', '加水煮开', '淋入蛋液', '加盐调味', '滴香油撒葱花']
+  },
+  {
+    id: '11', name: '可乐鸡翅', category: 'meat',
+    description: '甜香入味，色泽诱人，老少皆宜',
+    image: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?w=400&q=80',
+    cookTime: 30, difficulty: '简单', rating: 4.6, calories: 350, servings: 3,
+    tags: ['家常菜', '鸡肉', '甜口'],
+    ingredients: ['鸡翅 8个', '可乐 1罐', '生抽', '姜片', '葱段'],
+    steps: ['鸡翅划刀焯水', '煎至两面金黄', '加姜葱炒香', '倒入可乐和生抽', '小火炖煮', '大火收汁']
+  },
+  {
+    id: '12', name: '青椒肉丝', category: 'meat',
+    description: '家常下饭菜，肉嫩椒脆，简单美味',
+    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=80',
+    cookTime: 15, difficulty: '简单', rating: 4.4, calories: 280, servings: 2,
+    tags: ['家常菜', '快手菜', '下饭'],
+    ingredients: ['猪肉 200g', '青椒 2个', '葱姜蒜', '生抽', '淀粉'],
+    steps: ['肉切丝腌制', '青椒切丝', '热锅炒肉丝', '加青椒翻炒', '调味出锅']
+  },
+  {
+    id: '13', name: '红烧茄子', category: 'vegetable',
+    description: '软糯入味，酱香浓郁，超级下饭',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&q=80',
+    cookTime: 20, difficulty: '简单', rating: 4.5, calories: 200, servings: 2,
+    tags: ['家常菜', '素菜', '下饭'],
+    ingredients: ['茄子 2根', '蒜末', '生抽', '老抽', '糖', '淀粉'],
+    steps: ['茄子切条', '油炸至软', '蒜末爆香', '加调料和水', '放入茄子', '收汁装盘']
+  },
+  {
+    id: '14', name: '紫菜蛋花汤', category: 'soup',
+    description: '清淡鲜美，营养快手，简单易做',
+    image: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&q=80',
+    cookTime: 10, difficulty: '简单', rating: 4.3, calories: 80, servings: 2,
+    tags: ['汤羹', '快手菜', '健康'],
+    ingredients: ['紫菜', '鸡蛋 1个', '葱花', '盐', '香油'],
+    steps: ['水烧开', '放入紫菜', '淋入蛋液', '加盐调味', '滴香油', '撒葱花出锅']
+  },
+  {
+    id: '15', name: '珍珠奶茶', category: 'drink',
+    description: '台式经典饮品，Q弹珍珠，奶香浓郁',
+    image: 'https://images.unsplash.com/photo-1558857563-b371033873b8?w=400&q=80',
+    cookTime: 30, difficulty: '中等', rating: 4.7, calories: 350, servings: 2,
+    tags: ['饮品', '奶茶', '甜品'],
+    ingredients: ['红茶', '牛奶', '珍珠', '黑糖', '冰块'],
+    steps: ['煮珍珠至透明', '泡红茶', '加入牛奶', '放黑糖调味', '加冰块', '放入珍珠']
+  },
+  {
+    id: '16', name: '双皮奶', category: 'dessert',
+    description: '香滑细腻，奶香浓郁，经典甜品',
+    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&q=80',
+    cookTime: 40, difficulty: '中等', rating: 4.8, calories: 200, servings: 3,
+    tags: ['甜点', '广式', '奶制品'],
+    ingredients: ['牛奶 500ml', '蛋清 2个', '糖 30g'],
+    steps: ['牛奶煮开放凉结皮', '蛋清加糖打匀', '混合牛奶', '过滤入碗', '蒸15分钟', '冷藏后食用']
+  }
+]
+
+// 计算属性 - 根据搜索和分类过滤食谱
+const recipes = computed(() => allRecipes.value)
+
 const filteredRecipes = computed(() => {
-  let filtered = recipes.value
+  let filtered = allRecipes.value
   
   // 按分类筛选
   if (activeCategory.value !== 'all') {
@@ -309,10 +458,10 @@ const filteredRecipes = computed(() => {
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
     filtered = filtered.filter(recipe => 
-      recipe.name.toLowerCase().includes(keyword) ||
-      recipe.description.toLowerCase().includes(keyword) ||
-      recipe.tags.some(tag => tag.toLowerCase().includes(keyword)) ||
-      recipe.ingredients.some(ingredient => ingredient.toLowerCase().includes(keyword))
+      recipe.name.includes(keyword) ||
+      recipe.description.includes(keyword) ||
+      recipe.tags.some(tag => tag.includes(keyword)) ||
+      recipe.ingredients.some(ingredient => ingredient.includes(keyword))
     )
   }
   
@@ -320,22 +469,12 @@ const filteredRecipes = computed(() => {
   if (selectedIngredients.value.length > 0) {
     filtered = filtered.filter(recipe => {
       if (includeAllIngredients.value) {
-        // 严格模式：必须包含所有选择的食材
         return selectedIngredients.value.every(selected => 
-          recipe.ingredients.some(ingredient => 
-            searchMode.value === 'strict' 
-              ? ingredient.toLowerCase() === selected.toLowerCase()
-              : ingredient.toLowerCase().includes(selected.toLowerCase())
-          )
+          recipe.ingredients.some(ingredient => ingredient.includes(selected))
         )
       } else {
-        // 宽松模式：包含任意一个选择的食材即可
         return selectedIngredients.value.some(selected => 
-          recipe.ingredients.some(ingredient => 
-            searchMode.value === 'strict' 
-              ? ingredient.toLowerCase() === selected.toLowerCase()
-              : ingredient.toLowerCase().includes(selected.toLowerCase())
-          )
+          recipe.ingredients.some(ingredient => ingredient.includes(selected))
         )
       }
     })
@@ -346,128 +485,40 @@ const filteredRecipes = computed(() => {
 
 const isH5 = ref(false)
 function init() {
-    if(isYinheAppEnv()) { 
-        appDsBridge.hideNavigationBarSyn('1')
-    } else if(getSystemInfo()?.hostName !== 'WeChat'){
-        isH5.value = true;
-    }
+  if(isYinheAppEnv()) { 
+    appDsBridge.hideNavigationBarSyn('1')
+  } else if(getSystemInfo()?.hostName !== 'WeChat'){
+    isH5.value = true;
+  }
 }
 
 const goBack = () => {
   if(isYinheAppEnv()) {
     appDsBridge.backToAppPreView()
-  }else {
+  } else {
     uni.navigateBack()
   }
 }
 
 // 生命周期
 onMounted(() => {
+  init()
   loadRecipes()
-  loadHotRecipes()
 })
 
-// 方法
+// 加载食谱数据
 const loadRecipes = () => {
-  // 模拟数据加载
-  const mockRecipes: Recipe[] = [
-    {
-      id: '1',
-      name: '红烧肉',
-      description: '经典美味的红烧肉，肥而不腻，入口即化',
-      image: '/static/image/home/cooking.jpg',
-      cookTime: 60,
-      difficulty: '中等',
-      rating: 4.8,
-      calories: 450,
-      servings: 4,
-      tags: ['家常菜', '肉类', '红烧'],
-      category: 'chinese',
-      ingredients: ['五花肉', '生抽', '老抽', '料酒', '冰糖', '葱姜蒜'],
-      steps: ['五花肉切块', '焯水去腥', '炒糖色', '加入调料', '炖煮收汁']
-    },
-    {
-      id: '2',
-      name: '宫保鸡丁',
-      description: '川菜经典，鸡肉嫩滑，花生香脆，麻辣鲜香',
-      image: '/static/image/home/cooking.jpg',
-      cookTime: 30,
-      difficulty: '简单',
-      rating: 4.6,
-      calories: 320,
-      servings: 3,
-      tags: ['川菜', '鸡肉', '快手菜'],
-      category: 'chinese',
-      ingredients: ['鸡胸肉', '花生米', '干辣椒', '花椒', '生抽', '醋'],
-      steps: ['鸡肉切丁', '腌制入味', '炒制花生', '爆炒鸡丁', '调味出锅']
-    },
-    {
-      id: '3',
-      name: '番茄炒蛋',
-      description: '简单易做的家常菜，酸甜可口，营养丰富',
-      image: '/static/image/home/liucheng.svg',
-      cookTime: 15,
-      difficulty: '简单',
-      rating: 4.4,
-      calories: 180,
-      servings: 2,
-      tags: ['家常菜', '素菜', '快手菜'],
-      category: 'chinese',
-      ingredients: ['番茄', '鸡蛋', '葱花', '盐', '糖'],
-      steps: ['番茄切块', '鸡蛋打散', '炒制鸡蛋', '加入番茄', '调味出锅']
-    },
-    {
-      id: '4',
-      name: '意大利面',
-      description: '经典意式料理，面条劲道，酱汁浓郁',
-      image: '/static/image/home/shuishou.svg',
-      cookTime: 25,
-      difficulty: '中等',
-      rating: 4.5,
-      calories: 380,
-      servings: 2,
-      tags: ['西餐', '面食', '意式'],
-      category: 'western',
-      ingredients: ['意大利面', '番茄', '洋葱', '蒜末', '橄榄油', '罗勒'],
-      steps: ['煮面', '炒制酱料', '混合面条', '调味装盘']
-    },
-    {
-      id: '5',
-      name: '提拉米苏',
-      description: '经典意式甜点，咖啡香浓，口感细腻',
-      image: '/static/image/home/youshi.svg',
-      cookTime: 45,
-      difficulty: '困难',
-      rating: 4.9,
-      calories: 280,
-      servings: 6,
-      tags: ['甜点', '意式', '咖啡'],
-      category: 'dessert',
-      ingredients: ['马斯卡彭奶酪', '手指饼干', '咖啡', '鸡蛋', '糖', '可可粉'],
-      steps: ['制作奶酪糊', '浸泡饼干', '层层叠加', '冷藏定型', '撒可可粉']
-    }
-  ]
-  
-  recipes.value = mockRecipes
+  allRecipes.value = recipeData
+  hotRecipes.value = recipeData.slice(0, 3)
 }
 
-const loadHotRecipes = () => {
-  // 模拟热门食谱数据
-  hotRecipes.value = recipes.value.slice(0, 3)
-}
-
+// 搜索处理
 const handleSearch = () => {
-  // 实时搜索逻辑
-  if (searchKeyword.value.length > 0) {
-    // 可以在这里添加防抖搜索
-  }
+  // 本地搜索，无需防抖
 }
 
 const handleSearchConfirm = () => {
-  if (searchKeyword.value.trim()) {
-    // 执行搜索
-    console.log('搜索关键词:', searchKeyword.value)
-  }
+  // 本地搜索，直接通过 computed 过滤
 }
 
 const clearSearch = () => {
@@ -485,17 +536,15 @@ const getCategoryTitle = () => {
 }
 
 const goToRecipeDetail = (recipe: Recipe) => {
-  // 跳转到食谱详情页
+  // 将食谱数据存储到本地，详情页读取
+  uni.setStorageSync('currentRecipe', JSON.stringify(recipe))
   uni.navigateTo({
     url: `/subPackages/services/recipe/detail?id=${recipe.id}`
   })
 }
 
 const loadMore = () => {
-  // 加载更多食谱
-  currentPage.value++
-  // 这里可以调用API加载更多数据
-  hasMore.value = false // 暂时设置为false
+  hasMore.value = false
 }
 
 // 食材筛选相关方法
@@ -535,14 +584,9 @@ const getMatchPercentage = (recipe: Recipe) => {
   
   let matchCount = 0
   selectedIngredients.value.forEach(selected => {
-    const hasMatch = recipe.ingredients.some(ingredient => {
-      if (searchMode.value === 'strict') {
-        return ingredient.toLowerCase() === selected.toLowerCase()
-      } else {
-        return ingredient.toLowerCase().includes(selected.toLowerCase())
-      }
-    })
-    if (hasMatch) matchCount++
+    if (recipe.ingredients.some(ingredient => ingredient.includes(selected))) {
+      matchCount++
+    }
   })
   
   return Math.round((matchCount / selectedIngredients.value.length) * 100)

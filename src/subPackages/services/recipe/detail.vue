@@ -178,7 +178,6 @@
 // @ts-ignore
 import { ref, onMounted, computed } from 'vue'
 
-// 声明uni全局对象
 declare const uni: any
 
 // 定义类型
@@ -189,8 +188,6 @@ interface Ingredient {
 
 interface Step {
   description: string
-  tips?: string
-  image?: string
 }
 
 interface Nutrition {
@@ -231,85 +228,58 @@ const progressPercentage = computed(() => {
 
 // 生命周期
 onMounted(() => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const recipeId = currentPage.options?.id || '1'
-  
-  loadRecipeDetail(recipeId)
+  loadRecipeDetail()
 })
 
-// 方法
-const loadRecipeDetail = (id: string) => {
-  // 模拟数据加载
-  const mockRecipe: RecipeDetail = {
-    id: '1',
-    name: '红烧肉',
-    description: '经典美味的红烧肉，肥而不腻，入口即化。选用上等五花肉，经过精心烹饪，色泽红亮，味道醇厚。',
-    image: '/static/image/home/cooking.jpg',
-    cookTime: 60,
-    difficulty: '中等',
-    rating: 4.8,
-    ratingCount: 1280,
-    calories: 450,
-    servings: 4,
-    tags: ['家常菜', '肉类', '红烧', '下饭菜'],
-    ingredients: [
-      { name: '五花肉', amount: '500g' },
-      { name: '生抽', amount: '2勺' },
-      { name: '老抽', amount: '1勺' },
-      { name: '料酒', amount: '2勺' },
-      { name: '冰糖', amount: '30g' },
-      { name: '葱', amount: '2根' },
-      { name: '姜', amount: '3片' },
-      { name: '蒜', amount: '3瓣' },
-      { name: '八角', amount: '2个' },
-      { name: '桂皮', amount: '1小块' }
-    ],
-    steps: [
-      {
-        description: '五花肉切成3cm见方的块，冷水下锅焯水，去除血水和杂质。',
-        tips: '焯水时加入姜片和料酒，可以去腥增香。'
-      },
-      {
-        description: '锅中放油，放入冰糖小火炒至焦糖色，注意不要炒糊。',
-        tips: '炒糖色是红烧肉的关键步骤，要耐心小火慢炒。'
-      },
-      {
-        description: '放入焯好水的五花肉，翻炒均匀，让每块肉都裹上糖色。',
-        tips: '翻炒时要快速，避免糖色糊掉。'
-      },
-      {
-        description: '加入生抽、老抽、料酒，放入葱姜蒜、八角、桂皮等香料。',
-        tips: '调味料要分次加入，先放液体调料，再放固体香料。'
-      },
-      {
-        description: '加入适量热水，大火烧开后转小火慢炖40分钟。',
-        tips: '水量要没过肉块，炖煮时间要足够，让肉质软烂。'
-      },
-      {
-        description: '大火收汁，汤汁浓稠时即可出锅，撒上葱花点缀。',
-        tips: '收汁时要注意火候，避免糊锅。'
+// 从本地存储加载食谱详情
+const loadRecipeDetail = () => {
+  try {
+    const storedRecipe = uni.getStorageSync('currentRecipe')
+    if (storedRecipe) {
+      const data = JSON.parse(storedRecipe)
+      
+      // 转换食材格式
+      const ingredients: Ingredient[] = data.ingredients.map((ing: string) => {
+        const parts = ing.split(' ')
+        if (parts.length > 1) {
+          return { name: parts.slice(0, -1).join(' '), amount: parts[parts.length - 1] }
+        }
+        return { name: ing, amount: '' }
+      })
+      
+      // 转换步骤格式
+      const steps: Step[] = data.steps.map((step: string) => ({
+        description: step
+      }))
+      
+      recipe.value = {
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        image: data.image,
+        cookTime: data.cookTime,
+        difficulty: data.difficulty,
+        rating: data.rating,
+        ratingCount: Math.floor(Math.random() * 1000) + 500,
+        calories: data.calories,
+        servings: data.servings,
+        tags: data.tags,
+        ingredients,
+        steps,
+        nutrition: [
+          { name: '蛋白质', value: Math.floor(data.calories * 0.15 / 4), unit: 'g' },
+          { name: '脂肪', value: Math.floor(data.calories * 0.3 / 9), unit: 'g' },
+          { name: '碳水', value: Math.floor(data.calories * 0.55 / 4), unit: 'g' }
+        ],
+        tips: []
       }
-    ],
-    nutrition: [
-      { name: '蛋白质', value: 25, unit: 'g' },
-      { name: '脂肪', value: 35, unit: 'g' },
-      { name: '碳水化合物', value: 8, unit: 'g' },
-      { name: '热量', value: 450, unit: 'kcal' },
-      { name: '钠', value: 800, unit: 'mg' },
-      { name: '钾', value: 350, unit: 'mg' }
-    ],
-    tips: [
-      '选择五花肉时，要选肥瘦相间的，这样口感更好。',
-      '焯水时加入姜片和料酒，可以有效去除肉的腥味。',
-      '炒糖色时要耐心，小火慢炒，避免炒糊影响口感。',
-      '炖煮时间要足够，让肉质软烂入味。',
-      '收汁时要注意火候，避免糊锅。'
-    ]
+      
+      checkedIngredients.value = new Array(ingredients.length).fill(false)
+    }
+  } catch (error) {
+    console.error('加载食谱详情失败:', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
   }
-  
-  recipe.value = mockRecipe
-  checkedIngredients.value = new Array(mockRecipe.ingredients.length).fill(false)
 }
 
 const goBack = () => {

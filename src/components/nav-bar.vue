@@ -68,10 +68,10 @@ onPageScroll((event: any) => {
     @back="emit('back')"
   >
     <template #title>
-      <slot name="title" />
+      <slot name="title" >{{ navTitle }}</slot>
     </template>
     <template #right>
-      <slot name="right" />
+      <slot name="right" ></slot>
     </template>
   </NavBarBase>
 </template>

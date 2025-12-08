@@ -51,6 +51,7 @@
     /* 小程序特有相关 */
     "mp-weixin" : {
         "appid" : "wx262135894a3b87c3",
+        "__usePrivacyCheck__" : true,
         "setting" : {
             "urlCheck" : false,
             "es6" : true,

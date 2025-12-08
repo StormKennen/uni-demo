@@ -136,6 +136,18 @@ const onBack = async () => {
         color: #ffffff; // 深色背景下标题为白色
       }
     }
+    
+    // 首页导航栏样式：内容居左
+    &.home-navbar {
+      justify-content: flex-start;
+      padding-left: 32rpx;
+      
+      .nav-title {
+        position: relative;
+        left: auto;
+        transform: none;
+      }
+    }
   }
 }
 </style>

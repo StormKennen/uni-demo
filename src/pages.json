@@ -15,21 +15,6 @@
         "navigationStyle": "custom"
       }
     },
-
-    {
-      "path": "pages/mall/mall",
-      "style": {
-        "navigationBarTitleText": "商品列表",
-        "enablePullDownRefresh": true,
-        "onReachBottomDistance": 50
-      }
-    },
-    {
-      "path": "pages/mall/goods/goods-detail",
-      "style": {
-        "navigationStyle": "custom"
-      }
-    },
     {
       "path": "pages/mine/mine",
       "style": {
@@ -49,12 +34,6 @@
       "root": "subPackages/user",
       "name": "user",
       "pages": [
-        {
-          "path": "order/order",
-          "style": {
-            "navigationBarTitleText": "我的订单"
-          }
-        },
         {
           "path": "setting/setting",
           "style": {
@@ -79,6 +58,22 @@
           "path": "family-tree/demo",
           "style": {
             "navigationBarTitleText": "族谱",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "oss-upload/index",
+          "style": {
+            "navigationBarTitleText": "文件上传",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "oss-upload/fileList",
+          "style": {
+            "navigationBarTitleText": "我的文件列表",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 50,
             "navigationStyle": "custom"
           }
         },
@@ -172,12 +167,6 @@
         "iconPath": "static/image/index.png",
         "selectedIconPath": "static/image/index_on.png",
         "text": "首頁"
-      },
-      {
-        "pagePath": "pages/mall/mall",
-        "iconPath": "static/image/mall.png",
-        "selectedIconPath": "static/image/mall_on.png",
-        "text": "商城"
       },
       {
         "pagePath": "pages/mine/mine",

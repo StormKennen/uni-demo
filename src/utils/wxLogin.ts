@@ -64,7 +64,7 @@ export const wxGetUserInfo = async () => {
       },
       fail: function (error: any) {
         console.warn("🚀 ~ newPromise ~ error:", error)
-
+        reject(error)
       }
     })
   })

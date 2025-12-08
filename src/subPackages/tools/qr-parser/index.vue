@@ -5,7 +5,7 @@
       always-title
       title="二维码解析"
       custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
 
     <!-- 内容区域 -->
@@ -166,88 +166,119 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+/* 统一配色变量（与首页一致） */
+$bg-color: #f5f7fa;
+$card-bg: #ffffff;
+$text-primary: #1a1a1a;
+$text-secondary: #666666;
+$text-hint: #999999;
+$border-color: #eaeef3;
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+$radius-md: 24rpx;
+
 .qr-parser {
   min-height: 100vh;
-  background: linear-gradient(135deg, #4C8BF5 0%, #6A5ACD 100%);
+  background: $bg-color;
   display: flex;
   flex-direction: column;
 }
 
 .content {
   flex: 1;
-  padding: 20rpx;
+  padding: 32rpx;
   padding-top: calc(32rpx + var(--nav-height, 120rpx));
   overflow-y: auto;
 }
 
 .section-title {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
+  font-weight: 600;
+  color: $text-primary;
+  margin-bottom: 24rpx;
 }
 
 .parse-section {
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: $shadow-sm;
 }
 
 .action-btn {
   width: 100%;
-  padding: 25rpx;
+  height: 88rpx;
   border: none;
-  border-radius: 50rpx;
+  border-radius: 44rpx;
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .parse-btn {
-  background: linear-gradient(45deg, #8E24AA, #AB47BC);
+  background: $primary-gradient;
   color: white;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
 }
 
 .scan-btn {
-  background: linear-gradient(45deg, #FF7043, #FF8A65);
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
+  box-shadow: 0 8rpx 24rpx rgba(240, 147, 251, 0.3);
+}
+
+.tips {
+  font-size: 24rpx;
+  color: $text-hint;
+  text-align: center;
+  margin-bottom: 16rpx;
 }
 
 .preview-wrap {
-  margin-top: 20rpx;
+  margin-top: 24rpx;
   display: flex;
   justify-content: center;
 }
 
 .preview-image {
   max-width: 100%;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
 }
 
 .result-section {
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: 32rpx;
+  box-shadow: $shadow-sm;
 }
 
 .info-item {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 10rpx;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .info-label {
   font-size: 26rpx;
-  color: #666;
+  color: $text-secondary;
 }
 
 .info-value {
-  font-size: 26rpx;
-  color: #333;
-  font-weight: bold;
+  font-size: 28rpx;
+  color: $text-primary;
+  font-weight: 500;
+  word-break: break-all;
+  line-height: 1.5;
 }
 </style>

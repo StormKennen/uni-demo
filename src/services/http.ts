@@ -52,6 +52,9 @@ const DEFAULT_CONFIG: Options = {
 
 export class Request {
   config: Options
+  // 防止重复刷新与无限重试
+  private refreshInFlight: Promise<any> | null = null
+  private maxRetryAfterRefresh = 1
   constructor(options = {}) {
     // 合并用户自定义配置
     this.config = merge({}, DEFAULT_CONFIG, options);
@@ -115,32 +118,46 @@ export class Request {
    * 静默刷新token并重试请求
    */
   private async handleTokenRefreshAndRetry(originalUrl: string, originalData: any, originalConfig: ParticalUniAppRequestOptions, originalMethod: Methods): Promise<any> {
+    // 防止无限重试：每个请求最多重试一次
+    const currentRetry = (originalConfig as any)?._retryAfterRefresh || 0
+    if (currentRetry >= this.maxRetryAfterRefresh) {
+      console.log('已达到最大重试次数，停止自动登录重试')
+      await this.showLoginDialog()
+      return Promise.reject({ code: 401, message: '登录已过期，请重新登录' })
+    }
+
     try {
       console.log('尝试静默刷新token...')
-      const refreshResult = await refreshAccessToken()
+      // 刷新操作去重：有刷新进行中则复用同一个Promise
+      if (!this.refreshInFlight) {
+        this.refreshInFlight = refreshAccessToken().finally(() => {
+          this.refreshInFlight = null
+        })
+      }
+      const refreshResult = await this.refreshInFlight
       
-      if (refreshResult.success) {
+      if (refreshResult?.success) {
         console.log('Token刷新成功，重试原请求')
         // 更新请求头中的token和Authorization
-        const newConfig = { ...originalConfig }
+        const newConfig: any = { ...originalConfig }
+        newConfig._retryAfterRefresh = currentRetry + 1
         if (newConfig.header) {
           newConfig.header.Token = getToken()
-          // Authorization header已经通过updateHttpHeaders自动更新到全局config中
-          // 这里确保新请求也包含最新的Authorization header
           if (this.config.header.Authorization) {
             newConfig.header.Authorization = this.config.header.Authorization
           }
         }
-        
-        // 重试原请求
+        // 重试原请求（仅一次）
         return this.request(originalUrl, originalData, newConfig, originalMethod)
       } else {
-        console.log('Token刷新失败')
-        throw new Error('Token刷新失败')
+        console.log('Token刷新失败，提示登录')
+        await this.showLoginDialog()
+        return Promise.reject({ code: 401, message: '登录已过期' })
       }
     } catch (error) {
       console.log('静默刷新token失败:', error)
-      throw error
+      await this.showLoginDialog()
+      return Promise.reject({ code: 401, message: '登录已过期' })
     }
   }
 
@@ -189,54 +206,29 @@ export class Request {
         })
       }
       
-      // 非认证接口的401错误 - 尝试静默刷新token
-      console.log('非认证接口401错误，尝试静默刷新token')
-      try {
-        // 尝试静默刷新token并重试请求
-        return await this.handleTokenRefreshAndRetry(
-          requestConfig?.url || '',
-          requestConfig?.data || {},
-          requestConfig || {},
-          requestConfig?.method || 'GET'
-        )
-      } catch (refreshError) {
-        // 静默刷新失败，显示友好的登录提示
-        console.log('静默刷新失败，显示登录提示')
-        await this.showLoginDialog()
-        return Promise.reject({
-          code: 401,
-          message: '登录已过期',
-          data: _data
-        })
-      }
+      // 非认证接口的401错误 - 禁用自动刷新与自动登录，直接弹窗提示
+      console.log('非认证接口401错误，禁用自动登录，直接提示登录')
+      await this.showLoginDialog()
+      return Promise.reject({
+        code: 401,
+        message: '登录已过期',
+        data: _data
+      })
     }
     
     const { code, msg, data } = _data;
     
     // 处理业务层面的token失效 - 尝试静默刷新token
     if (code === RES_CODE.InvalidToken) {
-      console.log('业务层面Token失效，尝试静默刷新token')
-      try {
-        // 尝试静默刷新token并重试请求
-        return await this.handleTokenRefreshAndRetry(
-          requestConfig?.url || '',
-          requestConfig?.data || {},
-          requestConfig || {},
-          requestConfig?.method || 'GET'
-        )
-      } catch (refreshError) {
-        // 静默刷新失败，显示友好的登录提示
-        console.log('静默刷新失败，显示登录提示')
-        await this.showLoginDialog()
-        return Promise.reject({
-          code: RES_CODE.InvalidToken,
-          message: 'Token失效',
-          data: _data
-        })
-      }
+      console.log('业务层面Token失效，禁用自动登录，直接提示登录')
+      await this.showLoginDialog()
+      return Promise.reject({
+        code: RES_CODE.InvalidToken,
+        message: 'Token失效',
+        data: _data
+      })
     }
     
-    // todo: 删除code!==0判断
     if (code !== RES_CODE.Success) {
       return Promise.reject(msg);
     }

@@ -6,6 +6,7 @@
   import { getToken, getWxUserInfo, getUserInfo, clearLoginData } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
   import { useShare } from '@/utils/share'
+  import H5TabBar from '@/components/h5-tab-bar.vue'
 
   const token = ref()
   const avatar = ref()
@@ -117,6 +118,11 @@
         <MineListItem :data="item" @click="handleItemClick(item)" />
       </view>
     </view>
+    
+    <!-- H5 底部导航 -->
+    <!-- #ifdef H5 -->
+    <H5TabBar current="mine" />
+    <!-- #endif -->
   </view>
 </template>
 
@@ -124,6 +130,10 @@
   .mine {
     // width: 750rpx;
     background: none;
+    
+    /* #ifdef H5 */
+    padding-bottom: 120rpx; // 为底部导航留出空间
+    /* #endif */
 		.bg {
       position: absolute;
       z-index: -1;

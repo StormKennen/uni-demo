@@ -51,9 +51,6 @@ export const formatNumberThousand = (num: number | string): string => {
 }
 
 export const hideAllTabBar = () => {
-  // if(import.meta.env.MODE==='development'){
-  //   return
-  // }
   uni.setTabBarItem({
     index: 0,
     pagePath: '/pages/index/index',
@@ -61,16 +58,6 @@ export const hideAllTabBar = () => {
   })
   uni.setTabBarItem({
     index: 1,
-    pagePath: '/pages/chat/chat',
-    visible: false
-  })
-  uni.setTabBarItem({
-    index: 2,
-    pagePath: '/pages/mall/mall',
-    visible: false
-  })
-  uni.setTabBarItem({
-    index: 3,
     pagePath: '/pages/mine/mine',
     visible: false
   })

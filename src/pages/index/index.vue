@@ -1,218 +1,274 @@
 <template>
   <view class="home-page">
-    <!-- 顶部导航栏 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="logo-section">
-          <image class="logo" src="/static/logo.png" mode="aspectFit" />
-          <view class="company-info">
-            <text class="company-name">kai</text>
-            <text class="company-slogan">专业服务平台</text>
+    <!-- 使用 NavBarBase 组件 -->
+    <NavBarBase 
+      :nav-back="false"
+      custom-class="home-navbar"
+      :custom-style="{ background: '#667eea' }"
+    >
+      <template #title>
+        <view class="home-navbar-content">
+          <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
+          <view class="navbar-brand">
+            <text class="navbar-title">工具箱</text>
+            <text class="navbar-slogan">高效 · 实用 · 专业</text>
           </view>
         </view>
-        <view class="header-actions">
-          <view class="search-btn" @click="goToSearch">
-            <uni-icons type="search" size="20" color="#666" />
-          </view>
-          <view class="notification-btn" @click="goToNotification">
-            <uni-icons type="notification" size="20" color="#666" />
-            <view v-if="hasNotification" class="notification-dot"></view>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 轮播图 -->
-    <view class="banner-section">
-      <swiper class="banner-swiper" :indicator-dots="true" :autoplay="true" :interval="3000" :duration="500">
-        <swiper-item v-for="(banner, index) in banners" :key="index">
-          <image class="banner-image" :src="banner.image" mode="aspectFill" @click="handleBannerClick(banner)" />
-        </swiper-item>
-      </swiper>
-    </view>
-
-    <!-- 快捷功能入口 -->
-    <view class="quick-actions">
-      <view class="section-title">
-        <text class="title-text">快捷服务</text>
-        <text class="title-desc">一站式解决方案</text>
+      </template>
+    </NavBarBase>
+    
+    <!-- Nav 区域（不吸顶，随页面滚动） -->
+    <view class="nav-section">
+      <!-- 搜索栏 -->
+      <view class="search-bar" @click="goToSearch">
+        <uni-icons type="search" size="18" color="#999" />
+        <text class="search-placeholder">搜索工具...</text>
       </view>
       
-      <view class="action-grid">
+      <!-- 数据统计 -->
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-num">{{ enabledToolsCount }}</text>
+          <text class="stat-label">可用工具</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">免费</text>
+          <text class="stat-label">全部功能</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-num">本地</text>
+          <text class="stat-label">隐私安全</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 常用工具 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">常用工具</text>
+        <text class="section-subtitle">POPULAR</text>
+      </view>
+      
+      <view class="tools-grid popular">
         <view 
-          :class="['action-item', { 'action-item-disabled': action.disabled }]" 
-          v-for="(action, index) in quickActions" 
-          :key="index"
-          @click.prevent.stop="handleActionClick(action)"
+          v-for="tool in popularTools" 
+          :key="tool.id"
+          :class="['tool-card', 'large', { disabled: tool.disabled }]"
+          @click="handleActionClick(tool)"
         >
-          <view class="action-icon" :style="{ background: action.bgColor }">
-            <uni-icons :type="action.icon" size="24" color="white" />
+          <view class="tool-icon-wrapper" :style="{ background: tool.gradient }">
+            <uni-icons :type="tool.icon" size="32" color="#fff" />
           </view>
-          <text class="action-name">{{ action.name }}</text>
-          <text class="action-desc">{{ action.desc }}</text>
+          <view class="tool-info">
+            <text class="tool-name">{{ tool.name }}</text>
+            <text class="tool-desc">{{ tool.desc }}</text>
+          </view>
+          <view class="tool-arrow" v-if="!tool.disabled">
+            <uni-icons type="right" size="16" color="#ccc" />
+          </view>
+          <view class="tool-badge" v-if="tool.badge">{{ tool.badge }}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 图片工具 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">图片工具</text>
+        <text class="section-subtitle">IMAGE</text>
+      </view>
+      
+      <view class="tools-grid">
+        <view 
+          v-for="tool in imageTools" 
+          :key="tool.id"
+          :class="['tool-card', { disabled: tool.disabled }]"
+          @click="handleActionClick(tool)"
+        >
+          <view class="tool-icon-wrapper small" :style="{ background: tool.gradient }">
+            <uni-icons :type="tool.icon" size="24" color="#fff" />
+          </view>
+          <text class="tool-name">{{ tool.name }}</text>
+          <text class="tool-desc">{{ tool.desc }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 更多工具 -->
+    <view class="section">
+      <view class="section-header">
+        <text class="section-title">更多工具</text>
+        <text class="section-subtitle">MORE</text>
+      </view>
+      
+      <view class="tools-list">
+        <view 
+          v-for="tool in moreTools" 
+          :key="tool.id"
+          :class="['tool-list-item', { disabled: tool.disabled }]"
+          @click="handleActionClick(tool)"
+        >
+          <view class="tool-icon-wrapper mini" :style="{ background: tool.gradient }">
+            <uni-icons :type="tool.icon" size="20" color="#fff" />
+          </view>
+          <view class="tool-content">
+            <text class="tool-name">{{ tool.name }}</text>
+            <text class="tool-desc">{{ tool.desc }}</text>
+          </view>
+          <view class="tool-status">
+            <text v-if="tool.disabled" class="status-dev">开发中</text>
+            <uni-icons v-else type="right" size="16" color="#ccc" />
+          </view>
         </view>
       </view>
     </view>
 
 
 
-
-
-
-    <!-- 底部安全提示 -->
-    <view class="safety-tips">
-      <view class="tips-content">
-        <uni-icons type="info" size="16" color="#999" />
-        <text class="tips-text">平台已通过安全认证，请放心使用</text>
+    <!-- 底部信息 -->
+    <view class="footer">
+      <view class="footer-info">
+        <view class="security-row">
+          <uni-icons type="locked" size="14" color="#10b981" />
+          <text class="security-text">数据本地处理，保护您的隐私安全</text>
+        </view>
+        <text class="icp-text">粤ICP备2025489016号-2</text>
       </view>
     </view>
+    
+    <!-- H5 底部导航 -->
+    <!-- #ifdef H5 -->
+    <H5TabBar current="index" />
+    <!-- #endif -->
+    
+    <!-- 微信小程序隐私授权弹窗 -->
+    <!-- #ifdef MP-WEIXIN -->
+    <PrivacyPopup />
+    <!-- #endif -->
   </view>
 </template>
 
 <script setup lang="ts">
 // @ts-ignore
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
 import { useShare } from '@/utils/share'
+import NavBarBase from '@/components/nav-bar-base.vue'
+import H5TabBar from '@/components/h5-tab-bar.vue'
+import PrivacyPopup from '@/components/privacy-popup.vue'
 
 // 定义类型
-interface Banner {
-  id: number
-  image: string
-  title: string
-  link: string
-}
-
-interface QuickAction {
+interface Tool {
   id: number
   name: string
   desc: string
   icon: string
-  bgColor: string
+  gradient: string
   link: string
-}
-
-interface HotService {
-  id: number
-  name: string
-  desc: string
-  image: string
-  tags: string[]
-  link: string
-}
-
-interface BusinessCategory {
-  id: number
-  name: string
-  icon: string
-  count: number
-  link: string
+  disabled?: boolean
+  badge?: string
+  isWebLink?: boolean
 }
 
 // 声明uni全局对象
 declare const uni: any
 
-// 轮播图数据
-const banners = ref([])
-
-// 快捷功能
-const quickActions = ref([
-  // {
-  //   id: 1,
-  //   name: '食谱',
-  //   desc: '今天我们来做菜',
-  //   icon: 'home',
-  //   bgColor: '#0046B4',
-  //   // link: '/pages/pagesServices/recipe/index',
-  //   link: 'https://eat.lz-t.top',
-  //   disabled: false,
-  //   isWebLink: true // 是外链
-  // },
+// 常用工具 - 二维码相关
+const popularTools = ref<Tool[]>([
   {
     id: 1,
+    name: '二维码生成',
+    desc: '支持多种样式，自定义颜色和Logo',
+    icon: 'scan',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    link: '/subPackages/tools/qr-generator/index',
+    disabled: false,
+    badge: '热门'
+  },
+  {
+    id: 2,
+    name: '二维码解析',
+    desc: '扫码识别或图片上传解析',
+    icon: 'camera',
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    link: '/subPackages/tools/qr-parser/index',
+    disabled: false
+  }
+])
+
+// 图片工具
+const imageTools = ref<Tool[]>([
+  {
+    id: 3,
     name: '图片压缩',
-    desc: '智能压缩',
+    desc: '智能压缩不失真',
     icon: 'image',
-    bgColor: '#FF6B35',
+    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     link: '/subPackages/tools/image-compress/index',
     disabled: false
   },
   {
-    id: 2,
-    name: '二维码生成',
-    desc: '支持样式编辑',
-    icon: 'scan',
-    bgColor: '#FF6600',
-    link: '/subPackages/tools/qr-generator/index',
+    id: 4,
+    name: '文件上传',
+    desc: '安全快速传输',
+    icon: 'upload',
+    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    link: '/subPackages/tools/oss-upload/index',
     disabled: false
+  }
+])
+
+// 更多工具
+const moreTools = ref<Tool[]>([
+  {
+    id: 5,
+    name: '食谱大全',
+    desc: '中文食谱，食材筛选',
+    icon: 'flag',
+    gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
+    link: '/subPackages/services/recipe/index',
+    disabled: false,
+    badge: '新'
   },
   {
-    id: 8,
-    name: '解析二维码',
-    desc: '图片解析/扫码解析',
-    icon: 'scan',
-    bgColor: '#6A5ACD',
-    link: '/subPackages/tools/qr-parser/index',
-    disabled: false
-  },
-  {
-    id: 3,
-    name: '族谱（快照）',
-    desc: '不可编辑',
+    id: 6,
+    name: '族谱查看',
+    desc: '快照模式，仅供浏览',
     icon: 'person',
-    bgColor: '#55CBA0',
+    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
     link: '/subPackages/tools/family-tree/demo',
     disabled: false
   },
   {
-    id: 4,
-    name: '族谱（实时）',
-    desc: '数据实时更新',
-    icon: 'person',
-    bgColor: '#FF9933',
+    id: 7,
+    name: '族谱编辑',
+    desc: '实时数据，支持编辑',
+    icon: 'personadd',
+    gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     link: '/subPackages/tools/family-tree/index',
     disabled: false
   },
   {
-    id: 5,
-    name: '开发中',
-    desc: '开发中',
-    icon: 'chat',
-    bgColor: '#999999',
+    id: 8,
+    name: '更多工具',
+    desc: '敬请期待更多实用功能',
+    icon: 'more',
+    gradient: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
     link: '',
     disabled: true
-  },
-  {
-    id: 6,
-    name: '开发中',
-    desc: '开发中',
-    icon: 'shop',
-    bgColor: '#999999',
-    link: '',
-    disabled: true
-  },
-  {
-    id: 7,
-    name: '开发中',
-    desc: '开发中',
-    icon: 'list',
-    bgColor: '#999999',
-    link: '',
-    disabled: true
-  },
-
+  }
 ])
 
-
-
-// 状态数据
-const hasNotification = ref(false)
+// 计算可用工具数量
+const enabledToolsCount = computed(() => {
+  const all = [...popularTools.value, ...imageTools.value, ...moreTools.value]
+  return all.filter(t => !t.disabled).length
+})
 
 // 生命周期
 onMounted(async () => {
-  // 检查是否有通知
-  checkNotifications()
-  
   // 执行自动登录检查
   try {
     const result = await autoLogin()
@@ -222,21 +278,9 @@ onMounted(async () => {
   }
 })
 
-// 方法
-const checkNotifications = () => {
-  // 这里可以调用API检查是否有新通知
-  hasNotification.value = Math.random() > 0.5
-}
-
-const handleBannerClick = (banner: any) => {
-  uni.navigateTo({
-    url: banner.link
-  })
-}
-
-const handleActionClick = async (action: any) => {
-  // 检查是否为禁用状态
-  if (action.disabled) {
+// 工具点击处理
+const handleActionClick = async (tool: Tool) => {
+  if (tool.disabled) {
     uni.showToast({
       title: '功能开发中，敬请期待',
       icon: 'none',
@@ -245,111 +289,51 @@ const handleActionClick = async (action: any) => {
     return
   }
   
-  // 特殊处理使用h5页面打开外部链接
-  if (action.isWebLink) {
-    // 检查当前运行环境
-    // #ifdef MP-WEIXIN
-    // 微信小程序环境，由于web-view域名限制，提示用户
-    // uni.showModal({
-    //   title: '提示',
-    //   content: '由于微信小程序限制，食谱功能暂时无法使用。请在H5版本中体验此功能。',
-    //   showCancel: false,
-    //   confirmText: '我知道了'
-    // })
-    // return
-    // #endif
-    
-    // 其他环境（H5、App等）正常跳转
+  // 处理外部链接
+  if (tool.isWebLink) {
     uni.navigateTo({
-      url: `/subPackages/common/webview/h5?path=${encodeURIComponent(action.link)}&title=${encodeURIComponent('食谱')}`
+      url: `/subPackages/common/webview/h5?path=${encodeURIComponent(tool.link)}&title=${encodeURIComponent(tool.name)}`
     })
     return
   }
   
-  // 定义需要登录的服务列表
-  const needLoginServices = [
-    '/pages/pagesServices/business/company-account-open/index',
-    '/pages/mall/mall',
-    '/subPackages/user/order/order'
-  ]
+  // 需要登录的服务列表
+  const needLoginServices: string[] = []
   
-  // 检查是否需要登录
-  if (needLoginServices.includes(action.link)) {
+  if (needLoginServices.includes(tool.link)) {
     if (!isUserLoggedIn()) {
-      // 需要登录，跳转到登录页面
-      uni.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-      
+      uni.showToast({ title: '请先登录', icon: 'none' })
       try {
         const result = await autoLogin()
         if (result.isLoggedIn) {
-          // 自动登录成功，继续跳转
-          uni.navigateTo({
-            url: action.link
-          })
+          uni.navigateTo({ url: tool.link })
         } else {
-          // 自动登录失败，跳转登录页面
-          setTimeout(() => {
-            uni.navigateTo({
-              url: '/pages/mine/login/login'
-            })
-          }, 1000);
+          setTimeout(() => uni.navigateTo({ url: '/pages/mine/login/login' }), 1000)
         }
-      } catch (error) {
-        console.log('自动登录检查失败:', error)
-        setTimeout(() => {
-          uni.navigateTo({
-            url: '/pages/mine/login/login'
-          })
-        }, 1000);
+      } catch {
+        setTimeout(() => uni.navigateTo({ url: '/pages/mine/login/login' }), 1000)
       }
       return
     }
   }
   
-  // 不需要登录或已登录，直接跳转
-  uni.navigateTo({
-    url: action.link
-  })
+  uni.navigateTo({ url: tool.link })
 }
 
-
-
+// 搜索
 const goToSearch = () => {
-  uni.navigateTo({
-    url: '/pages/country-search/index'
-  })
-}
-
-const goToNotification = () => {
   uni.showToast({
-    title: '暂无新通知',
-    icon: 'none'
-  })
-}
-
-
-
-
-
-
-
-const handleDisabledClick = () => {
-  uni.showToast({
-    title: '功能开发中，敬请期待',
+    title: '搜索功能开发中',
     icon: 'none'
   })
 }
 
 // 分享功能
 const { onShareAppMessage, onShareTimeline } = useShare('index', {
-  title: 'kai - 专业服务平台',
+  title: '工具箱 - 高效实用的工具集合',
   path: '/pages/index/index'
 })
 
-// 导出分享方法供微信小程序调用
 defineExpose({
   onShareAppMessage,
   onShareTimeline
@@ -357,421 +341,386 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+// 现代简洁配色
+$bg-color: #f5f7fa;
+$card-bg: #ffffff;
+$text-primary: #1a1a1a;
+$text-secondary: #666666;
+$text-hint: #999999;
+$border-color: #eaeef3;
+$shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+$radius-sm: 16rpx;
+$radius-md: 24rpx;
+$radius-lg: 32rpx;
+
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #F8FCFF 0%, #FFFFFF 100%);
-}
-
-.header {
-  background: linear-gradient(135deg, #0046B4 0%, #1E40AF 100%);
-  padding: 88rpx 32rpx 32rpx;
-  color: white;
+  background: $bg-color;
+  overflow-x: hidden; // 防止水平滚动
   
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    
-    .logo-section {
-      display: flex;
-      align-items: center;
-      
-      .logo {
-        width: 80rpx;
-        height: 80rpx;
-        margin-right: 24rpx;
-      }
-      
-      .company-info {
-        display: flex;
-        flex-direction: column;
-        
-        .company-name {
-          font-size: 36rpx;
-          font-weight: 600;
-          margin-bottom: 8rpx;
-        }
-        
-        .company-slogan {
-          font-size: 24rpx;
-          opacity: 0.8;
-        }
-      }
-    }
-    
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 32rpx;
-      
-      .search-btn,
-      .notification-btn {
-        width: 64rpx;
-        height: 64rpx;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        
-        .notification-dot {
-          position: absolute;
-          top: 8rpx;
-          right: 8rpx;
-          width: 16rpx;
-          height: 16rpx;
-          background: #EF4444;
-          border-radius: 50%;
-        }
-      }
-    }
-  }
+  /* #ifdef H5 */
+  padding-bottom: 140rpx;
+  /* #endif */
 }
 
-.banner-section {
-  margin: -16rpx 32rpx 0;
-  border-radius: 24rpx;
-  overflow: hidden;
-  box-shadow: 0 8rpx 32rpx rgba(0, 70, 180, 0.1);
-  
-  .banner-swiper {
-    height: 320rpx;
-    
-    .banner-image {
-      width: 100%;
-      height: 100%;
-    }
-  }
-}
-
-.section-title {
+// 首页导航栏内容
+.home-navbar-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 32rpx;
+  gap: 16rpx;
   
-  .title-text {
-    font-size: 36rpx;
-    font-weight: 600;
-    color: #121A26;
+  .navbar-logo {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 12rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
   }
   
-  .title-desc {
-    font-size: 24rpx;
-    color: #666;
-    margin-left: 16rpx;
+  .navbar-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    
+    .navbar-title {
+      font-size: 32rpx;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1rpx;
+      line-height: 1.2;
+    }
+    
+    .navbar-slogan {
+      font-size: 18rpx;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.2;
+    }
   }
+}
+
+// Nav 区域（不吸顶）
+.nav-section {
+  background: #667eea; // 纯色，与导航栏统一
+  padding: 24rpx 32rpx 40rpx;
+  border-radius: 0 0 48rpx 48rpx;
+  position: relative;
   
-  .more-btn {
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -20rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200rpx;
+    height: 40rpx;
+    background: inherit;
+    filter: blur(30rpx);
+    opacity: 0.3;
+    border-radius: 50%;
+  }
+}
+
+// 搜索栏
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-md;
+  
+  .search-placeholder {
     font-size: 28rpx;
-    color: #0046B4;
+    color: $text-hint;
   }
 }
 
-.quick-actions {
-  padding: 48rpx 32rpx 0;
+// 数据统计
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-top: 32rpx;
+  padding: 24rpx 0;
   
-  .action-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32rpx;
-    
-    .action-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 32rpx 16rpx;
-      background: white;
-      border-radius: 16rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      
-      &:active {
-        transform: scale(0.95);
-      }
-      
-      .action-icon {
-        width: 80rpx;
-        height: 80rpx;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 16rpx;
-      }
-      
-      .action-name {
-        font-size: 28rpx;
-        font-weight: 600;
-        color: #121A26;
-        margin-bottom: 8rpx;
-        text-align: center;
-      }
-      
-      .action-desc {
-        font-size: 22rpx;
-        color: #666;
-        text-align: center;
-      }
-      
-      &.action-item-disabled {
-        opacity: 0.6;
-        
-        &:active {
-          transform: none;
-        }
-        
-        .action-name,
-        .action-desc {
-          color: #999;
-        }
-      }
-    }
-  }
-}
-
-.hot-services {
-  padding: 48rpx 32rpx 0;
-  
-  .service-list {
+  .stat-item {
     display: flex;
     flex-direction: column;
-    gap: 24rpx;
+    align-items: center;
+    flex: 1;
     
-    .service-card {
-      display: flex;
-      align-items: center;
-      padding: 24rpx;
-      background: white;
-      border-radius: 16rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
-      
-      &:active {
-        transform: scale(0.98);
-      }
-      
-      .service-image {
-        width: 120rpx;
-        height: 120rpx;
-        border-radius: 12rpx;
-        margin-right: 24rpx;
-      }
-      
-      .service-info {
-        flex: 1;
-        
-        .service-name {
-          font-size: 32rpx;
-          font-weight: 600;
-          color: #121A26;
-          margin-bottom: 8rpx;
-          display: block;
-        }
-        
-        .service-desc {
-          font-size: 26rpx;
-          color: #666;
-          margin-bottom: 16rpx;
-          display: block;
-        }
-        
-        .service-tags {
-          display: flex;
-          gap: 12rpx;
-          
-          .service-tag {
-            padding: 8rpx 16rpx;
-            background: #F0F9FF;
-            color: #0046B4;
-            font-size: 22rpx;
-            border-radius: 20rpx;
-          }
-        }
-      }
-      
-      .service-arrow {
-        margin-left: 16rpx;
-      }
-      
-      // 禁用状态样式
-      &.service-card-disabled {
-        opacity: 0.6;
-        
-        &:active {
-          transform: none;
-        }
-        
-        .service-name,
-        .service-desc {
-          color: #999;
-        }
-        
-        .service-tag {
-          background: #f5f5f5;
-          color: #999;
-        }
-      }
+    .stat-num {
+      font-size: 36rpx;
+      font-weight: 700;
+      color: #fff;
+    }
+    
+    .stat-label {
+      font-size: 22rpx;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 8rpx;
+    }
+  }
+  
+  .stat-divider {
+    width: 1px;
+    height: 48rpx;
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+// 通用区块
+.section {
+  padding: 32rpx;
+  
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12rpx;
+    margin-bottom: 24rpx;
+    
+    .section-title {
+      font-size: 34rpx;
+      font-weight: 600;
+      color: $text-primary;
+    }
+    
+    .section-subtitle {
+      font-size: 20rpx;
+      color: $text-hint;
+      letter-spacing: 2rpx;
     }
   }
 }
 
-.business-categories {
-  padding: 48rpx 32rpx 0;
+// 工具网格 - 常用工具（大卡片）
+.tools-grid.popular {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
   
-  .category-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24rpx;
+  .tool-card.large {
+    display: flex;
+    align-items: center;
+    padding: 32rpx;
+    background: $card-bg;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
     
-    .category-item {
+    &:active {
+      transform: scale(0.98);
+      box-shadow: $shadow-md;
+    }
+    
+    .tool-icon-wrapper {
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: $radius-md;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 32rpx 24rpx;
-      background: white;
-      border-radius: 16rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .tool-info {
+      flex: 1;
+      margin-left: 28rpx;
       
-      &:active {
-        transform: scale(0.95);
-      }
-      
-      .category-icon {
-        width: 80rpx;
-        height: 80rpx;
-        margin-bottom: 16rpx;
-        
-        image {
-          width: 100%;
-          height: 100%;
-        }
-      }
-      
-      .category-name {
-        font-size: 28rpx;
+      .tool-name {
+        font-size: 32rpx;
         font-weight: 600;
-        color: #121A26;
-        margin-bottom: 8rpx;
-        text-align: center;
+        color: $text-primary;
+        display: block;
       }
       
-      .category-count {
-        font-size: 22rpx;
-        color: #666;
-        text-align: center;
+      .tool-desc {
+        font-size: 24rpx;
+        color: $text-secondary;
+        margin-top: 8rpx;
+        display: block;
       }
+    }
+    
+    .tool-arrow {
+      flex-shrink: 0;
+    }
+    
+    .tool-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 8rpx 20rpx;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+      font-size: 20rpx;
+      font-weight: 500;
+      border-radius: 0 $radius-md 0 $radius-sm;
+    }
+    
+    &.disabled {
+      opacity: 0.5;
       
-      // 禁用状态样式
-      &.category-item-disabled {
-        opacity: 0.6;
-        
-        &:active {
-          transform: none;
-        }
-        
-        .category-name,
-        .category-count {
-          color: #999;
-        }
+      &:active {
+        transform: none;
       }
     }
   }
 }
 
-.bottom-recommend {
-  padding: 48rpx 32rpx 0;
+// 工具网格 - 图片工具（小卡片）
+.tools-grid:not(.popular) {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
   
-  .recommend-content {
+  .tool-card {
     display: flex;
     flex-direction: column;
-    gap: 24rpx;
+    align-items: center;
+    padding: 36rpx 24rpx;
+    background: $card-bg;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm;
+    transition: all 0.3s ease;
     
-    .recommend-card {
+    &:active {
+      transform: scale(0.96);
+      box-shadow: $shadow-md;
+    }
+    
+    .tool-icon-wrapper.small {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 20rpx;
       display: flex;
       align-items: center;
-      padding: 32rpx;
-      background: white;
-      border-radius: 16rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-      transition: all 0.3s ease;
+      justify-content: center;
+      margin-bottom: 20rpx;
+    }
+    
+    .tool-name {
+      font-size: 28rpx;
+      font-weight: 600;
+      color: $text-primary;
+      margin-bottom: 8rpx;
+    }
+    
+    .tool-desc {
+      font-size: 22rpx;
+      color: $text-hint;
+    }
+    
+    &.disabled {
+      opacity: 0.5;
       
       &:active {
-        transform: scale(0.98);
-      }
-      
-      .recommend-icon {
-        margin-right: 24rpx;
-      }
-      
-      .recommend-info {
-        flex: 1;
-        
-        .recommend-title {
-          font-size: 32rpx;
-          font-weight: 600;
-          color: #121A26;
-          margin-bottom: 8rpx;
-          display: block;
-        }
-        
-        .recommend-desc {
-          font-size: 26rpx;
-          color: #666;
-          display: block;
-        }
-      }
-      
-      .recommend-arrow {
-        margin-left: 16rpx;
-      }
-      
-      // 禁用状态样式
-      &.recommend-card-disabled {
-        opacity: 0.6;
-        
-        &:active {
-          transform: none;
-        }
-        
-        .recommend-title,
-        .recommend-desc {
-          color: #999;
-        }
+        transform: none;
       }
     }
   }
 }
 
-.safety-tips {
+// 工具列表
+.tools-list {
+  background: $card-bg;
+  border-radius: $radius-md;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+  
+  .tool-list-item {
+    display: flex;
+    align-items: center;
+    padding: 28rpx 32rpx;
+    border-bottom: 1rpx solid $border-color;
+    transition: background 0.2s ease;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:active {
+      background: #f8f9fa;
+    }
+    
+    .tool-icon-wrapper.mini {
+      width: 64rpx;
+      height: 64rpx;
+      border-radius: 16rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .tool-content {
+      flex: 1;
+      margin-left: 24rpx;
+      
+      .tool-name {
+        font-size: 28rpx;
+        font-weight: 500;
+        color: $text-primary;
+        display: block;
+      }
+      
+      .tool-desc {
+        font-size: 22rpx;
+        color: $text-hint;
+        margin-top: 4rpx;
+        display: block;
+      }
+    }
+    
+    .tool-status {
+      flex-shrink: 0;
+      
+      .status-dev {
+        font-size: 22rpx;
+        color: $text-hint;
+        padding: 6rpx 16rpx;
+        background: #f0f0f0;
+        border-radius: 20rpx;
+      }
+    }
+    
+    &.disabled {
+      opacity: 0.6;
+      
+      &:active {
+        background: transparent;
+      }
+    }
+  }
+}
+
+// 底部信息
+.footer {
   padding: 48rpx 32rpx 32rpx;
   
-  .tips-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16rpx;
-    padding: 24rpx;
-    background: rgba(0, 70, 180, 0.05);
-    border-radius: 12rpx;
+  .footer-info {
+    text-align: center;
     
-    .tips-text {
-      font-size: 24rpx;
-      color: #666;
+    .security-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8rpx;
+      margin-bottom: 16rpx;
+      
+      .security-text {
+        font-size: 24rpx;
+        color: #10b981;
+      }
     }
-  }
-}
-
-// 响应式设计
-@media screen and (max-width: 750rpx) {
-  .quick-actions .action-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .business-categories .category-list {
-    grid-template-columns: 1fr;
+    
+    .icp-text {
+      font-size: 22rpx;
+      color: $text-hint;
+    }
   }
 }
 </style>

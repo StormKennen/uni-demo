@@ -70,11 +70,11 @@ export const PAGE_SHARE_CONFIGS = {
   },
   
   // 商城
-  mall: {
-    title: 'kai商城 - 优质商品推荐',
-    path: '/pages/mall/mall',
-    imageUrl: '/static/logo.png'
-  },
+  // mall: {
+  //   title: 'kai商城 - 优质商品推荐',
+  //   path: '/pages/mall/mall',
+  //   imageUrl: '/static/logo.png'
+  // },
   
   // 个人中心
   mine: {

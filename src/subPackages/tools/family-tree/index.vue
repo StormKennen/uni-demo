@@ -13,7 +13,7 @@
       always-title
       title="家族族谱树形图"
       custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
     
 
@@ -290,6 +290,7 @@
 
 <script setup>
 import LEchart from '@/components/l-echart/l-echart.vue';
+import NavBar from '@/components/nav-bar.vue';
 import { onBeforeMount, onMounted, reactive, ref } from 'vue';
 import { getFamiliesTrees, postFamiliesMembers, postFamiliesRelationshipsLink, getFamiliesMembers } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox';
 import { useShare } from '@/utils/share';
@@ -494,15 +495,25 @@ state.option = {
         position: 'bottom',
         verticalAlign: 'top',
         align: 'center',
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'normal',
-        color: '#333'
+        color: '#333',
+        // 竖向显示文本
+        formatter: function(params) {
+          // 将名字拆分成单个字符，用换行符连接实现竖排
+          return params.name.split('').join('\n');
+        },
+        lineHeight: 18
       },
       leaves: {
         label: {
           position: 'bottom',
           verticalAlign: 'top',
-          align: 'center'
+          align: 'center',
+          formatter: function(params) {
+            return params.name.split('').join('\n');
+          },
+          lineHeight: 18
         }
       },
       lineStyle: {

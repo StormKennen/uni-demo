@@ -5,7 +5,7 @@
       always-title
       title="二维码生成器"
       custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #0046B4 0%, #1E40AF 100%)' }"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
     
     <!-- 内容区域 -->
@@ -522,168 +522,175 @@ export default {
 }
 </script>
 
-<style scoped>
-.qr-generator {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  flex-direction: column;
-}
+    <style scoped lang="scss">
+    /* 统一配色变量（与首页一致） */
+    $bg-color: #f5f7fa;
+    $card-bg: #ffffff;
+    $text-primary: #1a1a1a;
+    $text-secondary: #666666;
+    $text-hint: #999999;
+    $border-color: #eaeef3;
+    $primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    $shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+    $shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+    $radius-md: 24rpx;
 
-.content {
-  flex: 1;
-  padding: 20rpx;
-  padding-top: calc(32rpx + var(--nav-height, 120rpx));
-  overflow-y: auto;
-}
+    .qr-generator {
+      min-height: 100vh;
+      background: $bg-color;
+      display: flex;
+      flex-direction: column;
+    }
 
-.section-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 20rpx;
-}
+    .content {
+      flex: 1;
+      padding: 32rpx;
+      padding-top: calc(32rpx + var(--nav-height, 120rpx));
+      overflow-y: auto;
+    }
 
-/* 输入区域 */
-.input-section {
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
-}
+    .section-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: $text-primary;
+      margin-bottom: 24rpx;
+    }
 
-.input-textarea {
-  width: 100%;
-  min-height: 200rpx;
-  padding: 20rpx;
-  border: 2rpx solid #e0e0e0;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  line-height: 1.5;
-  background: #fafafa;
-  box-sizing: border-box;
-}
+    /* 输入区域 */
+    .input-section {
+      background: $card-bg;
+      border-radius: $radius-md;
+      padding: 32rpx;
+      margin-bottom: 24rpx;
+      box-shadow: $shadow-sm;
+    }
 
-.input-counter {
-  text-align: right;
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 10rpx;
-}
+    .input-textarea {
+      width: 100%;
+      min-height: 200rpx;
+      padding: 24rpx;
+      border: 2rpx solid $border-color;
+      border-radius: 16rpx;
+      font-size: 28rpx;
+      line-height: 1.5;
+      background: #fafbfc;
+      box-sizing: border-box;
+    }
 
-/* 生成按钮 */
-.generate-btn {
-  width: 100%;
-  padding: 25rpx;
-  background: linear-gradient(45deg, #FF6600, #FF8800);
-  color: white;
-  border: none;
-  border-radius: 50rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  margin-bottom: 30rpx;
-  box-shadow: 0 8rpx 25rpx rgba(255, 102, 0, 0.3);
-}
+    .input-counter {
+      text-align: right;
+      font-size: 24rpx;
+      color: $text-hint;
+      margin-top: 12rpx;
+    }
 
-.generate-btn:disabled {
-  background: #ccc;
-  box-shadow: none;
-}
+    /* 生成按钮 */
+    .generate-btn {
+      width: 100%;
+      height: 88rpx;
+      background: $primary-gradient;
+      color: white;
+      border: none;
+      border-radius: 44rpx;
+      font-size: 32rpx;
+      font-weight: 600;
+      margin-bottom: 24rpx;
+      box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+    }
 
-.generate-btn.loading {
-  background: #999;
-}
+    .generate-btn:disabled {
+      background: #ccc;
+      box-shadow: none;
+    }
 
-/* 二维码显示区域 */
-.qr-display {
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.1);
-}
+    .generate-btn.loading {
+      background: #9CA3AF;
+    }
 
-.qr-container {
-  display: flex;
-  justify-content: center;
-  margin: 30rpx 0;
-  width: 100%;
-  overflow: visible;
-}
+    /* 二维码显示区域 */
+    .qr-display {
+      background: $card-bg;
+      border-radius: $radius-md;
+      padding: 32rpx;
+      box-shadow: $shadow-sm;
+    }
 
-.qr-canvas {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  background: white;
-  box-sizing: content-box;
-}
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      margin: 24rpx 0;
+      width: 100%;
+      overflow: visible;
+    }
 
-.action-buttons {
-  display: flex;
-  gap: 20rpx;
-  margin: 30rpx 0;
-}
+    .qr-canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      background: white;
+      box-sizing: content-box;
+    }
 
-.action-btn {
-  flex: 1;
-  padding: 20rpx;
-  border: none;
-  border-radius: 25rpx;
-  font-size: 28rpx;
-  font-weight: bold;
-}
+    .action-buttons {
+      display: flex;
+      gap: 16rpx;
+      margin: 24rpx 0;
+    }
 
-.download-btn {
-  background: linear-gradient(45deg, #4CAF50, #66BB6A);
-  color: white;
-}
+    .action-btn {
+      flex: 1;
+      height: 80rpx;
+      border: none;
+      border-radius: 40rpx;
+      font-size: 28rpx;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-.share-btn {
-  background: linear-gradient(45deg, #2196F3, #42A5F5);
-  color: white;
-}
+    .download-btn {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      color: white;
+    }
 
-.parse-btn {
-  background: linear-gradient(45deg, #8E24AA, #AB47BC);
-  color: white;
-}
+    .share-btn {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
 
-.scan-btn {
-  background: linear-gradient(45deg, #FF7043, #FF8A65);
-  color: white;
-}
+    .qr-info {
+      border-top: 1rpx solid $border-color;
+      padding-top: 24rpx;
+      margin-top: 8rpx;
+    }
 
-.qr-info {
-  border-top: 2rpx solid #f0f0f0;
-  padding-top: 20rpx;
-}
+    .scale-control {
+      display: flex;
+      align-items: center;
+      gap: 20rpx;
+      margin-bottom: 20rpx;
+    }
 
-.scale-control {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  margin-bottom: 20rpx;
-}
-.scale-label {
-  font-size: 26rpx;
-  color: #666;
-}
+    .scale-label {
+      font-size: 26rpx;
+      color: $text-secondary;
+    }
 
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10rpx;
-}
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12rpx;
+    }
 
-.info-label {
-  font-size: 26rpx;
-  color: #666;
-}
+    .info-label {
+      font-size: 26rpx;
+      color: $text-secondary;
+    }
 
-.info-value {
-  font-size: 26rpx;
-  color: #333;
-  font-weight: bold;
-}
-</style>
+    .info-value {
+      font-size: 26rpx;
+      color: $text-primary;
+      font-weight: 600;
+    }
+    </style>

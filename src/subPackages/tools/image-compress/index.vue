@@ -5,8 +5,7 @@
       always-title
       title="图片压缩"
       custom-class="light"
-      init-bg-color="#0046B4"
-      bg-color="#0046B4"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
 
     <!-- 主要内容区域 -->
@@ -67,7 +66,7 @@
               :max="100"
               :step="5"
               @change="onQualityChange"
-              activeColor="#0046B4"
+              activeColor="#667eea"
               backgroundColor="#E5E7EB"
             />
           </view>
@@ -383,24 +382,34 @@ const formatFileSize = (bytes: number): string => {
 </script>
 
 <style lang="scss" scoped>
+// 统一配色变量（与首页一致）
+$bg-color: #f5f7fa;
+$card-bg: #ffffff;
+$text-primary: #1a1a1a;
+$text-secondary: #666666;
+$text-hint: #999999;
+$border-color: #eaeef3;
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+$radius-md: 24rpx;
+
 .image-compress-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #F8FCFF 0%, #FFFFFF 100%);
+  background: $bg-color;
   display: flex;
   flex-direction: column;
 }
 
-/* 统一使用 nav-bar 组件，移除旧 header 样式 */
-
 .main-content {
   flex: 1;
   padding: 32rpx;
-  padding-top: calc(32rpx + var(--nav-height, 120rpx)); /* 动态计算导航栏高度 */
+  padding-top: calc(32rpx + var(--nav-height, 120rpx));
   overflow-y: auto;
 }
 
 .upload-section {
-  margin-bottom: 48rpx;
+  margin-bottom: 32rpx;
   
   .upload-area {
     display: flex;
@@ -408,9 +417,10 @@ const formatFileSize = (bytes: number): string => {
     align-items: center;
     justify-content: center;
     height: 400rpx;
-    background: white;
-    border: 2rpx dashed #D1D5DB;
-    border-radius: 16rpx;
+    background: $card-bg;
+    border: 2rpx dashed $border-color;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm;
     
     .upload-icon {
       margin-bottom: 24rpx;
@@ -418,13 +428,13 @@ const formatFileSize = (bytes: number): string => {
     
     .upload-text {
       font-size: 32rpx;
-      color: #374151;
+      color: $text-primary;
       margin-bottom: 12rpx;
     }
     
     .upload-desc {
       font-size: 24rpx;
-      color: #9CA3AF;
+      color: $text-hint;
     }
   }
   
@@ -434,16 +444,16 @@ const formatFileSize = (bytes: number): string => {
     gap: 32rpx;
     
     .image-preview {
-      background: white;
-      border-radius: 16rpx;
+      background: $card-bg;
+      border-radius: $radius-md;
       padding: 24rpx;
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+      box-shadow: $shadow-sm;
       
       .preview-title {
         display: block;
         font-size: 28rpx;
         font-weight: 600;
-        color: #374151;
+        color: $text-primary;
         margin-bottom: 16rpx;
       }
       
@@ -463,7 +473,7 @@ const formatFileSize = (bytes: number): string => {
         .image-dimensions,
         .compression-ratio {
           font-size: 24rpx;
-          color: #6B7280;
+          color: $text-secondary;
         }
         
         .compression-ratio {
@@ -476,11 +486,11 @@ const formatFileSize = (bytes: number): string => {
 }
 
 .compress-controls {
-  background: white;
-  border-radius: 16rpx;
+  background: $card-bg;
+  border-radius: $radius-md;
   padding: 32rpx;
   margin-bottom: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+  box-shadow: $shadow-sm;
   
   .control-section {
     margin-bottom: 32rpx;
@@ -489,7 +499,7 @@ const formatFileSize = (bytes: number): string => {
       display: block;
       font-size: 32rpx;
       font-weight: 600;
-      color: #374151;
+      color: $text-primary;
       margin-bottom: 24rpx;
     }
     
@@ -500,7 +510,7 @@ const formatFileSize = (bytes: number): string => {
       
       .quality-label {
         font-size: 28rpx;
-        color: #0046B4;
+        color: #667eea;
         font-weight: 600;
         margin-right: 24rpx;
         min-width: 80rpx;
@@ -517,7 +527,7 @@ const formatFileSize = (bytes: number): string => {
       
       .input-label {
         font-size: 28rpx;
-        color: #374151;
+        color: $text-primary;
         margin-right: 16rpx;
       }
       
@@ -525,7 +535,7 @@ const formatFileSize = (bytes: number): string => {
         flex: 1;
         height: 80rpx;
         padding: 0 24rpx;
-        border: 2rpx solid #E5E7EB;
+        border: 2rpx solid $border-color;
         border-radius: 12rpx;
         font-size: 28rpx;
         margin-right: 16rpx;
@@ -533,7 +543,7 @@ const formatFileSize = (bytes: number): string => {
       
       .input-unit {
         font-size: 28rpx;
-        color: #6B7280;
+        color: $text-secondary;
       }
     }
   }
@@ -554,12 +564,12 @@ const formatFileSize = (bytes: number): string => {
       border: none;
       
       &.secondary-btn {
-        background: #F3F4F6;
-        color: #374151;
+        background: #f0f1f3;
+        color: $text-primary;
       }
       
       &.primary-btn {
-        background: #0046B4;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         
         &:disabled {
@@ -577,10 +587,10 @@ const formatFileSize = (bytes: number): string => {
 
 .compress-info {
   .info-card {
-    background: white;
-    border-radius: 16rpx;
+    background: $card-bg;
+    border-radius: $radius-md;
     padding: 32rpx;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+    box-shadow: $shadow-sm;
     
     .info-item {
       display: flex;
@@ -595,12 +605,12 @@ const formatFileSize = (bytes: number): string => {
       
       .info-label {
         font-size: 28rpx;
-        color: #6B7280;
+        color: $text-secondary;
       }
       
       .info-value {
         font-size: 28rpx;
-        color: #374151;
+        color: $text-primary;
         font-weight: 600;
         
         &.saved {

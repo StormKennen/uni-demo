@@ -9,7 +9,6 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
   import { wxCode2Session, wxGetUserInfo, wxLogin } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
-  import { useOrderStore } from '@/stores/order'
   import { autoLogin } from '@/utils/autoLogin'
 
   type LoginType = 'mobile' | 'register'
@@ -17,8 +16,6 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
   const readDialogRef = ref(null)
   const loginType = ref<LoginType>('mobile')
   const redirectUrl = ref()
-
-  const orderStore = useOrderStore()
 
   const changeLoginType = (type: LoginType) => {
     loginType.value = type
@@ -42,9 +39,6 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
       if (isLoggedIn && user) {
         console.log('🚀 ~ checkAutoLogin ~ 自动登录成功:', user)
         
-        // 自动登录成功，模拟loginSuccess的跳转逻辑
-        orderStore.getOrderList()
-        
         uni.hideLoading()
         
         if (redirectUrl.value) {
@@ -52,8 +46,6 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
           console.log('Auto login redirect url:', url)
           if (
             redirectUrl.value === '/pages/index/index' ||
-            redirectUrl.value === '/pages/chat/chat' ||
-            redirectUrl.value === '/pages/mall/mall' ||
             redirectUrl.value === '/pages/mine/mine'
           ) {
             return uni.switchTab(url)
@@ -115,9 +107,17 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     })
     
     setTimeout(() => {
+      // #ifdef MP-WEIXIN
       uni.switchTab({
         url: '/pages/index/index'
       })
+      // #endif
+      
+      // #ifdef H5
+      uni.redirectTo({
+        url: '/pages/index/index'
+      })
+      // #endif
     }, 1000)
   }
 
@@ -159,27 +159,24 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     }
     try {
       uni.showLoading()
-      const wxUserInfo = await wxGetUserInfo()
-      console.log('🚀 ~ mobileLogin ~ userInfo:', wxUserInfo)
-      const userInfo = wxUserInfo.userInfo
-      const wxSession = getWxSession()
-      // const params = {
-      //   unionid: wxSession.unionid as string,
-      //   avatar_url: userInfo.avatarUrl,
-      //   nickname: userInfo.nickName,
-      //   gender: `${userInfo.gender}`,
-      //   city: userInfo.city,
-      //   province: userInfo.province,
-      //   country: userInfo.country,
-      //   mobile: mobileNumber.value,
-      //   sms_code: password.value, // 暂时使用password作为sms_code传递
-      //   mobile_js_code: '', // 设置为空字符串，表示使用手机号+密码登录
-      // }
+      
+      // #ifdef MP-WEIXIN
+      // 尝试获取微信用户信息，但不阻塞登录流程
+      try {
+        const wxUserInfo = await wxGetUserInfo()
+        console.log('🚀 ~ mobileLogin ~ userInfo:', wxUserInfo)
+      } catch (e) {
+        console.log('获取微信用户信息失败，继续登录流程')
+      }
+      // #endif
+      
       const loginParams = {
         phone: mobileNumber.value,
         password: password.value,
       }
+      console.log('🚀 ~ mobileLogin ~ loginParams:', loginParams)
       const res = await postAuthLogin(loginParams)
+      console.log('🚀 ~ mobileLogin ~ res:', res)
       loginSuccess(res)
       uni.hideLoading()
     } catch (error) {
@@ -227,35 +224,38 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     try {
       uni.showLoading()
       
+      let userName = '用户'
+      
+      // #ifdef MP-WEIXIN
       // 获取微信用户信息
       const wxUserInfo = await wxGetUserInfo()
       console.log('🚀 ~ userRegister ~ wxUserInfo:', wxUserInfo)
       
       // 存储微信加密数据到本地，便于后续使用
-       if (wxUserInfo.iv) {
-         setWxEncryptedData({
-           cloudID: wxUserInfo.cloudID,
-           encryptedData: wxUserInfo.encryptedData,
-           iv: wxUserInfo.iv,
-           signature: wxUserInfo.signature,
-           rawData: wxUserInfo.rawData,
-           userInfo: wxUserInfo.userInfo || {},
-         })
-       }
+      if (wxUserInfo.iv) {
+        setWxEncryptedData({
+          cloudID: wxUserInfo.cloudID,
+          encryptedData: wxUserInfo.encryptedData,
+          iv: wxUserInfo.iv,
+          signature: wxUserInfo.signature,
+          rawData: wxUserInfo.rawData,
+          userInfo: wxUserInfo.userInfo || {},
+        })
+      }
+      userName = wxUserInfo.userInfo?.nickName || '用户'
+      // #endif
       
       // 使用标准注册API
       const registerParams = {
-        // email: mobileNumber.value + '@temp.com', // 使用手机号生成唯一邮箱，避免重复
         phone: mobileNumber.value,
-        name: wxUserInfo.userInfo?.nickName || '微信用户',
+        name: userName,
         password: password.value,
       }
       
       const registerRes = await postAuthRegister(registerParams)
       console.log('🚀 ~ userRegister ~ registerRes:', registerRes)
       
-      // 注册成功后，可以调用登录API获取完整的用户信息和token
-      const wxSession = getWxSession()
+      // 注册成功后，调用登录API获取完整的用户信息和token
       const loginParams = {
         phone: mobileNumber.value,
         password: password.value,

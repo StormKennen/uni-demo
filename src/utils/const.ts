@@ -3,7 +3,5 @@ export const ProtocolPageUrl = `/subPackages/common/webview/webview?title=kai港
 
 export const TabsRoutes = [
   '/pages/index/index',
-  '/pages/mall/mall',
-  '/pages/chat/chat',
   '/pages/mine/mine',
 ]
