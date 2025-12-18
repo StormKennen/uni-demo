@@ -15,44 +15,6 @@ export interface postAuthRegisterBody {
 export type postAuthRegisterRes = string
 
 /**
- * @description Auth/Login--接口请求Body参数
- * @url POST /auth/login
- */
-export interface postAuthLoginBody {
-  email: string
-  password: string
-}
-
-/**
- * @description Auth/Login--接口返回值
- * @url POST /auth/login
- */
-export interface postAuthLoginRes {
-  tokens?: postAuthLoginResTokens
-  user?: postAuthLoginResUser
-}
-
-/** postAuthLoginResTokensAccess */
-export interface postAuthLoginResTokensAccess {
-  expires?: string
-  token?: string
-}
-
-/** postAuthLoginResTokens */
-export interface postAuthLoginResTokens {
-  access?: postAuthLoginResTokensAccess
-  refresh?: postAuthLoginResTokensAccess
-}
-
-/** postAuthLoginResUser */
-export interface postAuthLoginResUser {
-  email?: string
-  id?: string
-  name?: string
-  role?: 'user' | 'admin'
-}
-
-/**
  * @description Auth/Logout--接口请求Body参数
  * @url POST /auth/logout
  */
@@ -146,3 +108,38 @@ export interface postAuthVerifyEmailQuery {
  * @url POST /auth/verify-email
  */
 export type postAuthVerifyEmailRes = string
+
+/**
+ * @description Auth/Login--接口请求Body参数
+ * @url POST /auth/login
+ */
+export type postAuthLoginBody = string
+
+/**
+ * @description Auth/Login--接口返回值
+ * @url POST /auth/login
+ */
+export interface postAuthLoginRes {
+  tokens?: postAuthLoginResTokens
+  user?: postAuthLoginResUser
+}
+
+/** postAuthLoginResTokensAccess */
+export interface postAuthLoginResTokensAccess {
+  expires?: string
+  token?: string
+}
+
+/** postAuthLoginResTokens */
+export interface postAuthLoginResTokens {
+  access?: postAuthLoginResTokensAccess
+  refresh?: postAuthLoginResTokensAccess
+}
+
+/** postAuthLoginResUser */
+export interface postAuthLoginResUser {
+  email?: string
+  id?: string
+  name?: string
+  role?: 'user' | 'admin'
+}

@@ -25,7 +25,8 @@
       "path": "pages/mine/login/login",
       "style": {
         "navigationBarTitleText": "",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "disableScroll": true
       }
     }
   ],
@@ -115,6 +116,20 @@
           "path": "recipe/detail",
           "style": {
             "navigationBarTitleText": "食谱详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "memo/list",
+          "style": {
+            "navigationBarTitleText": "我的备忘录",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "memo/editor",
+          "style": {
+            "navigationBarTitleText": "编辑备忘录",
             "navigationStyle": "custom"
           }
         }

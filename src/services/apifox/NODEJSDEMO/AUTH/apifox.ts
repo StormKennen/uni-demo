@@ -37,19 +37,6 @@ export const postAuthRegister = async (
 }
 
 /**
- * @description Auth/Login
- * @url POST /auth/login
- * @host https://app.apifox.com/link/project/7048425/apis/api-363075587
- */
-export const postAuthLogin = async (
-  data: Expand<postAuthLoginBody>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postAuthLoginRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/auth/login', data, _config)
-}
-
-/**
  * @description Auth/Logout
  * @url POST /auth/logout
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075588
@@ -125,4 +112,17 @@ export const postAuthVerifyEmail = async (
 ): Promise<Expand<postAuthVerifyEmailRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post('/auth/verify-email', {}, _config)
+}
+
+/**
+ * @description Auth/Login
+ * @url POST /auth/login
+ * @host https://app.apifox.com/link/project/7048425/apis/api-363075587
+ */
+export const postAuthLogin = async (
+  data: Expand<postAuthLoginBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postAuthLoginRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/auth/login', data, _config)
 }

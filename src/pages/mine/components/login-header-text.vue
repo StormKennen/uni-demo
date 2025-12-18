@@ -5,11 +5,11 @@ const props = defineProps<Props>()
 
 <template>
   <view class="login-header">
-    <view class="hello" hover-class="none" hover-stop-propagation="false">
+    <!-- <view class="hello" hover-class="none" hover-stop-propagation="false">
       <text class="hello-text">Hello!</text>
-    </view>
+    </view> -->
     <view class="welcome" hover-class="none" hover-stop-propagation="false">
-      <text class="welcome-text">欢迎使用kai通</text>
+      <text class="welcome-text">欢迎使用</text>
     </view>
     <view class="service" hover-class="none" hover-stop-propagation="false">
       <text class="service-text">登录后可享受优质服务</text>
@@ -19,10 +19,11 @@ const props = defineProps<Props>()
 
 <style lang="scss" scoped>
 .login-header{
-  padding: 168rpx 72rpx 92rpx 72rpx;
+  padding: 96rpx 32rpx 24rpx 32rpx;
+  box-sizing: border-box;
   .hello {
     .hello-text{
-      font-size: 48rpx;
+      font-size: 36rpx;
       font-weight: 700;
       line-height: 150%;
       color: $ga-brand-4;
@@ -31,7 +32,7 @@ const props = defineProps<Props>()
   }
   .welcome {
     .welcome-text{
-      font-size: 64rpx;
+      font-size: 48rpx;
       font-weight: 700;
       line-height: 150%;
       color: $ga-gray-8;
@@ -39,9 +40,9 @@ const props = defineProps<Props>()
     }
   }
   .service {
-    margin-top: 8rpx;
+    margin-top: 6rpx;
     .service-text{
-      font-size: 32rpx;
+      font-size: 26rpx;
       font-weight: 300;
       line-height: 150%;
       color: $ga-gray-7;

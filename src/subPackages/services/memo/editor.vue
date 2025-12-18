@@ -1,0 +1,2591 @@
+<template>
+  <view class="editor-page">
+    <!-- 导航栏 -->
+    <NavBar :title="isPreview ? '备忘录详情' : '编辑备忘录'">
+      <template #right>
+        <view class="nav-mode-switch" @click="toggleMode">
+          <text>{{ isPreview ? '编辑' : '预览' }}</text>
+        </view>
+      </template>
+    </NavBar>
+    
+    <!-- 可滚动内容区域 -->
+    <scroll-view class="scrollable-content" scroll-y>
+      <!-- 备忘录名称和标签 -->
+      <view class="memo-info-section" v-if="!isPreview">
+        <input 
+          class="memo-name-input" 
+          v-model="memoName" 
+          placeholder="请输入备忘录名称"
+        />
+        <view class="tags-section">
+          <view class="tags-container">
+            <view 
+              v-for="(tag, index) in tags" 
+              :key="index"
+              class="tag-item"
+            >
+              <text class="tag-text">{{ tag }}</text>
+              <text class="tag-remove" @click="removeTag(index)">×</text>
+            </view>
+            <input 
+              class="tag-input" 
+              v-model="tagInput"
+              placeholder="添加标签"
+              @confirm="addTag"
+            />
+          </view>
+        </view>
+      </view>
+      
+      <!-- 内容区域 -->
+    <view class="content-section">
+      
+      <!-- 内容块列表 -->
+      <view 
+        v-for="(block, blockIndex) in pageData.content" 
+        :key="blockIndex"
+        class="content-block"
+      >
+        <!-- 文本块 -->
+        <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
+          <!-- 编辑模式：显示块头部 -->
+          <view class="block-header" v-if="!isPreview" @click="selectBlock(blockIndex)">
+            <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text>
+            <view class="block-actions">
+              <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+              <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+              <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙</view>
+              <view class="action-btn delete" v-if="blockIndex > 0" @click.stop="deleteBlock(blockIndex)">×</view>
+            </view>
+          </view>
+          
+          <view 
+            v-for="(item, itemIndex) in block.children" 
+            :key="itemIndex"
+            class="text-item"
+            :class="{ 
+              selected: isItemSelected(blockIndex, itemIndex, 'text'),
+              'title-item': isTitleItem(blockIndex, itemIndex)
+            }"
+          >
+            <!-- 编辑模式 -->
+            <template v-if="!isPreview">
+              <view 
+                class="text-display" 
+                :class="{ 'title-display': isTitleItem(blockIndex, itemIndex) }"
+                :style="getTextStyle(item.style)"
+                @click="selectItem(blockIndex, itemIndex, 'text')"
+              >
+                {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '文本') }}
+              </view>
+            </template>
+            <!-- 预览模式 -->
+            <text v-else class="text-preview" :style="getTextStyle(item.style)">
+              {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '') }}
+            </text>
+          </view>
+          
+          <!-- 编辑模式：添加按钮 -->
+          <view class="add-item-btn" v-if="!isPreview" @click="addTextItem(blockIndex)">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加文本行</text>
+          </view>
+        </view>
+
+        <!-- 图片块 -->
+        <view v-if="block.type === 'image'" class="image-block" :style="getBlockBorderStyle(block)">
+          <!-- 编辑模式：显示块头部 -->
+          <view class="block-header" v-if="!isPreview" @click="selectBlock(blockIndex)">
+            <text class="block-type-label">🖼️ 图片块</text>
+            <view class="block-actions">
+              <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+              <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+              <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙</view>
+              <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+            </view>
+          </view>
+          
+          <view 
+            v-for="(item, itemIndex) in block.children" 
+            :key="itemIndex"
+            class="image-item"
+            :class="{ selected: isItemSelected(blockIndex, itemIndex, 'image') }"
+          >
+            <!-- 编辑模式 -->
+            <template v-if="!isPreview">
+              <!-- 图片上传/预览 -->
+              <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
+                <text class="upload-icon">+</text>
+                <text class="upload-text">点击上传图片</text>
+              </view>
+              <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
+                <view class="image-container">
+                  <image 
+                    :src="item.value.url" 
+                    :style="getImageStyle(item.style)"
+                    :mode="getImageMode(item.style)"
+                  />
+                </view>
+              </view>
+            </template>
+            <!-- 预览模式 -->
+            <image 
+              v-else-if="item.value.url"
+              class="image-preview-only"
+              :src="item.value.url" 
+              :style="getImageStyle(item.style)"
+              :mode="getImageMode(item.style)"
+              @click="previewImageFull(item.value.url)"
+            />
+          </view>
+          
+          <!-- 编辑模式：添加按钮 -->
+          <view class="add-item-btn" v-if="!isPreview" @click="addImageItem(blockIndex)">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加图片</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    </scroll-view>
+
+    <!-- 底部新增按钮（仅编辑模式） -->
+    <view class="add-block-bar" v-if="!isPreview">
+      <view class="add-block-btn" @click="addTextBlock">
+        <text class="btn-icon">📝</text>
+        <text class="btn-text">新增文本行</text>
+      </view>
+      <view class="add-block-btn" @click="addImageBlock">
+        <text class="btn-icon">🖼️</text>
+        <text class="btn-text">新增图片行</text>
+      </view>
+    </view>
+
+    <!-- 颜色选择器弹窗 -->
+    <view class="color-picker-modal" v-if="colorPickerVisible" @click="colorPickerVisible = false">
+      <view class="color-picker-content" @click.stop>
+        <view class="color-picker-title">选择颜色</view>
+        <view class="color-grid">
+          <view 
+            v-for="color in colors" 
+            :key="color"
+            class="color-item"
+            :style="{ backgroundColor: color }"
+            @click="selectColor(color)"
+          ></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 文件选择器弹窗 -->
+    <view class="file-picker-modal" v-if="filePickerVisible" @click="filePickerVisible = false">
+      <view class="file-picker-content" @click.stop>
+        <view class="file-picker-header">
+          <text class="file-picker-title">选择云端图片</text>
+          <text class="file-picker-close" @click="filePickerVisible = false">×</text>
+        </view>
+        
+        <!-- 云端文件列表 -->
+        <view class="file-tab-content">
+          <view v-if="loadingFiles" class="loading-files">
+            <text class="loading-icon">⏳</text>
+            <text>加载中...</text>
+          </view>
+          <view v-else-if="cloudFiles.length === 0" class="empty-files">
+            <text class="empty-icon">�</text>
+            <text>暂无图片文件</text>
+          </view>
+          <scroll-view v-else scroll-y class="file-list">
+            <view 
+              v-for="file in cloudFiles" 
+              :key="file.id"
+              class="file-item"
+              @click="selectCloudFile(file)"
+            >
+              <view class="file-preview">
+                <image 
+                  :src="file.file_url" 
+                  class="file-thumb"
+                  mode="aspectFill"
+                />
+              </view>
+              <view class="file-info">
+                <text class="file-name">{{ file.file_name }}</text>
+                <view class="file-meta">
+                  <text class="file-size">{{ file.file_size_formatted }}</text>
+                  <text class="file-date">{{ formatDate(file.created_at) }}</text>
+                </view>
+              </view>
+              <view class="file-select-icon">✓</view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部样式面板 -->
+    <view class="bottom-style-panel" v-if="!isPreview && selectedItem">
+      <!-- 文本样式面板 -->
+      <view class="style-panel-content" v-if="selectedItem.type === 'text'">
+        <view class="panel-header">
+          <view class="panel-title">文本样式</view>
+          <view class="panel-close" @click="selectedItem = null">×</view>
+        </view>
+        <!-- 文本编辑区 -->
+        <textarea 
+          class="panel-text-input" 
+          v-model="getSelectedItem().value"
+          placeholder="输入文本内容..."
+          :style="getTextStyle(getSelectedItem().style)"
+          auto-height
+        />
+        <view class="text-style-bar">
+          <view 
+            class="style-btn" 
+            :class="{ active: getSelectedItem()?.style.bold }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'bold')"
+          >B</view>
+          <view 
+            class="style-btn italic" 
+            :class="{ active: getSelectedItem()?.style.italic }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'italic')"
+          >I</view>
+          <view 
+            class="style-btn" 
+            :class="{ active: getSelectedItem()?.style.underline }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'underline')"
+          >U</view>
+          <view 
+            class="style-btn" 
+            :class="{ active: getSelectedItem()?.style.lineThrough }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'lineThrough')"
+          >S</view>
+          <picker 
+            :value="fontSizeIndex(getSelectedItem()?.style.fontSize)" 
+            :range="fontSizes"
+            @change="(e) => setTextFontSize(selectedItem.blockIndex, selectedItem.itemIndex, e)"
+          >
+            <view class="style-btn size-btn">{{ getSelectedItem()?.style.fontSize || 16 }}px</view>
+          </picker>
+          <view 
+            class="style-btn color-btn" 
+            :style="{ backgroundColor: getSelectedItem()?.style.color || '#333' }"
+            @click="showColorPicker(selectedItem.blockIndex, selectedItem.itemIndex)"
+          ></view>
+          <view 
+            class="style-btn delete-item" 
+            v-if="pageData.content[selectedItem.blockIndex].children.length > 1 && !isTitleItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+            @click="deleteTextItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+          >🗑</view>
+        </view>
+      </view>
+      
+      <!-- 图片样式面板 -->
+      <view class="style-panel-content" v-if="selectedItem.type === 'image'">
+        <view class="panel-header">
+          <view class="panel-title">图片样式</view>
+          <view class="panel-close" @click="selectedItem = null">×</view>
+        </view>
+        <!-- 图片操作区 -->
+        <view class="image-actions-bar" v-if="getSelectedItem()?.value.url">
+          <view class="action-btn" @click="previewImage(getSelectedItem().value.url)">
+            <text class="action-icon">🔍</text>
+            <text>预览图片</text>
+          </view>
+          <view class="action-btn" @click="chooseImage(selectedItem.blockIndex, selectedItem.itemIndex)">
+            <text class="action-icon">📷</text>
+            <text>更换图片</text>
+          </view>
+        </view>
+        <view class="image-style-bar">
+          <view class="style-label">尺寸:</view>
+          <picker 
+            :value="imageSizeModeIndex(getSelectedItem()?.style.sizeMode)" 
+            :range="imageSizeModes"
+            :range-key="'label'"
+            @change="(e) => setImageSizeMode(selectedItem.blockIndex, selectedItem.itemIndex, e)"
+          >
+            <view class="style-btn size-mode-btn">
+              {{ getImageSizeModeLabel(getSelectedItem()?.style.sizeMode) }}
+            </view>
+          </picker>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedWidth'">
+            <text>宽:</text>
+            <input 
+              type="number" 
+              v-model="getSelectedItem().style.width" 
+              class="size-input"
+              placeholder="600"
+            />
+            <text class="unit">rpx</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedHeight'">
+            <text>高:</text>
+            <input 
+              type="number" 
+              v-model="getSelectedItem().style.height" 
+              class="size-input"
+              placeholder="400"
+            />
+            <text class="unit">rpx</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentWidth'">
+            <text>宽:</text>
+            <input 
+              type="number" 
+              v-model="getSelectedItem().style.widthPercent" 
+              class="size-input"
+              placeholder="80"
+            />
+            <text class="unit">%</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentHeight'">
+            <text>高:</text>
+            <input 
+              type="number" 
+              v-model="getSelectedItem().style.heightPercent" 
+              class="size-input"
+              placeholder="50"
+            />
+            <text class="unit">vh</text>
+          </view>
+          <view 
+            class="style-btn delete-item" 
+            v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
+            @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+          >🗑</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 行样式面板 -->
+    <view class="bottom-style-panel" v-if="!isPreview && selectedBlock !== null">
+      <view class="style-panel-content">
+        <view class="panel-header">
+          <view class="panel-title">行样式</view>
+          <view class="panel-close" @click="selectedBlock = null">×</view>
+        </view>
+        <view class="border-style-bar">
+          <view class="style-label">边框:</view>
+          <view 
+            class="style-btn border-btn" 
+            :class="{ active: getBlockStyle(selectedBlock)?.borderTop }"
+            @click="toggleBlockBorder(selectedBlock, 'borderTop')"
+          >上</view>
+          <view 
+            class="style-btn border-btn" 
+            :class="{ active: getBlockStyle(selectedBlock)?.borderBottom }"
+            @click="toggleBlockBorder(selectedBlock, 'borderBottom')"
+          >下</view>
+          <view 
+            class="style-btn border-btn" 
+            :class="{ active: getBlockStyle(selectedBlock)?.borderLeft }"
+            @click="toggleBlockBorder(selectedBlock, 'borderLeft')"
+          >左</view>
+          <view 
+            class="style-btn border-btn" 
+            :class="{ active: getBlockStyle(selectedBlock)?.borderRight }"
+            @click="toggleBlockBorder(selectedBlock, 'borderRight')"
+          >右</view>
+        </view>
+        <view class="align-style-bar">
+          <view class="style-label">对齐:</view>
+          <view class="align-btns">
+            <view 
+              class="style-btn align-btn" 
+              :class="{ active: !getBlockStyle(selectedBlock)?.textAlign || getBlockStyle(selectedBlock)?.textAlign === 'left' }"
+              @click="setBlockAlign(selectedBlock, 'left')"
+            >左</view>
+            <view 
+              class="style-btn align-btn" 
+              :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'center' }"
+              @click="setBlockAlign(selectedBlock, 'center')"
+            >中</view>
+            <view 
+              class="style-btn align-btn" 
+              :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'right' }"
+              @click="setBlockAlign(selectedBlock, 'right')"
+            >右</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作按钮 -->
+    <view class="footer-actions">
+      <template v-if="!isPreview">
+        <view class="footer-btn preview" @click="toggleMode">预览</view>
+        <view class="footer-btn save" @click="saveData">保存</view>
+      </template>
+      <template v-else>
+        <view class="footer-btn edit" @click="toggleMode">编辑</view>
+        <view class="footer-btn export" @click="exportToImage">导出图片</view>
+        <view class="footer-btn share" @click="shareContent">分享</view>
+      </template>
+    </view>
+    
+    <!-- 导出用的隐藏Canvas -->
+    <canvas 
+      v-if="exportLoading"
+      type="2d" 
+      id="exportCanvas" 
+      class="export-canvas"
+      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+    ></canvas>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { postMemos } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
+import { getMemoById, updateMemo } from '@/services/memo.api';
+
+import { ref, reactive, onMounted } from 'vue'
+import NavBar from '@/components/nav-bar.vue'
+import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
+import type { getFilesResItems } from '@/services/apifox/NODEJSDEMO/FILES/interface'
+
+// 类型定义
+interface TextStyle {
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
+  lineThrough?: boolean
+  fontSize?: number
+  color?: string
+}
+
+// 行样式（边框、对齐等）
+interface BlockStyle {
+  borderTop?: boolean
+  borderBottom?: boolean
+  borderLeft?: boolean
+  borderRight?: boolean
+  textAlign?: 'left' | 'center' | 'right'
+}
+
+interface ImageStyle {
+  sizeMode?: 'auto' | 'fixedWidth' | 'fixedHeight' | 'percentWidth' | 'percentHeight'
+  width?: number
+  height?: number
+  widthPercent?: number
+  heightPercent?: number
+}
+
+interface ImageInfo {
+  id: string
+  url: string
+  name?: string
+  size?: number
+}
+
+interface TextItem {
+  value: string
+  style: TextStyle
+}
+
+interface ImageItem {
+  value: ImageInfo
+  style: ImageStyle
+}
+
+interface TextBlock {
+  type: 'text'
+  children: TextItem[]
+  style?: BlockStyle
+}
+
+interface ImageBlock {
+  type: 'image'
+  children: ImageItem[]
+  style?: BlockStyle
+}
+
+interface PageData {
+  content: (TextBlock | ImageBlock)[]
+}
+
+// 页面数据（第一个文本块的第一项为标题，不可删除）
+const pageData = reactive<PageData>({
+  content: [
+    {
+      type: 'text',
+      children: [
+        {
+          value: '我的备忘录',
+          style: {
+            bold: true,
+            italic: false,
+            fontSize: 36
+          }
+        }
+      ]
+    }
+  ]
+})
+
+// 判断是否为标题项（第一个文本块的第一项）
+const isTitleItem = (blockIndex: number, itemIndex: number) => {
+  return blockIndex === 0 && itemIndex === 0 && pageData.content[0]?.type === 'text'
+}
+
+// 备忘录名称和标签
+const memoName = ref('')
+const tags = ref<string[]>([])
+const tagInput = ref('')
+const memoId = ref<string | null>(null)
+
+// 字体大小选项
+const fontSizes = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48]
+
+// 颜色选项
+const colors = [
+  '#333333', '#666666', '#999999', '#000000',
+  '#FF4757', '#FF6B81', '#FFA502', '#FFDD59',
+  '#2ED573', '#7BED9F', '#1E90FF', '#70A1FF',
+  '#5352ED', '#A29BFE', '#FF6348', '#747D8C'
+]
+
+// 图片尺寸模式
+const imageSizeModes = [
+  { value: 'auto', label: '自适应' },
+  { value: 'fixedWidth', label: '固定宽度' },
+  { value: 'fixedHeight', label: '固定高度' },
+  { value: 'percentWidth', label: '百分比宽度' },
+  { value: 'percentHeight', label: '百分比高度' }
+]
+
+// 模式状态：编辑/预览
+const isPreview = ref(true) // 默认预览模式
+
+// 颜色选择器状态
+const colorPickerVisible = ref(false)
+const currentColorTarget = ref<{ blockIndex: number; itemIndex: number } | null>(null)
+const showTitleSizePicker = ref(false)
+
+// 文件选择器状态
+const filePickerVisible = ref(false)
+const currentImageTarget = ref<{ blockIndex: number; itemIndex: number } | null>(null)
+const cloudFiles = ref<getFilesResItems[]>([])
+const loadingFiles = ref(false)
+
+// 选中状态
+const selectedItem = ref<{ blockIndex: number; itemIndex: number; type: 'text' | 'image' } | null>(null)
+
+// 选中项目
+const selectItem = (blockIndex: number, itemIndex: number, type: 'text' | 'image') => {
+  selectedItem.value = { blockIndex, itemIndex, type }
+  selectedBlock.value = null // 关闭行面板
+}
+
+// 判断是否选中
+const isItemSelected = (blockIndex: number, itemIndex: number, type: 'text' | 'image') => {
+  return selectedItem.value?.blockIndex === blockIndex && 
+         selectedItem.value?.itemIndex === itemIndex && 
+         selectedItem.value?.type === type
+}
+
+// 获取当前选中的项目
+const getSelectedItem = () => {
+  if (!selectedItem.value) return null
+  const { blockIndex, itemIndex, type } = selectedItem.value
+  const block = pageData.content[blockIndex]
+  if (!block || block.type !== type) return null
+  return block.children[itemIndex]
+}
+
+// 选中行状态
+const selectedBlock = ref<number | null>(null)
+
+// 选中行
+const selectBlock = (blockIndex: number) => {
+  selectedBlock.value = blockIndex
+  selectedItem.value = null
+}
+
+// 获取行样式
+const getBlockStyle = (blockIndex: number) => {
+  const block = pageData.content[blockIndex]
+  if (!block) return null
+  return block.style || {}
+}
+
+// 切换行边框
+const toggleBlockBorder = (blockIndex: number, key: 'borderTop' | 'borderBottom' | 'borderLeft' | 'borderRight') => {
+  const block = pageData.content[blockIndex]
+  if (!block) return
+  if (!block.style) {
+    block.style = {}
+  }
+  block.style[key] = !block.style[key]
+}
+
+// 获取行样式（边框、对齐等，用于渲染）
+const getBlockBorderStyle = (block: TextBlock | ImageBlock) => {
+  const style = block.style || {}
+  return {
+    borderTop: style.borderTop ? '2rpx solid #333' : 'none',
+    borderBottom: style.borderBottom ? '2rpx solid #333' : 'none',
+    borderLeft: style.borderLeft ? '2rpx solid #333' : 'none',
+    borderRight: style.borderRight ? '2rpx solid #333' : 'none',
+    padding: (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight) ? '16rpx' : '0',
+    textAlign: style.textAlign || 'left'
+  }
+}
+
+// 切换模式
+const toggleMode = () => {
+  isPreview.value = !isPreview.value
+}
+
+// 文本样式
+const getTextStyle = (style: TextStyle) => {
+  return {
+    fontWeight: style.bold ? 'bold' : 'normal',
+    fontStyle: style.italic ? 'italic' : 'normal',
+    textDecoration: style.underline ? 'underline' : (style.lineThrough ? 'line-through' : 'none'),
+    fontSize: (style.fontSize || 16) + 'px',
+    color: style.color || '#333'
+  }
+}
+
+const toggleTextStyle = (blockIndex: number, itemIndex: number, key: keyof TextStyle) => {
+  const block = pageData.content[blockIndex] as TextBlock
+  const item = block.children[itemIndex]
+  if (key === 'bold' || key === 'italic' || key === 'underline' || key === 'lineThrough') {
+    item.style[key] = !item.style[key]
+  }
+}
+
+// 设置行对齐方式
+const setBlockAlign = (blockIndex: number, align: 'left' | 'center' | 'right') => {
+  const block = pageData.content[blockIndex]
+  if (!block) return
+  if (!block.style) {
+    block.style = {}
+  }
+  block.style.textAlign = align
+}
+
+const fontSizeIndex = (size?: number) => {
+  const idx = fontSizes.indexOf(size || 16)
+  return idx >= 0 ? idx : 2
+}
+
+const setTextFontSize = (blockIndex: number, itemIndex: number, e: any) => {
+  const block = pageData.content[blockIndex] as TextBlock
+  block.children[itemIndex].style.fontSize = fontSizes[e.detail.value]
+}
+
+const showColorPicker = (blockIndex: number, itemIndex: number) => {
+  currentColorTarget.value = { blockIndex, itemIndex }
+  colorPickerVisible.value = true
+}
+
+const selectColor = (color: string) => {
+  if (currentColorTarget.value) {
+    const { blockIndex, itemIndex } = currentColorTarget.value
+    const block = pageData.content[blockIndex] as TextBlock
+    block.children[itemIndex].style.color = color
+  }
+  colorPickerVisible.value = false
+}
+
+// 图片样式
+const getImageStyle = (style: ImageStyle) => {
+  const result: Record<string, string> = {}
+  switch (style.sizeMode) {
+    case 'fixedWidth':
+      result.width = (style.width || 600) + 'rpx'
+      break
+    case 'fixedHeight':
+      result.height = (style.height || 400) + 'rpx'
+      result.maxWidth = '100%'
+      break
+    case 'percentWidth':
+      result.width = (style.widthPercent || 80) + '%'
+      break
+    case 'percentHeight':
+      result.height = (style.heightPercent || 50) + 'vh'
+      result.maxWidth = '100%'
+      break
+    default:
+      result.width = '300rpx'
+  }
+  return result
+}
+
+// 图片模式
+const getImageMode = (style: ImageStyle) => {
+  switch (style.sizeMode) {
+    case 'fixedHeight':
+    case 'percentHeight':
+      return 'heightFix'
+    default:
+      return 'widthFix'
+  }
+}
+
+const imageSizeModeIndex = (mode?: string) => {
+  const idx = imageSizeModes.findIndex(m => m.value === mode)
+  return idx >= 0 ? idx : 0
+}
+
+const getImageSizeModeLabel = (mode?: string) => {
+  const item = imageSizeModes.find(m => m.value === mode)
+  return item ? item.label : '自适应'
+}
+
+const setImageSizeMode = (blockIndex: number, itemIndex: number, e: any) => {
+  const block = pageData.content[blockIndex] as ImageBlock
+  block.children[itemIndex].style.sizeMode = imageSizeModes[e.detail.value].value as ImageStyle['sizeMode']
+}
+
+// 添加文本块
+const addTextBlock = () => {
+  pageData.content.push({
+    type: 'text',
+    children: [{
+      value: '',
+      style: { fontSize: 16, color: '#333' }
+    }]
+  })
+}
+
+// 添加图片块
+const addImageBlock = () => {
+  pageData.content.push({
+    type: 'image',
+    children: [{
+      value: { id: '', url: '' },
+      style: { sizeMode: 'auto' }
+    }]
+  })
+}
+
+// 添加文本项
+const addTextItem = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as TextBlock
+  block.children.push({
+    value: '',
+    style: { fontSize: 16, color: '#333' }
+  })
+}
+
+// 添加图片项
+const addImageItem = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as ImageBlock
+  block.children.push({
+    value: { id: '', url: '' },
+    style: { sizeMode: 'auto' }
+  })
+}
+
+// 删除文本项
+const deleteTextItem = (blockIndex: number, itemIndex: number) => {
+  const block = pageData.content[blockIndex] as TextBlock
+  block.children.splice(itemIndex, 1)
+  // 清除选中状态
+  if (isItemSelected(blockIndex, itemIndex, 'text')) {
+    selectedItem.value = null
+  }
+}
+
+// 删除图片项
+const deleteImageItem = (blockIndex: number, itemIndex: number) => {
+  const block = pageData.content[blockIndex] as ImageBlock
+  block.children.splice(itemIndex, 1)
+  // 清除选中状态
+  if (isItemSelected(blockIndex, itemIndex, 'image')) {
+    selectedItem.value = null
+  }
+}
+
+// 删除块
+const deleteBlock = (blockIndex: number) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这个内容块吗？',
+    success: (res) => {
+      if (res.confirm) {
+        // 清除选中状态
+        if (selectedItem.value?.blockIndex === blockIndex) {
+          selectedItem.value = null
+        }
+        pageData.content.splice(blockIndex, 1)
+      }
+    }
+  })
+}
+
+// 移动块
+const moveBlock = (blockIndex: number, direction: number) => {
+  const newIndex = blockIndex + direction
+  if (newIndex < 0 || newIndex >= pageData.content.length) return
+  const temp = pageData.content[blockIndex]
+  pageData.content[blockIndex] = pageData.content[newIndex]
+  pageData.content[newIndex] = temp
+}
+
+// 选择图片 - 打开文件选择器
+const chooseImage = async (blockIndex: number, itemIndex: number) => {
+  currentImageTarget.value = { blockIndex, itemIndex }
+  filePickerVisible.value = true
+  
+  // 加载云端文件
+  await loadCloudFiles()
+}
+
+// 加载云端文件
+const loadCloudFiles = async () => {
+  try {
+    loadingFiles.value = true
+    /**const res = await getFiles({
+      pageSize: 50,
+      pageNumber: 1
+    })
+    
+    if (res.items) {
+      // 只显示图片文件
+      cloudFiles.value = res.items.filter(file => 
+        isImageFile(file.file_name)
+      )
+    }**/
+    cloudFiles.value = [
+      {
+        id: 'mock-1',
+        file_name: '示例图片.png',
+        file_url: 'https://img2.baidu.com/it/u=3937590892,2751365619&fm=253&fmt=auto&app=138&f=PNG?w=75&h=103',
+        file_size: 15360,
+        file_size_formatted: '15 KB',
+        created_at: Math.floor(Date.now() / 1000)
+      },
+      {
+        
+        id: 'mock-1',
+        file_name: '示例图片.png',
+        file_url: 'https://bkimg.cdn.bcebos.com/pic/c75c10385343fbf2eb976ff5be7eca8064388fa9',
+        file_size: 15360,
+        file_size_formatted: '15 KB',
+        created_at: Math.floor(Date.now() / 1000)
+      }
+    ]
+  } catch (error) {
+    console.error('加载云端文件失败:', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
+  } finally {
+    loadingFiles.value = false
+  }
+}
+
+// 判断是否为图片文件
+const isImageFile = (filename?: string) => {
+  if (!filename) return false
+  const ext = filename.split('.').pop()?.toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext || '')
+}
+
+// 选择云端文件
+const selectCloudFile = (file: getFilesResItems) => {
+  if (!currentImageTarget.value) return
+  
+  const { blockIndex, itemIndex } = currentImageTarget.value
+  const block = pageData.content[blockIndex] as ImageBlock
+  
+  block.children[itemIndex].value = {
+    id: file.id || Date.now().toString(),
+    url: file.file_url || '',
+    name: file.file_name,
+    size: file.file_size
+  }
+  
+  filePickerVisible.value = false
+  currentImageTarget.value = null
+}
+
+// 格式化日期
+const formatDate = (timestamp?: number) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp * 1000)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) {
+    return '今天'
+  } else if (days === 1) {
+    return '昨天'
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    return `${month}月${day}日`
+  }
+}
+
+// 预览图片（编辑模式）
+const previewImage = (url: string) => {
+  uni.previewImage({
+    urls: [url],
+    current: url
+  })
+}
+
+// 预览图片（预览模式，支持多图切换）
+const previewImageFull = (url: string) => {
+  const urls = getAllImageUrls()
+  const current = urls.indexOf(url)
+  uni.previewImage({
+    urls,
+    current: current >= 0 ? current : 0
+  })
+}
+
+// 获取所有图片URL
+const getAllImageUrls = () => {
+  const urls: string[] = []
+  pageData.content.forEach(block => {
+    if (block.type === 'image') {
+      (block as ImageBlock).children.forEach(item => {
+        if (item.value.url) {
+          urls.push(item.value.url)
+        }
+      })
+    }
+  })
+  return urls
+}
+
+// 添加标签
+const addTag = () => {
+  const tag = tagInput.value.trim()
+  if (tag && !tags.value.includes(tag)) {
+    tags.value.push(tag)
+    tagInput.value = ''
+  }
+}
+
+// 移除标签
+const removeTag = (index: number) => {
+  tags.value.splice(index, 1)
+}
+
+// 分享内容
+const shareContent = () => {
+  uni.showToast({
+    title: '分享功能开发中',
+    icon: 'none'
+  })
+}
+
+// ========== 导出图片功能 ==========
+const exportLoading = ref(false)
+const canvasWidth = ref(375)
+const canvasHeight = ref(600)
+
+// 导出为图片
+const exportToImage = async () => {
+  if (exportLoading.value) return
+  
+  try {
+    exportLoading.value = true
+    uni.showLoading({
+      title: '正在生成图片...',
+      mask: true
+    })
+    
+    const systemInfo = uni.getSystemInfoSync()
+    const pixelRatio = systemInfo.pixelRatio || 2
+    const screenWidth = systemInfo.windowWidth || 375
+    
+    const canvasW = screenWidth - 20
+    const padding = 50
+    const contentWidth = canvasW - padding * 2
+    
+    // 预计算内容高度
+    let totalHeight = padding
+    
+    for (const block of pageData.content) {
+      if (block.type === 'text') {
+        for (const item of (block as TextBlock).children) {
+          const fontSize = item.style.fontSize || 16
+          const text = item.value || ''
+          const charsPerLine = Math.floor(contentWidth / fontSize)
+          const lines = Math.ceil(text.length / charsPerLine) || 1
+          totalHeight += lines * fontSize * 1.8 + 16
+        }
+      } else if (block.type === 'image') {
+        for (const item of (block as ImageBlock).children) {
+          if (item.value.url) {
+            totalHeight += 200 + 16
+          }
+        }
+      }
+      totalHeight += 20
+    }
+    
+    totalHeight += padding + 40
+    totalHeight = Math.max(totalHeight, 300)
+    
+    canvasWidth.value = canvasW
+    canvasHeight.value = totalHeight
+    
+    await new Promise(resolve => setTimeout(resolve, 150))
+    
+    // #ifdef H5
+    await drawWithH5Canvas(canvasW, totalHeight, padding, contentWidth, pixelRatio)
+    // #endif
+    
+    // #ifndef H5
+    await drawWithMpCanvas(canvasW, totalHeight, padding, contentWidth, pixelRatio)
+    // #endif
+    
+  } catch (error) {
+    console.error('导出图片失败:', error)
+    uni.hideLoading()
+    uni.showToast({
+      title: '导出失败，请重试',
+      icon: 'none'
+    })
+    exportLoading.value = false
+  }
+}
+
+// H5端绘制
+const drawWithH5Canvas = async (canvasW: number, totalHeight: number, padding: number, contentWidth: number, pixelRatio: number) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvasW * pixelRatio
+  canvas.height = totalHeight * pixelRatio
+  const ctx = canvas.getContext('2d')!
+  ctx.scale(pixelRatio, pixelRatio)
+  
+  // 绘制背景
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvasW, totalHeight)
+  
+  let y = padding
+  
+  // 绘制内容块（模拟 inline-block 布局，第一个文本块的第一项为标题）
+  for (const block of pageData.content) {
+    const blockStyle = block.style || {}
+    const blockPadding = (blockStyle.borderTop || blockStyle.borderBottom || blockStyle.borderLeft || blockStyle.borderRight) ? 8 : 0
+    const blockStartY = y
+    const blockStartX = padding
+    
+    if (block.type === 'text') {
+      const textAlign = blockStyle.textAlign || 'left'
+      let x = padding + blockPadding
+      let lineHeight = 0
+      let lineStartY = y + blockPadding
+      y = lineStartY
+      
+      for (const item of (block as TextBlock).children) {
+        const fontSize = item.style.fontSize || 16
+        const fontWeight = item.style.bold ? 'bold' : 'normal'
+        const fontStyle = item.style.italic ? 'italic' : 'normal'
+        
+        ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px sans-serif`
+        ctx.fillStyle = item.style.color || '#333333'
+        ctx.textBaseline = 'top'
+        
+        const text = item.value || ''
+        const textWidth = ctx.measureText(text).width
+        const itemHeight = fontSize * 1.4
+        
+        // 检查是否需要换行
+        if (x + textWidth > padding + contentWidth - blockPadding && x > padding + blockPadding) {
+          y = lineStartY + lineHeight + 8
+          lineStartY = y
+          x = padding + blockPadding
+          lineHeight = 0
+        }
+        
+        // 根据行对齐方式计算绘制位置
+        let drawX = x
+        if (textAlign === 'center') {
+          drawX = padding + (contentWidth - textWidth) / 2
+        } else if (textAlign === 'right') {
+          drawX = padding + contentWidth - blockPadding - textWidth
+        }
+        
+        // 绘制文本
+        ctx.fillText(text, drawX, y)
+        
+        // 更新位置
+        x += textWidth + 4
+        lineHeight = Math.max(lineHeight, itemHeight)
+      }
+      
+      y = lineStartY + lineHeight + blockPadding
+    } else if (block.type === 'image') {
+      const imageAlign = blockStyle.textAlign || 'left'
+      let x = padding + blockPadding
+      let lineHeight = 0
+      let lineStartY = y + blockPadding
+      y = lineStartY
+      
+      for (const item of (block as ImageBlock).children) {
+        if (item.value.url) {
+          try {
+            const img = await loadImageForExport(item.value.url)
+            if (img) {
+              const maxWidth = Math.min(contentWidth * 0.5, 200)
+              const maxHeight = 150
+              let drawWidth = img.width || 200
+              let drawHeight = img.height || 150
+              
+              if (drawWidth > maxWidth) {
+                drawHeight = (maxWidth / drawWidth) * drawHeight
+                drawWidth = maxWidth
+              }
+              if (drawHeight > maxHeight) {
+                drawWidth = (maxHeight / drawHeight) * drawWidth
+                drawHeight = maxHeight
+              }
+              
+              // 检查是否需要换行
+              if (x + drawWidth > padding + contentWidth - blockPadding && x > padding + blockPadding) {
+                y = lineStartY + lineHeight + 8
+                lineStartY = y
+                x = padding + blockPadding
+                lineHeight = 0
+              }
+              
+              // 根据行对齐方式计算绘制位置
+              let drawX = x
+              if (imageAlign === 'center') {
+                drawX = padding + (contentWidth - drawWidth) / 2
+              } else if (imageAlign === 'right') {
+                drawX = padding + contentWidth - blockPadding - drawWidth
+              }
+              
+              ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
+              x += drawWidth + 8
+              lineHeight = Math.max(lineHeight, drawHeight)
+            }
+          } catch (e) {
+            console.error('绘制图片失败:', e)
+          }
+        }
+      }
+      
+      y = lineStartY + lineHeight + blockPadding
+    }
+    
+    // 绘制行边框
+    const blockEndY = y
+    const blockWidth = contentWidth
+    if (blockStyle.borderTop || blockStyle.borderBottom || blockStyle.borderLeft || blockStyle.borderRight) {
+      ctx.strokeStyle = '#333333'
+      ctx.lineWidth = 1
+      if (blockStyle.borderTop) {
+        ctx.beginPath()
+        ctx.moveTo(blockStartX, blockStartY)
+        ctx.lineTo(blockStartX + blockWidth, blockStartY)
+        ctx.stroke()
+      }
+      if (blockStyle.borderBottom) {
+        ctx.beginPath()
+        ctx.moveTo(blockStartX, blockEndY)
+        ctx.lineTo(blockStartX + blockWidth, blockEndY)
+        ctx.stroke()
+      }
+      if (blockStyle.borderLeft) {
+        ctx.beginPath()
+        ctx.moveTo(blockStartX, blockStartY)
+        ctx.lineTo(blockStartX, blockEndY)
+        ctx.stroke()
+      }
+      if (blockStyle.borderRight) {
+        ctx.beginPath()
+        ctx.moveTo(blockStartX + blockWidth, blockStartY)
+        ctx.lineTo(blockStartX + blockWidth, blockEndY)
+        ctx.stroke()
+      }
+    }
+    
+    y += 8
+  }
+  
+  // 绘制底部水印
+  ctx.font = '12px sans-serif'
+  ctx.fillStyle = '#999999'
+  ctx.textAlign = 'center'
+  ctx.fillText('备忘录导出 · ' + formatExportDate(), canvasW / 2, totalHeight - 20)
+  
+  // 下载图片
+  const dataURL = canvas.toDataURL('image/png')
+  const link = document.createElement('a')
+  link.download = `备忘录_${formatExportDate()}.png`
+  link.href = dataURL
+  link.click()
+  
+  uni.hideLoading()
+  uni.showToast({
+    title: '图片已下载',
+    icon: 'success'
+  })
+  exportLoading.value = false
+}
+
+// 小程序端绘制
+const drawWithMpCanvas = async (canvasW: number, totalHeight: number, padding: number, contentWidth: number, pixelRatio: number) => {
+  const query = uni.createSelectorQuery()
+  query.select('#exportCanvas')
+    .fields({ node: true, size: true })
+    .exec(async (res) => {
+      if (!res[0] || !res[0].node) {
+        uni.hideLoading()
+        uni.showToast({ title: '导出失败', icon: 'none' })
+        exportLoading.value = false
+        return
+      }
+      
+      const canvas = res[0].node
+      const ctx = canvas.getContext('2d')
+      
+      canvas.width = canvasW * pixelRatio
+      canvas.height = totalHeight * pixelRatio
+      ctx.scale(pixelRatio, pixelRatio)
+      
+      // 绘制背景
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvasW, totalHeight)
+      
+      let y = padding
+      
+      // 绘制内容块（模拟 inline-block 布局，第一个文本块的第一项为标题）
+      for (const block of pageData.content) {
+        const blockStyle = block.style || {}
+        const blockPadding = (blockStyle.borderTop || blockStyle.borderBottom || blockStyle.borderLeft || blockStyle.borderRight) ? 8 : 0
+        const blockStartY = y
+        const blockStartX = padding
+        
+        if (block.type === 'text') {
+          const textAlign = blockStyle.textAlign || 'left'
+          let x = padding + blockPadding
+          let lineHeight = 0
+          let lineStartY = y + blockPadding
+          y = lineStartY
+          
+          for (const item of (block as TextBlock).children) {
+            const fontSize = item.style.fontSize || 16
+            const fontWeight = item.style.bold ? 'bold' : 'normal'
+            const fontStyle = item.style.italic ? 'italic' : 'normal'
+            
+            ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px sans-serif`
+            ctx.fillStyle = item.style.color || '#333333'
+            ctx.textBaseline = 'top'
+            
+            const text = item.value || ''
+            const textWidth = ctx.measureText(text).width
+            const itemHeight = fontSize * 1.4
+            
+            // 检查是否需要换行
+            if (x + textWidth > padding + contentWidth - blockPadding && x > padding + blockPadding) {
+              y = lineStartY + lineHeight + 8
+              lineStartY = y
+              x = padding + blockPadding
+              lineHeight = 0
+            }
+            
+            // 根据行对齐方式计算绘制位置
+            let drawX = x
+            if (textAlign === 'center') {
+              drawX = padding + (contentWidth - textWidth) / 2
+            } else if (textAlign === 'right') {
+              drawX = padding + contentWidth - blockPadding - textWidth
+            }
+            
+            // 绘制文本
+            ctx.fillText(text, drawX, y)
+            
+            x += textWidth + 4
+            lineHeight = Math.max(lineHeight, itemHeight)
+          }
+          
+          y = lineStartY + lineHeight + blockPadding
+        } else if (block.type === 'image') {
+          const imageAlign = blockStyle.textAlign || 'left'
+          let x = padding + blockPadding
+          let lineHeight = 0
+          let lineStartY = y + blockPadding
+          y = lineStartY
+          
+          for (const item of (block as ImageBlock).children) {
+            if (item.value.url) {
+              try {
+                const imgPath = await downloadImageForExport(item.value.url)
+                if (imgPath) {
+                  const img = canvas.createImage()
+                  await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve()
+                    img.onerror = reject
+                    img.src = imgPath
+                  })
+                  
+                  const maxWidth = Math.min(contentWidth * 0.5, 200)
+                  const maxHeight = 150
+                  let drawWidth = img.width || 200
+                  let drawHeight = img.height || 150
+                  
+                  if (drawWidth > maxWidth) {
+                    drawHeight = (maxWidth / drawWidth) * drawHeight
+                    drawWidth = maxWidth
+                  }
+                  if (drawHeight > maxHeight) {
+                    drawWidth = (maxHeight / drawHeight) * drawWidth
+                    drawHeight = maxHeight
+                  }
+                  
+                  // 检查是否需要换行
+                  if (x + drawWidth > padding + contentWidth - blockPadding && x > padding + blockPadding) {
+                    y = lineStartY + lineHeight + 8
+                    lineStartY = y
+                    x = padding + blockPadding
+                    lineHeight = 0
+                  }
+                  
+                  // 根据行对齐方式计算绘制位置
+                  let drawX = x
+                  if (imageAlign === 'center') {
+                    drawX = padding + (contentWidth - drawWidth) / 2
+                  } else if (imageAlign === 'right') {
+                    drawX = padding + contentWidth - blockPadding - drawWidth
+                  }
+                  
+                  ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
+                  x += drawWidth + 8
+                  lineHeight = Math.max(lineHeight, drawHeight)
+                }
+              } catch (e) {
+                console.error('绘制图片失败:', e)
+              }
+            }
+          }
+          
+          y = lineStartY + lineHeight + blockPadding
+        }
+        
+        // 绘制行边框
+        const blockEndY = y
+        const blockWidth = contentWidth
+        if (blockStyle.borderTop || blockStyle.borderBottom || blockStyle.borderLeft || blockStyle.borderRight) {
+          ctx.strokeStyle = '#333333'
+          ctx.lineWidth = 1
+          if (blockStyle.borderTop) {
+            ctx.beginPath()
+            ctx.moveTo(blockStartX, blockStartY)
+            ctx.lineTo(blockStartX + blockWidth, blockStartY)
+            ctx.stroke()
+          }
+          if (blockStyle.borderBottom) {
+            ctx.beginPath()
+            ctx.moveTo(blockStartX, blockEndY)
+            ctx.lineTo(blockStartX + blockWidth, blockEndY)
+            ctx.stroke()
+          }
+          if (blockStyle.borderLeft) {
+            ctx.beginPath()
+            ctx.moveTo(blockStartX, blockStartY)
+            ctx.lineTo(blockStartX, blockEndY)
+            ctx.stroke()
+          }
+          if (blockStyle.borderRight) {
+            ctx.beginPath()
+            ctx.moveTo(blockStartX + blockWidth, blockStartY)
+            ctx.lineTo(blockStartX + blockWidth, blockEndY)
+            ctx.stroke()
+          }
+        }
+        
+        y += 8
+      }
+      
+      // 绘制底部水印
+      ctx.font = '12px sans-serif'
+      ctx.fillStyle = '#999999'
+      ctx.textAlign = 'center'
+      ctx.fillText('备忘录导出 · ' + formatExportDate(), canvasW / 2, totalHeight - 20)
+      
+      // 导出图片并保存到相册
+      setTimeout(() => {
+        uni.canvasToTempFilePath({
+          canvas,
+          width: canvasW,
+          height: totalHeight,
+          destWidth: canvasW * pixelRatio,
+          destHeight: totalHeight * pixelRatio,
+          success: (res) => {
+            saveImageToAlbum(res.tempFilePath)
+          },
+          fail: (err) => {
+            console.error('生成图片失败:', err)
+            uni.hideLoading()
+            uni.showToast({ title: '生成图片失败', icon: 'none' })
+            exportLoading.value = false
+          }
+        })
+      }, 100)
+    })
+}
+
+// 文本换行处理
+const wrapTextForCanvas = (ctx: any, text: string, maxWidth: number): string[] => {
+  const lines: string[] = []
+  if (!text) return ['']
+  
+  let currentLine = ''
+  for (const char of text) {
+    const testLine = currentLine + char
+    const metrics = ctx.measureText(testLine)
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine)
+      currentLine = char
+    } else {
+      currentLine = testLine
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine)
+  }
+  return lines.length ? lines : ['']
+}
+
+// H5端加载图片
+const loadImageForExport = (url: string): Promise<HTMLImageElement | null> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = () => {
+      console.error('图片加载失败:', url)
+      resolve(null)
+    }
+    img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now()
+  })
+}
+
+// 小程序端下载图片
+const downloadImageForExport = (url: string): Promise<string> => {
+  return new Promise((resolve) => {
+    if (url.startsWith('wxfile://') || url.startsWith('http://tmp') || url.startsWith('/')) {
+      resolve(url)
+      return
+    }
+    
+    uni.downloadFile({
+      url,
+      success: (res) => {
+        if (res.statusCode === 200) {
+          resolve(res.tempFilePath)
+        } else {
+          resolve('')
+        }
+      },
+      fail: () => resolve('')
+    })
+  })
+}
+
+// 保存图片到相册
+const saveImageToAlbum = (tempFilePath: string) => {
+  uni.saveImageToPhotosAlbum({
+    filePath: tempFilePath,
+    success: () => {
+      uni.hideLoading()
+      uni.showToast({
+        title: '已保存到相册',
+        icon: 'success'
+      })
+      exportLoading.value = false
+    },
+    fail: (err) => {
+      console.error('保存到相册失败:', err)
+      if (err.errMsg?.includes('auth deny') || err.errMsg?.includes('authorize')) {
+        uni.hideLoading()
+        uni.showModal({
+          title: '提示',
+          content: '需要您授权保存图片到相册',
+          confirmText: '去授权',
+          success: (res) => {
+            if (res.confirm) {
+              uni.openSetting({
+                success: (settingRes) => {
+                  if (settingRes.authSetting['scope.writePhotosAlbum']) {
+                    saveImageToAlbum(tempFilePath)
+                  } else {
+                    exportLoading.value = false
+                  }
+                }
+              })
+            } else {
+              exportLoading.value = false
+            }
+          }
+        })
+      } else {
+        uni.hideLoading()
+        uni.showToast({ title: '保存失败', icon: 'none' })
+        exportLoading.value = false
+      }
+    }
+  })
+}
+
+// 格式化导出日期
+const formatExportDate = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hour = String(now.getHours()).padStart(2, '0')
+  const minute = String(now.getMinutes()).padStart(2, '0')
+  return `${year}${month}${day}_${hour}${minute}`
+}
+
+// 获取标题值（第一个文本块的第一项）
+const getTitleValue = () => {
+  const firstBlock = pageData.content[0]
+  if (firstBlock?.type === 'text') {
+    return (firstBlock as TextBlock).children[0]?.value || '我的备忘录'
+  }
+  return '我的备忘录'
+}
+
+// 保存数据
+const saveData = async () => {
+  // 备忘录名称默认值
+  if (!memoName.value.trim()) {
+    memoName.value = '我的备忘录'
+  }
+  
+  // 确保标题有值
+  const firstBlock = pageData.content[0]
+  if (firstBlock?.type === 'text') {
+    const titleItem = (firstBlock as TextBlock).children[0]
+    if (titleItem && !titleItem.value.trim()) {
+      titleItem.value = '我的备忘录'
+    }
+  }
+
+  try {
+    uni.showLoading({
+      title: '保存中...',
+      mask: true
+    })
+
+    const memoData = {
+      name: memoName.value,
+      content: pageData.content,
+      tags: tags.value,
+    }
+
+    console.log('保存的数据:', JSON.stringify(memoData, null, 2))
+    
+    // 调用 API 保存
+    const isCreate = !memoId.value
+    let savedMemo
+    if (memoId.value) {
+      // 更新现有备忘录
+      savedMemo = await updateMemo(memoId.value, memoData)
+    } else {
+      // 创建新备忘录
+      savedMemo = await postMemos(memoData)
+    }
+    
+    // 处理返回结果 - HTTP拦截器已经返回data字段，所以直接使用result
+    if (savedMemo && savedMemo.id) {
+      memoId.value = savedMemo.id
+      console.log('保存成功，备忘录ID:', memoId.value)
+      
+      // 同时保存到本地存储作为备份
+      uni.setStorageSync('richEditorData', JSON.stringify({
+        ...memoData,
+        id: memoId.value
+      }))
+    }
+    
+    uni.hideLoading()
+    uni.showToast({
+      title: isCreate ? '创建成功' : '更新成功',
+      icon: 'success'
+    })
+    
+    // 触发列表刷新事件
+    uni.$emit('memo-list-refresh')
+    
+    // 如果是新建，更新URL参数以保持页面状态一致
+    if (isCreate && memoId.value) {
+      // 使用 redirectTo 替换当前页面，更新URL参数
+      setTimeout(() => {
+        uni.redirectTo({
+          url: `/subPackages/services/memo/editor?id=${memoId.value}&mode=preview`
+        })
+      }, 800)
+    } else {
+      // 更新模式，切换到预览模式
+      setTimeout(() => {
+        isPreview.value = true
+      }, 500)
+    }
+  } catch (error) {
+    console.error('保存失败:', error)
+    uni.hideLoading()
+    uni.showToast({
+      title: error.message || '保存失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 加载数据
+const loadData = async () => {
+  try {
+    // 如果有 memoId，从 API 加载
+    if (memoId.value) {
+      uni.showLoading({
+        title: '加载中...',
+        mask: true
+      })
+      
+      // 调用 API 获取备忘录详情
+      const result = await getMemoById(memoId.value)
+      
+      uni.hideLoading()
+      
+      // 处理返回数据 - HTTP拦截器已经返回data字段，所以直接使用result
+      const memo = result
+      if (memo && memo.id) {
+        memoName.value = memo.name || ''
+        tags.value = memo.tags || []
+        
+        // 加载内容（第一个文本块的第一项为标题）
+        if (memo.content && Array.isArray(memo.content)) {
+          pageData.content = memo.content
+        }
+        
+        // 兼容旧数据：如果有独立的 title 字段，将其合并到第一个文本块
+        if (memo.title && memo.title.value) {
+          const firstBlock = pageData.content[0]
+          if (firstBlock?.type === 'text') {
+            const titleItem = (firstBlock as TextBlock).children[0]
+            if (titleItem) {
+              titleItem.value = memo.title.value
+              Object.assign(titleItem.style, memo.title.style)
+            }
+          }
+        }
+        
+        console.log('从 API 加载的数据:', memo)
+        
+        // 同时保存到本地存储作为备份
+        uni.setStorageSync('richEditorData', JSON.stringify({
+          id: memo.id,
+          name: memo.name,
+          content: memo.content,
+          tags: memo.tags
+        }))
+      } else {
+        // 如果 API 返回格式不同，尝试从本地存储加载
+        console.warn('API 返回格式异常，尝试从本地存储加载')
+        const savedData = uni.getStorageSync('richEditorData')
+        if (savedData) {
+          const data = JSON.parse(savedData)
+          memoName.value = data.name || ''
+          tags.value = data.tags || []
+          if (data.content) {
+            pageData.content = data.content
+          }
+          // 兼容旧数据：如果有独立的 title 字段，将其合并到第一个文本块
+          if (data.title && data.title.value) {
+            const firstBlock = pageData.content[0]
+            if (firstBlock?.type === 'text') {
+              const titleItem = (firstBlock as TextBlock).children[0]
+              if (titleItem) {
+                titleItem.value = data.title.value
+                Object.assign(titleItem.style, data.title.style)
+              }
+            }
+          }
+        }
+      }
+      return
+    }
+    
+    // 新建备忘录，使用空白页面
+    console.log('新建备忘录，使用空白页面')
+  } catch (error) {
+    console.error('加载数据失败:', error)
+    uni.hideLoading()
+    
+    // 尝试从本地存储加载作为降级方案
+    if (memoId.value) {
+      const savedData = uni.getStorageSync('richEditorData')
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData)
+          if (data.id === memoId.value) {
+            memoName.value = data.name || ''
+            tags.value = data.tags || []
+            if (data.content) {
+              pageData.content = data.content
+            }
+            // 兼容旧数据：如果有独立的 title 字段，将其合并到第一个文本块
+            if (data.title && data.title.value) {
+              const firstBlock = pageData.content[0]
+              if (firstBlock?.type === 'text') {
+                const titleItem = (firstBlock as TextBlock).children[0]
+                if (titleItem) {
+                  titleItem.value = data.title.value
+                  Object.assign(titleItem.style, data.title.style)
+                }
+              }
+            }
+            uni.showToast({
+              title: '已从缓存加载',
+              icon: 'none'
+            })
+            return
+          }
+        } catch (e) {
+          console.error('解析本地数据失败:', e)
+        }
+      }
+    }
+    
+    uni.showToast({
+      title: error.message || '加载数据失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 页面加载时初始化数据
+onMounted(() => {
+  // 从 URL 参数获取模式和 memoId
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const options = currentPage.options as any
+  
+  // 设置模式
+  if (options.mode === 'edit') {
+    isPreview.value = false
+  } else if (options.mode === 'preview') {
+    isPreview.value = true
+  } else if (!options.id) {
+    // 新建备忘录，默认编辑模式
+    isPreview.value = false
+  }
+  
+  // 如果有 id，设置 memoId
+  if (options.id) {
+    memoId.value = options.id
+  }
+  
+  loadData()
+})
+</script>
+
+<style lang="scss" scoped>
+.editor-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+.nav-mode-switch {
+  padding: 8rpx 24rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 24rpx;
+  font-size: 26rpx;
+  color: #fff;
+}
+
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.memo-info-section {
+  background: #fff;
+  padding: 24rpx 32rpx;
+  
+  .memo-name-input {
+    width: 100%;
+    font-size: 32rpx;
+    font-weight: 600;
+    padding: 20rpx 0;
+    border-bottom: 2rpx solid #eee;
+    margin-bottom: 20rpx;
+  }
+  
+  .tags-section {
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12rpx;
+      align-items: center;
+      
+      .tag-item {
+        display: flex;
+        align-items: center;
+        gap: 8rpx;
+        padding: 8rpx 16rpx;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-radius: 24rpx;
+        font-size: 24rpx;
+        
+        .tag-text {
+          max-width: 200rpx;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        
+        .tag-remove {
+          font-size: 32rpx;
+          line-height: 1;
+          cursor: pointer;
+          opacity: 0.8;
+          
+          &:active {
+            opacity: 1;
+          }
+        }
+      }
+      
+      .tag-input {
+        flex: 1;
+        min-width: 120rpx;
+        padding: 8rpx 16rpx;
+        background: #f8f9fa;
+        border-radius: 24rpx;
+        font-size: 24rpx;
+        border: 2rpx solid #eee;
+        
+        &:focus {
+          background: #fff;
+          border-color: #667eea;
+        }
+      }
+    }
+  }
+}
+
+.title-section {
+  background: #fff;
+  padding: 32rpx;
+  
+  .title-input {
+    width: 100%;
+    font-size: 36rpx;
+    font-weight: bold;
+    padding: 20rpx 0;
+    border-bottom: 2rpx solid #eee;
+  }
+  
+  .title-preview {
+    display: block;
+    font-size: 40rpx;
+    line-height: 1.4;
+  }
+  
+  .title-style-bar {
+    display: flex;
+    gap: 16rpx;
+    margin-top: 20rpx;
+  }
+}
+
+.content-section {
+  padding: 0;
+  
+  .empty-tip {
+    text-align: center;
+    color: #999;
+    padding: 60rpx 0;
+    font-size: 28rpx;
+  }
+}
+
+.content-block {
+  background: #fff;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: #f8f9fa;
+  border-bottom: 1rpx solid #eee;
+  
+  .block-type-label {
+    font-size: 26rpx;
+    color: #666;
+  }
+  
+  .block-actions {
+    display: flex;
+    gap: 16rpx;
+    
+    .action-btn {
+      width: 48rpx;
+      height: 48rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eee;
+      border-radius: 8rpx;
+      font-size: 24rpx;
+      
+      &.delete {
+        background: #ffebee;
+        color: #f44336;
+      }
+    }
+  }
+}
+
+.text-block, .image-block {
+  padding: 24rpx;
+}
+
+.text-item, .image-item {
+  border-radius: 8rpx;
+  transition: all 0.3s;
+  display: inline-block;
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &.selected {
+    background: #e6f7ff;
+    border: 2rpx solid #1890ff;
+    padding: 16rpx;
+    margin: -16rpx;
+    margin-bottom: 8rpx;
+  }
+}
+
+.text-input {
+  width: 100%;
+  min-height: 80rpx;
+  padding: 16rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.text-display {
+  width: 100%;
+  min-height: 80rpx;
+  padding: 16rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  cursor: pointer;
+  transition: all 0.3s;
+  
+  &:active {
+    background: #e8eaf0;
+  }
+}
+
+.text-preview {
+  display: block;
+  line-height: 1.8;
+  word-wrap: break-word;
+}
+
+.image-preview-only {
+  display: block;
+  width: 100%;
+  border-radius: 12rpx;
+}
+
+.text-style-bar, .image-style-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  align-items: center;
+  
+  .style-label {
+    font-size: 24rpx;
+    color: #666;
+    margin-right: 4rpx;
+  }
+}
+
+.style-btn {
+  min-width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  color: #333;
+  padding: 0 16rpx;
+  
+  &.active {
+    background: #1890ff;
+    color: #fff;
+  }
+  
+  &.italic {
+    font-style: italic;
+  }
+  
+  &.size-btn, &.size-mode-btn {
+    font-size: 22rpx;
+    min-width: 80rpx;
+  }
+  
+  &.color-btn {
+    width: 56rpx;
+    border: 2rpx solid #ddd;
+  }
+  
+  &.delete-item {
+    background: #ffebee;
+    margin-left: auto;
+  }
+  
+  &.align-btn {
+    font-size: 20rpx;
+    min-width: 48rpx;
+    padding: 0 8rpx;
+  }
+}
+
+.align-btns {
+  display: flex;
+  gap: 4rpx;
+  background: #e8e8e8;
+  border-radius: 8rpx;
+  padding: 4rpx;
+  
+  .align-btn:first-child {
+    text-align: left;
+  }
+  
+  .align-btn:nth-child(2) {
+    text-align: center;
+  }
+  
+  .align-btn:last-child {
+    text-align: right;
+  }
+}
+
+.size-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #666;
+  
+  .size-input {
+    width: 120rpx;
+    height: 56rpx;
+    background: #fff;
+    border: 1rpx solid #ddd;
+    border-radius: 8rpx;
+    text-align: center;
+    font-size: 24rpx;
+    padding: 0 8rpx;
+  }
+  
+  .unit {
+    font-size: 22rpx;
+    color: #999;
+  }
+}
+
+.image-upload-area {
+  width: 100%;
+  height: 300rpx;
+  background: #f8f9fa;
+  border: 2rpx dashed #ddd;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  .upload-icon {
+    font-size: 80rpx;
+    color: #ccc;
+  }
+  
+  .upload-text {
+    font-size: 26rpx;
+    color: #999;
+    margin-top: 16rpx;
+  }
+}
+
+.image-preview {
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  overflow: hidden;
+  
+  .image-container {
+    width: 100%;
+    min-height: 200rpx;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    image {
+      width: 100%;
+      display: block;
+    }
+  }
+  
+  .image-info {
+    padding: 20rpx;
+    background: #fff;
+    border-top: 1rpx solid #eee;
+    
+    .image-name {
+      font-size: 26rpx;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 12rpx;
+    }
+    
+    .image-actions {
+      display: flex;
+      gap: 24rpx;
+      
+      .action-link {
+        font-size: 26rpx;
+        color: #1890ff;
+        padding: 8rpx 0;
+        
+        &:active {
+          opacity: 0.7;
+        }
+      }
+    }
+  }
+}
+
+.add-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 24rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+  
+  .add-icon {
+    font-size: 36rpx;
+    color: #1890ff;
+  }
+  
+  .add-text {
+    font-size: 26rpx;
+    color: #1890ff;
+  }
+}
+
+.add-block-bar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 32rpx;
+  padding: 24rpx;
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  
+  .add-block-btn {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding: 20rpx 40rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 40rpx;
+    font-size: 28rpx;
+    
+    .btn-icon {
+      font-size: 32rpx;
+    }
+  }
+}
+
+.bottom-style-panel {
+  flex-shrink: 0;
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.15);
+  max-height: 50vh;
+  overflow-y: auto;
+  
+  .style-panel-content {
+    padding: 24rpx 32rpx;
+    
+    .panel-text-input {
+      width: 100%;
+      min-height: 120rpx;
+      padding: 16rpx;
+      background: #f8f9fa;
+      border-radius: 8rpx;
+      font-size: 28rpx;
+      line-height: 1.6;
+      margin-bottom: 20rpx;
+      border: 2rpx solid #e0e0e0;
+      
+      &:focus {
+        background: #fff;
+        border-color: #1890ff;
+      }
+    }
+    
+    .image-actions-bar {
+      display: flex;
+      gap: 16rpx;
+      margin-bottom: 20rpx;
+      
+      .action-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8rpx;
+        padding: 20rpx;
+        background: #f0f7ff;
+        border: 2rpx solid #1890ff;
+        border-radius: 8rpx;
+        color: #1890ff;
+        font-size: 26rpx;
+        transition: all 0.3s;
+        
+        .action-icon {
+          font-size: 32rpx;
+        }
+        
+        &:active {
+          background: #1890ff;
+          color: #fff;
+        }
+      }
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20rpx;
+      
+      .panel-title {
+        font-size: 28rpx;
+        font-weight: bold;
+        color: #333;
+      }
+      
+      .panel-close {
+        width: 56rpx;
+        height: 56rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0f0f0;
+        border-radius: 50%;
+        font-size: 48rpx;
+        color: #666;
+        line-height: 1;
+        transition: all 0.3s;
+        
+        &:active {
+          background: #e0e0e0;
+          transform: scale(0.95);
+        }
+      }
+    }
+  }
+}
+
+// 边框样式栏
+.border-style-bar, .align-style-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #eee;
+  
+  .style-label {
+    font-size: 24rpx;
+    color: #666;
+    margin-right: 8rpx;
+  }
+  
+  .border-btn {
+    min-width: 56rpx;
+    font-size: 24rpx;
+    
+    &.active {
+      background: #1890ff;
+      color: #fff;
+    }
+  }
+}
+
+.footer-actions {
+  flex-shrink: 0;
+  display: flex;
+  padding: 20rpx 32rpx;
+  background: #fff;
+  gap: 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  
+  .footer-btn {
+    flex: 1;
+    height: 80rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40rpx;
+    font-size: 28rpx;
+    
+    &.preview, &.edit {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    &.save {
+      background: #1890ff;
+      color: #fff;
+    }
+    
+    &.share {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+    
+    &.export {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: #fff;
+    }
+  }
+}
+
+// 隐藏的导出Canvas
+.export-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.color-picker-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  
+  .color-picker-content {
+    width: 600rpx;
+    background: #fff;
+    border-radius: 24rpx;
+    padding: 32rpx;
+    
+    .color-picker-title {
+      font-size: 32rpx;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 32rpx;
+    }
+    
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24rpx;
+      
+      .color-item {
+        aspect-ratio: 1;
+        border-radius: 12rpx;
+        border: 2rpx solid #eee;
+      }
+    }
+  }
+}
+
+.file-picker-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  
+  .file-picker-content {
+    width: 90%;
+    max-width: 700rpx;
+    height: 80vh;
+    background: #fff;
+    border-radius: 24rpx;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    
+    .file-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32rpx;
+      border-bottom: 1rpx solid #eee;
+      
+      .file-picker-title {
+        font-size: 32rpx;
+        font-weight: bold;
+      }
+      
+      .file-picker-close {
+        font-size: 48rpx;
+        color: #999;
+        line-height: 1;
+      }
+    }
+    
+    .file-tab-content {
+      flex: 1;
+      overflow: hidden;
+      
+      .loading-files, .empty-files {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16rpx;
+        color: #999;
+        font-size: 28rpx;
+        
+        .loading-icon, .empty-icon {
+          font-size: 80rpx;
+        }
+      }
+      
+      .file-list {
+        height: 100%;
+        padding: 16rpx;
+        
+        .file-item {
+          display: flex;
+          align-items: center;
+          padding: 20rpx;
+          margin-bottom: 16rpx;
+          background: #fff;
+          border: 2rpx solid #eee;
+          border-radius: 12rpx;
+          transition: all 0.3s;
+          position: relative;
+          
+          &:active {
+            background: #f0f7ff;
+            border-color: #1890ff;
+          }
+          
+          .file-preview {
+            width: 120rpx;
+            height: 120rpx;
+            margin-right: 20rpx;
+            border-radius: 8rpx;
+            overflow: hidden;
+            background: #f5f5f5;
+            
+            .file-thumb {
+              width: 100%;
+              height: 100%;
+            }
+          }
+          
+          .file-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12rpx;
+            min-width: 0;
+            
+            .file-name {
+              font-size: 28rpx;
+              font-weight: 500;
+              color: #333;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+            
+            .file-meta {
+              display: flex;
+              gap: 16rpx;
+              
+              .file-size {
+                font-size: 24rpx;
+                color: #999;
+              }
+              
+              .file-date {
+                font-size: 24rpx;
+                color: #1890ff;
+              }
+            }
+          }
+          
+          .file-select-icon {
+            width: 48rpx;
+            height: 48rpx;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32rpx;
+            color: #1890ff;
+            opacity: 0;
+            transition: opacity 0.3s;
+          }
+          
+          &:active .file-select-icon {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+</style>

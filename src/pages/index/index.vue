@@ -224,16 +224,25 @@ const imageTools = ref<Tool[]>([
 const moreTools = ref<Tool[]>([
   {
     id: 5,
-    name: '食谱大全',
-    desc: '中文食谱，食材筛选',
-    icon: 'flag',
-    gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-    link: '/subPackages/services/recipe/index',
+    name: '我的备忘录',
+    desc: '备忘录管理，支持分类',
+    icon: 'compose',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    link: '/subPackages/services/memo/list',
     disabled: false,
     badge: '新'
   },
   {
     id: 6,
+    name: '食谱大全',
+    desc: '中文食谱，食材筛选',
+    icon: 'flag',
+    gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
+    link: '/subPackages/services/recipe/index',
+    disabled: false
+  },
+  {
+    id: 7,
     name: '族谱查看',
     desc: '快照模式，仅供浏览',
     icon: 'person',
@@ -242,7 +251,7 @@ const moreTools = ref<Tool[]>([
     disabled: false
   },
   {
-    id: 7,
+    id: 8,
     name: '族谱编辑',
     desc: '实时数据，支持编辑',
     icon: 'personadd',
@@ -251,7 +260,7 @@ const moreTools = ref<Tool[]>([
     disabled: false
   },
   {
-    id: 8,
+    id: 9,
     name: '更多工具',
     desc: '敬请期待更多实用功能',
     icon: 'more',
@@ -298,21 +307,26 @@ const handleActionClick = async (tool: Tool) => {
   }
   
   // 需要登录的服务列表
-  const needLoginServices: string[] = []
+  const needLoginServices: string[] = [
+    '/subPackages/services/memo/list',
+  ]
   
   if (needLoginServices.includes(tool.link)) {
+    // 检查本地登录状态，未登录则拦截并提示
     if (!isUserLoggedIn()) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-      try {
-        const result = await autoLogin()
-        if (result.isLoggedIn) {
-          uni.navigateTo({ url: tool.link })
-        } else {
-          setTimeout(() => uni.navigateTo({ url: '/pages/mine/login/login' }), 1000)
+      uni.showModal({
+        title: '需要登录',
+        content: '该功能需要登录后才能使用',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            uni.navigateTo({ 
+              url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.link)}` 
+            })
+          }
         }
-      } catch {
-        setTimeout(() => uni.navigateTo({ url: '/pages/mine/login/login' }), 1000)
-      }
+      })
       return
     }
   }

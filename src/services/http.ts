@@ -20,7 +20,8 @@ enum RES_CODE {
 const getTokenByPlatform = () =>{
   let token = ''
   // #ifdef WEB
-  token = getAppTokenFromQuery() || ''
+  // H5环境：优先从storage获取登录token，如果没有再从URL query获取
+  token = getToken() || getAppTokenFromQuery() || ''
   // #endif
   // #ifndef WEB
   token = getToken() || ''
@@ -55,6 +56,8 @@ export class Request {
   // 防止重复刷新与无限重试
   private refreshInFlight: Promise<any> | null = null
   private maxRetryAfterRefresh = 1
+  // 防止重复弹出登录弹窗
+  private isShowingLoginDialog = false
   constructor(options = {}) {
     // 合并用户自定义配置
     this.config = merge({}, DEFAULT_CONFIG, options);
@@ -162,9 +165,16 @@ export class Request {
   }
 
   /**
-   * 显示友好的登录提示对话框
+   * 显示友好的登录提示对话框（防止重复弹窗）
    */
   private showLoginDialog(): Promise<boolean> {
+    // 如果已经在显示登录弹窗，直接返回
+    if (this.isShowingLoginDialog) {
+      return Promise.resolve(false)
+    }
+    
+    this.isShowingLoginDialog = true
+    
     return new Promise((resolve) => {
       uni.showModal({
         title: '登录状态已过期',
@@ -172,6 +182,7 @@ export class Request {
         confirmText: '去登录',
         cancelText: '稍后再说',
         success: (res) => {
+          this.isShowingLoginDialog = false
           if (res.confirm) {
             // 获取当前页面路径作为重定向URL
             const pages = getCurrentPages()
@@ -185,10 +196,15 @@ export class Request {
           } else {
             resolve(false)
           }
+        },
+        fail: () => {
+          this.isShowingLoginDialog = false
+          resolve(false)
         }
       })
     })
   }
+
   // 响应拦截，这里只是做了示例，可以根据自己情况进行扩展
   async responseInterceptor(res: any, requestConfig?: any) {
     console.log("🚀 ~ Request ~ responseInterceptor ~ res:", res)
@@ -313,7 +329,7 @@ export class Request {
     return this.request(url, data, config, "PUT");
   }
   /**
-   * post请求
+   * delete请求
    * @param {String} url 接口
    * @param {Object} data 请求参数 可选
    * @param {Object} config 接口自定义配置 可选
@@ -321,6 +337,16 @@ export class Request {
    */
   delete(url: string, data = {}, config: ParticalUniAppRequestOptions = {}) {
     return this.request(url, data, config, "DELETE");
+  }
+  /**
+   * patch请求
+   * @param {String} url 接口
+   * @param {Object} data 请求参数 可选
+   * @param {Object} config 接口自定义配置 可选
+   * @returns
+   */
+  patch(url: string, data = {}, config: ParticalUniAppRequestOptions = {}) {
+    return this.request(url, data, config, "PATCH");
   }
   // 错误提示
   handleError(title: string) {
