@@ -548,6 +548,7 @@ onShareTimeline(() => {
 }
 
 .nav-actions {
+  padding-left: 16rpx;
   display: flex;
   gap: 16rpx;
   background-color: #ffeaa7;
