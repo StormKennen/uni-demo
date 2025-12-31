@@ -21,13 +21,24 @@ import type {
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
- * @description 获取单个备忘录
+ * @description 获取单个备忘录（需要登录）
  */
 export const getMemoById = async (
   memoId: string,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMemosMemoIdRes>> => {
   return http.get(`/memos/${memoId}`, {}, config)
+}
+
+/**
+ * @description 获取公开的备忘录详情（无需登录）
+ * 用于分享链接访问
+ */
+export const getPublicMemoById = async (
+  memoId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getMemosMemoIdRes>> => {
+  return http.get(`/memos/${memoId}/public`, {}, config)
 }
 
 /**

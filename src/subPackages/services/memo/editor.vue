@@ -1,10 +1,12 @@
 <template>
   <view class="editor-page">
     <!-- 导航栏 -->
-    <NavBar :title="isPreview ? '备忘录详情' : '编辑备忘录'">
+    <NavBar title="编辑备忘录">
       <template #right>
-        <view class="nav-mode-switch" @click="toggleMode">
-          <text>{{ isPreview ? '编辑' : '预览' }}</text>
+        <view class="nav-actions">
+          <view class="nav-action-btn" @click="saveAndGoToDetail" v-if="memoId">
+            <text>�️</text>
+          </view>
         </view>
       </template>
     </NavBar>
@@ -12,7 +14,7 @@
     <!-- 可滚动内容区域 -->
     <scroll-view class="scrollable-content" scroll-y>
       <!-- 备忘录名称和标签 -->
-      <view class="memo-info-section" v-if="!isPreview">
+      <view class="memo-info-section">
         <input 
           class="memo-name-input" 
           v-model="memoName" 
@@ -50,13 +52,14 @@
         <!-- 文本块 -->
         <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
           <!-- 编辑模式：显示块头部 -->
-          <view class="block-header" v-if="!isPreview" @click="selectBlock(blockIndex)">
-            <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text>
+          <view class="block-header" @click="selectBlock(blockIndex)">
+            <!-- <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text> -->
+            <text class="block-type-label">📝 文本块</text>
             <view class="block-actions">
               <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
               <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
               <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙</view>
-              <view class="action-btn delete" v-if="blockIndex > 0" @click.stop="deleteBlock(blockIndex)">×</view>
+              <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
             </view>
           </view>
           
@@ -69,25 +72,18 @@
               'title-item': isTitleItem(blockIndex, itemIndex)
             }"
           >
-            <!-- 编辑模式 -->
-            <template v-if="!isPreview">
-              <view 
-                class="text-display" 
-                :class="{ 'title-display': isTitleItem(blockIndex, itemIndex) }"
-                :style="getTextStyle(item.style)"
-                @click="selectItem(blockIndex, itemIndex, 'text')"
-              >
-                {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '文本') }}
-              </view>
-            </template>
-            <!-- 预览模式 -->
-            <text v-else class="text-preview" :style="getTextStyle(item.style)">
-              {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '') }}
-            </text>
+            <view 
+              class="text-display" 
+              :class="{ 'title-display': isTitleItem(blockIndex, itemIndex) }"
+              :style="getTextStyle(item.style)"
+              @click="selectItem(blockIndex, itemIndex, 'text')"
+            >
+              {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '文本') }}
+            </view>
           </view>
           
           <!-- 编辑模式：添加按钮 -->
-          <view class="add-item-btn" v-if="!isPreview" @click="addTextItem(blockIndex)">
+          <view class="add-item-btn" @click="addTextItem(blockIndex)">
             <text class="add-icon">+</text>
             <text class="add-text">添加文本行</text>
           </view>
@@ -96,7 +92,7 @@
         <!-- 图片块 -->
         <view v-if="block.type === 'image'" class="image-block" :style="getBlockBorderStyle(block)">
           <!-- 编辑模式：显示块头部 -->
-          <view class="block-header" v-if="!isPreview" @click="selectBlock(blockIndex)">
+          <view class="block-header" @click="selectBlock(blockIndex)">
             <text class="block-type-label">🖼️ 图片块</text>
             <view class="block-actions">
               <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
@@ -112,36 +108,24 @@
             class="image-item"
             :class="{ selected: isItemSelected(blockIndex, itemIndex, 'image') }"
           >
-            <!-- 编辑模式 -->
-            <template v-if="!isPreview">
               <!-- 图片上传/预览 -->
-              <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
-                <text class="upload-icon">+</text>
-                <text class="upload-text">点击上传图片</text>
+            <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
+              <text class="upload-icon">+</text>
+              <text class="upload-text">点击上传图片</text>
+            </view>
+            <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
+              <view class="image-container">
+                <image 
+                  :src="item.value.url" 
+                  :style="getImageStyle(item.style)"
+                  :mode="getImageMode(item.style)"
+                />
               </view>
-              <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
-                <view class="image-container">
-                  <image 
-                    :src="item.value.url" 
-                    :style="getImageStyle(item.style)"
-                    :mode="getImageMode(item.style)"
-                  />
-                </view>
-              </view>
-            </template>
-            <!-- 预览模式 -->
-            <image 
-              v-else-if="item.value.url"
-              class="image-preview-only"
-              :src="item.value.url" 
-              :style="getImageStyle(item.style)"
-              :mode="getImageMode(item.style)"
-              @click="previewImageFull(item.value.url)"
-            />
+            </view>
           </view>
           
           <!-- 编辑模式：添加按钮 -->
-          <view class="add-item-btn" v-if="!isPreview" @click="addImageItem(blockIndex)">
+          <view class="add-item-btn" @click="addImageItem(blockIndex)">
             <text class="add-icon">+</text>
             <text class="add-text">添加图片</text>
           </view>
@@ -151,7 +135,7 @@
     </scroll-view>
 
     <!-- 底部新增按钮（仅编辑模式） -->
-    <view class="add-block-bar" v-if="!isPreview">
+    <view class="add-block-bar">
       <view class="add-block-btn" @click="addTextBlock">
         <text class="btn-icon">📝</text>
         <text class="btn-text">新增文本行</text>
@@ -225,7 +209,7 @@
     </view>
 
     <!-- 底部样式面板 -->
-    <view class="bottom-style-panel" v-if="!isPreview && selectedItem">
+    <view class="bottom-style-panel" v-if="selectedItem">
       <!-- 文本样式面板 -->
       <view class="style-panel-content" v-if="selectedItem.type === 'text'">
         <view class="panel-header">
@@ -350,17 +334,64 @@
             />
             <text class="unit">vh</text>
           </view>
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">Z轴旋转 (平面): {{ getSelectedItem()?.style.rotate || 0 }}°</view>
+          <slider 
+            :value="getSelectedItem()?.style.rotate || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'z')"
+            min="0"
+            max="360"
+            step="1"
+            block-size="20"
+            activeColor="#1890ff"
+            backgroundColor="#e0e0e0"
+            class="rotate-slider"
+          />
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">X轴旋转 (上下翻转): {{ getSelectedItem()?.style.rotateX || 0 }}°</view>
+          <slider 
+            :value="getSelectedItem()?.style.rotateX || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'x')"
+            min="0"
+            max="360"
+            step="1"
+            block-size="20"
+            activeColor="#52c41a"
+            backgroundColor="#e0e0e0"
+            class="rotate-slider"
+          />
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">Y轴旋转 (左右翻转): {{ getSelectedItem()?.style.rotateY || 0 }}°</view>
+          <slider 
+            :value="getSelectedItem()?.style.rotateY || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'y')"
+            min="0"
+            max="360"
+            step="1"
+            block-size="20"
+            activeColor="#faad14"
+            backgroundColor="#e0e0e0"
+            class="rotate-slider"
+          />
+        </view>
+        <view class="rotate-tip">
+          <text>💡 提示：3D旋转效果在预览模式下可见，导出图片时仅支持Z轴(平面)旋转</text>
+        </view>
+        <view class="image-style-bar">
           <view 
             class="style-btn delete-item" 
             v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
             @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)"
-          >🗑</view>
+          >🗑 删除图片</view>
         </view>
       </view>
     </view>
 
     <!-- 行样式面板 -->
-    <view class="bottom-style-panel" v-if="!isPreview && selectedBlock !== null">
+    <view class="bottom-style-panel" v-if="selectedBlock !== null">
       <view class="style-panel-content">
         <view class="panel-header">
           <view class="panel-title">行样式</view>
@@ -414,15 +445,8 @@
 
     <!-- 底部操作按钮 -->
     <view class="footer-actions">
-      <template v-if="!isPreview">
-        <view class="footer-btn preview" @click="toggleMode">预览</view>
-        <view class="footer-btn save" @click="saveData">保存</view>
-      </template>
-      <template v-else>
-        <view class="footer-btn edit" @click="toggleMode">编辑</view>
-        <view class="footer-btn export" @click="exportToImage">导出图片</view>
-        <view class="footer-btn share" @click="shareContent">分享</view>
-      </template>
+      <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
+      <view class="footer-btn save" @click="saveData">保存</view>
     </view>
     
     <!-- 导出用的隐藏Canvas -->
@@ -437,10 +461,10 @@
 </template>
 
 <script setup lang="ts">
-import { postMemos } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
-import { getMemoById, updateMemo } from '@/services/memo.api';
+import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
 
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
+import { onLoad, onReady, onShareAppMessage } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
 import type { getFilesResItems } from '@/services/apifox/NODEJSDEMO/FILES/interface'
@@ -470,6 +494,9 @@ interface ImageStyle {
   height?: number
   widthPercent?: number
   heightPercent?: number
+  rotate?: number // Z轴旋转角度 0-360
+  rotateX?: number // X轴旋转角度 0-360
+  rotateY?: number // Y轴3D旋转角度 0-360
 }
 
 interface ImageInfo {
@@ -505,22 +532,22 @@ interface PageData {
   content: (TextBlock | ImageBlock)[]
 }
 
-// 页面数据（第一个文本块的第一项为标题，不可删除）
+// 页面数据
 const pageData = reactive<PageData>({
   content: [
-    {
-      type: 'text',
-      children: [
-        {
-          value: '我的备忘录',
-          style: {
-            bold: true,
-            italic: false,
-            fontSize: 36
-          }
-        }
-      ]
-    }
+    // {
+    //   type: 'text',
+    //   children: [
+    //     {
+    //       value: '我的备忘录',
+    //       style: {
+    //         bold: true,
+    //         italic: false,
+    //         fontSize: 36
+    //       }
+    //     }
+    //   ]
+    // }
   ]
 })
 
@@ -555,8 +582,7 @@ const imageSizeModes = [
   { value: 'percentHeight', label: '百分比高度' }
 ]
 
-// 模式状态：编辑/预览
-const isPreview = ref(true) // 默认预览模式
+// 编辑模式（移除预览模式，详情页负责预览）
 
 // 颜色选择器状态
 const colorPickerVisible = ref(false)
@@ -633,9 +659,16 @@ const getBlockBorderStyle = (block: TextBlock | ImageBlock) => {
   }
 }
 
-// 切换模式
-const toggleMode = () => {
-  isPreview.value = !isPreview.value
+// 保存并跳转到详情页
+const saveAndGoToDetail = async () => {
+  // 先保存
+  await saveData()
+  // 如果保存成功且有memoId，跳转到详情页
+  if (memoId.value) {
+    uni.redirectTo({
+      url: `/subPackages/services/memo/detail?id=${memoId.value}`
+    })
+  }
 }
 
 // 文本样式
@@ -709,8 +742,25 @@ const getImageStyle = (style: ImageStyle) => {
       result.height = (style.heightPercent || 50) + 'vh'
       result.maxWidth = '100%'
       break
+    case 'auto':
     default:
-      result.width = '300rpx'
+      // auto模式：默认宽度24rpx
+      result.width = '24rpx'
+      break
+  }
+  // 添加3D旋转样式
+  const transforms = []
+  if (style.rotateX) {
+    transforms.push(`rotateX(${style.rotateX}deg)`)
+  }
+  if (style.rotateY) {
+    transforms.push(`rotateY(${style.rotateY}deg)`)
+  }
+  if (style.rotate) {
+    transforms.push(`rotateZ(${style.rotate}deg)`)
+  }
+  if (transforms.length > 0) {
+    result.transform = transforms.join(' ')
   }
   return result
 }
@@ -741,6 +791,17 @@ const setImageSizeMode = (blockIndex: number, itemIndex: number, e: any) => {
   block.children[itemIndex].style.sizeMode = imageSizeModes[e.detail.value].value as ImageStyle['sizeMode']
 }
 
+const setImageRotate = (blockIndex: number, itemIndex: number, e: any, axis: 'x' | 'y' | 'z' = 'z') => {
+  const block = pageData.content[blockIndex] as ImageBlock
+  if (axis === 'x') {
+    block.children[itemIndex].style.rotateX = e.detail.value
+  } else if (axis === 'y') {
+    block.children[itemIndex].style.rotateY = e.detail.value
+  } else {
+    block.children[itemIndex].style.rotate = e.detail.value
+  }
+}
+
 // 添加文本块
 const addTextBlock = () => {
   pageData.content.push({
@@ -758,7 +819,7 @@ const addImageBlock = () => {
     type: 'image',
     children: [{
       value: { id: '', url: '' },
-      style: { sizeMode: 'auto' }
+      style: { sizeMode: 'auto', rotate: 0, rotateX: 0, rotateY: 0 }
     }]
   })
 }
@@ -777,7 +838,7 @@ const addImageItem = (blockIndex: number) => {
   const block = pageData.content[blockIndex] as ImageBlock
   block.children.push({
     value: { id: '', url: '' },
-    style: { sizeMode: 'auto' }
+    style: { sizeMode: 'auto', rotate: 0, rotateX: 0, rotateY: 0 }
   })
 }
 
@@ -840,7 +901,7 @@ const chooseImage = async (blockIndex: number, itemIndex: number) => {
 const loadCloudFiles = async () => {
   try {
     loadingFiles.value = true
-    /**const res = await getFiles({
+    const res = await getFiles({
       pageSize: 50,
       pageNumber: 1
     })
@@ -850,26 +911,26 @@ const loadCloudFiles = async () => {
       cloudFiles.value = res.items.filter(file => 
         isImageFile(file.file_name)
       )
-    }**/
-    cloudFiles.value = [
-      {
-        id: 'mock-1',
-        file_name: '示例图片.png',
-        file_url: 'https://img2.baidu.com/it/u=3937590892,2751365619&fm=253&fmt=auto&app=138&f=PNG?w=75&h=103',
-        file_size: 15360,
-        file_size_formatted: '15 KB',
-        created_at: Math.floor(Date.now() / 1000)
-      },
-      {
+    }
+    // cloudFiles.value = [
+    //   {
+    //     id: 'mock-1',
+    //     file_name: '示例图片.png',
+    //     file_url: 'https://img2.baidu.com/it/u=3937590892,2751365619&fm=253&fmt=auto&app=138&f=PNG?w=75&h=103',
+    //     file_size: 15360,
+    //     file_size_formatted: '15 KB',
+    //     created_at: Math.floor(Date.now() / 1000)
+    //   },
+    //   {
         
-        id: 'mock-1',
-        file_name: '示例图片.png',
-        file_url: 'https://bkimg.cdn.bcebos.com/pic/c75c10385343fbf2eb976ff5be7eca8064388fa9',
-        file_size: 15360,
-        file_size_formatted: '15 KB',
-        created_at: Math.floor(Date.now() / 1000)
-      }
-    ]
+    //     id: 'mock-1',
+    //     file_name: '示例图片.png',
+    //     file_url: 'https://bkimg.cdn.bcebos.com/pic/c75c10385343fbf2eb976ff5be7eca8064388fa9',
+    //     file_size: 15360,
+    //     file_size_formatted: '15 KB',
+    //     created_at: Math.floor(Date.now() / 1000)
+    //   }
+    // ]
   } catch (error) {
     console.error('加载云端文件失败:', error)
     uni.showToast({
@@ -976,10 +1037,53 @@ const removeTag = (index: number) => {
 
 // 分享内容
 const shareContent = () => {
+  shareMemo()
+}
+
+// 分享备忘录
+const shareMemo = () => {
+  if (!memoId.value) {
+    uni.showToast({
+      title: '请先保存备忘录',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // #ifdef MP-WEIXIN
+  // 微信小程序使用右上角分享
   uni.showToast({
-    title: '分享功能开发中',
+    title: '请点击右上角分享',
     icon: 'none'
   })
+  // #endif
+  
+  // #ifdef H5
+  // H5使用复制链接
+  const shareUrl = `${window.location.origin}/subPackages/services/memo/detail?id=${memoId.value}`
+  // @ts-ignore
+  if (navigator.clipboard) {
+    // @ts-ignore
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      uni.showToast({
+        title: '链接已复制',
+        icon: 'success'
+      })
+    }).catch(() => {
+      uni.showModal({
+        title: '分享链接',
+        content: shareUrl,
+        showCancel: false
+      })
+    })
+  } else {
+    uni.showModal({
+      title: '分享链接',
+      content: shareUrl,
+      showCancel: false
+    })
+  }
+  // #endif
 }
 
 // ========== 导出图片功能 ==========
@@ -998,13 +1102,11 @@ const exportToImage = async () => {
       mask: true
     })
     
-    const systemInfo = uni.getSystemInfoSync()
-    const pixelRatio = systemInfo.pixelRatio || 2
-    const screenWidth = systemInfo.windowWidth || 375
-    
-    const canvasW = screenWidth - 20
-    const padding = 50
+    // 固定导出宽度为375px
+    const canvasW = 375
+    const padding = 4
     const contentWidth = canvasW - padding * 2
+    const pixelRatio = 1
     
     // 预计算内容高度
     let totalHeight = padding
@@ -1021,14 +1123,36 @@ const exportToImage = async () => {
       } else if (block.type === 'image') {
         for (const item of (block as ImageBlock).children) {
           if (item.value.url) {
-            totalHeight += 200 + 16
+            // 根据图片样式估算高度，与预览模式保持一致
+            const imageStyle = item.style
+            let estimatedHeight = 150
+            switch (imageStyle.sizeMode) {
+              case 'fixedWidth':
+                estimatedHeight = (imageStyle.width || 600) * 375 / 750 * 0.75
+                break
+              case 'fixedHeight':
+                estimatedHeight = (imageStyle.height || 400) * 375 / 750
+                break
+              case 'percentWidth':
+                estimatedHeight = contentWidth * (imageStyle.widthPercent || 80) / 100 * 0.75
+                break
+              case 'percentHeight':
+                estimatedHeight = 200 * (imageStyle.heightPercent || 50) / 100
+                break
+              case 'auto':
+              default:
+                // auto模式：24rpx在375px宽度下换算为24px
+                estimatedHeight = 24 * 0.7
+                break
+            }
+            totalHeight += estimatedHeight + 16
           }
         }
       }
       totalHeight += 20
     }
     
-    totalHeight += padding + 40
+    totalHeight += padding
     totalHeight = Math.max(totalHeight, 300)
     
     canvasWidth.value = canvasW
@@ -1133,18 +1257,41 @@ const drawWithH5Canvas = async (canvasW: number, totalHeight: number, padding: n
           try {
             const img = await loadImageForExport(item.value.url)
             if (img) {
-              const maxWidth = Math.min(contentWidth * 0.5, 200)
-              const maxHeight = 150
+              // 根据图片样式计算绘制尺寸，与预览模式保持一致
+              const imageStyle = item.style
               let drawWidth = img.width || 200
               let drawHeight = img.height || 150
+              const aspectRatio = drawWidth / drawHeight
               
-              if (drawWidth > maxWidth) {
-                drawHeight = (maxWidth / drawWidth) * drawHeight
-                drawWidth = maxWidth
+              switch (imageStyle.sizeMode) {
+                case 'fixedWidth':
+                  drawWidth = (imageStyle.width || 600) * 375 / 750
+                  drawHeight = drawWidth / aspectRatio
+                  break
+                case 'fixedHeight':
+                  drawHeight = (imageStyle.height || 400) * 375 / 750
+                  drawWidth = drawHeight * aspectRatio
+                  break
+                case 'percentWidth':
+                  drawWidth = contentWidth * (imageStyle.widthPercent || 80) / 100
+                  drawHeight = drawWidth / aspectRatio
+                  break
+                case 'percentHeight':
+                  drawHeight = 200 * (imageStyle.heightPercent || 50) / 100
+                  drawWidth = drawHeight * aspectRatio
+                  break
+                case 'auto':
+                default:
+                  // auto模式：24rpx在375px宽度下换算为24px
+                  drawWidth = 24 * 375 / 750
+                  drawHeight = drawWidth / aspectRatio
+                  break
               }
-              if (drawHeight > maxHeight) {
-                drawWidth = (maxHeight / drawHeight) * drawWidth
-                drawHeight = maxHeight
+              
+              // 限制最大宽度不超过内容区域
+              if (drawWidth > contentWidth) {
+                drawHeight = (contentWidth / drawWidth) * drawHeight
+                drawWidth = contentWidth
               }
               
               // 检查是否需要换行
@@ -1163,8 +1310,21 @@ const drawWithH5Canvas = async (canvasW: number, totalHeight: number, padding: n
                 drawX = padding + contentWidth - blockPadding - drawWidth
               }
               
-              ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
-              x += drawWidth + 8
+              // 应用旋转变换
+              const rotate = imageStyle.rotate || 0
+              if (rotate !== 0) {
+                ctx.save()
+                const centerX = drawX + drawWidth / 2
+                const centerY = y + drawHeight / 2
+                ctx.translate(centerX, centerY)
+                ctx.rotate((rotate * Math.PI) / 180)
+                ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+                ctx.restore()
+              } else {
+                ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
+              }
+              
+              x += drawWidth
               lineHeight = Math.max(lineHeight, drawHeight)
             }
           } catch (e) {
@@ -1211,14 +1371,8 @@ const drawWithH5Canvas = async (canvasW: number, totalHeight: number, padding: n
     y += 8
   }
   
-  // 绘制底部水印
-  ctx.font = '12px sans-serif'
-  ctx.fillStyle = '#999999'
-  ctx.textAlign = 'center'
-  ctx.fillText('备忘录导出 · ' + formatExportDate(), canvasW / 2, totalHeight - 20)
-  
-  // 下载图片
-  const dataURL = canvas.toDataURL('image/png')
+  // 下载图片（使用最高质量）
+  const dataURL = canvas.toDataURL('image/png', 1.0)
   const link = document.createElement('a')
   link.download = `备忘录_${formatExportDate()}.png`
   link.href = dataURL
@@ -1328,18 +1482,41 @@ const drawWithMpCanvas = async (canvasW: number, totalHeight: number, padding: n
                     img.src = imgPath
                   })
                   
-                  const maxWidth = Math.min(contentWidth * 0.5, 200)
-                  const maxHeight = 150
+                  // 根据图片样式计算绘制尺寸，与预览模式保持一致
+                  const imageStyle = item.style
                   let drawWidth = img.width || 200
                   let drawHeight = img.height || 150
+                  const aspectRatio = drawWidth / drawHeight
                   
-                  if (drawWidth > maxWidth) {
-                    drawHeight = (maxWidth / drawWidth) * drawHeight
-                    drawWidth = maxWidth
+                  switch (imageStyle.sizeMode) {
+                    case 'fixedWidth':
+                      drawWidth = (imageStyle.width || 600) * 375 / 750
+                      drawHeight = drawWidth / aspectRatio
+                      break
+                    case 'fixedHeight':
+                      drawHeight = (imageStyle.height || 400) * 375 / 750
+                      drawWidth = drawHeight * aspectRatio
+                      break
+                    case 'percentWidth':
+                      drawWidth = contentWidth * (imageStyle.widthPercent || 80) / 100
+                      drawHeight = drawWidth / aspectRatio
+                      break
+                    case 'percentHeight':
+                      drawHeight = 200 * (imageStyle.heightPercent || 50) / 100
+                      drawWidth = drawHeight * aspectRatio
+                      break
+                    case 'auto':
+                    default:
+                      // auto模式：24rpx在375px宽度下换算为24px
+                      drawWidth = 24
+                      drawHeight = drawWidth / aspectRatio
+                      break
                   }
-                  if (drawHeight > maxHeight) {
-                    drawWidth = (maxHeight / drawHeight) * drawWidth
-                    drawHeight = maxHeight
+                  
+                  // 限制最大宽度不超过内容区域
+                  if (drawWidth > contentWidth) {
+                    drawHeight = (contentWidth / drawWidth) * drawHeight
+                    drawWidth = contentWidth
                   }
                   
                   // 检查是否需要换行
@@ -1358,8 +1535,21 @@ const drawWithMpCanvas = async (canvasW: number, totalHeight: number, padding: n
                     drawX = padding + contentWidth - blockPadding - drawWidth
                   }
                   
-                  ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
-                  x += drawWidth + 8
+                  // 应用旋转变换
+                  const rotate = imageStyle.rotate || 0
+                  if (rotate !== 0) {
+                    ctx.save()
+                    const centerX = drawX + drawWidth / 2
+                    const centerY = y + drawHeight / 2
+                    ctx.translate(centerX, centerY)
+                    ctx.rotate((rotate * Math.PI) / 180)
+                    ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+                    ctx.restore()
+                  } else {
+                    ctx.drawImage(img, drawX, y, drawWidth, drawHeight)
+                  }
+                  
+                  x += drawWidth
                   lineHeight = Math.max(lineHeight, drawHeight)
                 }
               } catch (e) {
@@ -1406,13 +1596,7 @@ const drawWithMpCanvas = async (canvasW: number, totalHeight: number, padding: n
         y += 8
       }
       
-      // 绘制底部水印
-      ctx.font = '12px sans-serif'
-      ctx.fillStyle = '#999999'
-      ctx.textAlign = 'center'
-      ctx.fillText('备忘录导出 · ' + formatExportDate(), canvasW / 2, totalHeight - 20)
-      
-      // 导出图片并保存到相册
+      // 导出图片并保存到相册（使用最高质量）
       setTimeout(() => {
         uni.canvasToTempFilePath({
           canvas,
@@ -1420,6 +1604,8 @@ const drawWithMpCanvas = async (canvasW: number, totalHeight: number, padding: n
           height: totalHeight,
           destWidth: canvasW * pixelRatio,
           destHeight: totalHeight * pixelRatio,
+          fileType: 'png',
+          quality: 1.0,
           success: (res) => {
             saveImageToAlbum(res.tempFilePath)
           },
@@ -1548,6 +1734,19 @@ const formatExportDate = () => {
   return `${year}${month}${day}_${hour}${minute}`
 }
 
+// 生成默认备忘录名称
+const generateDefaultMemoName = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hour = String(now.getHours()).padStart(2, '0')
+  const minute = String(now.getMinutes()).padStart(2, '0')
+  const second = String(now.getSeconds()).padStart(2, '0')
+  const serial = `${hour}${minute}${second}`
+  return `备忘录-${year}${month}${day}-${serial}`
+}
+
 // 获取标题值（第一个文本块的第一项）
 const getTitleValue = () => {
   const firstBlock = pageData.content[0]
@@ -1561,17 +1760,17 @@ const getTitleValue = () => {
 const saveData = async () => {
   // 备忘录名称默认值
   if (!memoName.value.trim()) {
-    memoName.value = '我的备忘录'
+    memoName.value = generateDefaultMemoName()
   }
   
   // 确保标题有值
-  const firstBlock = pageData.content[0]
-  if (firstBlock?.type === 'text') {
-    const titleItem = (firstBlock as TextBlock).children[0]
-    if (titleItem && !titleItem.value.trim()) {
-      titleItem.value = '我的备忘录'
-    }
-  }
+  // const firstBlock = pageData.content[0]
+  // if (firstBlock?.type === 'text') {
+  //   const titleItem = (firstBlock as TextBlock).children[0]
+  //   if (titleItem && !titleItem.value.trim()) {
+  //     titleItem.value = '我的备忘录'
+  //   }
+  // }
 
   try {
     uni.showLoading({
@@ -1592,7 +1791,7 @@ const saveData = async () => {
     let savedMemo
     if (memoId.value) {
       // 更新现有备忘录
-      savedMemo = await updateMemo(memoId.value, memoData)
+      savedMemo = await patchMemosMemoId(memoId.value, memoData)
     } else {
       // 创建新备忘录
       savedMemo = await postMemos(memoData)
@@ -1618,21 +1817,6 @@ const saveData = async () => {
     
     // 触发列表刷新事件
     uni.$emit('memo-list-refresh')
-    
-    // 如果是新建，更新URL参数以保持页面状态一致
-    if (isCreate && memoId.value) {
-      // 使用 redirectTo 替换当前页面，更新URL参数
-      setTimeout(() => {
-        uni.redirectTo({
-          url: `/subPackages/services/memo/editor?id=${memoId.value}&mode=preview`
-        })
-      }, 800)
-    } else {
-      // 更新模式，切换到预览模式
-      setTimeout(() => {
-        isPreview.value = true
-      }, 500)
-    }
   } catch (error) {
     console.error('保存失败:', error)
     uni.hideLoading()
@@ -1654,7 +1838,7 @@ const loadData = async () => {
       })
       
       // 调用 API 获取备忘录详情
-      const result = await getMemoById(memoId.value)
+      const result = await getMemosMemoId(memoId.value)
       
       uni.hideLoading()
       
@@ -1772,16 +1956,6 @@ onMounted(() => {
   const currentPage = pages[pages.length - 1]
   const options = currentPage.options as any
   
-  // 设置模式
-  if (options.mode === 'edit') {
-    isPreview.value = false
-  } else if (options.mode === 'preview') {
-    isPreview.value = true
-  } else if (!options.id) {
-    // 新建备忘录，默认编辑模式
-    isPreview.value = false
-  }
-  
   // 如果有 id，设置 memoId
   if (options.id) {
     memoId.value = options.id
@@ -1789,6 +1963,17 @@ onMounted(() => {
   
   loadData()
 })
+
+// 微信小程序分享配置
+// #ifdef MP-WEIXIN
+onShareAppMessage(() => {
+  return {
+    title: memoName.value || '我的备忘录',
+    path: `/subPackages/services/memo/detail?id=${memoId.value}`,
+    imageUrl: '' // 可以设置分享图片
+  }
+})
+// #endif
 </script>
 
 <style lang="scss" scoped>
@@ -1797,6 +1982,23 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.nav-action-btn {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  font-size: 28rpx;
 }
 
 .nav-mode-switch {
@@ -2028,6 +2230,50 @@ onMounted(() => {
     font-size: 24rpx;
     color: #666;
     margin-right: 4rpx;
+  }
+  
+  .rotate-slider {
+    flex: 1;
+    min-width: 200rpx;
+  }
+  
+  .rotate-value {
+    font-size: 24rpx;
+    color: #333;
+    min-width: 60rpx;
+    text-align: center;
+  }
+}
+
+.image-rotate-bar {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  
+  .rotate-label {
+    font-size: 26rpx;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 12rpx;
+  }
+  
+  .rotate-slider {
+    width: 100%;
+  }
+}
+
+.rotate-tip {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: #fff7e6;
+  border-left: 4rpx solid #faad14;
+  border-radius: 4rpx;
+  
+  text {
+    font-size: 24rpx;
+    color: #d48806;
+    line-height: 1.5;
   }
 }
 

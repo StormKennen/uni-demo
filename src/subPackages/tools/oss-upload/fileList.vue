@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox';
-import type { getFilesRes, getFilesResItems } from '@/services/apifox/NODEJSDEMO/FILES/interface';
+import { getFiles, deleteFilesId, getFilesFoldersTree } from '@/services/apifox/NODEJSDEMO/FILES/apifox';
+import type { getFilesResItems, FolderTreeNode } from '@/services/apifox/NODEJSDEMO/FILES/interface';
 
 import { ref } from 'vue'
 import { onLoad, onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
+import FolderPicker from '@/components/FolderPicker.vue'
 import dayjs from 'dayjs'
 
 import { getFilenameAndExtension } from '@/utils/oss-util'
@@ -21,9 +22,23 @@ const total = ref<number | undefined>(undefined)
 const hasMore = ref(true)
 const userid = ref('')
 const token = ref('')
- 
 
- 
+// 文件夹树形结构
+const folderTree = ref<FolderTreeNode | null>(null)
+const currentFolder = ref<string>('/')
+const showFolderPanel = ref(true)
+const searchKeyword = ref<string>('')
+const isSearching = ref(false)
+const showFolderPicker = ref(false)
+
+// 文件夹变更后刷新
+function onFolderChange(folder: string) {
+  currentFolder.value = folder
+  isSearching.value = false
+  searchKeyword.value = ''
+  fetchList(true)
+  loadFolderTree()
+}
 
 function formatSize(size?: number) {
   if (!size || size <= 0) return '未知'
@@ -51,7 +66,18 @@ async function fetchList(reset = false) {
   try {
     if (reset) { page.value = 1; list.value = []; total.value = undefined; hasMore.value = true }
     const params: any = { pageNumber: page.value, pageSize: pageSize.value }
-    if (userid.value) params.created_by = userid.value
+    // 只有当 userid 是有效的24位十六进制字符串时才添加
+    if (userid.value && /^[a-fA-F0-9]{24}$/.test(userid.value)) {
+      params.created_by = userid.value
+    }
+    // 添加文件夹过滤（根目录 '/' 表示全部文件，不传 folder 参数）
+    if (currentFolder.value && currentFolder.value !== '/' && !isSearching.value) {
+      params.folder = currentFolder.value
+    }
+    // 添加搜索关键词
+    if (searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
     const res = await getFiles(params)
     const rows = Array.isArray(res.items) ? res.items : []
     total.value = typeof res.pagination?.total === 'number' ? res.pagination.total : undefined
@@ -65,6 +91,83 @@ async function fetchList(reset = false) {
   } finally {
     loading.value = false
   }
+}
+
+// 加载文件夹树
+async function loadFolderTree() {
+  try {
+    const res = await getFilesFoldersTree()
+    folderTree.value = res
+  } catch (e) {
+    console.error('加载文件夹失败', e)
+  }
+}
+
+// 将树形结构转换为平铺列表（用于文件夹面板展示）
+function flattenFolderTree(node: FolderTreeNode | null, level = 0): Array<{ path: string; name: string; displayName: string; count: number; totalCount: number; level: number }> {
+  if (!node) return []
+  const result: Array<{ path: string; name: string; displayName: string; count: number; totalCount: number; level: number }> = []
+  
+  // 递归遍历子节点
+  function traverse(n: FolderTreeNode, depth: number, parentPath: string) {
+    // 构建显示名称：/A、/A/B、/A/B/C
+    const displayName = n.path === '/' ? '全部文件' : n.path.replace(/\/$/, '')
+    result.push({
+      path: n.path,
+      name: n.name,
+      displayName,
+      count: n.count,
+      totalCount: n.totalCount,
+      level: depth
+    })
+    
+    if (n.children && n.children.length > 0) {
+      n.children.forEach(child => traverse(child, depth + 1, n.path))
+    }
+  }
+  
+  traverse(node, level, '')
+  return result
+}
+
+// 获取平铺的文件夹列表
+function getFlatFolders() {
+  return flattenFolderTree(folderTree.value)
+}
+
+// 选择文件夹
+function selectFolder(folder: string) {
+  currentFolder.value = folder
+  isSearching.value = false
+  searchKeyword.value = ''
+  fetchList(true)
+}
+
+// 搜索文件
+function onSearch() {
+  if (searchKeyword.value.trim()) {
+    isSearching.value = true
+    fetchList(true)
+  }
+}
+
+// 清除搜索
+function clearSearch() {
+  searchKeyword.value = ''
+  isSearching.value = false
+  fetchList(true)
+}
+
+// 切换文件夹面板显示
+function toggleFolderPanel() {
+  showFolderPanel.value = !showFolderPanel.value
+}
+
+// 获取当前文件夹名称
+function getCurrentFolderName(): string {
+  if (currentFolder.value === '/') return '全部文件'
+  const parts = currentFolder.value.split('/').filter(s => s)
+  return parts[parts.length - 1] || '全部文件'
 }
 
 async function onDownload(item: getFilesResItems) {
@@ -152,6 +255,35 @@ function onCopyLink(item: getFilesResItems) {
   uni.showToast({ title: '链接已复制', icon: 'none' })
 }
 
+async function onDelete(item: getFilesResItems) {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除文件「${item.file_name}」吗？`,
+    confirmColor: '#ef4444',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          uni.showLoading({ title: '删除中...' })
+          console.log('删除文件:', item.id, item.file_name)
+          const result = await deleteFilesId(item.id)
+          console.log('删除结果:', result)
+          uni.hideLoading()
+          uni.showToast({ title: '删除成功', icon: 'success' })
+          // 从列表中移除该项
+          list.value = list.value.filter(f => f.id !== item.id)
+          if (total.value !== undefined) total.value -= 1
+          // 刷新文件夹树
+          await loadFolderTree()
+        } catch (e: any) {
+          console.error('删除失败:', e)
+          uni.hideLoading()
+          uni.showToast({ title: e?.message || '删除失败', icon: 'none' })
+        }
+      }
+    }
+  })
+}
+
 async function onPreview(item: getFilesResItems) {
   const url = (item.file_url || '').replace(/^http:/, 'https:')
   const { extension } = getFilenameAndExtension(url)
@@ -206,6 +338,7 @@ function checkLogin() {
 }
 
 onShow(() => {
+  loadFolderTree()
   fetchList(true)
 })
 
@@ -229,8 +362,64 @@ onReachBottom(() => {
       custom-class="light"
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
-    <view class="content">
-      <view v-if="!list.length && !loading" class="empty">暂无文件</view>
+    
+    <!-- 搜索栏 -->
+    <view class="search-bar">
+      <view class="search-input-wrap">
+        <uni-icons type="search" size="18" color="#999" />
+        <input 
+          class="search-input" 
+          v-model="searchKeyword" 
+          placeholder="搜索文件名" 
+          confirm-type="search"
+          @confirm="onSearch"
+        />
+        <view v-if="searchKeyword" class="search-clear" @click="clearSearch">
+          <uni-icons type="clear" size="16" color="#999" />
+        </view>
+      </view>
+      <view class="folder-toggle" @click="toggleFolderPanel">
+        <uni-icons :type="showFolderPanel ? 'folder' : 'folder'" size="20" color="#667eea" />
+      </view>
+      <view class="folder-manage" @click="showFolderPicker = true">
+        <uni-icons type="gear" size="20" color="#667eea" />
+      </view>
+    </view>
+    
+    <!-- 当前位置 -->
+    <view class="current-path" v-if="!isSearching">
+      <uni-icons type="folder" size="16" color="#667eea" />
+      <text class="path-text">{{ getCurrentFolderName() }}</text>
+      <text class="file-count" v-if="total !== undefined">({{ total }}个文件)</text>
+    </view>
+    <view class="current-path" v-else>
+      <uni-icons type="search" size="16" color="#667eea" />
+      <text class="path-text">搜索: {{ searchKeyword }}</text>
+      <text class="file-count" v-if="total !== undefined">({{ total }}个结果)</text>
+    </view>
+    
+    <view class="main-content">
+      <!-- 文件夹面板（平铺模式展示分级目录） -->
+      <view class="folder-panel" v-if="showFolderPanel">
+        <scroll-view class="folder-scroll" scroll-y>
+          <view 
+            v-for="folder in getFlatFolders()" 
+            :key="folder.path"
+            class="folder-item"
+            :class="{ active: currentFolder === folder.path && !isSearching }"
+            :style="{ paddingLeft: (16 + folder.level * 24) + 'rpx' }"
+            @click="selectFolder(folder.path)"
+          >
+            <uni-icons type="folder" size="18" color="#667eea" />
+            <text class="folder-name">{{ folder.displayName }}</text>
+            <text class="folder-count">{{ folder.totalCount }}</text>
+          </view>
+        </scroll-view>
+      </view>
+      
+      <!-- 文件列表 -->
+      <view class="file-list-wrap">
+        <view v-if="!list.length && !loading" class="empty">暂无文件</view>
       <view v-for="(item, idx) in list" :key="idx" class="card">
         <view class="thumb-wrap">
           <image v-if="isImageExt(getExtFromItem(item))" class="thumb" :src="(item.file_url || '').replace(/^http:/, 'https:')" mode="aspectFill" />
@@ -250,6 +439,7 @@ onReachBottom(() => {
             <view class="icon-btn" @click="onPreview(item)"><uni-icons type="eye" size="22" color="#1F2A37" /></view>
             <view class="icon-btn" @click="onCopyLink(item)"><uni-icons type="link" size="22" color="#1F2A37" /></view>
             <view class="icon-btn" @click="onDownload(item)"><uni-icons type="download" size="22" color="#1F2A37" /></view>
+            <view class="icon-btn delete-btn" @click="onDelete(item)"><uni-icons type="trash" size="22" color="#ef4444" /></view>
           </view>
         </view>
       </view>
@@ -257,10 +447,16 @@ onReachBottom(() => {
         <view v-if="loading" class="loading">加载中...</view>
         <view v-else-if="!hasMore" class="no-more">没有更多了</view>
       </view>
-      
+      </view>
     </view>
+    
+    <!-- 文件夹管理弹窗 -->
+    <FolderPicker 
+      v-model="currentFolder" 
+      v-model:visible="showFolderPicker"
+      @change="onFolderChange"
+    />
   </view>
-  
 </template>
 
 <style scoped lang="scss">
@@ -280,7 +476,124 @@ $radius-md: 24rpx;
   background: $bg-color;
 }
 
-.content { 
+// 搜索栏样式
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 32rpx;
+  background: $card-bg;
+}
+
+.search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #f5f7fa;
+  border-radius: 16rpx;
+  padding: 0 20rpx;
+  height: 72rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 72rpx;
+  font-size: 28rpx;
+  color: $text-primary;
+}
+
+.search-clear {
+  padding: 8rpx;
+}
+
+.folder-toggle {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 16rpx;
+}
+
+.folder-manage {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 16rpx;
+}
+
+// 当前路径
+.current-path {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 16rpx 32rpx;
+  background: $card-bg;
+  border-top: 1rpx solid $border-color;
+}
+
+.path-text {
+  font-size: 26rpx;
+  color: $text-primary;
+  font-weight: 500;
+}
+
+.file-count {
+  font-size: 24rpx;
+  color: $text-hint;
+}
+
+// 主内容区
+.main-content {
+  display: flex;
+  flex-direction: column;
+}
+
+// 文件夹面板
+.folder-panel {
+  background: $card-bg;
+  border-bottom: 1rpx solid $border-color;
+  max-height: 300rpx;
+}
+
+.folder-scroll {
+  max-height: 300rpx;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx 32rpx;
+  transition: background 0.2s;
+  
+  &:active, &.active {
+    background: rgba(102, 126, 234, 0.08);
+  }
+}
+
+.folder-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: $text-primary;
+}
+
+.folder-count {
+  font-size: 24rpx;
+  color: $text-hint;
+  background: #f0f1f3;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+// 文件列表区域
+.file-list-wrap {
+  flex: 1;
   padding: 32rpx;
 }
 
@@ -388,6 +701,11 @@ $radius-md: 24rpx;
 .icon-btn.primary { 
   background: $primary-gradient; 
   border: none;
+}
+
+.icon-btn.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .icon-btn::after { 

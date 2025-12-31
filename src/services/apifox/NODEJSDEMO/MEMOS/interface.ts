@@ -59,6 +59,31 @@ export interface getMemosResResultsItem {}
 export type getMemosTagsRes = string[][]
 
 /**
+ * @description Memos/Get memo statistics--接口返回值
+ * @url GET /memos/stats
+ */
+export interface getMemosStatsRes {
+  active?: number
+  archived?: number
+  deleted?: number
+  favorite?: number
+  folderStats?: getMemosStatsResFolderStats
+  pinned?: number
+  recentWeek?: number
+  topTags?: getMemosStatsResTopTagsItem[]
+  total?: number
+}
+
+/** 各文件夹备忘录数量 */
+export interface getMemosStatsResFolderStats {}
+
+/** 热门标签（前10个） */
+export interface getMemosStatsResTopTagsItem {
+  count?: number
+  tag?: string
+}
+
+/**
  * @description Memos/Batch update memos--接口请求Body参数
  * @url PATCH /memos/batch
  */
@@ -145,26 +170,22 @@ export interface postMemosMemoIdMoveRes {}
 export type deleteMemosMemoIdPermanentRes = string
 
 /**
- * @description Memos/Get memo statistics--接口返回值
- * @url GET /memos/stats
+ * @description Memos/Get a public memo (no auth required)--接口返回值
+ * @url GET /memos/{memoId}/public
  */
-export interface getMemosStatsRes {
-  active?: number
-  archived?: number
-  deleted?: number
-  favorite?: number
-  folderStats?: getMemosStatsResFolderStats
-  pinned?: number
-  recentWeek?: number
-  topTags?: getMemosStatsResTopTagsItem[]
-  total?: number
+export interface getMemosMemoIdPublicRes {}
+
+/**
+ * @description Memos/Get a public memo (no auth required)--接口请求Query参数
+ * @url GET /memos/public/detail
+ */
+export interface getMemosPublicDetailQuery {
+  /** 备忘录ID */
+  id: string
 }
 
-/** 各文件夹备忘录数量 */
-export interface getMemosStatsResFolderStats {}
-
-/** 热门标签（前10个） */
-export interface getMemosStatsResTopTagsItem {
-  count?: number
-  tag?: string
-}
+/**
+ * @description Memos/Get a public memo (no auth required)--接口返回值
+ * @url GET /memos/public/detail
+ */
+export interface getMemosPublicDetailRes {}

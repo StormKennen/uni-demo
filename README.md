@@ -33,7 +33,60 @@ pnpm build:mp-weixin
 - 系统: CentOS 7.9
 - Web目录: `/var/www/html/`
 
-### 上传命令（本地 PowerShell / Git Bash 执行）
+### 方式一：一键部署（推荐）
+
+使用 PowerShell 脚本自动完成构建、压缩、上传、部署：
+
+**首次部署前，需要先上传服务器端部署脚本：**
+
+```powershell
+scp -i $env:USERPROFILE\.ssh\id_ed25519 deploy-h5.sh root@120.24.96.11:/var/www/html/
+```
+
+**之后每次部署只需执行：**
+
+```powershell
+# 在项目根目录执行
+.\deploy-h5.ps1
+```
+
+脚本会自动：
+1. 构建 H5 (`pnpm build:h5`)
+2. 压缩构建产物为 `h5-deploy.zip`
+3. 上传压缩包到服务器
+4. 执行服务器端部署脚本（清理旧文件、解压新文件）
+
+### 方式二：手动部署
+
+#### 本地操作（PowerShell）
+
+```powershell
+# 构建 H5
+pnpm build:h5
+
+# 压缩构建产物
+Compress-Archive -Path ".\dist\build\h5\*" -DestinationPath "h5-deploy.zip" -Force
+
+# 上传压缩包到服务器
+scp -i $env:USERPROFILE\.ssh\id_ed25519 h5-deploy.zip root@120.24.96.11:/var/www/html/
+
+# 上传部署脚本（首次需要）
+scp -i $env:USERPROFILE\.ssh\id_ed25519 deploy-h5.sh root@120.24.96.11:/var/www/html/
+```
+
+#### 服务器操作
+
+```bash
+# 连接服务器
+ssh -i $env:USERPROFILE\.ssh\id_ed25519 root@120.24.96.11
+
+# 执行部署脚本
+cd /var/www/html
+chmod +x deploy-h5.sh
+./deploy-h5.sh h5-deploy.zip
+```
+
+### 方式三：直接上传（旧方式）
 
 ```bash
 # 构建 H5

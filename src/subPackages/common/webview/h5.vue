@@ -33,7 +33,7 @@
         param: tokenToParam(getToken()),
         from: 'business_wx',
       }
-      webviewUrl.value = `${import.meta.env.VITE_HKLIFE_H5_HOST}${_path}?${stringify(query.value)}`
+      webviewUrl.value = `${import.meta.env.VITE_PUBLIC_THIS_H5_URL}${_path}?${stringify(query.value)}`
     }
   })
   onShow(() => {
@@ -46,7 +46,7 @@
     } else if (query.value) {
       // 内部路径，更新token参数
       query.value.param = tokenToParam(getToken())
-      webviewUrl.value = `${import.meta.env.VITE_HKLIFE_H5_HOST}${path.value}?${stringify(query.value)}`
+      webviewUrl.value = `${import.meta.env.VITE_PUBLIC_THIS_H5_URL}${path.value}?${stringify(query.value)}`
     }
   })
 </script>

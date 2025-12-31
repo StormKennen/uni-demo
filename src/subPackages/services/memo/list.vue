@@ -142,27 +142,35 @@
             v-for="memo in memos" 
             :key="memo.id"
             class="memo-item"
-            @click="viewMemo(memo.id)"
+            @click="editMemo(memo.id)"
           >
+            <!-- <view class="memo-title">{{ memo.name || '-' }}</view> -->
             <view class="memo-header">
               <view class="memo-title-row">
-                <text class="memo-pin" v-if="memo.is_pinned">📌</text>
-                <text class="memo-favorite" v-if="memo.is_favorite">⭐</text>
-                <text class="memo-title">{{ memo.title?.value || '无标题' }}</text>
-              </view>
-              <view class="memo-actions" @click.stop>
-                <text class="action-icon" @click="togglePin(memo.id, memo.is_pinned)">
+                <text class="memo-name">{{ memo.name }}</text>
+                <!-- <text class="memo-pin" v-if="memo.is_pinned">📌</text> -->
+                 <text class="action-icon" @click.stop.prevent="togglePin(memo.id, memo.is_pinned)">
                   {{ memo.is_pinned ? '📌' : '📍' }}
                 </text>
-                <text class="action-icon" @click="toggleFavorite(memo.id, memo.is_favorite)">
+                <!-- <text class="memo-favorite" v-if="memo.is_favorite">⭐</text> -->
+                <text class="action-icon" @click.stop.prevent="toggleFavorite(memo.id, memo.is_favorite)">
                   {{ memo.is_favorite ? '⭐' : '☆' }}
                 </text>
-                <text class="action-icon" @click="editMemo(memo.id)">✏️</text>
-                <text class="action-icon" @click="deleteMemo(memo.id)">🗑️</text>
+                <!-- <text class="memo-title">{{ memo.name || '-' }}</text> -->
+              </view>
+              <view class="memo-actions" @click.stop>
+                <!-- <text class="action-icon" @click="togglePin(memo.id, memo.is_pinned)">
+                  {{ memo.is_pinned ? '📌' : '📍' }}
+                </text> -->
+                <!-- <text class="action-icon" @click="toggleFavorite(memo.id, memo.is_favorite)">
+                  {{ memo.is_favorite ? '⭐' : '☆' }}
+                </text> -->
+                <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text>
+                <text class="action-icon" @click="deleteMemo(memo.id)">🗑️</text> -->
               </view>
             </view>
             
-            <text class="memo-name">{{ memo.name }}</text>
+            <!-- <text class="memo-name">{{ memo.name }}</text> -->
             
             <view class="memo-tags" v-if="memo.tags && memo.tags.length > 0">
               <text 
@@ -176,6 +184,10 @@
             
             <view class="memo-meta">
               <text class="memo-time">{{ formatTime(memo.updated_at) }}</text>
+              <view class="memo-actions">
+                <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text> -->
+                <text class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
+              </view>
             </view>
           </view>
 
@@ -215,15 +227,13 @@
 import { 
   getMemosTags, 
   getMemos, 
-  postMemos
+  postMemos,
+  deleteMemosMemoId,
+  postMemosMemoIdPin,
+  postMemosMemoIdFavorite,
+  postMemosMemoIdArchive,
+  postMemosMemoIdRestore
 } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
-import {
-  deleteMemo,
-  toggleMemoPin,
-  toggleMemoFavorite,
-  archiveMemo,
-  restoreMemo
-} from '@/services/memo.api';
 
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import NavBar from '@/components/nav-bar.vue'
@@ -513,7 +523,7 @@ const editMemo = (id: string) => {
 const togglePin = async (id: string, isPinned: boolean) => {
   try {
     // 调用 API 切换置顶状态
-    const result = await toggleMemoPin(id)
+    const result = await postMemosMemoIdPin(id)
     
     // 更新本地列表数据
     const memo = memos.value.find(m => m.id === id)
@@ -545,7 +555,7 @@ const togglePin = async (id: string, isPinned: boolean) => {
 const toggleFavorite = async (id: string, isFavorite: boolean) => {
   try {
     // 调用 API 切换收藏状态
-    const result = await toggleMemoFavorite(id)
+    const result = await postMemosMemoIdFavorite(id)
     
     // 更新本地列表数据
     const memo = memos.value.find(m => m.id === id)
@@ -567,7 +577,7 @@ const toggleFavorite = async (id: string, isFavorite: boolean) => {
 }
 
 // 删除备忘录
-const deleteMemo = async (id: string) => {
+const handleDeleteMemo = async (id: string) => {
   uni.showModal({
     title: '确认删除',
     content: '确定要删除这个备忘录吗？',
@@ -580,7 +590,7 @@ const deleteMemo = async (id: string) => {
           })
           
           // 调用 Apifox 生成的删除 API
-          await deleteMemo(id)
+          await deleteMemosMemoId(id)
           
           // 从列表中移除
           memos.value = memos.value.filter(m => m.id !== id)
@@ -990,9 +1000,9 @@ onUnmounted(() => {
       }
       
       .memo-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
+        // display: flex;
+        // justify-content: space-between;
+        // align-items: flex-start;
         margin-bottom: 12rpx;
         
         .memo-title-row {
@@ -1027,6 +1037,13 @@ onUnmounted(() => {
           }
         }
       }
+
+      .memo-meta {
+        .action-icon {
+          font-size: 20rpx;
+          padding: 8rpx;
+        }
+      }
       
       .memo-name {
         font-size: 28rpx;
@@ -1051,6 +1068,8 @@ onUnmounted(() => {
       }
       
       .memo-meta {
+        display: flex;
+        justify-content: space-between;
         .memo-time {
           font-size: 24rpx;
           color: #999;

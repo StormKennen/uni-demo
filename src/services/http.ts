@@ -74,16 +74,22 @@ export class Request {
     const { baseURL } = this.config;
     // 拼接Url
     url = config.baseURL ? config.baseURL + url : baseURL + url;
+    
+    // 深拷贝 header 避免引用问题
     const _config = {
       ...this.config,
-      ...config
+      ...config,
+      header: {
+        ...this.config.header,
+        ...(config.header || {})
+      }
     }
     
     // 更新Token字段（兼容旧API）
-    _config.header.Token = getTokenByPlatform()
+    const token = getTokenByPlatform()
+    _config.header.Token = token
     
     // 更新Authorization header（新API标准）
-    const token = getTokenByPlatform()
     if (token) {
       _config.header.Authorization = `Bearer ${token}`
     } else {
@@ -222,14 +228,14 @@ export class Request {
         })
       }
       
-      // 非认证接口的401错误 - 禁用自动刷新与自动登录，直接弹窗提示
-      console.log('非认证接口401错误，禁用自动登录，直接提示登录')
-      await this.showLoginDialog()
-      return Promise.reject({
-        code: 401,
-        message: '登录已过期',
-        data: _data
-      })
+      // 非认证接口的401错误 - 尝试自动刷新token并重试
+      console.log('非认证接口401错误，尝试刷新token')
+      return this.handleTokenRefreshAndRetry(
+        requestConfig?.url || '',
+        requestConfig?.data,
+        requestConfig || {},
+        requestConfig?.method || 'GET'
+      )
     }
     
     const { code, msg, data } = _data;
@@ -287,6 +293,11 @@ export class Request {
         fail: (err: any) => {
           // 提示错误
           console.log("fail", err);
+          reject({
+            code: -1,
+            message: err.errMsg || '网络请求失败',
+            error: err
+          });
         },
         complete: () => {
           // 关闭Loading

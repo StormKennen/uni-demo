@@ -14,6 +14,8 @@ import type {
   putFilesIdRes,
   putFilesIdShareBody,
   putFilesIdShareRes,
+  getFilesFoldersRes,
+  getFilesFoldersTreeRes,
 } from './interface'
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
@@ -54,7 +56,7 @@ export const getFilesId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFilesIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/files/${id}', {}, _config)
+  return http.get(`/files/${id}`, {}, _config)
 }
 
 /**
@@ -68,7 +70,7 @@ export const putFilesId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<putFilesIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.put('/files/${id}', data, _config)
+  return http.put(`/files/${id}`, data, _config)
 }
 
 /**
@@ -81,7 +83,7 @@ export const deleteFilesId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteFilesIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/files/${id}', {}, _config)
+  return http.delete(`/files/${id}`, {}, _config)
 }
 
 /**
@@ -95,7 +97,7 @@ export const putFilesIdShare = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<putFilesIdShareRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.put('/files/${id}/share', data, _config)
+  return http.put(`/files/${id}/share`, data, _config)
 }
 
 /**
@@ -108,5 +110,63 @@ export const deleteFilesIdShare = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteFilesIdShareRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/files/${id}/share', {}, _config)
+  return http.delete(`/files/${id}/share`, {}, _config)
+}
+
+/**
+ * @description Files/创建文件夹
+ * @url POST /files/folders
+ */
+export const postFilesFolders = async (
+  data: { path: string },
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<{ path: string; name: string; id?: string; exists: boolean }> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/files/folders', data, _config)
+}
+
+/**
+ * @description Files/重命名文件夹
+ * @url PUT /files/folders
+ */
+export const putFilesFolders = async (
+  data: { path: string; newName: string },
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<{ oldPath: string; newPath: string; updated: boolean }> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.put('/files/folders', data, _config)
+}
+
+/**
+ * @description Files/删除文件夹
+ * @url DELETE /files/folders
+ */
+export const deleteFilesFolders = async (
+  data: { path: string },
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<{ path: string; deleted: boolean }> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete('/files/folders', data, _config)
+}
+
+/**
+ * @description Files/获取文件夹列表
+ * @url GET /files/folders
+ */
+export const getFilesFolders = async (
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getFilesFoldersRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/files/folders', {}, _config)
+}
+
+/**
+ * @description Files/获取文件夹树形结构
+ * @url GET /files/folders/tree
+ */
+export const getFilesFoldersTree = async (
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getFilesFoldersTreeRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/files/folders/tree', {}, _config)
 }

@@ -143,30 +143,31 @@ const handleDisagree = () => {
   .privacy-btns {
     display: flex;
     gap: 24rpx;
+  }
+  
+  .btn-disagree,
+  .btn-agree {
+    flex: 1;
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: 40rpx;
+    font-size: 30rpx;
+    font-weight: 500;
+    border: none;
     
-    button {
-      flex: 1;
-      height: 80rpx;
-      line-height: 80rpx;
-      border-radius: 40rpx;
-      font-size: 30rpx;
-      font-weight: 500;
-      border: none;
-      
-      &::after {
-        display: none;
-      }
+    &::after {
+      display: none;
     }
-    
-    .btn-disagree {
-      background: #f5f5f5;
-      color: #666;
-    }
-    
-    .btn-agree {
-      background: #0046B4;
-      color: #fff;
-    }
+  }
+  
+  .btn-disagree {
+    background: #f5f5f5;
+    color: #666;
+  }
+  
+  .btn-agree {
+    background: #0046B4;
+    color: #fff;
   }
 }
 </style>

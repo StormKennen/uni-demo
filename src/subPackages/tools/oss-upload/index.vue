@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { postFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox';
+import FolderPicker from '@/components/FolderPicker.vue';
 
 // import { post, getOssGetSignature } from '@/services/apifox/NODEJSDEMO/oSS/apifox';
 
@@ -21,26 +22,30 @@ const uploadedUrl = ref<string>('')
 const uploading = ref(false)
 const uploadError = ref('')
 
+// URL直接录入模式
+const urlInputMode = ref(false)
+const directUrl = ref<string>('')
+const savingUrl = ref(false)
+
+// 文件夹选择
+const selectedFolder = ref<string>('/')
+const showFolderPicker = ref(false)
+
 // 进入页面时仅调用一次获取签名并缓存
 const ossSignature = ref<any>(null)
 const uploadHost = ref<string>('https://lzk-web.oss-cn-beijing.aliyuncs.com')
-
-// async function prefetchSignature() {
-//   try {
-//     const sign = await getOssGetSignature()
-//     // 接口封装返回即为data
-//     ossSignature.value = sign
-//     if (sign?.host) uploadHost.value = sign.host
-//   } catch (e: any) {
-//     console.error('获取OSS签名失败', e)
-//     uni.showToast({ title: '获取上传凭证失败', icon: 'none' })
-//   }
-// }
 
 // 进入页面时检查登录状态
 onLoad(() => {
   checkLogin()
 })
+
+// 获取文件夹显示名称
+function getFolderDisplayName(path: string): string {
+  if (path === '/') return '根目录'
+  const parts = path.split('/').filter(s => s)
+  return parts[parts.length - 1] || '根目录'
+}
 
 // 检查登录状态
 function checkLogin() {
@@ -134,17 +139,53 @@ async function chooseFile() {
 
 async function chooseImageAction() {
   uploadError.value = ''
-  const res: any = await uni.chooseImage({ count: 1, sourceType: ['album', 'camera'] })
-  const filePath = (Array.isArray(res.tempFilePaths) && res.tempFilePaths[0])
-    || (Array.isArray(res.tempFiles) && res.tempFiles[0]?.path)
-  if (filePath) {
-    selectedFilePath.value = filePath
-    const ext = extractExtFromPath(filePath)
-    selectedFileName.value = `${formatDateId()}.${ext}`
-    const size = Array.isArray(res.tempFiles) ? (res.tempFiles[0]?.size || 0) : 0
-    selectedFileSize.value = size
-    selectedExt.value = ext
-    inputBaseName.value = ''
+  try {
+    const res: any = await uni.chooseImage({ count: 1, sourceType: ['album', 'camera'] })
+    const filePath = (Array.isArray(res.tempFilePaths) && res.tempFilePaths[0])
+      || (Array.isArray(res.tempFiles) && res.tempFiles[0]?.path)
+    
+    if (filePath) {
+      selectedFilePath.value = filePath
+      
+      // H5平台特殊处理：从tempFiles中获取文件信息
+      let ext = 'jpg'
+      let size = 0
+      
+      // #ifdef H5
+      if (Array.isArray(res.tempFiles) && res.tempFiles[0]) {
+        const file = res.tempFiles[0]
+        // H5的tempFiles包含原始File对象
+        if (file.name) {
+          ext = extractExtFromPath(file.name)
+        } else if (file.type) {
+          // 从MIME类型推断扩展名
+          const mimeMap: Record<string, string> = {
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/bmp': 'bmp'
+          }
+          ext = mimeMap[file.type] || 'jpg'
+        }
+        size = file.size || 0
+      }
+      // #endif
+      
+      // #ifndef H5
+      ext = extractExtFromPath(filePath)
+      size = Array.isArray(res.tempFiles) ? (res.tempFiles[0]?.size || 0) : 0
+      // #endif
+      
+      selectedFileName.value = `${formatDateId()}.${ext}`
+      selectedFileSize.value = size
+      selectedExt.value = ext
+      inputBaseName.value = ''
+    }
+  } catch (e) {
+    console.error('选择图片失败:', e)
+    uni.showToast({ title: '选择图片失败', icon: 'none' })
   }
 }
 
@@ -232,6 +273,7 @@ async function upload() {
         file_name: postFileName,
         file_size: selectedFileSize.value || 0,
         file_url: uploadedUrl.value,
+        folder: selectedFolder.value,
       })
     } catch (err) {
       console.error('生成文件记录失败', err)
@@ -294,6 +336,76 @@ function goToFileList() {
   const url = `/subPackages/tools/oss-upload/fileList?token=${encodeURIComponent(token)}&userid=${encodeURIComponent(userid)}`
   uni.navigateTo({ url })
 }
+
+// 切换URL输入模式
+function toggleUrlInputMode() {
+  urlInputMode.value = !urlInputMode.value
+  if (urlInputMode.value) {
+    // 切换到URL模式时，清空文件选择
+    resetSelection()
+  } else {
+    // 切换回文件模式时，清空URL
+    directUrl.value = ''
+  }
+}
+
+// 从URL中提取文件名
+function extractFileNameFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    const pathname = urlObj.pathname
+    const segments = pathname.split('/').filter(s => s)
+    if (segments.length > 0) {
+      return decodeURIComponent(segments[segments.length - 1])
+    }
+  } catch (e) {
+    // URL解析失败，尝试简单截取
+    const lastSlash = url.lastIndexOf('/')
+    if (lastSlash > -1 && lastSlash < url.length - 1) {
+      const name = url.substring(lastSlash + 1)
+      // 去掉查询参数
+      const queryIndex = name.indexOf('?')
+      return queryIndex > -1 ? name.substring(0, queryIndex) : name
+    }
+  }
+  return 'unknown_file'
+}
+
+// 保存URL记录
+async function saveUrlRecord() {
+  const url = directUrl.value.trim()
+  if (!url) {
+    uni.showToast({ title: '请输入文件地址', icon: 'none' })
+    return
+  }
+  
+  // 简单验证URL格式
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    uni.showToast({ title: '请输入有效的URL地址', icon: 'none' })
+    return
+  }
+  
+  savingUrl.value = true
+  try {
+    const fileName = extractFileNameFromUrl(url)
+    const fileSize = 10 * 1024 * 1024 // 固定10MB
+    
+    await postFiles({
+      file_name: fileName,
+      file_size: fileSize,
+      file_url: url,
+      folder: selectedFolder.value,
+    })
+    
+    uni.showToast({ title: '记录保存成功', icon: 'success' })
+    directUrl.value = ''
+  } catch (err) {
+    console.error('保存URL记录失败', err)
+    uni.showToast({ title: '保存失败', icon: 'none' })
+  } finally {
+    savingUrl.value = false
+  }
+}
 </script>
 
 <template>
@@ -314,7 +426,51 @@ function goToFileList() {
     </view>
   <view class="content">
     <view class="section upload-section">
-      <view v-if="!hasFile" class="upload-area">
+      <!-- 模式切换 -->
+      <view class="mode-switch">
+        <view class="mode-btn" :class="{ active: !urlInputMode }" @click="urlInputMode = false">
+          <uni-icons type="upload" size="18" :color="!urlInputMode ? '#667eea' : '#999'" />
+          <text>上传文件</text>
+        </view>
+        <view class="mode-btn" :class="{ active: urlInputMode }" @click="urlInputMode = true">
+          <uni-icons type="link" size="18" :color="urlInputMode ? '#667eea' : '#999'" />
+          <text>录入URL</text>
+        </view>
+      </view>
+      
+      <!-- 文件夹选择 -->
+      <view class="folder-selector" @click="showFolderPicker = true">
+        <view class="folder-icon">
+          <uni-icons type="folder" size="20" color="#667eea" />
+        </view>
+        <view class="folder-info">
+          <text class="folder-label">存放目录</text>
+          <text class="folder-path">{{ selectedFolder === '/' ? '根目录' : selectedFolder }}</text>
+        </view>
+        <uni-icons type="right" size="16" color="#999" />
+      </view>
+      
+      <!-- URL录入模式 -->
+      <view v-if="urlInputMode" class="url-input-section">
+        <view class="url-input-box">
+          <uni-icons type="link" size="20" color="#999" />
+          <input 
+            class="url-input" 
+            v-model="directUrl" 
+            placeholder="请输入文件URL地址" 
+            confirm-type="done"
+          />
+        </view>
+        <view class="url-hint">
+          <text>文件名将从URL中自动提取，大小固定为10MB</text>
+        </view>
+        <button class="btn primary" :disabled="savingUrl || !directUrl.trim()" @click="saveUrlRecord">
+          {{ savingUrl ? '保存中...' : '保存记录' }}
+        </button>
+      </view>
+      
+      <!-- 文件上传模式 -->
+      <view v-else-if="!hasFile" class="upload-area">
         <view class="upload-choices">
           <view class="choice" @click="chooseImageAction">
             <uni-icons type="camera" size="48" color="#999" />
@@ -360,6 +516,12 @@ function goToFileList() {
         </view>
       </view>
     </view>
+    
+    <!-- 文件夹选择弹窗 -->
+    <FolderPicker 
+      v-model="selectedFolder" 
+      v-model:visible="showFolderPicker"
+    />
   </view>
 </template>
 
@@ -387,6 +549,69 @@ $radius-md: 24rpx;
 
 .upload-section { 
   margin-bottom: 24rpx; 
+}
+
+.mode-switch {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: 8rpx;
+  box-shadow: $shadow-sm;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 20rpx 0;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: $text-hint;
+  transition: all 0.2s ease;
+  
+  &.active {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    font-weight: 600;
+  }
+}
+
+.url-input-section {
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: 24rpx;
+  box-shadow: $shadow-sm;
+}
+
+.url-input-box {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #fafbfc;
+  border: 1rpx solid $border-color;
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.url-input {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+  color: $text-primary;
+}
+
+.url-hint {
+  margin-bottom: 24rpx;
+  text {
+    font-size: 24rpx;
+    color: $text-hint;
+  }
 }
 
 .upload-area { 
@@ -650,4 +875,45 @@ $radius-md: 24rpx;
 .mt-16rpx { 
   margin-top: 16rpx;
 }
+
+// 文件夹选择器样式
+.folder-selector {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: 20rpx 24rpx;
+  margin-bottom: 24rpx;
+  box-shadow: $shadow-sm;
+}
+
+.folder-icon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 12rpx;
+  background: rgba(102, 126, 234, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.folder-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.folder-label {
+  font-size: 24rpx;
+  color: $text-hint;
+}
+
+.folder-path {
+  font-size: 28rpx;
+  color: $text-primary;
+  font-weight: 500;
+  margin-top: 4rpx;
+}
+
 </style>

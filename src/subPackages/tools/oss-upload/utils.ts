@@ -14,15 +14,15 @@ export const getOssToken = async () => {
     }
 }
 
-export const getOssFormData = async (name: string, ext: string) => {
+export const getOssFormData = async (name: string, ext: string, dirName: string) => {
 
   const kkRes = await getOssToken();
 
   let formData: any
   const { policy, signature, x_oss_signature_version, x_oss_credential, x_oss_date, security_token } = kkRes
-  const dir = 'common/uni-app-files';
+  const dir = dirName || 'common/uni-app-files/';
   const file_name = name || `${Date.now()}.${ext}`
-  // #ifdef MP-WEIXIN
+  // uni.uploadFile 的 formData 参数只接受普通对象，不支持 FormData 对象
   formData = {
     policy,
     'x-oss-signature': signature,
@@ -32,16 +32,5 @@ export const getOssFormData = async (name: string, ext: string) => {
     key: dir + file_name,
     'x-oss-security-token': security_token,
   }
-  // #endif
-  // #ifndef MP-WEIXIN
-  formData = new FormData()
-  formData.append('policy', policy)
-  formData.append('x-oss-signature', signature)
-  formData.append('x-oss-signature-version', x_oss_signature_version)
-  formData.append('x-oss-credential', x_oss_credential)
-  formData.append('x-oss-date', x_oss_date)
-  formData.append('key', dir + file_name)
-  formData.append('x-oss-security-token', security_token)
-  // #endif
   return formData
 }

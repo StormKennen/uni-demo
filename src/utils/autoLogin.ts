@@ -81,9 +81,11 @@ export const refreshAccessToken = async (): Promise<{ success: boolean }> => {
       setToken(response.access.token || '')
       setRefreshToken(response.refresh.token || '')
       
-      // 保存token过期时间
+      // 保存token过期时间（转换为时间戳毫秒数）
       if (response.access.expires) {
-        setTokenExpiresAt(response.access.expires)
+        // 后端返回的是 ISO 日期字符串，需要转换为时间戳
+        const expiresMs = new Date(response.access.expires).getTime()
+        setTokenExpiresAt(expiresMs)
       } else if (response.access.expiresIn) {
         // 如果返回的是相对时间（秒），转换为绝对时间
         const expires = Date.now() + (response.access.expiresIn * 1000)
@@ -91,7 +93,9 @@ export const refreshAccessToken = async (): Promise<{ success: boolean }> => {
       }
       
       if (response.refresh.expires) {
-        setRefreshTokenExpiresAt(response.refresh.expires)
+        // 后端返回的是 ISO 日期字符串，需要转换为时间戳
+        const expiresMs = new Date(response.refresh.expires).getTime()
+        setRefreshTokenExpiresAt(expiresMs)
       } else if (response.refresh.expiresIn) {
         // 如果返回的是相对时间（秒），转换为绝对时间
         const expires = Date.now() + (response.refresh.expiresIn * 1000)

@@ -11,6 +11,7 @@ node_modules
 .DS_Store
 dist
 *.local
+h5-deploy.zip
 
 # Editor directories and files
 .idea

@@ -5,7 +5,10 @@ import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteMemosMemoIdPermanentRes,
   deleteMemosMemoIdRes,
+  getMemosMemoIdPublicRes,
   getMemosMemoIdRes,
+  getMemosPublicDetailQuery,
+  getMemosPublicDetailRes,
   getMemosQuery,
   getMemosRes,
   getMemosStatsRes,
@@ -65,6 +68,18 @@ export const getMemosTags = async (
 }
 
 /**
+ * @description Memos/Get memo statistics
+ * @url GET /memos/stats
+ * @host https://app.apifox.com/link/project/7048425/apis/api-392744883
+ */
+export const getMemosStats = async (
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getMemosStatsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/memos/stats', {}, _config)
+}
+
+/**
  * @description Memos/Batch update memos
  * @url PATCH /memos/batch
  * @host https://app.apifox.com/link/project/7048425/apis/api-390070036
@@ -87,7 +102,7 @@ export const getMemosMemoId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMemosMemoIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/memos/${memoId}', {}, _config)
+  return http.get(`/memos/${memoId}`, {}, _config)
 }
 
 /**
@@ -101,7 +116,7 @@ export const patchMemosMemoId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchMemosMemoIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/memos/${memoId}', data, _config)
+  return http.patch(`/memos/${memoId}`, data, _config)
 }
 
 /**
@@ -114,7 +129,7 @@ export const deleteMemosMemoId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteMemosMemoIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/memos/${memoId}', {}, _config)
+  return http.delete(`/memos/${memoId}`, {}, _config)
 }
 
 /**
@@ -127,7 +142,7 @@ export const postMemosMemoIdArchive = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemosMemoIdArchiveRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memos/${memoId}/archive', {}, _config)
+  return http.post(`/memos/${memoId}/archive`, {}, _config)
 }
 
 /**
@@ -140,7 +155,7 @@ export const postMemosMemoIdRestore = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemosMemoIdRestoreRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memos/${memoId}/restore', {}, _config)
+  return http.post(`/memos/${memoId}/restore`, {}, _config)
 }
 
 /**
@@ -153,7 +168,7 @@ export const postMemosMemoIdPin = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemosMemoIdPinRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memos/${memoId}/pin', {}, _config)
+  return http.post(`/memos/${memoId}/pin`, {}, _config)
 }
 
 /**
@@ -166,7 +181,7 @@ export const postMemosMemoIdFavorite = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemosMemoIdFavoriteRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memos/${memoId}/favorite', {}, _config)
+  return http.post(`/memos/${memoId}/favorite`, {}, _config)
 }
 
 /**
@@ -180,7 +195,7 @@ export const postMemosMemoIdMove = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemosMemoIdMoveRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memos/${memoId}/move', data, _config)
+  return http.post(`/memos/${memoId}/move`, data, _config)
 }
 
 /**
@@ -193,17 +208,31 @@ export const deleteMemosMemoIdPermanent = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteMemosMemoIdPermanentRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/memos/${memoId}/permanent', {}, _config)
+  return http.delete(`/memos/${memoId}/permanent`, {}, _config)
 }
 
 /**
- * @description Memos/Get memo statistics
- * @url GET /memos/stats
- * @host https://app.apifox.com/link/project/7048425/apis/api-392744883
+ * @description Memos/Get a public memo (no auth required)
+ * @url GET /memos/public/detail?id={memoId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-395917382
  */
-export const getMemosStats = async (
+export const getMemosMemoIdPublic = async (
+  memoId: string,
   config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getMemosStatsRes>> => {
+): Promise<Expand<getMemosMemoIdPublicRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/memos/stats', {}, _config)
+  return http.get(`/memos/public/detail`, { id: memoId }, _config)
+}
+
+/**
+ * @description Memos/Get a public memo (no auth required)
+ * @url GET /memos/public/detail
+ * @host https://app.apifox.com/link/project/7048425/apis/api-396224787
+ */
+export const getMemosPublicDetail = async (
+  params: Expand<getMemosPublicDetailQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getMemosPublicDetailRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/memos/public/detail', params, _config)
 }
