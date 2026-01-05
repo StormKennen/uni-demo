@@ -195,6 +195,16 @@ const popularTools = ref<Tool[]>([
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     link: '/subPackages/tools/qr-parser/index',
     disabled: false
+  },
+  {
+    id: 10,
+    name: '万年历',
+    desc: '黄历查询、择吉日、时辰吉凶',
+    icon: 'calendar',
+    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
+    link: '/subPackages/tools/calendar/index',
+    disabled: false,
+    badge: 'NEW'
   }
 ])
 

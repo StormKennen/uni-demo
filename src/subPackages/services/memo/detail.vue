@@ -1,6 +1,11 @@
 <template>
   <view class="memo-detail-page">
-    <NavBar :title="memoTitle"></NavBar>
+    <nav-bar 
+      always-title
+      :title="memoTitle"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
+    />
 
     <view class="nav-actions">
       <!-- 导出图片按钮 -->
@@ -61,8 +66,17 @@
               v-for="(item, itemIndex) in block.children" 
               :key="itemIndex"
               class="text-item"
+              :class="{ 'has-link': item.linkInfo }"
+              @click="item.linkInfo ? handleTextLinkClick(item.linkInfo) : null"
             >
-              <text class="text-preview" :style="getTextStyle(item.style)">
+              <text v-if="item.linkInfo" class="link-indicator">
+                {{ item.linkInfo.linkType === 'navigation' ? '📍' : '🔗' }}
+              </text>
+              <text 
+                class="text-preview" 
+                :class="{ 'link-text': item.linkInfo }"
+                :style="getTextStyle(item.style)"
+              >
                 {{ item.value || '' }}
               </text>
             </view>
@@ -86,6 +100,7 @@
               </view>
             </view>
           </view>
+
         </view>
       </view>
     </view>
@@ -107,6 +122,7 @@ import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getToken } from '@/utils/storage'
 import { getMemosPublicDetail, getMemosMemoIdPublic } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
+import { openMapNavigation, openExternalLink } from '@/utils/map'
 
 const memoId = ref<string>('')
 const memoData = ref<any>(null)
@@ -273,6 +289,51 @@ const getImageMode = (style: any) => {
   }
 }
 
+// 获取链接样式
+const getLinkStyle = (style: any) => {
+  if (!style) return {}
+  return {
+    fontSize: (style.fontSize || 16) + 'px',
+    color: style.color || '#1890ff',
+    fontWeight: style.bold ? 'bold' : 'normal'
+  }
+}
+
+// 处理链接点击（通用）
+const handleLinkClick = (linkInfo: any) => {
+  if (!linkInfo) return
+  
+  if (linkInfo.linkType === 'navigation') {
+    // 导航类型
+    if (linkInfo.latitude && linkInfo.longitude) {
+      openMapNavigation(
+        Number(linkInfo.latitude),
+        Number(linkInfo.longitude),
+        linkInfo.address || linkInfo.label || '目的地',
+        linkInfo.address
+      )
+    } else {
+      uni.showToast({
+        title: '缺少经纬度信息',
+        icon: 'none'
+      })
+    }
+  } else {
+    // 超链接类型
+    if (linkInfo.url) {
+      openExternalLink(linkInfo.url)
+    } else {
+      uni.showToast({
+        title: '链接地址为空',
+        icon: 'none'
+      })
+    }
+  }
+}
+
+// 处理文本项链接点击（复用handleLinkClick）
+const handleTextLinkClick = handleLinkClick
+
 // 获取图片容器样式（用于inline-block布局中的宽度控制）
 const getImageContainerStyle = (style: any) => {
   if (!style) return {}
@@ -363,58 +424,109 @@ const formatExportDate = () => {
 
 // 导出图片（统一使用后端海报生成接口）
 const exportImage = async () => {
-  if (exportLoading.value) return
+  // 使用uni.showToast调试，因为console.log在生产环境可能被移除
+  // uni.showToast({ title: '导出函数被调用', icon: 'none', duration: 1000 })
+  
+  console.log('exportImage被调用, exportLoading:', exportLoading.value)
+  
+  if (exportLoading.value) {
+    console.log('exportLoading为true，直接返回')
+    uni.showToast({ title: '正在处理中...', icon: 'none' })
+    return
+  }
   
   try {
     exportLoading.value = true
+    console.log('设置exportLoading为true')
+    
     uni.showLoading({
       title: '正在生成图片...',
       mask: true
     })
     
-    const targetUrl = `${import.meta.env.VITE_PUBLIC_THIS_H5_URL}/subPackages/services/memo/detail?id=${memoId.value}`
+    console.log('=== 开始导出图片 ===')
+    console.log('当前平台:', process.env.UNI_PLATFORM || 'unknown')
+    console.log('memoId:', memoId.value)
+    
+    // 构建目标URL（去除可能的引号）
+    const baseUrl = String(import.meta.env.VITE_PUBLIC_THIS_H5_URL || '').replace(/['"]/g, '')
+    const targetUrl = `${baseUrl}/subPackages/services/memo/detail?id=${memoId.value}`
     const posterId = `memo_${memoId.value}_${Date.now()}`
     
-    console.log('开始生成海报, posterId:', posterId)
-    console.log('targetUrl:', targetUrl)
+    console.log('步骤1: 准备参数')
+    console.log('- posterId:', posterId)
+    console.log('- targetUrl:', targetUrl)
+    console.log('- baseUrl:', baseUrl)
+    console.log('- VITE_APP_BASE_URL:', import.meta.env.VITE_APP_BASE_URL)
     
     // 第一步：调用接口生成海报
-    const generateRes = await postPainterGenerateInfo({
-      id: posterId,
-      targetUrl: targetUrl,
-      selector: '.memo-content',
-      options: {
-        width: 375,
-        deviceScaleFactor: 2,
-        readySelector: '.is-ready'
-      }
-    })
+    console.log('步骤2: 调用海报生成接口...')
     
-    console.log('生成海报响应:', generateRes)
+    // 添加超时控制
+    const apiTimeout = 30000 // 30秒超时
+    let generateRes
     
-    if (!generateRes?.id) {
-      throw new Error('生成海报失败')
+    try {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('接口调用超时(30秒)')), apiTimeout)
+      })
+      
+      const apiPromise = postPainterGenerateInfo({
+        id: posterId,
+        targetUrl: targetUrl,
+        selector: '.memo-content',
+        options: {
+          width: 375,
+          deviceScaleFactor: 2,
+          readySelector: '.is-ready',
+          timeout: 60000
+        }
+      })
+      
+      generateRes = await Promise.race([apiPromise, timeoutPromise])
+      console.log('步骤2完成: 海报生成响应:', JSON.stringify(generateRes))
+    } catch (apiErr: any) {
+      console.error('步骤2失败: 调用海报接口失败')
+      console.error('- 错误信息:', apiErr?.message || apiErr)
+      throw new Error(`生成海报接口错误: ${apiErr.message || '未知错误'}`)
     }
     
-    console.log('开始下载海报图片')
+    if (!generateRes?.id) {
+      console.error('步骤2失败: 海报响应无效')
+      console.error('- generateRes:', JSON.stringify(generateRes))
+      throw new Error('生成海报失败，服务器未返回有效数据')
+    }
+    
+    console.log('步骤3: 开始下载海报图片')
     
     // 第二步：下载图片
     // #ifdef H5
+    console.log('- 使用H5下载方式')
     await downloadImageForH5(posterId)
     // #endif
     
     // #ifndef H5
+    console.log('- 使用小程序下载方式')
     await downloadImageForMp(posterId)
     // #endif
     
   } catch (error: any) {
     console.error('导出图片失败:', error)
     uni.hideLoading()
-    uni.showToast({
-      title: error.message || '导出失败，请重试',
-      icon: 'none'
+    
+    // 使用showModal显示详细错误，便于调试
+    const errorDetail = error?.message || error?.errMsg || String(error) || '未知错误'
+    console.error('错误详情:', errorDetail)
+    
+    uni.showModal({
+      title: '导出失败',
+      content: errorDetail.substring(0, 200),
+      showCancel: false
     })
+  } finally {
+    // 确保在任何情况下都重置loading状态
     exportLoading.value = false
+    console.log('exportLoading已重置为false')
   }
 }
 
@@ -448,40 +560,107 @@ const downloadImageForH5 = async (posterId: string) => {
   exportLoading.value = false
 }
 
-// 小程序端下载图片
+// 小程序端下载并保存图片
 const downloadImageForMp = async (posterId: string) => {
-  const downloadRes = await new Promise<UniApp.DownloadSuccessData>((resolve, reject) => {
-    uni.downloadFile({
-      url: `${import.meta.env.VITE_APP_BASE_URL}/painter/${posterId}`,
-      success: (res) => {
-        console.log('下载结果:', res)
-        resolve(res)
-      },
-      fail: (err) => {
-        console.error('下载失败:', err)
-        reject(err)
-      }
-    })
-  })
+  console.log('=== 小程序保存图片开始 ===')
   
-  if (downloadRes.statusCode !== 200) {
-    throw new Error(`下载失败，状态码: ${downloadRes.statusCode}`)
+  // 构建下载URL
+  const baseUrl = String(import.meta.env.VITE_APP_BASE_URL || '').replace(/['"]/g, '')
+  const imageUrl = `${baseUrl}/painter/${posterId}`
+  console.log('图片URL:', imageUrl)
+  
+  // 使用uni.getImageInfo获取网络图片（会自动下载到本地临时文件）
+  console.log('正在获取图片...')
+  
+  let tempFilePath: string
+  
+  try {
+    const imageInfo = await new Promise<UniApp.GetImageInfoSuccessData>((resolve, reject) => {
+      uni.getImageInfo({
+        src: imageUrl,
+        success: (res) => {
+          console.log('获取图片成功:', res.path)
+          resolve(res)
+        },
+        fail: (err) => {
+          console.error('获取图片失败:', err)
+          reject(new Error(err.errMsg || '获取图片失败'))
+        }
+      })
+    })
+    tempFilePath = imageInfo.path
+  } catch (err: any) {
+    // 如果getImageInfo失败，尝试使用downloadFile
+    console.log('getImageInfo失败，尝试downloadFile...')
+    try {
+      const downloadRes = await new Promise<UniApp.DownloadSuccessData>((resolve, reject) => {
+        uni.downloadFile({
+          url: imageUrl,
+          success: resolve,
+          fail: (err) => reject(new Error(err.errMsg || '下载失败'))
+        })
+      })
+      
+      if (downloadRes.statusCode !== 200 || !downloadRes.tempFilePath) {
+        throw new Error(`下载失败，状态码: ${downloadRes.statusCode}`)
+      }
+      tempFilePath = downloadRes.tempFilePath
+    } catch (downloadErr: any) {
+      throw new Error(`下载图片失败: ${downloadErr.message}`)
+    }
   }
   
-  console.log('保存到相册, tempFilePath:', downloadRes.tempFilePath)
+  console.log('临时文件路径:', tempFilePath)
   
-  // 先隐藏loading，避免遮挡隐私授权弹窗
+  // 隐藏loading
   uni.hideLoading()
   
   // 保存到相册
-  await uni.saveImageToPhotosAlbum({
-    filePath: downloadRes.tempFilePath
-  })
-  uni.showToast({
-    title: '已保存到相册',
-    icon: 'success'
-  })
-  exportLoading.value = false
+  console.log('正在保存到相册...')
+  try {
+    await new Promise<void>((resolve, reject) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: tempFilePath,
+        success: () => resolve(),
+        fail: (err) => reject(err)
+      })
+    })
+    
+    uni.showToast({
+      title: '已保存到相册',
+      icon: 'success'
+    })
+  } catch (saveErr: any) {
+    console.error('保存失败:', saveErr)
+    
+    // 权限问题
+    if (saveErr.errMsg && (saveErr.errMsg.includes('auth') || saveErr.errMsg.includes('deny'))) {
+      uni.showModal({
+        title: '需要授权',
+        content: '请授权保存图片到相册',
+        confirmText: '去设置',
+        success: (res) => {
+          if (res.confirm) {
+            uni.openSetting()
+          }
+        }
+      })
+      return
+    }
+    
+    // 其他错误，使用预览方式
+    uni.previewImage({
+      urls: [tempFilePath],
+      current: tempFilePath
+    })
+    uni.showToast({
+      title: '长按图片可保存',
+      icon: 'none',
+      duration: 2000
+    })
+  }
+  
+  console.log('=== 小程序保存图片完成 ===')
 }
 
 // 分享备忘录
@@ -716,5 +895,29 @@ onShareTimeline(() => {
   position: fixed;
   left: -9999px;
   top: -9999px;
+}
+
+// 文本项链接样式
+.text-item {
+  &.has-link {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    cursor: pointer;
+    
+    &:active {
+      opacity: 0.7;
+    }
+    
+    .link-text {
+      text-decoration: underline;
+      text-decoration-color: currentColor;
+    }
+    
+    .link-indicator {
+      font-size: 24rpx;
+      flex-shrink: 0;
+    }
+  }
 }
 </style>

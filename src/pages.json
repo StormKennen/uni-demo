@@ -98,6 +98,27 @@
             "navigationBarTitleText": "二维码解析",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "calendar/index",
+          "style": {
+            "navigationBarTitleText": "万年历",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "calendar/detail",
+          "style": {
+            "navigationBarTitleText": "黄历详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "calendar/festivals",
+          "style": {
+            "navigationBarTitleText": "节日",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

@@ -149,15 +149,12 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
   const password = ref()
   const confirmPassword = ref()
   const inputMobile = (val: string) => {
-    console.log('🚀 ~ inputMobile ~ val:', val)
     mobileNumber.value = val
   }
   const inputPassword = (val: string) => {
-    console.log('🚀 ~ inputPassword ~ val:', val)
     password.value = val
   }
   const inputConfirmPassword = (val: string) => {
-    console.log('🚀 ~ inputConfirmPassword ~ val:', val)
     confirmPassword.value = val
   }
 

@@ -1,18 +1,28 @@
 <template>
   <view class="memo-list-page">
     <!-- 导航栏 -->
-    <NavBar title="我的备忘录">
-      <template #right>
-        <view class="nav-actions">
-          <view class="action-btn folder-toggle" :class="{ active: !folderPanelCollapsed }" @click="toggleFolderPanel">
-            <text class="icon">{{ folderPanelCollapsed ? '☰' : '✕' }}</text>
-          </view>
-          <view class="action-btn add-btn" @click="createNewMemo">
-            <text class="icon">+</text>
-          </view>
+    <nav-bar 
+      always-title
+      title="我的备忘录"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
+    />
+    
+    <!-- 操作栏（导航栏下方独立一行） -->
+    <view class="action-bar">
+      <view class="action-bar-left">
+        <view class="action-btn folder-toggle" :class="{ active: !folderPanelCollapsed }" @click="toggleFolderPanel">
+          <text class="icon">{{ folderPanelCollapsed ? '☰' : '✕' }}</text>
+          <text class="btn-text">分类</text>
         </view>
-      </template>
-    </NavBar>
+      </view>
+      <view class="action-bar-right">
+        <view class="action-btn add-btn" @click="createNewMemo">
+          <text class="icon">+</text>
+          <text class="btn-text">新建</text>
+        </view>
+      </view>
+    </view>
 
     <view class="content-wrapper">
       <!-- 左侧文件夹树（可折叠） -->
@@ -751,6 +761,59 @@ onUnmounted(() => {
       font-size: 40rpx;
       font-weight: bold;
       color: #667eea;
+    }
+  }
+}
+
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+  
+  .action-bar-left, .action-bar-right {
+    display: flex;
+    gap: 16rpx;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    padding: 12rpx 24rpx;
+    border-radius: 8rpx;
+    background: #f5f5f5;
+    
+    .icon {
+      font-size: 28rpx;
+      color: #666;
+    }
+    
+    .btn-text {
+      font-size: 26rpx;
+      color: #666;
+    }
+    
+    &.folder-toggle.active {
+      background: #e6f7ff;
+      
+      .icon, .btn-text {
+        color: #1890ff;
+      }
+    }
+    
+    &.add-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      
+      .icon, .btn-text {
+        color: #fff;
+      }
+    }
+    
+    &:active {
+      opacity: 0.8;
     }
   }
 }
