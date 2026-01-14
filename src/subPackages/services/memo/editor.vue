@@ -842,16 +842,18 @@ const onSelectLocationForText = () => {
   }
 
   // #ifdef MP-WEIXIN
-  uni.chooseLocation({
-    success: (res) => {
+  // 直接使用 wx.chooseLocation 原生方法（已申请权限）
+  // @ts-ignore
+  wx.chooseLocation({
+    success: (res: any) => {
       if (item.linkInfo) {
         item.linkInfo.latitude = res.latitude
         item.linkInfo.longitude = res.longitude
-        item.linkInfo.address = res.name || res.address
+        item.linkInfo.address = res.name || res.address || ''
       }
       uni.showToast({ title: '位置已同步', icon: 'success' })
     },
-    fail: (err) => {
+    fail: (err: any) => {
       console.log('用户取消或选点失败', err)
       if (err.errMsg && !err.errMsg.includes('cancel')) {
         uni.showToast({ title: '选点失败', icon: 'none' })

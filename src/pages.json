@@ -119,6 +119,27 @@
             "navigationBarTitleText": "节日",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "calendar/auspicious",
+          "style": {
+            "navigationBarTitleText": "择吉日",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "video-compress/index",
+          "style": {
+            "navigationBarTitleText": "视频压缩神器",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "image-stitch/index",
+          "style": {
+            "navigationBarTitleText": "长图拼接",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

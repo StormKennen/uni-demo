@@ -163,10 +163,34 @@ const savedSpace = computed(() => {
 // 方法
 
 const selectImage = () => {
+  // #ifdef MP-WEIXIN
+  // 微信小程序需要先检查隐私授权
+  if (wx.getPrivacySetting) {
+    wx.getPrivacySetting({
+      success: (res: any) => {
+        console.log('隐私设置状态:', res)
+        doChooseImage()
+      },
+      fail: () => {
+        doChooseImage()
+      }
+    })
+  } else {
+    doChooseImage()
+  }
+  // #endif
+  
+  // #ifndef MP-WEIXIN
+  doChooseImage()
+  // #endif
+}
+
+// 实际执行选择图片
+const doChooseImage = () => {
   uni.chooseImage({
     count: 1,
     sizeType: ['original'],
-    sourceType: ['album', 'camera'],
+    sourceType: ['album'],
     success: (res: any) => {
       const tempFilePath = res.tempFilePaths[0]
       
@@ -192,6 +216,9 @@ const selectImage = () => {
     },
     fail: (err: any) => {
       console.error('选择图片失败:', err)
+      if (err.errMsg && err.errMsg.includes('cancel')) {
+        return
+      }
       uni.showToast({
         title: '选择图片失败',
         icon: 'none'

@@ -1,11 +1,3 @@
-<!-- <template>
-  <view>
-    <view class="title">树形图折叠展开测试</view>
-    <view>
-      <LEchart class="echart" ref="chart" @finished="init"></LEchart>
-    </view>
-  </view>
-</template> -->
 <template>
   <view class="family-tree-page">
     <!-- 顶部导航栏（统一组件） -->

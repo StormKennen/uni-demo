@@ -140,7 +140,24 @@ async function chooseFile() {
 async function chooseImageAction() {
   uploadError.value = ''
   try {
-    const res: any = await uni.chooseImage({ count: 1, sourceType: ['album', 'camera'] })
+    // #ifdef MP-WEIXIN
+    // 微信小程序需要先检查隐私授权
+    if (wx.getPrivacySetting) {
+      await new Promise((resolve, reject) => {
+        wx.getPrivacySetting({
+          success: (res: any) => {
+            console.log('隐私设置状态:', res)
+            resolve(res)
+          },
+          fail: () => {
+            resolve(null)
+          }
+        })
+      })
+    }
+    // #endif
+    
+    const res: any = await uni.chooseImage({ count: 1, sourceType: ['album'] })
     const filePath = (Array.isArray(res.tempFilePaths) && res.tempFilePaths[0])
       || (Array.isArray(res.tempFiles) && res.tempFiles[0]?.path)
     

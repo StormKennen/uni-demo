@@ -76,7 +76,7 @@
     <!-- 图片工具 -->
     <view class="section">
       <view class="section-header">
-        <text class="section-title">图片工具</text>
+        <text class="section-title">图片/视频工具</text>
         <text class="section-subtitle">IMAGE</text>
       </view>
       
@@ -212,6 +212,24 @@ const popularTools = ref<Tool[]>([
 const imageTools = ref<Tool[]>([
   {
     id: 3,
+    name: '图片上传',
+    desc: '安全快速传输',
+    icon: 'upload',
+    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    link: '/subPackages/tools/oss-upload/index',
+    disabled: false
+  },
+  {
+    id: 12,
+    name: '图片拼接',
+    desc: '多图合成长图',
+    icon: 'images',
+    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    link: '/subPackages/tools/image-stitch/index',
+    disabled: false
+  },
+  {
+    id: 4,
     name: '图片压缩',
     desc: '智能压缩不失真',
     icon: 'image',
@@ -220,12 +238,12 @@ const imageTools = ref<Tool[]>([
     disabled: false
   },
   {
-    id: 4,
-    name: '文件上传',
-    desc: '安全快速传输',
-    icon: 'upload',
-    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-    link: '/subPackages/tools/oss-upload/index',
+    id: 11,
+    name: '视频压缩',
+    desc: '高效压缩省空间',
+    icon: 'videocam',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    link: '/subPackages/tools/video-compress/index',
     disabled: false
   }
 ])
@@ -242,24 +260,24 @@ const moreTools = ref<Tool[]>([
     disabled: false,
     badge: '新'
   },
-  {
-    id: 6,
-    name: '食谱大全',
-    desc: '中文食谱，食材筛选',
-    icon: 'flag',
-    gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-    link: '/subPackages/services/recipe/index',
-    disabled: false
-  },
-  {
-    id: 7,
-    name: '族谱查看',
-    desc: '快照模式，仅供浏览',
-    icon: 'person',
-    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    link: '/subPackages/tools/family-tree/demo',
-    disabled: false
-  },
+  // {
+  //   id: 6,
+  //   name: '食谱大全',
+  //   desc: '中文食谱，食材筛选',
+  //   icon: 'flag',
+  //   gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
+  //   link: '/subPackages/services/recipe/index',
+  //   disabled: false
+  // },
+  // {
+  //   id: 7,
+  //   name: '族谱查看',
+  //   desc: '快照模式，仅供浏览',
+  //   icon: 'person',
+  //   gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  //   link: '/subPackages/tools/family-tree/demo',
+  //   disabled: false
+  // },
   {
     id: 8,
     name: '族谱编辑',

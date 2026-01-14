@@ -26,13 +26,40 @@
         <view class="header-btn today-btn" @click="goToday">
           <text>今</text>
         </view>
-        <view class="header-btn share-btn" @click="onShare">
+        <view class="header-btn filter-btn" :class="{ active: showLuckyTags || selectedLuckyTag }" @click="toggleLuckyTags">
+          <uni-icons type="bars" size="16" :color="showLuckyTags || selectedLuckyTag ? '#C83C3C' : '#fff'" />
+        </view>
+        <!-- <view class="header-btn share-btn" @click="onShare">
           <text>分享</text>
+        </view> -->
+        <view class="header-btn festivals-btn" @click="goToAuspicious">
+          <text>择吉</text>
         </view>
         <view class="header-btn festivals-btn" @click="goToFestivals">
           <text>节日</text>
         </view>
       </view>
+    </view>
+    
+    <!-- 择吉日标签栏 -->
+    <view class="lucky-tags" v-if="showLuckyTags">
+      <scroll-view scroll-x class="tags-scroll">
+        <view class="tags-container">
+          <view 
+            v-for="tag in luckyTags" 
+            :key="tag.key"
+            class="lucky-tag"
+            :class="{ active: selectedLuckyTag === tag.key }"
+            @click="selectLuckyTag(tag.key)"
+          >
+            {{ tag.label }}
+          </view>
+          <!-- 收起按钮 -->
+          <view class="lucky-tag close-tag" @click="toggleLuckyTags">
+            <uni-icons type="closeempty" size="14" color="#999" />
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
     <!-- 星期标题 -->
@@ -47,17 +74,18 @@
       </view>
     </view>
 
-    <!-- 日历网格 -->
+    <!-- 日历网格（只显示4行） -->
     <view class="calendar-grid">
       <view 
-        v-for="(item, index) in calendarData" 
+        v-for="(item, index) in displayCalendarData" 
         :key="index"
         class="calendar-cell"
         :class="{
           'other-month': !item.isCurrentMonth,
           'selected': isSelected(item),
           'today': isToday(item),
-          'has-festival': item.jieQi || item.festivals.length > 0
+          'has-festival': item.jieQi || item.festivals.length > 0,
+          'lucky-day': isLuckyDay(item)
         }"
         @click="selectDate(item)"
       >
@@ -120,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCalendarMonth, getCalendarDetail } from '@/services/apifox/NODEJSDEMO/CALENDAR/apifox'
+import { getCalendarMonth, getCalendarDetail, getCalendarAuspicious } from '@/services/apifox/NODEJSDEMO/CALENDAR/apifox'
 import { ref, computed, onMounted } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { formatDate, getTodayStr } from '@/utils/lunar'
@@ -128,6 +156,33 @@ import NavBar from '@/components/nav-bar.vue'
 import { holidays } from './holidays'
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+
+// 择吉日标签配置
+const luckyTags = [
+  { key: 'marry', label: '结婚', keywords: ['嫁娶', '结婚'] },
+  { key: 'travel', label: '出行', keywords: ['出行'] },
+  { key: 'move', label: '搬新房', keywords: ['入宅'] },
+  { key: 'engagement', label: '订盟', keywords: ['订盟', '订婚'] },
+  { key: 'haircut', label: '理发', keywords: ['理发', '剃头'] },
+  { key: 'business', label: '开业', keywords: ['开市', '开业'] }
+]
+
+// 当前选中的吉日标签
+const selectedLuckyTag = ref<string | null>(null)
+// 吉日日期列表（存储日期字符串）
+const luckyDates = ref<string[]>([])
+// 是否显示择吉日标签栏
+const showLuckyTags = ref(false)
+
+// 切换择吉日标签栏显示
+const toggleLuckyTags = () => {
+  showLuckyTags.value = !showLuckyTags.value
+  // 收起时清除选中的标签
+  if (!showLuckyTags.value) {
+    selectedLuckyTag.value = null
+    luckyDates.value = []
+  }
+}
 
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth() + 1)
@@ -154,12 +209,39 @@ const displayJi = computed(() => {
   return selectedData.value?.ji?.slice(0, 4) || []
 })
 
+// 只显示4行日历数据（28个格子）
+const displayCalendarData = computed(() => {
+  if (!calendarData.value || calendarData.value.length === 0) return []
+  
+  // 找到选中日期所在的行，确保选中日期可见
+  const selectedIndex = calendarData.value.findIndex(item => isSelected(item))
+  
+  // 计算起始行（确保选中日期在可见范围内）
+  let startRow = 0
+  if (selectedIndex >= 0) {
+    const selectedRow = Math.floor(selectedIndex / 7)
+    // 如果选中日期在第4行之后，调整起始行
+    if (selectedRow >= 4) {
+      startRow = selectedRow - 3
+    }
+  }
+  
+  const startIndex = startRow * 7
+  const endIndex = startIndex + 28 // 4行 x 7列 = 28
+  
+  return calendarData.value.slice(startIndex, endIndex)
+})
+
 // 从后端获取月历数据
 const loadCalendar = async () => {
   try {
     const res = await getCalendarMonth({ year: currentYear.value, month: currentMonth.value })
     if (res?.days) {
       calendarData.value = res.days
+    }
+    // 如果有选中的吉日标签，重新加载吉日数据
+    if (selectedLuckyTag.value) {
+      await loadLuckyDates(selectedLuckyTag.value)
     }
   } catch (error) {
     console.error('获取月历数据失败:', error)
@@ -191,6 +273,54 @@ const isSelected = (item: any) => {
 const isToday = (item: any) => {
   const dateStr = formatDate(item.solar.year, item.solar.month, item.solar.day)
   return dateStr === getTodayStr()
+}
+
+// 选择吉日标签
+const selectLuckyTag = async (key: string) => {
+  // 再次点击取消选中
+  if (selectedLuckyTag.value === key) {
+    selectedLuckyTag.value = null
+    luckyDates.value = []
+  } else {
+    selectedLuckyTag.value = key
+    await loadLuckyDates(key)
+  }
+}
+
+// 加载吉日数据
+const loadLuckyDates = async (tagKey: string) => {
+  const tag = luckyTags.find(t => t.key === tagKey)
+  if (!tag) return
+  
+  try {
+    // 使用第一个关键字调用 API
+    const res = await getCalendarAuspicious({
+      year: currentYear.value,
+      month: currentMonth.value,
+      event: tag.keywords[0]
+    })
+    
+    // API 返回格式: { year, month, event, days: [{solar: {year, month, day}, ...}, ...] }
+    if (res?.days && Array.isArray(res.days)) {
+      // 将日期对象转换为日期字符串
+      luckyDates.value = res.days.map((d: any) => 
+        formatDate(d.solar.year, d.solar.month, d.solar.day)
+      )
+    } else {
+      luckyDates.value = []
+    }
+  } catch (error) {
+    console.error('获取吉日数据失败:', error)
+    luckyDates.value = []
+  }
+}
+
+// 判断日期是否为当前选中标签的吉日
+const isLuckyDay = (item: any) => {
+  if (!selectedLuckyTag.value || luckyDates.value.length === 0) return false
+  
+  const dateStr = formatDate(item.solar.year, item.solar.month, item.solar.day)
+  return luckyDates.value.includes(dateStr)
 }
 
 const selectDate = async (item: any) => {
@@ -254,6 +384,12 @@ const goToDetail = () => {
 const goToFestivals = () => {
   uni.navigateTo({
     url: '/subPackages/tools/calendar/festivals'
+  })
+}
+
+const goToAuspicious = () => {
+  uni.navigateTo({
+    url: '/subPackages/tools/calendar/auspicious'
   })
 }
 
@@ -327,6 +463,47 @@ $card-bg: #FFFFFF;
   padding-bottom: 40rpx;
 }
 
+// 择吉日标签栏
+.lucky-tags {
+  background-color: #fff;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.tags-scroll {
+  white-space: nowrap;
+}
+
+.tags-container {
+  display: inline-flex;
+  padding: 0 24rpx;
+  gap: 20rpx;
+}
+
+.lucky-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 24rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  color: #666;
+  background-color: #f5f5f5;
+  border: 2rpx solid #e0e0e0;
+  
+  &.active {
+    color: #fff;
+    background-color: $primary-red;
+    border-color: $primary-red;
+  }
+  
+  &.close-tag {
+    padding: 8rpx 16rpx;
+    background-color: transparent;
+    border: none;
+  }
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -391,6 +568,21 @@ $card-bg: #FFFFFF;
     border: 2rpx solid #fff;
     border-radius: 8rpx;
     font-weight: 600;
+  }
+  
+  &.filter-btn {
+    width: 48rpx;
+    height: 48rpx;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 8rpx;
+    
+    &.active {
+      background-color: #fff;
+    }
   }
   
   &.share-btn {
@@ -467,6 +659,19 @@ $card-bg: #FFFFFF;
       color: $primary-red;
     }
   }
+  
+  // 吉日背景样式（浅黄色）
+  &.lucky-day {
+    background-color: #f5f2e9;
+  }
+  
+  // 确保今日样式不被吉日背景覆盖
+  &.today.lucky-day:not(.selected) {
+    .solar-day {
+      color: $primary-red;
+      font-weight: 600;
+    }
+  }
 }
 
 .solar-day {
@@ -493,11 +698,13 @@ $card-bg: #FFFFFF;
   border-radius: 4rpx;
   
   &.rest {
-    color: #52c41a;
+    color: $primary-red;
+    font-weight: 500;
   }
   
   &.work {
     color: #fa8c16;
+    font-weight: 500;
   }
 }
 
