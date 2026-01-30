@@ -34,7 +34,7 @@
     </view>
 
     <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
-    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': !loading && memoData }">
+    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }">
       <!-- 标题 -->
       <!-- <view class="memo-header">
         <text class="memo-title">{{ memoData.name || '未命名备忘录' }}</text>
@@ -58,10 +58,18 @@
         <view 
           v-for="(block, blockIndex) in parsedContent" 
           :key="blockIndex"
+          :id="'L' + (blockIndex + 1)"
           class="content-block"
         >
+          <!-- 锚点标签显示 -->
+          <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
           <!-- 文本块 -->
-          <view v-if="block.type === 'text'" class="text-block" :style="getBlockStyle(block.style)">
+          <view 
+            v-if="block.type === 'text'" 
+            class="text-block" 
+            :class="{ 'is-markdown': block.isMarkdown }"
+            :style="getBlockStyle(block.style)"
+          >
             <view 
               v-for="(item, itemIndex) in block.children" 
               :key="itemIndex"
@@ -70,15 +78,52 @@
               @click="item.linkInfo ? handleTextLinkClick(item.linkInfo) : null"
             >
               <text v-if="item.linkInfo" class="link-indicator">
-                {{ item.linkInfo.linkType === 'navigation' ? '📍' : '🔗' }}
+                {{ item.linkInfo.linkType === 'navigation' ? '📍' : (item.linkInfo.linkType === 'internal' ? '📄' : '🔗') }}
               </text>
+              <!-- Markdown 模式 -->
+              <view 
+                v-if="block.isMarkdown"
+                class="markdown-body" 
+                :class="{ 'link-text': item.linkInfo }"
+                :style="getTextStyleWithVars(item.style)"
+                @click="handleMarkdownClick"
+              >
+                <!-- #ifdef H5 -->
+                <rich-text 
+                  :nodes="renderMarkdown(item.value, item.style, undefined, false)" 
+                  @click="handleMarkdownClick"
+                  :user-select="true"
+                  :selectable="true"
+                ></rich-text>
+                <!-- #endif -->
+                <!-- #ifdef MP-WEIXIN -->
+                <rich-text 
+                  :nodes="renderMarkdown(item.value, item.style, undefined, false)" 
+                  @tap="handleMarkdownClick" 
+                  @touchend="handleMarkdownClick"
+                  :data-text="item.value"
+                  :user-select="true"
+                  :selectable="true"
+                ></rich-text>
+                <!-- #endif -->
+                <!-- #ifndef H5 -->
+                <!-- #ifndef MP-WEIXIN -->
+                <rich-text 
+                  :nodes="renderMarkdown(item.value, item.style, undefined, false)" 
+                  @click="handleMarkdownClick"
+                  :user-select="true"
+                  :selectable="true"
+                ></rich-text>
+                <!-- #endif -->
+                <!-- #endif -->
+              </view>
+              <!-- 普通文本模式 -->
               <text 
+                v-else
                 class="text-preview" 
                 :class="{ 'link-text': item.linkInfo }"
                 :style="getTextStyle(item.style)"
-              >
-                {{ item.value || '' }}
-              </text>
+              >{{ item.value || '' }}</text>
             </view>
           </view>
 
@@ -117,17 +162,175 @@
 <script setup lang="ts">
 import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
 
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, getCurrentInstance } from 'vue'
+import { marked } from 'marked'
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getToken } from '@/utils/storage'
 import { getMemosPublicDetail, getMemosMemoIdPublic } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
 import { openMapNavigation, openExternalLink } from '@/utils/map'
 
+// 获取组件实例用于 uni.createSelectorQuery()
+const instance = getCurrentInstance()
+
 const memoId = ref<string>('')
 const memoData = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
+
+// 渲染完成状态锁 - 用于确保截图时 Markdown 已完全渲染
+const isRendered = ref(false)
+
+// 配置 marked 选项 - 回退到基础 Markdown 解析模式（消除 JS 报错）
+marked.setOptions({
+  breaks: true,
+  gfm: true
+  // 移除 html: true 和 sanitize: false 以确保渲染器稳定
+})
+
+// 判断是否为 H5 环境
+const isH5 = () => {
+  // #ifdef H5
+  return true
+  // #endif
+  // #ifndef H5
+  return false
+  // #endif
+}
+
+// Markdown 渲染方法 - 强力内联样式注入（绕过 WXSS 编译）
+const renderMarkdown = (content: string, blockStyle?: any, anchorId?: string, isForExport?: boolean): string => {
+  if (!content) return ''
+  
+  try {
+    // 1. 处理占位符 [w数字] 转换为 &nbsp;
+    let html = marked.parse(content.replace(/\[w(\d+)\]/g, (m, w) => {
+      const width = parseInt(w)
+      return isNaN(width) ? '' : '&nbsp;'.repeat(Math.max(1, Math.floor(width / 12)))
+    })) as string
+
+    // 2. 准备内联样式变量
+    const color = blockStyle?.color || '#333'
+    const fontSize = blockStyle?.fontSize ? blockStyle.fontSize + 'rpx' : '28rpx'
+    const fontWeight = blockStyle?.bold ? 'bold' : 'normal'
+    const fontStyle = blockStyle?.italic ? 'italic' : 'normal'
+    const textDecoration = blockStyle?.underline ? 'underline' : (blockStyle?.lineThrough ? 'line-through' : 'none')
+    const cellStyle = `border:1px solid #e0e0e0;padding:12rpx;color:${color};font-size:${fontSize};`
+
+    // 3. 强力内联注入 (绕过 WXSS 编译) - 使用边界匹配避免误伤
+    html = html
+      .replace(/<table(?=\s|>)/gi, '<div style="overflow-x:auto;margin:20rpx 0;"><table style="width:100%;border-collapse:collapse;"')
+      .replace(/<\/table>/gi, '</table></div>')
+      .replace(/<th(?=\s|>)/gi, `<th style="${cellStyle}background-color:#f8f9fa;font-weight:bold;"`)
+      .replace(/<td(?=\s|>)/gi, `<td style="${cellStyle}"`)
+      .replace(/<(p|li|span)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:${fontWeight};font-style:${fontStyle};text-decoration:${textDecoration};line-height:1.6;"`)
+      .replace(/<(h[1-6])(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:bold;margin:16rpx 0;"`)
+      .replace(/<(strong|b)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:bold;"`)
+      .replace(/<(em|i)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-style:italic;"`)
+      .replace(/<code(?=\s|>)/gi, `<code style="background-color:#f1f3f4;color:${color};font-size:${fontSize};padding:2rpx 6rpx;border-radius:4rpx;font-family:monospace;"`)
+      .replace(/<pre(?=\s|>)/gi, `<pre style="background-color:#f8f9fa;color:${color};font-size:${fontSize};padding:16rpx;border-radius:8rpx;overflow-x:auto;"`)
+      .replace(/<blockquote(?=\s|>)/gi, `<blockquote style="border-left:4rpx solid #667eea;margin:0;padding:0 16rpx;background-color:transparent;color:${color};font-size:${fontSize};"`)
+      .replace(/<a(?=\s|>)/gi, `<a style="color:#007bff;text-decoration:underline;font-size:${fontSize};"`)
+    
+    // 调试补丁：检查生成的 HTML 是否异常
+    if (!html || html.trim().length === 0) {
+      console.warn('renderMarkdown 返回空 HTML:', { content, blockStyle })
+    }
+    if (html.includes('<th') && html.includes('ead>')) {
+      console.error('HTML 存在无效标签（正则误伤）:', html)
+    }
+    if (html.includes('<') && !html.includes('>')) {
+      console.error('HTML 标签不闭合:', html)
+    }
+    
+    // 渲染同步延迟锁
+    setTimeout(() => {
+      isRendered.value = true
+    }, 500)
+    
+    return html
+  } catch (e) {
+    console.error('Markdown 解析失败:', e)
+    return content
+  }
+}
+
+// 导出模式的 Markdown 渲染包装器
+const renderMarkdownForExport = (content: string, style?: any, anchorId?: string): string => {
+  return renderMarkdown(content, style, anchorId, true) // isForExport = true
+}
+
+// 获取块的锚点ID（从第一个文本项的linkInfo中获取）
+const getBlockAnchorId = (block: any): string | undefined => {
+  if (block.type === 'text' && block.children && block.children.length > 0) {
+    const firstTextItem = block.children[0]
+    if (firstTextItem.linkInfo && firstTextItem.linkInfo.linkType === 'anchor' && firstTextItem.linkInfo.anchorId) {
+      return firstTextItem.linkInfo.anchorId
+    }
+  }
+  return undefined
+}
+
+// 滚动到指定锚点（兼容H5和微信小程序，优化版本）
+const scrollToAnchor = (anchorId: string) => {
+  if (!anchorId) return
+  
+  console.log('scrollToAnchor called with:', anchorId)
+  
+  // 使用 nextTick 确保 DOM 元素已渲染
+  nextTick(() => {
+    // 等待一小段时间确保元素完全渲染
+    setTimeout(() => {
+      const query = uni.createSelectorQuery().in(instance.proxy)
+      query.select(`#${anchorId}`).boundingClientRect(data => {
+        console.log('Anchor element data:', data)
+        if (data) {
+          let targetScrollTop = 0
+          
+          // 平台特定的滚动位置计算
+          // #ifdef H5
+          // H5环境：需要考虑已滚动的偏移量
+          const currentScrollTop = window?.pageYOffset || document.documentElement.scrollTop || 0
+          targetScrollTop = data.top + currentScrollTop - 60 // H5减去60px顶栏间距
+          console.log('H5 scrolling - current:', currentScrollTop, 'element top:', data.top, 'target:', targetScrollTop)
+          // #endif
+          
+          // #ifdef MP-WEIXIN
+          // 微信小程序环境：直接使用元素的top值
+          targetScrollTop = data.top - 50 // 微信小程序减去50px顶栏间距
+          console.log('WeChat scrolling - element top:', data.top, 'target:', targetScrollTop)
+          // #endif
+          
+          // #ifndef H5
+          // #ifndef MP-WEIXIN
+          // 其他平台（如其他小程序）
+          targetScrollTop = data.top - 50
+          console.log('Other platform scrolling - element top:', data.top, 'target:', targetScrollTop)
+          // #endif
+          // #endif
+          
+          uni.pageScrollTo({
+            scrollTop: Math.max(0, targetScrollTop),
+            duration: 300,
+            success: () => {
+              console.log('Scroll to anchor successful')
+            },
+            fail: (err) => {
+              console.error('Scroll to anchor failed:', err)
+            }
+          })
+        } else {
+          console.warn('Anchor element not found:', anchorId)
+          uni.showToast({
+            title: '未找到目标位置',
+            icon: 'none',
+            duration: 2000
+          })
+        }
+      }).exec()
+    }, 100) // 等待100ms确保元素完全渲染
+  })
+}
 
 // 检查登录状态
 const isLoggedIn = computed(() => !!getToken())
@@ -225,6 +428,18 @@ const getTextStyle = (style: any) => {
   }
 }
 
+// 获取文本样式（带 CSS 变量，用于 Markdown 模式）
+const getTextStyleWithVars = (style: any) => {
+  if (!style) return {}
+  return {
+    '--memo-fs': (style.fontSize || 16) + 'px',
+    '--memo-color': style.color || '#333',
+    '--memo-fw': style.bold ? 'bold' : 'normal',
+    '--memo-fs-italic': style.italic ? 'italic' : 'normal',
+    '--memo-text-decoration': style.underline ? 'underline' : (style.lineThrough ? 'line-through' : 'none')
+  }
+}
+
 // 获取图片样式 - 与editor.vue完全一致
 const getImageStyle = (style: any) => {
   if (!style) return {}
@@ -303,25 +518,85 @@ const getLinkStyle = (style: any) => {
 const handleLinkClick = (linkInfo: any) => {
   if (!linkInfo) return
   
+  // 检查是否是锚点跳转链接
+  if (linkInfo.url && linkInfo.url.startsWith('memo://scroll?id=')) {
+    const anchorId = linkInfo.url.replace('memo://scroll?id=', '')
+    scrollToAnchor(anchorId)
+    return
+  }
+  
   if (linkInfo.linkType === 'navigation') {
     // 导航类型
     if (linkInfo.latitude && linkInfo.longitude) {
+      // #ifdef H5
+      // H5 环境下打开地图网页
+      const mapUrl = `https://uri.amap.com/marker?position=${linkInfo.longitude},${linkInfo.latitude}&name=${encodeURIComponent(linkInfo.address || linkInfo.label || '目的地')}`
+      window.open(mapUrl, '_blank')
+      // #endif
+      // #ifndef H5
       openMapNavigation(
         Number(linkInfo.latitude),
         Number(linkInfo.longitude),
         linkInfo.address || linkInfo.label || '目的地',
         linkInfo.address
       )
+      // #endif
     } else {
       uni.showToast({
         title: '缺少经纬度信息',
         icon: 'none'
       })
     }
+  } else if (linkInfo.linkType === 'internal') {
+    // 内部链接类型
+    if (linkInfo.internalPath) {
+      // #ifdef H5
+      // H5 环境下使用 router 或直接跳转
+      const basePath = window.location.origin
+      window.location.href = `${basePath}${linkInfo.internalPath}`
+      // #endif
+      // #ifndef H5
+      uni.navigateTo({
+        url: linkInfo.internalPath
+      })
+      // #endif
+    } else {
+      uni.showToast({
+        title: '内部链接无效',
+        icon: 'none'
+      })
+    }
+  } else if (linkInfo.linkType === 'anchor') {
+    // 锚点链接类型
+    if (linkInfo.anchorId) {
+      scrollToAnchor(linkInfo.anchorId)
+    } else {
+      uni.showToast({
+        title: '锚点ID为空',
+        icon: 'none'
+      })
+    }
   } else {
     // 超链接类型
     if (linkInfo.url) {
+      // #ifdef H5
+      // H5 环境下使用 window.open 打开外部链接
+      // 检测是否在微信浏览器中
+      const isWechat = /MicroMessenger/i.test(navigator.userAgent)
+      if (isWechat) {
+        // 微信内 H5 无法直接打开外部链接，提示用户
+        uni.showModal({
+          title: '提示',
+          content: '请点击右上角菜单，选择"在浏览器中打开"后访问链接',
+          showCancel: false
+        })
+      } else {
+        window.open(linkInfo.url, '_blank')
+      }
+      // #endif
+      // #ifndef H5
       openExternalLink(linkInfo.url)
+      // #endif
     } else {
       uni.showToast({
         title: '链接地址为空',
@@ -329,6 +604,133 @@ const handleLinkClick = (linkInfo: any) => {
       })
     }
   }
+}
+
+// 检查文本中是否包含锚点链接
+const extractAnchorFromText = (text: string): string | null => {
+  // 匹配 Markdown 格式的锚点链接 [text](#anchor-id)
+  const markdownMatch = text.match(/\[([^\]]+)\]\(#([^)]+)\)/)
+  if (markdownMatch) {
+    return markdownMatch[2] // 返回 anchor-id
+  }
+  
+  // 匹配 memo://scroll?id=xxx 格式
+  const memoMatch = text.match(/memo:\/\/scroll\?id=([^\s"'<>]+)/)
+  if (memoMatch) {
+    return memoMatch[1]
+  }
+  
+  return null
+}
+
+// 处理 Markdown 内容中的链接点击（兼容H5和微信小程序）
+const handleMarkdownClick = (event: any) => {
+  console.log('handleMarkdownClick triggered:', event)
+  
+  // Try to get link information from different platforms
+  let href = ''
+  let anchorId = ''
+  
+  // #ifdef H5
+  if (event.target && event.target.tagName === 'A') {
+    href = event.target.href || ''
+    anchorId = event.target.getAttribute('data-anchor') || ''
+    
+    // Task 4: Intercept anchor links in Markdown [text](#anchor-id)
+    if (href.includes('#') && !href.includes('://')) {
+      const hashIndex = href.lastIndexOf('#')
+      if (hashIndex > -1) {
+        anchorId = href.substring(hashIndex + 1)
+        console.log('H5 - extracted anchor from hash:', anchorId)
+      }
+    }
+    
+    // Check for memo://scroll format
+    if (href && href.startsWith('memo://scroll?id=') && anchorId) {
+      event.preventDefault()
+      event.stopPropagation()
+      scrollToAnchor(anchorId)
+      return false
+    }
+    
+    // Task 4: Handle #L{number} format links (sequential anchors)
+    if (anchorId && anchorId.match(/^L\d+$/i)) {
+      event.preventDefault()
+      event.stopPropagation()
+      scrollToAnchor(anchorId)
+      return false
+    }
+    
+    console.log('H5 - href:', href, 'anchorId:', anchorId)
+  }
+  // #endif
+  
+  // #ifdef MP-WEIXIN
+  // WeChat Mini Program environment: Get from event.detail
+  if (event.detail && event.detail.href) {
+    href = event.detail.href
+    
+    // Task 4: Intercept anchor links in Markdown
+    if (href.includes('#') && !href.includes('://')) {
+      const hashIndex = href.lastIndexOf('#')
+      if (hashIndex > -1) {
+        anchorId = href.substring(hashIndex + 1)
+        console.log('WeChat - extracted anchor from hash:', anchorId)
+      }
+    }
+    
+    // Extract anchor ID from memo://scroll format
+    const anchorMatch = href.match(/memo:\/\/scroll\?id=([^&]+)/)
+    if (anchorMatch) {
+      anchorId = anchorMatch[1]
+    }
+    
+    console.log('WeChat - href:', href, 'anchorId:', anchorId)
+  }
+  // #endif
+  
+  // Other platform compatibility handling
+  // #ifndef H5
+  // #ifndef MP-WEIXIN
+  if (event.detail && event.detail.href) {
+    href = event.detail.href
+    
+    // Intercept anchor links
+    if (href.includes('#') && !href.includes('://')) {
+      const hashIndex = href.lastIndexOf('#')
+      if (hashIndex > -1) {
+        anchorId = href.substring(hashIndex + 1)
+        console.log('Other platform - extracted anchor from hash:', anchorId)
+      }
+    }
+    
+    const anchorMatch = href.match(/memo:\/\/scroll\?id=([^&]+)/)
+    if (anchorMatch) {
+      anchorId = anchorMatch[1]
+    }
+    console.log('Other platform - href:', href, 'anchorId:', anchorId)
+  }
+  // #endif
+  // #endif
+  
+  // Task 4: Handle anchor jump (directly trigger scrollToAnchor instead of navigating URL)
+  if (anchorId) {
+    console.log('Processing anchor jump to:', anchorId)
+    event.preventDefault && event.preventDefault()
+    event.stopPropagation && event.stopPropagation()
+    
+    // Try to find element directly by ID
+    scrollToAnchor(anchorId)
+    return
+  }
+  
+  // Handle other types of links
+  if (href) {
+    console.log('Processing other link:', href)
+    handleLinkClick({ linkType: 'url', url: href })
+  }
+  
+  console.log('No anchor link found in click event')
 }
 
 // 处理文本项链接点击（复用handleLinkClick）
@@ -439,10 +841,33 @@ const exportImage = async () => {
     exportLoading.value = true
     console.log('设置exportLoading为true')
     
+    // 任务三：导出时的确定性检查 - 显式判断 isRendered 状态
+    if (!isRendered.value) {
+      uni.showLoading({
+        title: '准备内容中...',
+        mask: true
+      })
+      console.log('等待 Markdown 渲染完成...')
+      // isRendered 为 false 说明还没渲染完或开关刚打开，等待 1 秒后再继续
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('1秒等待完成, isRendered:', isRendered.value)
+      // 如果仍未渲染完成，继续等待最多 2 秒
+      let waitCount = 0
+      while (!isRendered.value && waitCount < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        waitCount++
+      }
+      console.log('渲染等待完成, isRendered:', isRendered.value)
+    }
+    
     uni.showLoading({
       title: '正在生成图片...',
       mask: true
     })
+    
+    // 任务三：增加主动等待时间，给浏览器留出重绘时间
+    console.log('主动等待 800ms，确保页面完全渲染...')
+    await new Promise(resolve => setTimeout(resolve, 800))
     
     console.log('=== 开始导出图片 ===')
     console.log('当前平台:', process.env.UNI_PLATFORM || 'unknown')
@@ -462,13 +887,13 @@ const exportImage = async () => {
     // 第一步：调用接口生成海报
     console.log('步骤2: 调用海报生成接口...')
     
-    // 添加超时控制
-    const apiTimeout = 30000 // 30秒超时
+    // 任务四：增加超时控制到 60 秒
+    const apiTimeout = 60000 // 60秒超时
     let generateRes
     
     try {
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('接口调用超时(30秒)')), apiTimeout)
+        setTimeout(() => reject(new Error('接口调用超时(60秒)')), apiTimeout)
       })
       
       const apiPromise = postPainterGenerateInfo({
@@ -479,7 +904,8 @@ const exportImage = async () => {
           width: 375,
           deviceScaleFactor: 2,
           readySelector: '.is-ready',
-          timeout: 60000
+          timeout: 90000,  // 任务四：增加后端超时时间
+          waitTime: 1000   // 任务四：显式延时截图参数
         }
       })
       
@@ -534,30 +960,168 @@ const exportImage = async () => {
 const downloadImageForH5 = async (posterId: string) => {
   const imageUrl = `${import.meta.env.VITE_APP_BASE_URL}/painter/${posterId}`
   
-  // 使用fetch获取图片blob，然后触发下载
-  const response = await fetch(imageUrl)
-  if (!response.ok) {
-    throw new Error(`下载失败，状态码: ${response.status}`)
+  // 检测是否在微信浏览器中
+  const isWechat = /MicroMessenger/i.test(navigator.userAgent)
+  
+  try {
+    // 使用fetch获取图片blob
+    const response = await fetch(imageUrl, {
+      mode: 'cors',
+      credentials: 'omit'
+    })
+    if (!response.ok) {
+      throw new Error(`下载失败，状态码: ${response.status}`)
+    }
+    
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    
+    uni.hideLoading()
+    
+    // 微信内 H5 浏览器不支持 download 属性，使用预览方式
+    if (isWechat) {
+      // 显示图片预览弹窗，提示用户长按保存
+      showImagePreviewModal(blobUrl)
+    } else {
+      // 尝试使用 a 标签下载（适用于大多数现代浏览器）
+      const downloadSuccess = await tryDownloadWithLink(blobUrl, `备忘录_${formatExportDate()}.png`)
+      
+      if (downloadSuccess) {
+        uni.showToast({
+          title: '图片已下载',
+          icon: 'success'
+        })
+      } else {
+        // 下载失败，显示图片预览让用户手动保存
+        showImagePreviewModal(blobUrl)
+      }
+    }
+  } catch (fetchError: any) {
+    console.error('Fetch 下载失败:', fetchError)
+    uni.hideLoading()
+    
+    // 备用方案：直接打开图片链接让用户手动保存
+    showImagePreviewModal(imageUrl)
   }
   
-  const blob = await response.blob()
-  const url = URL.createObjectURL(blob)
-  
-  // 创建下载链接
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `备忘录_${formatExportDate()}.png`
-  link.click()
-  
-  // 释放URL对象
-  URL.revokeObjectURL(url)
-  
-  uni.hideLoading()
-  uni.showToast({
-    title: '图片已下载',
-    icon: 'success'
-  })
   exportLoading.value = false
+}
+
+// 尝试使用 a 标签下载文件
+const tryDownloadWithLink = (url: string, filename: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    try {
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      link.style.display = 'none'
+      
+      // 检测浏览器是否支持 download 属性
+      if (typeof link.download === 'undefined') {
+        resolve(false)
+        return
+      }
+      
+      document.body.appendChild(link)
+      link.click()
+      
+      // 延迟移除元素和释放 URL
+      setTimeout(() => {
+        document.body.removeChild(link)
+        // 只有 blob URL 才需要释放
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      }, 100)
+      
+      resolve(true)
+    } catch (e) {
+      console.error('下载链接创建失败:', e)
+      resolve(false)
+    }
+  })
+}
+
+// 显示图片预览弹窗（用于不支持自动下载的环境）
+const showImagePreviewModal = (imageUrl: string) => {
+  // 创建遮罩层
+  const overlay = document.createElement('div')
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `
+  
+  // 提示文字
+  const tip = document.createElement('div')
+  tip.style.cssText = `
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+  `
+  tip.textContent = '长按图片保存到相册'
+  
+  // 图片元素
+  const img = document.createElement('img')
+  img.src = imageUrl
+  img.style.cssText = `
+    max-width: 90%;
+    max-height: 70vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  `
+  
+  // 关闭按钮
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = '关闭'
+  closeBtn.style.cssText = `
+    margin-top: 20px;
+    padding: 12px 40px;
+    background: #fff;
+    color: #333;
+    border: none;
+    border-radius: 24px;
+    font-size: 16px;
+    cursor: pointer;
+  `
+  closeBtn.onclick = () => {
+    document.body.removeChild(overlay)
+    // 释放 blob URL
+    if (imageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imageUrl)
+    }
+  }
+  
+  // 点击遮罩关闭
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay)
+      if (imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl)
+      }
+    }
+  }
+  
+  overlay.appendChild(tip)
+  overlay.appendChild(img)
+  overlay.appendChild(closeBtn)
+  document.body.appendChild(overlay)
+  
+  uni.showToast({
+    title: '长按图片保存',
+    icon: 'none',
+    duration: 2000
+  })
 }
 
 // 小程序端下载并保存图片
@@ -727,7 +1291,7 @@ onShareTimeline(() => {
 }
 
 .nav-actions {
-  padding-left: 16rpx;
+  padding-left: 32rpx;
   display: flex;
   gap: 16rpx;
   background-color: #ffeaa7;
@@ -796,11 +1360,11 @@ onShareTimeline(() => {
 }
 
 .memo-content {
-  // padding: 32rpx;
+  padding: 32rpx;
+  background: #fff;
 }
 
 .memo-header {
-  background: #fff;
   padding: 32rpx;
   border-radius: 16rpx;
   margin-bottom: 24rpx;
@@ -842,17 +1406,37 @@ onShareTimeline(() => {
 }
 
 .content-blocks {
-  background: #fff;
-  // border-radius: 16rpx;
-  padding: 16rpx;
-  // box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  // padding: 0 32rpx;
 }
 
 .content-block {
-  margin-bottom: 24rpx;
+  position: relative;
+  box-shadow: none;
+  background: transparent;
+  margin-bottom: 0;
+  // border-radius: 12rpx;
+  // padding: 24rpx;
+  // box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+// 锚点标签样式
+.anchor-tag {
+  position: absolute;
+  left: -40rpx; // 悬浮在内容左侧
+  top: 8rpx;
+  font-size: 20rpx;
+  color: #ccc;
+  opacity: 0.5;
+  font-family: monospace;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2rpx 6rpx;
+  border-radius: 4rpx;
   
-  &:last-child {
-    margin-bottom: 0;
+  // 在小屏幕上调整位置
+  @media (max-width: 750rpx) {
+    left: -30rpx;
+    font-size: 18rpx;
   }
 }
 
@@ -869,6 +1453,50 @@ onShareTimeline(() => {
   display: inline;
   line-height: 1.8;
   word-break: break-word;
+}
+
+// Markdown 渲染样式（极简版本 - 避免 WXSS 编译错误）
+.markdown-body {
+  word-break: break-all;
+  line-height: 1.8;
+  display: inline;
+  
+  /* 核心：开启选中 */
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+// 表格容器样式（仅保留布局）
+.table-container {
+  overflow-x: auto;
+  margin: 16rpx 0;
+  width: 100%;
+}
+
+// 确保父级容器支持文本选中
+.content-blocks {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+.content-block {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+.text-block {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+.text-item {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
 }
 
 .image-preview {
@@ -900,9 +1528,9 @@ onShareTimeline(() => {
 // 文本项链接样式
 .text-item {
   &.has-link {
-    display: flex;
-    align-items: center;
-    gap: 8rpx;
+    // display: flex;
+    // align-items: center;
+    // gap: 8rpx;
     cursor: pointer;
     
     &:active {
@@ -920,4 +1548,36 @@ onShareTimeline(() => {
     }
   }
 }
+
+/* #ifdef H5 */
+// H5 端增强样式：处理 uni-rich-text 节点和 CSS 变量穿透
+.markdown-body {
+  // H5 下使用 block 布局更稳健
+  display: block;
+  
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+
+.content-blocks {
+  overflow-x: hidden;
+}
+
+.text-block {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* #endif */
+
+/* #ifdef MP-WEIXIN */
+.content-blocks,
+.content-block,
+.text-block,
+.text-item {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  pointer-events: auto !important;
+}
+/* #endif */
 </style>

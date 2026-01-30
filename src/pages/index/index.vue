@@ -178,6 +178,24 @@ declare const uni: any
 // 常用工具 - 二维码相关
 const popularTools = ref<Tool[]>([
   {
+    id: 10,
+    name: '万年历',
+    desc: '黄历查询、择吉日、时辰吉凶',
+    icon: 'calendar',
+    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
+    link: '/subPackages/tools/calendar/index',
+    disabled: false,
+  },
+  {
+    id: 13,
+    name: '笔记收藏',
+    desc: '个人笔记',
+    icon: 'chat',
+    gradient: 'linear-gradient(135deg, #42b913 0%, #42b983 100%)',
+    link: '/subPackages/tools/chat/index',
+    disabled: false,
+  },
+  {
     id: 1,
     name: '二维码生成',
     desc: '支持多种样式，自定义颜色和Logo',
@@ -185,7 +203,6 @@ const popularTools = ref<Tool[]>([
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     link: '/subPackages/tools/qr-generator/index',
     disabled: false,
-    badge: '热门'
   },
   {
     id: 2,
@@ -194,18 +211,8 @@ const popularTools = ref<Tool[]>([
     icon: 'camera',
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     link: '/subPackages/tools/qr-parser/index',
-    disabled: false
-  },
-  {
-    id: 10,
-    name: '万年历',
-    desc: '黄历查询、择吉日、时辰吉凶',
-    icon: 'calendar',
-    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
-    link: '/subPackages/tools/calendar/index',
     disabled: false,
-    badge: 'NEW'
-  }
+  },
 ])
 
 // 图片工具
@@ -231,7 +238,7 @@ const imageTools = ref<Tool[]>([
   {
     id: 4,
     name: '图片压缩',
-    desc: '智能压缩不失真',
+    desc: '高效压缩不失真',
     icon: 'image',
     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     link: '/subPackages/tools/image-compress/index',

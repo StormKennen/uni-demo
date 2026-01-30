@@ -140,6 +140,20 @@
             "navigationBarTitleText": "长图拼接",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "chat/index",
+          "style": {
+            "navigationBarTitleText": "个人笔记",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "chat/list",
+          "style": {
+            "navigationBarTitleText": "我的草稿",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

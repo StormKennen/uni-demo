@@ -35,10 +35,21 @@
         <view v-for="(block, blockIndex) in pageData.content" :key="blockIndex" class="content-block">
           <!-- 文本块 -->
           <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
+            <!-- 锚点ID显示 -->
+            <!-- <view class="anchor-id-display">
+              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
+                <text class="copy-hint">点击复制</text>
+              </view>
+            </view> -->
             <!-- 编辑模式：显示块头部 -->
             <view class="block-header" @click="selectBlock(blockIndex)">
               <!-- <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text> -->
-              <text class="block-type-label">📝 文本块</text>
+              <!-- <text class="block-type-label">📝 文本块</text> -->
+              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">文本容器#L{{ blockIndex + 1 }}</text>
+                <!-- <text class="copy-hint">点击复制</text> -->
+              </text>
               <view class="block-actions">
                 <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
@@ -60,15 +71,26 @@
             <!-- 编辑模式：添加按钮 -->
             <view class="add-item-btn" @click="addTextItem(blockIndex)">
               <text class="add-icon">+</text>
-              <text class="add-text">添加文本行</text>
+              <text class="add-text">添加文本</text>
             </view>
           </view>
 
           <!-- 图片块 -->
           <view v-if="block.type === 'image'" class="image-block" :style="getBlockBorderStyle(block)">
+            <!-- 锚点ID显示 -->
+            <!-- <view class="anchor-id-display">
+              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
+                <text class="copy-hint">点击复制</text>
+              </view>
+            </view> -->
             <!-- 编辑模式：显示块头部 -->
             <view class="block-header" @click="selectBlock(blockIndex)">
-              <text class="block-type-label">🖼️ 图片块</text>
+              <!-- <text class="block-type-label">🖼️ 图片块</text> -->
+              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">图片容器#L{{ blockIndex + 1 }}</text>
+                <!-- <text class="copy-hint">点击复制</text> -->
+              </text>
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
@@ -82,7 +104,7 @@
               <!-- 图片上传/预览 -->
               <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
                 <text class="upload-icon">+</text>
-                <text class="upload-text">点击上传图片</text>
+                <text class="upload-text">点击上传</text>
               </view>
               <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
                 <view class="image-container">
@@ -105,12 +127,12 @@
     <!-- 底部新增按钮（仅编辑模式，控制面板显示时隐藏） -->
     <view class="add-block-bar" v-if="!selectedItem && selectedBlock === null">
       <view class="add-block-btn" @click="addTextBlock">
-        <text class="btn-icon">📝</text>
-        <text class="btn-text">新增文本行</text>
+        <!-- <text class="btn-icon">📝</text> -->
+        <text class="btn-text">新增文本容器</text>
       </view>
       <view class="add-block-btn" @click="addImageBlock">
-        <text class="btn-icon">🖼️</text>
-        <text class="btn-text">新增图片行</text>
+        <!-- <text class="btn-icon">🖼️</text> -->
+        <text class="btn-text">新增图片容器</text>
       </view>
     </view>
 
@@ -159,6 +181,34 @@
             </view>
           </scroll-view>
         </view>
+      </view>
+    </view>
+
+    <!-- 写作素材选择弹窗 -->
+    <view class="chat-session-modal" v-if="chatSessionPickerVisible" @click="chatSessionPickerVisible = false">
+      <view class="chat-session-content" @click.stop>
+        <view class="chat-session-header">
+          <text class="chat-session-title">选择笔记</text>
+          <text class="chat-session-close" @click="chatSessionPickerVisible = false">×</text>
+        </view>
+        <view v-if="loadingChatSessions" class="loading-sessions">
+          <text class="loading-icon">⏳</text>
+          <text>加载中...</text>
+        </view>
+        <view v-else-if="chatSessions.length === 0" class="empty-sessions">
+          <text class="empty-icon">📝</text>
+          <text>暂无笔记</text>
+        </view>
+        <scroll-view v-else scroll-y class="chat-session-list">
+          <view v-for="session in chatSessions" :key="session.id" class="chat-session-item" @click="selectChatSession(session)">
+            <view class="session-icon">📄</view>
+            <view class="session-info">
+              <text class="session-title">{{ session.title || '新建草稿' }}</text>
+              <text class="session-meta">{{ session.messageCount || 0 }} 条素材 · {{ session.updatedAt || session.createdAt }}</text>
+            </view>
+            <view class="session-select-icon">›</view>
+          </view>
+        </scroll-view>
       </view>
     </view>
 
@@ -216,12 +266,56 @@
                   <text class="type-icon">📍</text>
                   <text>导航</text>
                 </view>
+                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'internal' }"
+                  @click="setTextLinkType('internal')">
+                  <text class="type-icon">📄</text>
+                  <text>关联素材</text>
+                </view>
+                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'anchor' }"
+                  @click="setTextLinkType('anchor')">
+                  <text class="type-icon">⚓</text>
+                  <text>锚点</text>
+                </view>
               </view>
 
               <!-- 超链接输入 -->
               <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'url'">
                 <input class="link-input" v-model="getSelectedItem().linkInfo.url"
                   placeholder="请输入链接地址，如 https://example.com" :maxlength="500" />
+              </view>
+
+              <!-- 关联素材选择 -->
+              <view v-if="getSelectedItem()?.linkInfo?.linkType === 'internal'" class="internal-link-section">
+                <!-- 场景选择 -->
+                <view class="link-input-group">
+                  <view class="input-label">素材类型</view>
+                  <picker :value="0" :range="internalLinkScenes" range-key="label" @change="onInternalSceneChange">
+                    <view class="scene-picker-btn">
+                      <text>{{ getSelectedItem()?.linkInfo?.internalScene === 'chat' ? '笔记' : '请选择类型' }}</text>
+                      <text class="picker-arrow">›</text>
+                    </view>
+                  </picker>
+                </view>
+                
+                <!-- 写作素材选择 -->
+                <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'chat'" class="chat-session-picker">
+                  <view class="input-label">选择笔记</view>
+                  <view class="session-picker-btn" @click="showChatSessionPicker">
+                    <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
+                    <text v-else class="placeholder">点击选择笔记</text>
+                    <text class="picker-arrow">›</text>
+                  </view>
+                </view>
+              </view>
+
+              <!-- 锚点输入 -->
+              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'anchor'">
+                <view class="input-label">锚点ID（用于跳转定位）</view>
+                <input class="link-input" v-model="getSelectedItem().linkInfo.anchorId"
+                  placeholder="请输入唯一的锚点ID，如 section-1" :maxlength="50" />
+                <!-- <view class="anchor-tip">
+                  <text>💡 提示：锚点ID应该是唯一的，建议使用英文和数字，如 section-1、intro、conclusion 等</text>
+                </view> -->
               </view>
 
               <!-- 导航输入 -->
@@ -364,6 +458,15 @@
               @click="setBlockAlign(selectedBlock, 'right')">右</view>
           </view>
         </view>
+        <!-- Markdown 模式开关（仅文本块） -->
+        <view class="markdown-toggle-bar" v-if="pageData.content[selectedBlock]?.type === 'text'">
+          <view class="style-label">Markdown 模式:</view>
+          <switch 
+            :checked="(pageData.content[selectedBlock] as TextBlock)?.isMarkdown || false" 
+            @change="toggleBlockMarkdown(selectedBlock)"
+            color="#667eea"
+          />
+        </view>
       </view>
     </view>
 
@@ -381,6 +484,7 @@
 
 <script setup lang="ts">
 import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
+import { getGeminiSessions } from '@/services/apifox/NODEJSDEMO/GEMINI/apifox';
 
 import { ref, reactive, computed, watch } from 'vue'
 import { onLoad, onReady, onShareAppMessage } from '@dcloudio/uni-app'
@@ -440,6 +544,7 @@ interface TextBlock {
   type: 'text'
   children: TextItem[]
   style?: BlockStyle
+  isMarkdown?: boolean
 }
 
 interface ImageBlock {
@@ -451,11 +556,26 @@ interface ImageBlock {
 // 链接信息
 interface LinkInfo {
   label: string // 显示的文本
-  linkType: 'url' | 'navigation' // 链接类型：超链接或导航
+  linkType: 'url' | 'navigation' | 'internal' | 'anchor' // 链接类型：超链接、导航、内部链接或锚点
   url?: string // 超链接地址
   latitude?: number // 导航纬度
   longitude?: number // 导航经度
   address?: string // 导航地址名称
+  internalScene?: 'chat' // 内部链接场景
+  internalId?: string // 内部链接目标ID
+  internalTitle?: string // 内部链接目标标题
+  internalPath?: string // 内部链接路径
+  anchorId?: string // 锚点ID
+}
+
+// 创作助手接口
+interface ChatSession {
+  id: string
+  title: string
+  messageCount: number
+  createdAt: string
+  updatedAt: string
+  isShared?: boolean
 }
 
 interface PageData {
@@ -524,6 +644,14 @@ const filePickerVisible = ref(false)
 const currentImageTarget = ref<{ blockIndex: number; itemIndex: number } | null>(null)
 const cloudFiles = ref<getFilesResItems[]>([])
 const loadingFiles = ref(false)
+
+// 关联素材相关状态
+const internalLinkScenes = [
+  { value: 'chat', label: '笔记' }
+]
+const chatSessionPickerVisible = ref(false)
+const chatSessions = ref<ChatSession[]>([])
+const loadingChatSessions = ref(false)
 
 // 选中状态
 const selectedItem = ref<{ blockIndex: number; itemIndex: number; type: 'text' | 'image' } | null>(null)
@@ -630,6 +758,13 @@ const setBlockAlign = (blockIndex: number, align: 'left' | 'center' | 'right') =
   block.style.textAlign = align
 }
 
+// 切换文本块的 Markdown 模式
+const toggleBlockMarkdown = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as TextBlock
+  if (!block || block.type !== 'text') return
+  block.isMarkdown = !block.isMarkdown
+}
+
 const fontSizeIndex = (size?: number) => {
   const idx = fontSizes.indexOf(size || 16)
   return idx >= 0 ? idx : 2
@@ -732,6 +867,55 @@ const setImageRotate = (blockIndex: number, itemIndex: number, e: any, axis: 'x'
   }
 }
 
+// 复制锚点链接到剪贴板（Markdown格式）
+const copyAnchor = (num: number) => {
+  const anchor = `L${num}`
+  
+  // #ifdef H5
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(anchor).then(() => {
+      uni.showToast({
+        title: `已复制: #L${num}`,
+        icon: 'success',
+        duration: 2000
+      })
+    }).catch(() => {
+      uni.showModal({
+        title: '锚点链接',
+        content: anchor,
+        showCancel: false
+      })
+    })
+  } else {
+    uni.showModal({
+      title: '锚点链接',
+      content: anchor,
+      showCancel: false
+    })
+  }
+  // #endif
+  
+  // #ifndef H5
+  uni.setClipboardData({
+    data: anchor,
+    success: () => {
+      uni.showToast({
+        title: `已复制: [跳转](#L${num})`,
+        icon: 'success',
+        duration: 2000
+      })
+    },
+    fail: () => {
+      uni.showModal({
+        title: '锚点链接',
+        content: anchor,
+        showCancel: false
+      })
+    }
+  })
+  // #endif
+}
+
 // 添加文本块
 const addTextBlock = () => {
   pageData.content.push({
@@ -818,19 +1002,86 @@ const toggleTextLink = () => {
 }
 
 // 设置文本链接类型
-const setTextLinkType = (type: 'url' | 'navigation') => {
+const setTextLinkType = (type: 'url' | 'navigation' | 'internal' | 'anchor') => {
   const item = getSelectedItem() as TextItem | null
   if (!item || !item.linkInfo) return
 
   item.linkInfo.linkType = type
-  // 清空另一种类型的数据
+  // 清空其他类型的数据
   if (type === 'url') {
     item.linkInfo.latitude = undefined
     item.linkInfo.longitude = undefined
     item.linkInfo.address = undefined
-  } else {
+    item.linkInfo.internalScene = undefined
+    item.linkInfo.internalId = undefined
+    item.linkInfo.internalTitle = undefined
+    item.linkInfo.internalPath = undefined
+    item.linkInfo.anchorId = undefined
+  } else if (type === 'navigation') {
     item.linkInfo.url = undefined
+    item.linkInfo.internalScene = undefined
+    item.linkInfo.internalId = undefined
+    item.linkInfo.internalTitle = undefined
+    item.linkInfo.internalPath = undefined
+    item.linkInfo.anchorId = undefined
+  } else if (type === 'internal') {
+    item.linkInfo.url = undefined
+    item.linkInfo.latitude = undefined
+    item.linkInfo.longitude = undefined
+    item.linkInfo.address = undefined
+    item.linkInfo.anchorId = undefined
+  } else if (type === 'anchor') {
+    item.linkInfo.url = undefined
+    item.linkInfo.latitude = undefined
+    item.linkInfo.longitude = undefined
+    item.linkInfo.address = undefined
+    item.linkInfo.internalScene = undefined
+    item.linkInfo.internalId = undefined
+    item.linkInfo.internalTitle = undefined
+    item.linkInfo.internalPath = undefined
   }
+}
+
+// 内部链接场景选择
+const onInternalSceneChange = (e: any) => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item || !item.linkInfo) return
+  
+  const scene = internalLinkScenes[e.detail.value]
+  item.linkInfo.internalScene = scene.value as 'chat'
+  // 清空之前选择的数据
+  item.linkInfo.internalId = undefined
+  item.linkInfo.internalTitle = undefined
+  item.linkInfo.internalPath = undefined
+}
+
+// 显示写作素材选择器
+const showChatSessionPicker = async () => {
+  chatSessionPickerVisible.value = true
+  loadingChatSessions.value = true
+  
+  try {
+    const res: any = await getGeminiSessions({ page: 1, limit: 50 })
+    chatSessions.value = res.results || []
+  } catch (error) {
+    console.error('获取笔记失败:', error)
+    uni.showToast({ title: '获取笔记列表失败', icon: 'none' })
+  } finally {
+    loadingChatSessions.value = false
+  }
+}
+
+// 选择写作素材
+const selectChatSession = (session: ChatSession) => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item || !item.linkInfo) return
+  
+  item.linkInfo.internalId = session.id
+  item.linkInfo.internalTitle = session.title || '新建草稿'
+  item.linkInfo.internalPath = `/subPackages/tools/chat/index?chatId=${session.id}`
+  
+  chatSessionPickerVisible.value = false
+  uni.showToast({ title: '已关联素材', icon: 'success' })
 }
 
 // 唤起地图选点（文本项用）
@@ -1781,6 +2032,10 @@ const saveData = async () => {
   //   }
   // }
 
+  // 关闭面板
+  selectedBlock.value = null
+  selectedItem.value = null
+
   try {
     uni.showLoading({
       title: '保存中...',
@@ -1972,6 +2227,7 @@ onMounted(() => {
 
   loadData()
 })
+
 
 // 微信小程序分享配置
 // #ifdef MP-WEIXIN
@@ -2170,6 +2426,51 @@ onShareAppMessage(() => {
 .text-block,
 .image-block {
   padding: 24rpx;
+  position: relative; // 为锚点ID显示定位
+}
+
+// 锚点ID显示样式
+.anchor-id-display {
+  // position: absolute;
+  // top: 8rpx;
+  // right: 8rpx;
+  // z-index: 10;
+  
+  .anchor-id-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(102, 126, 234, 0.1);
+    border: 1rpx solid rgba(102, 126, 234, 0.3);
+    border-radius: 12rpx;
+    padding: 8rpx 12rpx;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      background: rgba(102, 126, 234, 0.2);
+      transform: scale(1.05);
+    }
+    
+    &:active {
+      background: rgba(102, 126, 234, 0.3);
+      transform: scale(0.95);
+    }
+    
+    .anchor-tag {
+      font-size: 24rpx;
+      color: #667eea;
+      font-weight: 600;
+      font-family: monospace;
+      margin-bottom: 2rpx;
+    }
+    
+    .copy-hint {
+      font-size: 18rpx;
+      color: #999;
+      opacity: 0.8;
+    }
+  }
 }
 
 .text-item,
@@ -2603,7 +2904,8 @@ onShareAppMessage(() => {
 
 // 边框样式栏
 .border-style-bar,
-.align-style-bar {
+.align-style-bar,
+.markdown-toggle-bar {
   display: flex;
   align-items: center;
   gap: 12rpx;
@@ -2634,7 +2936,7 @@ onShareAppMessage(() => {
   padding: 20rpx 32rpx;
   background: #fff;
   gap: 24rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
 
   .footer-btn {
     flex: 1;
@@ -3056,6 +3358,152 @@ onShareAppMessage(() => {
   .picker-arrow {
     font-size: 32rpx;
     font-weight: bold;
+  }
+}
+
+// 内部链接相关样式
+.internal-link-section {
+  .scene-picker-btn,
+  .session-picker-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 8rpx;
+    font-size: 28rpx;
+    color: #333;
+    
+    .placeholder {
+      color: #999;
+    }
+    
+    .picker-arrow {
+      color: #999;
+      font-size: 28rpx;
+    }
+  }
+  
+  .chat-session-picker {
+    margin-top: 16rpx;
+  }
+}
+
+// 创作助手选择弹窗
+.chat-session-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  
+  .chat-session-content {
+    width: 100%;
+    max-height: 70vh;
+    background: #fff;
+    border-radius: 24rpx 24rpx 0 0;
+    display: flex;
+    flex-direction: column;
+    
+    .chat-session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32rpx;
+      border-bottom: 2rpx solid #f0f0f0;
+      
+      .chat-session-title {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .chat-session-close {
+        font-size: 40rpx;
+        color: #999;
+        padding: 8rpx;
+      }
+    }
+    
+    .loading-sessions,
+    .empty-sessions {
+      height: 400rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16rpx;
+      color: #999;
+      font-size: 28rpx;
+      
+      .loading-icon,
+      .empty-icon {
+        font-size: 80rpx;
+      }
+    }
+    
+    .chat-session-list {
+      flex: 1;
+      max-height: 60vh;
+      padding: 16rpx;
+      
+      .chat-session-item {
+        display: flex;
+        align-items: center;
+        padding: 24rpx;
+        margin-bottom: 16rpx;
+        background: #f8f9fa;
+        border-radius: 12rpx;
+        transition: all 0.2s;
+        
+        &:active {
+          background: #e6f7ff;
+        }
+        
+        .session-icon {
+          width: 72rpx;
+          height: 72rpx;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32rpx;
+          margin-right: 20rpx;
+        }
+        
+        .session-info {
+          flex: 1;
+          min-width: 0;
+          
+          .session-title {
+            font-size: 28rpx;
+            font-weight: 500;
+            color: #333;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          
+          .session-meta {
+            font-size: 24rpx;
+            color: #999;
+            margin-top: 8rpx;
+          }
+        }
+        
+        .session-select-icon {
+          font-size: 32rpx;
+          color: #999;
+        }
+      }
+    }
   }
 }
 </style>

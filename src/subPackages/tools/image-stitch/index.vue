@@ -1,9 +1,141 @@
 <template>
   <view class="container" :class="{ 'bot-mode': pageMode === 'bot' }">
     <!-- 用户模式显示导航栏 -->
-    <NavBar v-if="pageMode === 'user'" title="长图拼接" :back="true" />
+    <NavBar
+      always-title
+      title="图片拼接"
+      custom-class="light"
+      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
+    />
     
     <view class="content">
+      <!-- 模式选择 -->
+      <view v-if="pageMode === 'user'" class="section">
+        <view class="section-header">
+          <text class="section-title">拼接模式</text>
+        </view>
+        <view class="mode-tabs">
+          <view 
+            class="mode-tab" 
+            :class="{ active: layoutMode === '1N' }"
+            @click="layoutMode = '1N'"
+          >
+            <text class="mode-icon">↓</text>
+            <text>竖排 1×N</text>
+          </view>
+          <view 
+            class="mode-tab" 
+            :class="{ active: layoutMode === 'N1' }"
+            @click="layoutMode = 'N1'"
+          >
+            <text class="mode-icon">→</text>
+            <text>横排 N×1</text>
+          </view>
+          <view 
+            class="mode-tab" 
+            :class="{ active: layoutMode === 'grid' }"
+            @click="layoutMode = 'grid'"
+          >
+            <text class="mode-icon">▦</text>
+            <text>自定义</text>
+          </view>
+        </view>
+        
+        <!-- 10x10 网格选择器 (仅自定义模式) -->
+        <view v-if="layoutMode === 'grid'" class="grid-selector-wrapper">
+          <view class="grid-selector-header">
+            <text class="grid-selector-title">选择布局</text>
+            <text class="grid-selector-value">{{ gridLayout.rows }} × {{ gridLayout.cols }}</text>
+          </view>
+          <view 
+            class="grid-selector"
+            @touchmove.prevent="onGridTouchMove"
+            @touchend="onGridTouchEnd"
+          >
+            <view 
+              v-for="index in 100" 
+              :key="index"
+              class="grid-cell"
+              :class="{ 
+                selected: isCellSelected(index - 1),
+                hovered: isCellHovered(index - 1)
+              }"
+              @click="onGridCellClick(index - 1)"
+              @touchstart="onGridCellTouch(index - 1)"
+            />
+          </view>
+        </view>
+      </view>
+      
+      <!-- 属性配置表单 -->
+      <view v-if="pageMode === 'user'" class="section">
+        <view class="section-header">
+          <text class="section-title">样式设置</text>
+        </view>
+        
+        <!-- 单元格尺寸 -->
+        <view class="form-row">
+          <view class="form-item">
+            <text class="form-label">宽度</text>
+            <view class="form-input-wrapper">
+              <input 
+                type="number" 
+                class="form-input" 
+                v-model="itemWidth"
+                placeholder="auto"
+              />
+              <text class="form-unit">px</text>
+            </view>
+          </view>
+          <view class="form-item">
+            <text class="form-label">高度</text>
+            <view class="form-input-wrapper">
+              <input 
+                type="number" 
+                class="form-input" 
+                v-model="itemHeight"
+                placeholder="auto"
+              />
+              <text class="form-unit">px</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 尺寸提示 -->
+        <view v-if="itemWidth && itemHeight" class="form-tip warning">
+          <text>⚠️ 同时设置宽高将启用 object-fit: cover 模式</text>
+        </view>
+        
+        <!-- 间距设置 -->
+        <view class="control-item">
+          <text class="control-label">间距 (gap)</text>
+          <text class="control-value">{{ gridGap }}px</text>
+        </view>
+        <slider 
+          :value="gridGap" 
+          :min="0" 
+          :max="50" 
+          :step="1"
+          activeColor="#0046B4"
+          @change="gridGap = $event.detail.value"
+        />
+        
+        <!-- 背景颜色 -->
+        <view class="control-item">
+          <text class="control-label">背景颜色</text>
+        </view>
+        <view class="color-picker">
+          <view 
+            v-for="color in bgColorOptions" 
+            :key="color"
+            class="color-option"
+            :class="{ active: bgColor === color }"
+            :style="{ backgroundColor: color }"
+            @click="bgColor = color"
+          />
+        </view>
+      </view>
+      
       <!-- 实时预览区域 -->
       <view class="section preview-section">
         <!-- 用户模式显示标题 -->
@@ -22,8 +154,57 @@
           <!-- 渲染就绪标记 -->
           <view v-if="isRenderReady && pageMode === 'bot'" id="render-done" class="render-done" />
           
-          <!-- 预览容器 -->
-          <view v-if="images.length > 0" class="stitch-preview" :class="direction">
+          <!-- 调试信息 (仅后端模式) -->
+          <view v-if="pageMode === 'bot'" style="position: absolute; top: 0; left: 0; background: rgba(255,0,0,0.8); color: #fff; padding: 4px 8px; font-size: 12px; z-index: 9999;">
+            mode: {{ layoutMode }} | grid: {{ gridLayout.rows }}x{{ gridLayout.cols }} | images: {{ images.length }}
+          </view>
+          
+          <!-- 预览容器 - Grid 模式 -->
+          <view 
+            v-if="images.length > 0 && layoutMode === 'grid'" 
+            class="stitch-preview grid-mode"
+            :style="getGridPreviewStyle()"
+          >
+            <view 
+              v-for="(img, index) in displayImages" 
+              :key="img.id" 
+              class="grid-item"
+              :style="getGridItemStyle()"
+            >
+              <image 
+                :src="img.path" 
+                :mode="getImageMode()"
+                class="grid-thumb"
+                :style="getGridImageStyle()"
+                @load="onImageLoad"
+              />
+              <!-- 上传状态遮罩 -->
+              <view v-if="uploadingImages.has(img.id)" class="upload-overlay">
+                <view class="upload-spinner" />
+                <text class="upload-text">上传中...</text>
+              </view>
+              <!-- 用户模式显示操作按钮 -->
+              <template v-if="pageMode === 'user'">
+                <view class="image-index">{{ index + 1 }}</view>
+                <view class="image-actions">
+                  <view class="action-btn replace" @click.stop="replaceImage(index)">
+                    <uni-icons type="refreshempty" size="14" color="#fff" />
+                  </view>
+                  <view class="action-btn delete" @click.stop="removeImage(index)">
+                    <uni-icons type="close" size="14" color="#fff" />
+                  </view>
+                </view>
+              </template>
+            </view>
+          </view>
+          
+          <!-- 预览容器 - 1N/N1 模式 -->
+          <view 
+            v-else-if="images.length > 0" 
+            class="stitch-preview" 
+            :class="computedDirection"
+            :style="getLinearPreviewStyle()"
+          >
             <view 
               v-for="(img, index) in images" 
               :key="img.id" 
@@ -33,7 +214,7 @@
               <view class="preview-item" @longpress="pageMode === 'user' ? showImageActions(index) : null">
                 <image 
                   :src="img.path" 
-                  :mode="direction === 'vertical' ? 'widthFix' : 'heightFix'" 
+                  :mode="computedDirection === 'vertical' ? 'widthFix' : 'heightFix'" 
                   class="preview-thumb"
                   @load="onImageLoad"
                 />
@@ -188,7 +369,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from "@dcloudio/uni-app";
 import NavBar from '@/components/nav-bar.vue'
 import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
@@ -205,8 +386,44 @@ interface ImageInfo {
   height: number
 }
 
+// staticData 协议接口
+interface StaticData {
+  mode: 'grid' | '1N' | 'N1'
+  layout: {
+    rows: number
+    cols: number
+    gap: number
+  }
+  itemStyle: {
+    width: number | 'auto'
+    height: number | 'auto'
+  }
+  bgColor: string
+  images: string[]
+}
+
 // 页面模式
 const pageMode = ref<'user' | 'bot'>('user') // user: 用户交互模式, bot: 后端机器人模式
+
+// 布局模式: 1N(竖排), N1(横排), grid(自定义网格)
+const layoutMode = ref<'1N' | 'N1' | 'grid'>('1N')
+
+// 10x10 网格选择器状态
+const gridLayout = ref({ rows: 2, cols: 2 })
+const hoverCell = ref({ row: 0, col: 0 })
+const isHovering = ref(false)
+
+// 属性配置
+const itemWidth = ref<string>('')
+const itemHeight = ref<string>('')
+const gridGap = ref(10)
+const bgColor = ref('#ffffff')
+
+// 背景颜色选项
+const bgColorOptions = [
+  '#ffffff', '#f5f5f5', '#e0e0e0', '#000000',
+  '#fff3e0', '#e3f2fd', '#f3e5f5', '#e8f5e9'
+]
 
 // 状态
 const images = ref<ImageInfo[]>([])
@@ -225,19 +442,45 @@ const isRenderReady = ref(false) // 渲染就绪状态
 const uploadHost = ref<string>('https://lzk-web.oss-cn-beijing.aliyuncs.com')
 const uploadingImages = ref<Set<string>>(new Set()) // 正在上传的图片ID集合
 
+// 从 URL 中解析 stitchData 参数 (H5 hash 模式兼容)
+const getStitchDataFromUrl = () => {
+  // #ifdef H5
+  // H5 端需要从 window.location.href 中解析 hash 路由的 query 参数
+  const href = window.location.href
+  const hashIndex = href.indexOf('#')
+  if (hashIndex > -1) {
+    const hashPart = href.substring(hashIndex + 1)
+    const queryIndex = hashPart.indexOf('?')
+    if (queryIndex > -1) {
+      const queryString = hashPart.substring(queryIndex + 1)
+      const params = new URLSearchParams(queryString)
+      return params.get('stitchData')
+    }
+  }
+  return null
+  // #endif
+  
+  // #ifndef H5
+  return null
+  // #endif
+}
+
 // 页面加载时判断运行环境
 onLoad((options) => {
-  if (options.stitchData) {
+  // H5 端优先从 URL 解析，小程序端使用 options
+  const stitchData = getStitchDataFromUrl() || options.stitchData
+  
+  if (stitchData) {
     // 后端机器人模式
     pageMode.value = 'bot'
-    console.log('进入后端机器人模式')
+    console.log('进入后端机器人模式, stitchData长度:', stitchData.length)
     
     // 解析传入的数据
     try {
-      const decodedData = decodeBase64(options.stitchData)
+      const decodedData = decodeBase64(stitchData)
       const config = JSON.parse(decodedData)
       
-      // 应用配置
+      // 应用配置 (支持新版 staticData 协议)
       images.value = config.images || []
       direction.value = config.direction || 'vertical'
       showDivider.value = config.showDivider || false
@@ -245,7 +488,31 @@ onLoad((options) => {
       dividerColor.value = config.dividerColor || '#ffffff'
       exportWidth.value = config.exportWidth || 750
       
+      // 新版字段
+      if (config.layoutMode) {
+        layoutMode.value = config.layoutMode
+      }
+      if (config.gridLayout) {
+        gridLayout.value = config.gridLayout
+      }
+      if (config.gridGap !== undefined) {
+        gridGap.value = config.gridGap
+      }
+      if (config.bgColor) {
+        bgColor.value = config.bgColor
+      }
+      if (config.itemWidth) {
+        itemWidth.value = String(config.itemWidth)
+      }
+      if (config.itemHeight) {
+        itemHeight.value = String(config.itemHeight)
+      }
+      
+      // 重置图片加载计数器
+      resetImageLoadCounter()
+      
       console.log('已应用后端配置:', config)
+      console.log('layoutMode:', layoutMode.value, 'gridLayout:', gridLayout.value)
     } catch (error) {
       console.error('解析后端配置失败:', error)
     }
@@ -264,6 +531,198 @@ const colorOptions = [
   '#ffffff', '#000000', '#f5f5f5', '#e0e0e0',
   '#ff4444', '#44ff44', '#4444ff', '#ffff44'
 ]
+
+// ==================== 10x10 网格选择器逻辑 ====================
+
+// 根据 index 计算行列 (index 从 0 到 99)
+const getCellPosition = (index: number) => {
+  const row = Math.floor(index / 10) + 1
+  const col = (index % 10) + 1
+  return { row, col }
+}
+
+// 判断单元格是否在选中范围内
+const isCellSelected = (index: number) => {
+  const { row, col } = getCellPosition(index)
+  return row <= gridLayout.value.rows && col <= gridLayout.value.cols
+}
+
+// 判断单元格是否在 hover 范围内
+const isCellHovered = (index: number) => {
+  if (!isHovering.value) return false
+  const { row, col } = getCellPosition(index)
+  return row <= hoverCell.value.row && col <= hoverCell.value.col
+}
+
+// 点击单元格选中布局
+const onGridCellClick = (index: number) => {
+  const { row, col } = getCellPosition(index)
+  gridLayout.value = { rows: row, cols: col }
+  isHovering.value = false
+}
+
+// 触摸开始
+const onGridCellTouch = (index: number) => {
+  const { row, col } = getCellPosition(index)
+  hoverCell.value = { row, col }
+  isHovering.value = true
+}
+
+// 触摸移动
+const onGridTouchMove = (e: TouchEvent) => {
+  const touch = e.touches[0]
+  const target = document.elementFromPoint(touch.clientX, touch.clientY)
+  if (target && target.classList.contains('grid-cell')) {
+    const cells = document.querySelectorAll('.grid-cell')
+    const index = Array.from(cells).indexOf(target as Element)
+    if (index >= 0) {
+      const { row, col } = getCellPosition(index)
+      hoverCell.value = { row, col }
+    }
+  }
+}
+
+// 触摸结束
+const onGridTouchEnd = () => {
+  if (isHovering.value) {
+    gridLayout.value = { ...hoverCell.value }
+  }
+  isHovering.value = false
+}
+
+// ==================== 计算属性 ====================
+
+// 根据布局模式计算方向
+const computedDirection = computed(() => {
+  if (layoutMode.value === '1N') return 'vertical'
+  if (layoutMode.value === 'N1') return 'horizontal'
+  return direction.value
+})
+
+// 显示的图片列表 (Grid 模式下限制数量)
+const displayImages = computed(() => {
+  if (layoutMode.value === 'grid') {
+    const maxCount = gridLayout.value.rows * gridLayout.value.cols
+    return images.value.slice(0, maxCount)
+  }
+  return images.value
+})
+
+// 生成 staticData 协议对象
+const staticData = computed<StaticData>(() => {
+  let rows = 1, cols = 1
+  
+  if (layoutMode.value === '1N') {
+    rows = images.value.length
+    cols = 1
+  } else if (layoutMode.value === 'N1') {
+    rows = 1
+    cols = images.value.length
+  } else {
+    rows = gridLayout.value.rows
+    cols = gridLayout.value.cols
+  }
+  
+  return {
+    mode: layoutMode.value,
+    layout: {
+      rows,
+      cols,
+      gap: gridGap.value
+    },
+    itemStyle: {
+      width: itemWidth.value ? parseInt(itemWidth.value) : 'auto',
+      height: itemHeight.value ? parseInt(itemHeight.value) : 'auto'
+    },
+    bgColor: bgColor.value,
+    images: displayImages.value.map(img => img.path)
+  }
+})
+
+// ==================== 样式计算方法 ====================
+
+// Grid 预览容器样式 (使用 flex 实现兼容性更好的网格)
+const getGridPreviewStyle = () => {
+  return {
+    display: 'flex',
+    flexWrap: 'wrap',
+    backgroundColor: bgColor.value,
+    padding: '16rpx',
+    borderRadius: '16rpx',
+    gap: `${gridGap.value}px`
+  }
+}
+
+// Grid 单元格样式 (计算每个单元格的宽度百分比)
+const getGridItemStyle = () => {
+  const cols = gridLayout.value.cols
+  const gap = gridGap.value
+  // 计算每个单元格的宽度：(100% - 总间距) / 列数
+  // 总间距 = (列数 - 1) * gap
+  const gapTotal = (cols - 1) * gap
+  const itemWidthPercent = `calc((100% - ${gapTotal}px) / ${cols})`
+  
+  const style: Record<string, string> = {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: '8rpx',
+    width: itemWidthPercent,
+    boxSizing: 'border-box'
+  }
+  
+  // 如果用户指定了固定宽度，则使用固定宽度
+  if (itemWidth.value) {
+    style.width = `${itemWidth.value}px`
+  }
+  if (itemHeight.value) {
+    style.height = `${itemHeight.value}px`
+  }
+  
+  return style
+}
+
+// Grid 图片样式
+const getGridImageStyle = () => {
+  const style: Record<string, string> = {
+    display: 'block'
+  }
+  
+  if (itemWidth.value && itemHeight.value) {
+    style.width = '100%'
+    style.height = '100%'
+    style.objectFit = 'cover'
+  } else if (itemWidth.value) {
+    style.width = `${itemWidth.value}px`
+    style.height = 'auto'
+  } else if (itemHeight.value) {
+    style.width = 'auto'
+    style.height = `${itemHeight.value}px`
+  } else {
+    style.width = '100%'
+    style.height = 'auto'
+  }
+  
+  return style
+}
+
+// 获取图片模式
+const getImageMode = () => {
+  if (itemWidth.value && itemHeight.value) {
+    return 'aspectFill'
+  } else if (itemWidth.value) {
+    return 'widthFix'
+  } else if (itemHeight.value) {
+    return 'heightFix'
+  }
+  return 'widthFix'
+}
+
+// 线性布局预览样式
+const getLinearPreviewStyle = () => {
+  return {
+    backgroundColor: bgColor.value
+  }
+}
 
 // 生成唯一ID
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2)
@@ -374,10 +833,12 @@ let loadedImageCount = 0
 // 图片加载完成回调
 const onImageLoad = () => {
   loadedImageCount++
-  console.log(`图片加载进度: ${loadedImageCount}/${images.value.length}`)
+  // Grid 模式下使用 displayImages 的数量，其他模式使用 images 的数量
+  const targetCount = layoutMode.value === 'grid' ? displayImages.value.length : images.value.length
+  console.log(`图片加载进度: ${loadedImageCount}/${targetCount}, layoutMode: ${layoutMode.value}`)
   
   // 检查是否所有图片都已加载
-  if (loadedImageCount === images.value.length && images.value.length > 0) {
+  if (loadedImageCount >= targetCount && targetCount > 0) {
     isRenderReady.value = true
     console.log('所有图片加载完成，渲染就绪')
   }
@@ -810,14 +1271,24 @@ const exportImage = async () => {
     
     const posterId = `stitch_${Date.now()}`
     
-    // 构建配置数据
+    // 构建配置数据 (使用 staticData 协议)
     const config = {
-      images: images.value,
-      direction: direction.value,
+      // 新版 staticData 协议
+      staticData: staticData.value,
+      // 兼容旧版字段
+      images: displayImages.value,
+      direction: computedDirection.value,
       showDivider: showDivider.value,
       dividerWidth: dividerWidth.value,
       dividerColor: dividerColor.value,
-      exportWidth: exportWidth.value
+      exportWidth: exportWidth.value,
+      // 新增字段
+      layoutMode: layoutMode.value,
+      gridLayout: gridLayout.value,
+      gridGap: gridGap.value,
+      bgColor: bgColor.value,
+      itemWidth: itemWidth.value ? parseInt(itemWidth.value) : null,
+      itemHeight: itemHeight.value ? parseInt(itemHeight.value) : null
     }
     
     // 生成带Base64编码数据的URL
@@ -992,6 +1463,161 @@ const downloadImageForMp = async (posterId: string) => {
 
 .preview-section {
   min-height: 400rpx;
+}
+
+// ==================== 模式选择器样式 ====================
+.mode-tabs {
+  display: flex;
+  gap: 16rpx;
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 24rpx 16rpx;
+  background: #f5f5f5;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  color: #666;
+  transition: all 0.3s;
+  
+  &.active {
+    background: #0046B4;
+    color: #fff;
+  }
+}
+
+.mode-icon {
+  font-size: 32rpx;
+}
+
+// ==================== 10x10 网格选择器样式 ====================
+.grid-selector-wrapper {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.grid-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.grid-selector-title {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.grid-selector-value {
+  font-size: 28rpx;
+  color: #0046B4;
+  font-weight: 600;
+}
+
+.grid-selector {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4rpx;
+  padding: 16rpx;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+}
+
+.grid-cell {
+  aspect-ratio: 1;
+  background: #e0e0e0;
+  border-radius: 4rpx;
+  transition: all 0.15s;
+  cursor: pointer;
+  
+  &.selected {
+    background: #0046B4;
+  }
+  
+  &.hovered {
+    background: rgba(0, 70, 180, 0.5);
+  }
+}
+
+// ==================== 表单样式 ====================
+.form-row {
+  display: flex;
+  gap: 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.form-item {
+  flex: 1;
+}
+
+.form-label {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.form-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
+.form-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  background: transparent;
+}
+
+.form-unit {
+  font-size: 24rpx;
+  color: #999;
+  margin-left: 8rpx;
+}
+
+.form-tip {
+  padding: 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  margin-bottom: 16rpx;
+  
+  &.warning {
+    background: #fff3e0;
+    color: #e65100;
+  }
+}
+
+// ==================== Grid 预览样式 ====================
+.stitch-preview.grid-mode {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  max-height: none;
+  overflow: visible;
+}
+
+.grid-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8rpx;
+  background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.grid-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 // 海报容器

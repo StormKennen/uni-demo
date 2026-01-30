@@ -272,7 +272,7 @@ interface Memo {
 // 文件夹相关
 const folderTree = ref<Folder[]>([])
 const selectedFolderId = ref<string | null>(null)
-const folderPanelCollapsed = ref(false)
+const folderPanelCollapsed = ref(true)
 const expandedFolders = ref<string[]>([])
 const folderStats = ref<Record<string, number>>({})
 const showFolderModal = ref(false)
@@ -825,7 +825,7 @@ onUnmounted(() => {
 }
 
 .folder-panel {
-  width: 400rpx;
+  width: 300rpx;
   background: #fff;
   border-right: 1rpx solid #eee;
   display: flex;
