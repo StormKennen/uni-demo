@@ -132,15 +132,17 @@
 					chart.setOption(this.option);
 					
 					// 监听tooltip显示事件
-					chart.on('showTip', (params) => {
-					  this.showTip = true
-					  console.log('showTip::')
-					});
-					chart.on('hideTip', (params) => {
-						setTimeout(() => {
-							 this.showTip = false
-						},300)
-					});
+					if (chart && chart.on) {
+						chart.on('showTip', (params) => {
+						  this.showTip = true
+						  console.log('showTip::')
+						});
+						chart.on('hideTip', (params) => {
+							setTimeout(() => {
+								 this.showTip = false
+							},300)
+						});
+					}
 					
 					setTimeout(()=>{
 						const option = {

@@ -1173,27 +1173,29 @@ const init = async () => {
     chartRef.setOption(state.option);
 
     // 添加事件监听器测试折叠展开功能
-    chartRef.on('click', function (params) {
-      console.log('节点点击事件:', params);
-      selectedNode.value = params.data; // 选中的节点
-      // 触发选中成员选择列表
-      console.log('memberOptions.value', memberOptions.value, selectedNode.value);
+    if (chartRef && chartRef.on) {
+      chartRef.on('click', function (params) {
+        console.log('节点点击事件:', params);
+        selectedNode.value = params.data; // 选中的节点
+        // 触发选中成员选择列表
+        console.log('memberOptions.value', memberOptions.value, selectedNode.value);
 
-      const findNodeMemberIndex = memberOptions.value.findIndex(member => member.id === selectedNode.value.id);
-      if (findNodeMemberIndex !== -1) {
-        selectedMemberIndex.value = findNodeMemberIndex;
-      }
-    });
-
-    // 监听树形图展开/折叠事件，自动调整图表大小
-    chartRef.on('click', { seriesType: 'tree' }, function () {
-      // 延迟执行 resize，等待动画完成
-      setTimeout(() => {
-        if (chartInstance) {
-          chartInstance.resize();
+        const findNodeMemberIndex = memberOptions.value.findIndex(member => member.id === selectedNode.value.id);
+        if (findNodeMemberIndex !== -1) {
+          selectedMemberIndex.value = findNodeMemberIndex;
         }
-      }, 350);
-    });
+      });
+
+      // 监听树形图展开/折叠事件，自动调整图表大小
+      chartRef.on('click', { seriesType: 'tree' }, function () {
+        // 延迟执行 resize，等待动画完成
+        setTimeout(() => {
+          if (chartInstance) {
+            chartInstance.resize();
+          }
+        }, 350);
+      });
+    }
   });
   loading.value = false;
 };

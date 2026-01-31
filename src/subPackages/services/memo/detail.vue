@@ -1,5 +1,8 @@
 <template>
-  <view class="memo-detail-page">
+  <view class="memo-detail-page" :style="pageStyle">
+    <!-- 背景图层 -->
+    <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
+    
     <nav-bar 
       always-title
       :title="memoTitle"
@@ -7,7 +10,7 @@
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }"
     />
 
-    <view class="nav-actions">
+    <view class="nav-actions" v-if="!settings.hideNavActions">
       <!-- 导出图片按钮 -->
       <view class="action-btn" @click="exportImage" v-if="memoData">
         <text class="icon">导出</text>
@@ -34,7 +37,7 @@
     </view>
 
     <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
-    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }">
+    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }" :style="memoBodyStyle">
       <!-- 标题 -->
       <!-- <view class="memo-header">
         <text class="memo-title">{{ memoData.name || '未命名备忘录' }}</text>
@@ -54,7 +57,7 @@
       </view>
 
       <!-- 内容块 - 与editor.vue预览模式一致 -->
-      <view class="content-blocks">
+      <view class="content-blocks" :style="textStyle">
         <view 
           v-for="(block, blockIndex) in parsedContent" 
           :key="blockIndex"
@@ -62,7 +65,7 @@
           class="content-block"
         >
           <!-- 锚点标签显示 -->
-          <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
+          <!-- <text class="anchor-tag">#L{{ blockIndex + 1 }}</text> -->
           <!-- 文本块 -->
           <view 
             v-if="block.type === 'text'" 
@@ -146,7 +149,63 @@
             </view>
           </view>
 
+          <!-- 路径块 - 垂直时间轴 -->
+          <view v-if="block.type === 'route'" class="route-container">
+            <view 
+              v-for="(node, nodeIndex) in block.content" 
+              :key="nodeIndex"
+              class="route-node"
+              :class="{ 
+                'is-start': nodeIndex === 0,
+                'is-end': node.isEnd,
+                'is-transfer': node.type === 'transfer'
+              }"
+            >
+              <!-- 左侧轴线 -->
+              <view class="route-axis">
+                <!-- 圆点/徽章 -->
+                <view 
+                  class="route-dot" 
+                  :class="{ 
+                    'dot-large': nodeIndex === 0 || node.isEnd,
+                    'dot-badge': node.type === 'transfer' && !node.isEnd
+                  }"
+                ></view>
+                <!-- 连线（非终点显示） -->
+                <view 
+                  v-if="!node.isEnd" 
+                  class="route-line"
+                  :class="{ 
+                    'line-pipe': node.type === 'transfer',
+                    'line-dashed': node.type !== 'transfer'
+                  }"
+                ></view>
+              </view>
+
+              <!-- 右侧内容 -->
+              <view class="route-content">
+                <!-- 站点名称 -->
+                <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                
+                <!-- 信息胶囊（非终点显示） -->
+                <view v-if="!node.isEnd && (node.time || node.icon)" class="route-info-tag">
+                  <text v-if="node.time" class="tag-time">🕒 {{ node.time }}</text>
+                  <text v-if="node.time && node.icon" class="tag-divider">·</text>
+                  <text v-if="node.icon" class="tag-icon">{{ node.icon }}</text>
+                </view>
+                
+                <!-- 描述（非终点显示） -->
+                <text v-if="!node.isEnd && node.desc" class="route-desc">{{ node.desc }}</text>
+              </view>
+            </view>
+          </view>
+
         </view>
+      </view>
+      
+      <!-- 水印 -->
+      <view v-if="settings.features.showWatermark" class="watermark">
+        <text class="watermark-text">Powered by Memo</text>
       </view>
     </view>
 
@@ -155,6 +214,15 @@
       <text class="error-text">{{ error }}</text>
       <button class="retry-btn" @click="loadMemoData">重试</button>
     </view>
+
+    <!-- 回到顶部按钮 -->
+    <view 
+      class="back-to-top-btn" 
+      v-if="showBackToTopBtn" 
+      @click="backToTop"
+    >
+      <text class="back-to-top-icon">↑</text>
+    </view>
     
   </view>
 </template>
@@ -162,9 +230,9 @@
 <script setup lang="ts">
 import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
 
-import { ref, computed, nextTick, getCurrentInstance } from 'vue'
+import { ref, reactive, computed, nextTick, getCurrentInstance } from 'vue'
 import { marked } from 'marked'
-import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getToken } from '@/utils/storage'
 import { getMemosPublicDetail, getMemosMemoIdPublic } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
@@ -177,6 +245,135 @@ const memoId = ref<string>('')
 const memoData = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
+
+// 设置（从 memoData 中读取）
+const settings = reactive({
+  padding: { top: 32, bottom: 32, left: 32, right: 32 },
+  border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
+  appearance: {
+    backgroundColor: '#ffffff',
+    backgroundImage: '',
+    backgroundBlur: 0,
+    backgroundOpacity: 1
+  },
+  typography: {
+    fontSize: 'standard' as 'standard' | 'medium' | 'large',
+    lineHeight: 1.6
+  },
+  layout: {
+    contentWidth: 'full' as 'full' | 'narrow'
+  },
+  features: {
+    showWatermark: false,
+    enableComments: false
+  },
+  showBackToTop: true,
+  hideNavActions: false
+})
+
+// 滚动状态 - 用于回到顶部按钮
+const scrollTop = ref(0)
+const showBackToTopBtn = computed(() => settings.showBackToTop && scrollTop.value > 400)
+
+// 字号映射
+const fontSizeMap: Record<string, string> = {
+  standard: '28rpx',
+  medium: '32rpx',
+  large: '36rpx'
+}
+
+// 页面整体样式 - 背景颜色
+const pageStyle = computed(() => {
+  return {
+    backgroundColor: settings.appearance.backgroundColor
+  }
+})
+
+// 背景图层样式
+const backgroundLayerStyle = computed(() => {
+  if (!settings.appearance.backgroundImage) return null
+  return {
+    backgroundImage: 'url(' + settings.appearance.backgroundImage + ')',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    filter: 'blur(' + settings.appearance.backgroundBlur + 'px)',
+    opacity: settings.appearance.backgroundOpacity
+  }
+})
+
+// 文本全局样式
+const textStyle = computed(() => {
+  return {
+    fontSize: fontSizeMap[settings.typography.fontSize] || '28rpx',
+    lineHeight: String(settings.typography.lineHeight)
+  }
+})
+
+// 动态内容样式 - 根据 settings 计算
+const contentStyle = computed(() => {
+  const style: Record<string, string> = {
+    paddingTop: settings.padding.top + 'rpx',
+    paddingBottom: settings.padding.bottom + 'rpx',
+    paddingLeft: settings.padding.left + 'rpx',
+    paddingRight: settings.padding.right + 'rpx'
+  }
+  
+  if (settings.border.top > 0) {
+    style.borderTop = settings.border.top + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.bottom > 0) {
+    style.borderBottom = settings.border.bottom + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.left > 0) {
+    style.borderLeft = settings.border.left + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.right > 0) {
+    style.borderRight = settings.border.right + 'rpx solid ' + settings.border.color
+  }
+  
+  // 居中窄屏模式
+  if (settings.layout.contentWidth === 'narrow') {
+    style.maxWidth = '1200rpx'
+    style.marginLeft = 'auto'
+    style.marginRight = 'auto'
+  }
+  
+  return style
+})
+
+// 统一的备忘录主体样式 - 合并 padding, border, backgroundColor
+const memoBodyStyle = computed(() => {
+  const style: Record<string, string> = {
+    backgroundColor: settings.appearance.backgroundColor,
+    paddingTop: settings.padding.top + 'rpx',
+    paddingBottom: settings.padding.bottom + 'rpx',
+    paddingLeft: settings.padding.left + 'rpx',
+    paddingRight: settings.padding.right + 'rpx'
+  }
+  
+  // 边框样式
+  if (settings.border.top > 0) {
+    style.borderTop = settings.border.top + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.bottom > 0) {
+    style.borderBottom = settings.border.bottom + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.left > 0) {
+    style.borderLeft = settings.border.left + 'rpx solid ' + settings.border.color
+  }
+  if (settings.border.right > 0) {
+    style.borderRight = settings.border.right + 'rpx solid ' + settings.border.color
+  }
+  
+  // 居中窄屏模式
+  if (settings.layout.contentWidth === 'narrow') {
+    style.maxWidth = '1200rpx'
+    style.marginLeft = 'auto'
+    style.marginRight = 'auto'
+  }
+  
+  return style
+})
 
 // 渲染完成状态锁 - 用于确保截图时 Markdown 已完全渲染
 const isRendered = ref(false)
@@ -377,6 +574,41 @@ const loadMemoData = async () => {
     })
     if (res) {
       memoData.value = res
+      // 加载设置
+      if (res.settings) {
+        if (res.settings.padding) {
+          settings.padding.top = res.settings.padding.top ?? 32
+          settings.padding.bottom = res.settings.padding.bottom ?? 32
+          settings.padding.left = res.settings.padding.left ?? 32
+          settings.padding.right = res.settings.padding.right ?? 32
+        }
+        if (res.settings.border) {
+          settings.border.top = res.settings.border.top ?? 0
+          settings.border.bottom = res.settings.border.bottom ?? 0
+          settings.border.left = res.settings.border.left ?? 0
+          settings.border.right = res.settings.border.right ?? 0
+          settings.border.color = res.settings.border.color || '#eeeeee'
+        }
+        if (res.settings.appearance) {
+          settings.appearance.backgroundColor = res.settings.appearance.backgroundColor || '#ffffff'
+          settings.appearance.backgroundImage = res.settings.appearance.backgroundImage || ''
+          settings.appearance.backgroundBlur = res.settings.appearance.backgroundBlur ?? 0
+          settings.appearance.backgroundOpacity = res.settings.appearance.backgroundOpacity ?? 1
+        }
+        if (res.settings.typography) {
+          settings.typography.fontSize = res.settings.typography.fontSize || 'standard'
+          settings.typography.lineHeight = res.settings.typography.lineHeight ?? 1.6
+        }
+        if (res.settings.layout) {
+          settings.layout.contentWidth = res.settings.layout.contentWidth || 'full'
+        }
+        if (res.settings.features) {
+          settings.features.showWatermark = res.settings.features.showWatermark === true
+          settings.features.enableComments = res.settings.features.enableComments === true
+        }
+        settings.showBackToTop = res.settings.showBackToTop !== false
+        settings.hideNavActions = res.settings.hideNavActions === true
+      }
     } else {
       error.value = '备忘录不存在'
     }
@@ -807,6 +1039,19 @@ const goToLogin = () => {
 const goToEdit = () => {
   uni.navigateTo({
     url: `/subPackages/services/memo/editor?id=${memoId.value}&mode=edit`
+  })
+}
+
+// 监听页面滚动
+onPageScroll((e: { scrollTop: number }) => {
+  scrollTop.value = e.scrollTop
+})
+
+// 回到顶部
+const backToTop = () => {
+  uni.pageScrollTo({
+    scrollTop: 0,
+    duration: 300
   })
 }
 
@@ -1288,10 +1533,35 @@ onShareTimeline(() => {
 .memo-detail-page {
   min-height: 100vh;
   background: #f5f7fa;
+  position: relative;
+  overflow: hidden;
+}
+
+// 背景图层
+.background-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+// 水印
+.watermark {
+  padding: 40rpx 32rpx;
+  text-align: center;
+  
+  .watermark-text {
+    font-size: 24rpx;
+    color: #ccc;
+    letter-spacing: 2rpx;
+  }
 }
 
 .nav-actions {
-  padding-left: 32rpx;
+  // padding-left: 32rpx;
   display: flex;
   gap: 16rpx;
   background-color: #ffeaa7;
@@ -1361,7 +1631,9 @@ onShareTimeline(() => {
 
 .memo-content {
   padding: 32rpx;
-  background: #fff;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .memo-header {
@@ -1405,18 +1677,11 @@ onShareTimeline(() => {
   font-size: 24rpx;
 }
 
-.content-blocks {
-  // padding: 0 32rpx;
-}
-
 .content-block {
   position: relative;
   box-shadow: none;
   background: transparent;
   margin-bottom: 0;
-  // border-radius: 12rpx;
-  // padding: 24rpx;
-  // box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 // 锚点标签样式
@@ -1580,4 +1845,182 @@ onShareTimeline(() => {
   pointer-events: auto !important;
 }
 /* #endif */
+
+// 路径容器样式 - 垂直时间轴
+.route-container {
+  background: transparent;
+  padding: 24rpx 0;
+  margin: 16rpx 0;
+}
+
+.route-node {
+  display: flex;
+  position: relative;
+  min-height: 80rpx;
+  
+  &.is-end {
+    min-height: 48rpx;
+  }
+}
+
+// 左侧轴线
+.route-axis {
+  width: 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.route-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: #fff;
+  border: 4rpx solid #999;
+  z-index: 2;
+  flex-shrink: 0;
+  
+  &.dot-large {
+    width: 28rpx;
+    height: 28rpx;
+    background: #667eea;
+    border: none;
+  }
+  
+  // 菱形徽章样式（换乘站）
+  &.dot-badge {
+    width: 24rpx;
+    height: 24rpx;
+    border-radius: 6rpx;
+    transform: rotate(45deg);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
+    border: 2rpx solid #fff;
+    box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.4);
+  }
+}
+
+.route-line {
+  width: 4rpx;
+  flex: 1;
+  min-height: 80rpx;
+  margin-top: 8rpx;
+  position: relative;
+  
+  &.line-dashed {
+    background: repeating-linear-gradient(
+      to bottom,
+      #ccc 0rpx,
+      #ccc 8rpx,
+      transparent 8rpx,
+      transparent 16rpx
+    );
+  }
+  
+  // 管道感连线样式（换乘线）
+  &.line-pipe {
+    width: 8rpx;
+    background: #667eea;
+    border-radius: 4rpx;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: -4rpx;
+      bottom: -4rpx;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24rpx;
+      background: rgba(102, 126, 234, 0.15);
+      border-radius: 12rpx;
+      z-index: -1;
+    }
+  }
+}
+
+// 右侧内容
+.route-content {
+  flex: 1;
+  padding-left: 16rpx;
+  padding-bottom: 32rpx;
+  
+  .route-node.is-end & {
+    padding-bottom: 0;
+  }
+}
+
+.route-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+// 信息胶囊标签
+.route-info-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+  padding: 8rpx 20rpx;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border: 2rpx solid rgba(102, 126, 234, 0.2);
+  border-radius: 32rpx;
+  
+  .tag-time {
+    font-size: 24rpx;
+    color: #667eea;
+    font-weight: 500;
+  }
+  
+  .tag-divider {
+    font-size: 24rpx;
+    color: #999;
+  }
+  
+  .tag-icon {
+    font-size: 24rpx;
+  }
+}
+
+.route-desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: #999;
+  line-height: 1.5;
+}
+
+// 回到顶部按钮
+.back-to-top-btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: 200rpx;
+  width: 88rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 50%;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  z-index: 99;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  
+  .back-to-top-icon {
+    font-size: 40rpx;
+    color: #667eea;
+    font-weight: bold;
+  }
+  
+  &:active {
+    transform: scale(0.9);
+    background: rgba(240, 240, 240, 0.95);
+  }
+}
 </style>

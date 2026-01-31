@@ -102,13 +102,6 @@ export const PAGE_SHARE_CONFIGS = {
     title: '图片压缩工具 - 高效压缩图片',
     path: '/subPackages/tools/image-compress/index',
     imageUrl: '/static/logo.png'
-  },
-  
-  // 食谱
-  recipe: {
-    title: '食谱大全 - 美食制作指南',
-    path: '/subPackages/services/recipe/index',
-    imageUrl: '/static/logo.png'
   }
 }
 

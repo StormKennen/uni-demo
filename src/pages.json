@@ -162,20 +162,6 @@
       "name": "services",
       "pages": [
         {
-          "path": "recipe/index",
-          "style": {
-            "navigationBarTitleText": "食谱大全",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "recipe/detail",
-          "style": {
-            "navigationBarTitleText": "食谱详情",
-            "navigationStyle": "custom"
-          }
-        },
-        {
           "path": "memo/list",
           "style": {
             "navigationBarTitleText": "我的备忘录",

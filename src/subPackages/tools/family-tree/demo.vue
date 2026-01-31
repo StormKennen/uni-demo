@@ -421,6 +421,7 @@ const init = async () => {
     chartRef.setOption(state.option);
     
     // 添加事件监听器测试折叠展开功能
+    if (chartRef && chartRef.on) {
     chartRef.on('click', function (params) {
       console.log('节点点击事件:', params);
       selectedNode.value = params.data; // 选中的节点
@@ -438,6 +439,7 @@ const init = async () => {
       console.log('节点名称:', params.data?.name);
       console.log('展开状态:', params.data?.collapsed ? '折叠' : '展开');
     });
+    }
   });
   loading.value = false;
 };

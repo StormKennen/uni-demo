@@ -14,16 +14,18 @@
 
     <!-- 可滚动内容区域 -->
     <scroll-view class="scrollable-content" scroll-y>
-      <!-- 备忘录名称和标签 -->
+      <!-- 备忘录名称和设置按钮 -->
       <view class="memo-info-section">
-        <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
-        <view class="tags-section">
-          <view class="tags-container">
-            <view v-for="(tag, index) in tags" :key="index" class="tag-item">
-              <text class="tag-text">{{ tag }}</text>
-              <text class="tag-remove" @click="removeTag(index)">×</text>
-            </view>
-            <input class="tag-input" v-model="tagInput" placeholder="添加标签" @confirm="addTag" :maxlength="20" />
+        <view class="memo-header-row">
+          <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
+          <view class="settings-btn" @click="settingsVisible = true">
+            <text class="settings-icon">⚙️</text>
+          </view>
+        </view>
+        <!-- 标签预览（只读） -->
+        <view class="tags-preview" v-if="tags.length > 0">
+          <view v-for="(tag, index) in tags" :key="index" class="tag-preview-item">
+            <text class="tag-text">{{ tag }}</text>
           </view>
         </view>
       </view>
@@ -53,7 +55,7 @@
               <view class="block-actions">
                 <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙</view>
+                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
             </view>
@@ -94,7 +96,7 @@
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙</view>
+                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
             </view>
@@ -120,19 +122,145 @@
             </view>
           </view>
 
+          <!-- 路径块 -->
+          <view v-if="block.type === 'route'" class="route-block">
+            <view class="block-header" @click="selectBlock(blockIndex)">
+              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">行程路径#L{{ blockIndex + 1 }}</text>
+              </text>
+              <view class="block-actions">
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+              </view>
+            </view>
+
+            <view class="route-edit-container">
+              <!-- 路径编辑工具栏 -->
+              <view class="route-toolbar">
+                <view class="route-toolbar-btn" @click="showJsonImportModal(blockIndex)">
+                  <text class="toolbar-icon">📋</text>
+                  <text class="toolbar-text">导入 JSON</text>
+                </view>
+              </view>
+
+              <view 
+                v-for="(node, nodeIndex) in (block as RouteBlock).content" 
+                :key="nodeIndex" 
+                class="route-node-editor"
+              >
+                <!-- 插入节点按钮（非第一个节点前显示） -->
+                <view 
+                  v-if="nodeIndex > 0" 
+                  class="insert-node-btn" 
+                  @click="insertRouteNode(blockIndex, nodeIndex)"
+                >
+                  <text class="insert-icon">+</text>
+                  <text class="insert-text">插入节点</text>
+                </view>
+
+                <view class="node-content" :class="{ 'is-end': node.isEnd, 'is-transfer': node.type === 'transfer' }">
+                  <view class="node-header">
+                    <text class="node-index">{{ nodeIndex + 1 }}</text>
+                    <text class="node-type-label">{{ node.isEnd ? '终点' : (node.type === 'transfer' ? '换乘站' : '途经站') }}</text>
+                    <!-- 删除按钮（终点不可删除，且至少保留2个节点） -->
+                    <view 
+                      v-if="!node.isEnd && (block as RouteBlock).content.length > 2" 
+                      class="node-delete-btn" 
+                      @click="deleteRouteNode(blockIndex, nodeIndex)"
+                    >×</view>
+                  </view>
+
+                  <!-- 站点名称（所有节点都有） -->
+                  <view class="node-input-group">
+                    <text class="input-label">站点名称</text>
+                    <input 
+                      class="node-input" 
+                      v-model="node.name" 
+                      placeholder="请输入站点名称" 
+                      :maxlength="50"
+                    />
+                  </view>
+
+                  <!-- 非终点节点的额外字段 -->
+                  <template v-if="!node.isEnd">
+                    <view class="node-input-row">
+                      <view class="node-input-group half">
+                        <text class="input-label">耗时</text>
+                        <input 
+                          class="node-input" 
+                          v-model="node.time" 
+                          placeholder="如 1h" 
+                          :maxlength="20"
+                        />
+                      </view>
+                      <view class="node-input-group half">
+                        <text class="input-label">交通图标</text>
+                        <input 
+                          class="node-input" 
+                          v-model="node.icon" 
+                          placeholder="如 🚗" 
+                          :maxlength="20"
+                        />
+                      </view>
+                    </view>
+
+                    <view class="node-input-group">
+                      <text class="input-label">描述</text>
+                      <input 
+                        class="node-input" 
+                        v-model="node.desc" 
+                        placeholder="如 接机、换乘等" 
+                        :maxlength="100"
+                      />
+                    </view>
+
+                    <view class="node-switch-row">
+                      <text class="switch-label">换乘站点</text>
+                      <switch 
+                        :checked="node.type === 'transfer'" 
+                        @change="toggleRouteNodeType(blockIndex, nodeIndex)"
+                        color="#667eea"
+                      />
+                    </view>
+                  </template>
+                </view>
+              </view>
+
+              <!-- 在终点前添加节点 -->
+              <view class="add-route-node-btn" @click="addRouteNodeBeforeEnd(blockIndex)">
+                <text class="add-icon">+</text>
+                <text class="add-text">添加途经站</text>
+              </view>
+            </view>
+          </view>
+
         </view>
       </view>
     </scroll-view>
 
-    <!-- 底部新增按钮（仅编辑模式，控制面板显示时隐藏） -->
-    <view class="add-block-bar" v-if="!selectedItem && selectedBlock === null">
-      <view class="add-block-btn" @click="addTextBlock">
-        <!-- <text class="btn-icon">📝</text> -->
-        <text class="btn-text">新增文本容器</text>
+    <!-- FAB 悬浮按钮（仅编辑模式，控制面板显示时隐藏） -->
+    <view class="fab-container" v-if="!selectedItem && selectedBlock === null">
+      <!-- 遮罩层 -->
+      <view class="fab-overlay" v-if="fabExpanded" @click="fabExpanded = false"></view>
+      <!-- 子按钮 -->
+      <view class="fab-actions" :class="{ expanded: fabExpanded }">
+        <view class="fab-action-btn" @click="addTextBlockAndClose">
+          <text class="fab-action-icon">📝</text>
+          <text class="fab-action-text">+ 文字</text>
+        </view>
+        <view class="fab-action-btn" @click="addImageBlockAndClose">
+          <text class="fab-action-icon">🖼️</text>
+          <text class="fab-action-text">+ 图片</text>
+        </view>
+        <view class="fab-action-btn route" @click="addRouteBlockAndClose">
+          <text class="fab-action-icon">🗺️</text>
+          <text class="fab-action-text">+ 路径</text>
+        </view>
       </view>
-      <view class="add-block-btn" @click="addImageBlock">
-        <!-- <text class="btn-icon">🖼️</text> -->
-        <text class="btn-text">新增图片容器</text>
+      <!-- 主按钮 -->
+      <view class="fab-main-btn" :class="{ active: fabExpanded }" @click="fabExpanded = !fabExpanded">
+        <text class="fab-main-icon">{{ fabExpanded ? '×' : '+' }}</text>
       </view>
     </view>
 
@@ -209,6 +337,349 @@
             <view class="session-select-icon">›</view>
           </view>
         </scroll-view>
+      </view>
+    </view>
+
+    <!-- JSON 导入弹窗 -->
+    <view class="json-import-modal" v-if="jsonImportVisible" @click="jsonImportVisible = false">
+      <view class="json-import-content" @click.stop>
+        <view class="json-import-header">
+          <text class="json-import-title">导入 JSON 路径数据</text>
+          <text class="json-import-close" @click="jsonImportVisible = false">×</text>
+        </view>
+        <view class="json-import-body">
+          <textarea 
+            class="json-textarea" 
+            v-model="jsonImportText" 
+            placeholder="请粘贴 JSON 数组，如：[{name:机场,time:1h},{name:酒店,isEnd:true}]"
+            :maxlength="10000"
+          />
+          <view class="json-import-tip">
+            <text>提示：最后一个节点会自动设置为终点</text>
+          </view>
+        </view>
+        <view class="json-import-footer">
+          <view class="json-btn cancel" @click="jsonImportVisible = false">取消</view>
+          <view class="json-btn confirm" @click="confirmJsonImport">确认导入</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 设置面板 -->
+    <view class="settings-modal" v-if="settingsVisible" @click="settingsVisible = false">
+      <view class="settings-content" @click.stop>
+        <view class="settings-header">
+          <text class="settings-title">页面设置</text>
+          <text class="settings-close" @click="settingsVisible = false">×</text>
+        </view>
+        
+        <scroll-view class="settings-body" scroll-y>
+          <!-- 标签管理 -->
+          <view class="settings-section">
+            <view class="section-title">标签管理</view>
+            <view class="tags-manager">
+              <view class="tags-list" v-if="tags.length > 0">
+                <view v-for="(tag, index) in tags" :key="index" class="tag-editable">
+                  <text class="tag-text">{{ tag }}</text>
+                  <text class="tag-remove" @click="removeTag(index)">×</text>
+                </view>
+              </view>
+              <view class="tag-add-row">
+                <input 
+                  class="tag-add-input" 
+                  v-model="tagInput" 
+                  placeholder="输入标签后回车添加" 
+                  @confirm="addTag" 
+                  :maxlength="20"
+                />
+                <view class="tag-add-btn" @click="addTag">添加</view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 边距设置 -->
+          <view class="settings-section">
+            <view class="section-title">内容边距 (rpx)</view>
+            <view class="padding-grid">
+              <view class="padding-item">
+                <text class="padding-label">上</text>
+                <input 
+                  type="number" 
+                  class="padding-input" 
+                  :value="settings.padding.top" 
+                  @input="settings.padding.top = Number($event.detail.value) || 0"
+                />
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">下</text>
+                <input 
+                  type="number" 
+                  class="padding-input" 
+                  :value="settings.padding.bottom" 
+                  @input="settings.padding.bottom = Number($event.detail.value) || 0"
+                />
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">左</text>
+                <input 
+                  type="number" 
+                  class="padding-input" 
+                  :value="settings.padding.left" 
+                  @input="settings.padding.left = Number($event.detail.value) || 0"
+                />
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">右</text>
+                <input 
+                  type="number" 
+                  class="padding-input" 
+                  :value="settings.padding.right" 
+                  @input="settings.padding.right = Number($event.detail.value) || 0"
+                />
+              </view>
+            </view>
+          </view>
+
+          <!-- 边框设置 -->
+          <view class="settings-section">
+            <view class="section-title">内容边框</view>
+            <view class="border-grid">
+              <view class="border-item">
+                <text class="border-label">上边框</text>
+                <view class="border-controls">
+                  <input 
+                    type="number" 
+                    class="border-width-input" 
+                    :value="settings.border.top" 
+                    @input="settings.border.top = Number($event.detail.value) || 0"
+                    placeholder="0"
+                  />
+                  <text class="border-unit">rpx</text>
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">下边框</text>
+                <view class="border-controls">
+                  <input 
+                    type="number" 
+                    class="border-width-input" 
+                    :value="settings.border.bottom" 
+                    @input="settings.border.bottom = Number($event.detail.value) || 0"
+                    placeholder="0"
+                  />
+                  <text class="border-unit">rpx</text>
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">左边框</text>
+                <view class="border-controls">
+                  <input 
+                    type="number" 
+                    class="border-width-input" 
+                    :value="settings.border.left" 
+                    @input="settings.border.left = Number($event.detail.value) || 0"
+                    placeholder="0"
+                  />
+                  <text class="border-unit">rpx</text>
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">右边框</text>
+                <view class="border-controls">
+                  <input 
+                    type="number" 
+                    class="border-width-input" 
+                    :value="settings.border.right" 
+                    @input="settings.border.right = Number($event.detail.value) || 0"
+                    placeholder="0"
+                  />
+                  <text class="border-unit">rpx</text>
+                </view>
+              </view>
+            </view>
+            <view class="border-color-row">
+              <text class="border-color-label">边框颜色</text>
+              <input 
+                class="border-color-input" 
+                :value="settings.border.color" 
+                @input="settings.border.color = $event.detail.value"
+                placeholder="#eeeeee"
+              />
+              <view class="border-color-preview" :style="{ backgroundColor: settings.border.color }"></view>
+            </view>
+          </view>
+
+          <!-- 背景配置 -->
+          <view class="settings-section">
+            <view class="section-title">背景配置</view>
+            
+            <view class="subsection-title">莫兰迪配色</view>
+            <view class="color-palette">
+              <view 
+                v-for="color in morandiColors" 
+                :key="color.value"
+                class="palette-item"
+                :class="{ active: settings.appearance.backgroundColor === color.value }"
+                :style="{ backgroundColor: color.value }"
+                @click="settings.appearance.backgroundColor = color.value"
+              >
+                <text class="palette-check" v-if="settings.appearance.backgroundColor === color.value">✓</text>
+              </view>
+            </view>
+            
+            <view class="setting-row">
+              <text class="setting-row-label">背景图片</text>
+              <view class="bg-image-controls">
+                <input 
+                  class="bg-image-input" 
+                  :value="settings.appearance.backgroundImage" 
+                  @input="settings.appearance.backgroundImage = $event.detail.value"
+                  placeholder="输入图片URL或上传"
+                />
+                <view class="bg-image-upload" @click="uploadBackgroundImage">上传</view>
+              </view>
+            </view>
+            
+            <view class="slider-row" v-if="settings.appearance.backgroundImage">
+              <text class="slider-label">模糊度</text>
+              <slider 
+                :value="settings.appearance.backgroundBlur" 
+                :min="0" 
+                :max="30" 
+                :step="1"
+                activeColor="#667eea"
+                @change="settings.appearance.backgroundBlur = $event.detail.value"
+              />
+              <text class="slider-value">{{ settings.appearance.backgroundBlur }}px</text>
+            </view>
+            
+            <view class="slider-row" v-if="settings.appearance.backgroundImage">
+              <text class="slider-label">透明度</text>
+              <slider 
+                :value="settings.appearance.backgroundOpacity * 100" 
+                :min="0" 
+                :max="100" 
+                :step="5"
+                activeColor="#667eea"
+                @change="settings.appearance.backgroundOpacity = $event.detail.value / 100"
+              />
+              <text class="slider-value">{{ Math.round(settings.appearance.backgroundOpacity * 100) }}%</text>
+            </view>
+          </view>
+
+          <!-- 文字排版 -->
+          <view class="settings-section">
+            <view class="section-title">文字排版</view>
+            
+            <view class="setting-row">
+              <text class="setting-row-label">字号档位</text>
+              <view class="font-size-tabs">
+                <view 
+                  v-for="opt in fontSizeOptions" 
+                  :key="opt.value"
+                  class="font-size-tab"
+                  :class="{ active: settings.typography.fontSize === opt.value }"
+                  @click="settings.typography.fontSize = opt.value"
+                >
+                  <text class="tab-label">{{ opt.label }}</text>
+                  <text class="tab-size">{{ opt.size }}</text>
+                </view>
+              </view>
+            </view>
+            
+            <view class="slider-row">
+              <text class="slider-label">行高</text>
+              <slider 
+                :value="settings.typography.lineHeight * 10" 
+                :min="14" 
+                :max="22" 
+                :step="1"
+                activeColor="#667eea"
+                @change="settings.typography.lineHeight = $event.detail.value / 10"
+              />
+              <text class="slider-value">{{ settings.typography.lineHeight.toFixed(1) }}x</text>
+            </view>
+          </view>
+
+          <!-- 布局设置 -->
+          <view class="settings-section">
+            <view class="section-title">布局设置</view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">居中窄屏模式</text>
+                <text class="setting-desc">内容最大宽度1200rpx，适合大屏阅读</text>
+              </view>
+              <switch 
+                :checked="settings.layout.contentWidth === 'narrow'" 
+                @change="settings.layout.contentWidth = settings.layout.contentWidth === 'narrow' ? 'full' : 'narrow'"
+                color="#667eea"
+              />
+            </view>
+          </view>
+
+          <!-- 功能开关 -->
+          <view class="settings-section">
+            <view class="section-title">功能开关</view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">显示水印</text>
+                <text class="setting-desc">在详情页底部显示水印标识</text>
+              </view>
+              <switch 
+                :checked="settings.features.showWatermark" 
+                @change="settings.features.showWatermark = !settings.features.showWatermark"
+                color="#667eea"
+              />
+            </view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">启用评论</text>
+                <text class="setting-desc">允许访客在详情页留言互动</text>
+              </view>
+              <switch 
+                :checked="settings.features.enableComments" 
+                @change="settings.features.enableComments = !settings.features.enableComments"
+                color="#667eea"
+              />
+            </view>
+          </view>
+
+          <!-- 显示设置 -->
+          <view class="settings-section">
+            <view class="section-title">显示设置</view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">显示回到顶部</text>
+                <text class="setting-desc">详情页滚动时显示回到顶部按钮</text>
+              </view>
+              <switch 
+                :checked="settings.showBackToTop" 
+                @change="settings.showBackToTop = !settings.showBackToTop"
+                color="#667eea"
+              />
+            </view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">隐藏操作栏</text>
+                <text class="setting-desc">隐藏详情页右上角的导出/分享/编辑按钮</text>
+              </view>
+              <switch 
+                :checked="settings.hideNavActions" 
+                @change="settings.hideNavActions = !settings.hideNavActions"
+                color="#667eea"
+              />
+            </view>
+          </view>
+        </scroll-view>
+        
+        <view class="settings-footer">
+          <view class="settings-done-btn" @click="settingsVisible = false">完成</view>
+        </view>
       </view>
     </view>
 
@@ -553,6 +1024,23 @@ interface ImageBlock {
   style?: BlockStyle
 }
 
+// 路径节点
+interface RouteNode {
+  name: string
+  time?: string
+  icon?: string
+  desc?: string
+  type?: 'normal' | 'transfer'
+  isEnd?: boolean
+}
+
+// 路径块
+interface RouteBlock {
+  type: 'route'
+  content: RouteNode[]
+  style?: BlockStyle
+}
+
 // 链接信息
 interface LinkInfo {
   label: string // 显示的文本
@@ -579,7 +1067,7 @@ interface ChatSession {
 }
 
 interface PageData {
-  content: (TextBlock | ImageBlock)[]
+  content: (TextBlock | ImageBlock | RouteBlock)[]
 }
 
 // 页面数据
@@ -652,6 +1140,59 @@ const internalLinkScenes = [
 const chatSessionPickerVisible = ref(false)
 const chatSessions = ref<ChatSession[]>([])
 const loadingChatSessions = ref(false)
+
+// JSON 导入相关
+const jsonImportVisible = ref(false)
+const jsonImportText = ref('')
+const jsonImportTargetBlock = ref<number | null>(null)
+
+// FAB 悬浮按钮状态
+const fabExpanded = ref(false)
+
+// 设置面板状态
+const settingsVisible = ref(false)
+const settings = reactive({
+  padding: { top: 32, bottom: 32, left: 32, right: 32 },
+  border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
+  appearance: {
+    backgroundColor: '#ffffff',
+    backgroundImage: '',
+    backgroundBlur: 0,
+    backgroundOpacity: 1
+  },
+  typography: {
+    fontSize: 'standard' as 'standard' | 'medium' | 'large',
+    lineHeight: 1.6
+  },
+  layout: {
+    contentWidth: 'full' as 'full' | 'narrow'
+  },
+  features: {
+    showWatermark: false,
+    enableComments: false
+  },
+  showBackToTop: true,
+  hideNavActions: false
+})
+
+// 莫兰迪配色方案
+const morandiColors = [
+  { value: '#ffffff', label: '纯白' },
+  { value: '#E4DCD3', label: '燕麦色' },
+  { value: '#D6E4E5', label: '灰湖蓝' },
+  { value: '#F9F5EB', label: '奶油白' },
+  { value: '#E8E4D9', label: '亚麻色' },
+  { value: '#D5C4A1', label: '沙棕色' },
+  { value: '#C9D6DF', label: '雾霾蓝' },
+  { value: '#E6D5C3', label: '杏仁色' }
+]
+
+// 字号档位选项
+const fontSizeOptions = [
+  { value: 'standard', label: '标准', size: '28rpx' },
+  { value: 'medium', label: '中', size: '32rpx' },
+  { value: 'large', label: '大', size: '36rpx' }
+]
 
 // 选中状态
 const selectedItem = ref<{ blockIndex: number; itemIndex: number; type: 'text' | 'image' } | null>(null)
@@ -867,6 +1408,46 @@ const setImageRotate = (blockIndex: number, itemIndex: number, e: any, axis: 'x'
   }
 }
 
+// 上传背景图片
+const uploadBackgroundImage = () => {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      uni.showLoading({ title: '上传中...', mask: true })
+      
+      uni.uploadFile({
+        url: String(import.meta.env.VITE_APP_BASE_URL || '') + '/upload/image',
+        filePath: tempFilePath,
+        name: 'file',
+        header: {
+          'Authorization': 'Bearer ' + uni.getStorageSync('token')
+        },
+        success: (uploadRes) => {
+          uni.hideLoading()
+          try {
+            const data = JSON.parse(uploadRes.data)
+            if (data.data && data.data.url) {
+              settings.appearance.backgroundImage = data.data.url
+              uni.showToast({ title: '上传成功', icon: 'success' })
+            } else {
+              uni.showToast({ title: '上传失败', icon: 'none' })
+            }
+          } catch (e) {
+            uni.showToast({ title: '解析失败', icon: 'none' })
+          }
+        },
+        fail: () => {
+          uni.hideLoading()
+          uni.showToast({ title: '上传失败', icon: 'none' })
+        }
+      })
+    }
+  })
+}
+
 // 复制锚点链接到剪贴板（Markdown格式）
 const copyAnchor = (num: number) => {
   const anchor = `L${num}`
@@ -936,6 +1517,154 @@ const addImageBlock = () => {
       style: { sizeMode: 'auto', rotate: 0, rotateX: 0, rotateY: 0 }
     }]
   })
+}
+
+// 添加路径块
+const addRouteBlock = () => {
+  pageData.content.push({
+    type: 'route',
+    content: [
+      { name: '起点', time: '1h', icon: '🚗', desc: '', type: 'normal' },
+      { name: '终点', isEnd: true }
+    ]
+  })
+}
+
+// FAB 按钮操作（添加后关闭菜单）
+const addTextBlockAndClose = () => {
+  addTextBlock()
+  fabExpanded.value = false
+}
+
+const addImageBlockAndClose = () => {
+  addImageBlock()
+  fabExpanded.value = false
+}
+
+const addRouteBlockAndClose = () => {
+  addRouteBlock()
+  fabExpanded.value = false
+}
+
+// 在指定位置插入路径节点
+const insertRouteNode = (blockIndex: number, nodeIndex: number) => {
+  const block = pageData.content[blockIndex] as RouteBlock
+  if (!block || block.type !== 'route') return
+  
+  block.content.splice(nodeIndex, 0, {
+    name: '',
+    time: '',
+    icon: '🚗',
+    desc: '',
+    type: 'normal'
+  })
+}
+
+// 删除路径节点
+const deleteRouteNode = (blockIndex: number, nodeIndex: number) => {
+  const block = pageData.content[blockIndex] as RouteBlock
+  if (!block || block.type !== 'route') return
+  
+  // 确保至少保留2个节点（起点和终点）
+  if (block.content.length <= 2) return
+  
+  // 不能删除终点
+  if (block.content[nodeIndex].isEnd) return
+  
+  block.content.splice(nodeIndex, 1)
+}
+
+// 切换路径节点类型（普通/换乘）
+const toggleRouteNodeType = (blockIndex: number, nodeIndex: number) => {
+  const block = pageData.content[blockIndex] as RouteBlock
+  if (!block || block.type !== 'route') return
+  
+  const node = block.content[nodeIndex]
+  if (node.isEnd) return
+  
+  node.type = node.type === 'transfer' ? 'normal' : 'transfer'
+}
+
+// 在终点前添加节点
+const addRouteNodeBeforeEnd = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as RouteBlock
+  if (!block || block.type !== 'route') return
+  
+  // 找到终点的位置
+  const endIndex = block.content.findIndex(node => node.isEnd)
+  if (endIndex === -1) return
+  
+  block.content.splice(endIndex, 0, {
+    name: '',
+    time: '',
+    icon: '🚗',
+    desc: '',
+    type: 'normal'
+  })
+}
+
+// 显示 JSON 导入弹窗
+const showJsonImportModal = (blockIndex: number) => {
+  jsonImportTargetBlock.value = blockIndex
+  jsonImportText.value = ''
+  jsonImportVisible.value = true
+}
+
+// 确认 JSON 导入
+const confirmJsonImport = () => {
+  if (jsonImportTargetBlock.value === null) return
+  
+  const block = pageData.content[jsonImportTargetBlock.value] as RouteBlock
+  if (!block || block.type !== 'route') return
+  
+  try {
+    const inputText = jsonImportText.value.trim()
+    if (!inputText) {
+      uni.showToast({ title: '请输入 JSON 数据', icon: 'none' })
+      return
+    }
+    
+    const importedList = JSON.parse(inputText)
+    
+    if (!Array.isArray(importedList) || importedList.length === 0) {
+      uni.showToast({ title: '请输入有效的数组格式', icon: 'none' })
+      return
+    }
+    
+    // 自动补全缺失字段，确保格式兼容
+    const processedNodes: RouteNode[] = importedList.map((node, index) => ({
+      name: node.name || '',
+      time: node.time || '',
+      icon: node.icon || '',
+      desc: node.desc || '',
+      type: node.type || 'normal',
+      isEnd: false // 先全部设为 false
+    }))
+    
+    // 确保最后一个节点是终点
+    if (processedNodes.length > 0) {
+      const lastNode = processedNodes[processedNodes.length - 1]
+      lastNode.isEnd = true
+      // 终点不需要 time/icon/desc
+      lastNode.time = ''
+      lastNode.icon = ''
+      lastNode.desc = ''
+      lastNode.type = 'normal'
+    }
+    
+    // 更新路径块内容
+    block.content = processedNodes
+    
+    // 关闭弹窗
+    jsonImportVisible.value = false
+    jsonImportText.value = ''
+    jsonImportTargetBlock.value = null
+    
+    uni.showToast({ title: '导入成功', icon: 'success' })
+  } catch (e) {
+    console.error('JSON 解析失败:', e)
+    uni.showToast({ title: 'JSON 格式错误', icon: 'none' })
+  }
 }
 
 // 添加文本项
@@ -2046,6 +2775,40 @@ const saveData = async () => {
       name: memoName.value,
       content: pageData.content,
       tags: tags.value,
+      settings: {
+        padding: {
+          top: settings.padding.top,
+          bottom: settings.padding.bottom,
+          left: settings.padding.left,
+          right: settings.padding.right
+        },
+        border: {
+          top: settings.border.top,
+          bottom: settings.border.bottom,
+          left: settings.border.left,
+          right: settings.border.right,
+          color: settings.border.color
+        },
+        appearance: {
+          backgroundColor: settings.appearance.backgroundColor,
+          backgroundImage: settings.appearance.backgroundImage,
+          backgroundBlur: settings.appearance.backgroundBlur,
+          backgroundOpacity: settings.appearance.backgroundOpacity
+        },
+        typography: {
+          fontSize: settings.typography.fontSize,
+          lineHeight: settings.typography.lineHeight
+        },
+        layout: {
+          contentWidth: settings.layout.contentWidth
+        },
+        features: {
+          showWatermark: settings.features.showWatermark,
+          enableComments: settings.features.enableComments
+        },
+        showBackToTop: settings.showBackToTop,
+        hideNavActions: settings.hideNavActions
+      }
     }
 
     console.log('保存的数据:', JSON.stringify(memoData, null, 2))
@@ -2115,6 +2878,42 @@ const loadData = async () => {
         // 加载内容（第一个文本块的第一项为标题）
         if (memo.content && Array.isArray(memo.content)) {
           pageData.content = memo.content
+        }
+        
+        // 加载设置
+        if (memo.settings) {
+          if (memo.settings.padding) {
+            settings.padding.top = memo.settings.padding.top ?? 32
+            settings.padding.bottom = memo.settings.padding.bottom ?? 32
+            settings.padding.left = memo.settings.padding.left ?? 32
+            settings.padding.right = memo.settings.padding.right ?? 32
+          }
+          if (memo.settings.border) {
+            settings.border.top = memo.settings.border.top ?? 0
+            settings.border.bottom = memo.settings.border.bottom ?? 0
+            settings.border.left = memo.settings.border.left ?? 0
+            settings.border.right = memo.settings.border.right ?? 0
+            settings.border.color = memo.settings.border.color || '#eeeeee'
+          }
+          if (memo.settings.appearance) {
+            settings.appearance.backgroundColor = memo.settings.appearance.backgroundColor || '#ffffff'
+            settings.appearance.backgroundImage = memo.settings.appearance.backgroundImage || ''
+            settings.appearance.backgroundBlur = memo.settings.appearance.backgroundBlur ?? 0
+            settings.appearance.backgroundOpacity = memo.settings.appearance.backgroundOpacity ?? 1
+          }
+          if (memo.settings.typography) {
+            settings.typography.fontSize = memo.settings.typography.fontSize || 'standard'
+            settings.typography.lineHeight = memo.settings.typography.lineHeight ?? 1.6
+          }
+          if (memo.settings.layout) {
+            settings.layout.contentWidth = memo.settings.layout.contentWidth || 'full'
+          }
+          if (memo.settings.features) {
+            settings.features.showWatermark = memo.settings.features.showWatermark === true
+            settings.features.enableComments = memo.settings.features.enableComments === true
+          }
+          settings.showBackToTop = memo.settings.showBackToTop !== false
+          settings.hideNavActions = memo.settings.hideNavActions === true
         }
 
         // 兼容旧数据：如果有独立的 title 字段，将其合并到第一个文本块
@@ -2283,64 +3082,57 @@ onShareAppMessage(() => {
   background: #fff;
   padding: 24rpx 32rpx;
 
+  .memo-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+
   .memo-name-input {
-    width: 100%;
+    flex: 1;
     font-size: 32rpx;
     font-weight: 600;
     padding: 20rpx 0;
     border-bottom: 2rpx solid #eee;
-    margin-bottom: 20rpx;
   }
 
-  .tags-section {
-    .tags-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12rpx;
-      align-items: center;
+  .settings-btn {
+    width: 72rpx;
+    height: 72rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 50%;
+    flex-shrink: 0;
+    
+    .settings-icon {
+      font-size: 36rpx;
+    }
+    
+    &:active {
+      background: #eee;
+    }
+  }
 
-      .tag-item {
-        display: flex;
-        align-items: center;
-        gap: 8rpx;
-        padding: 8rpx 16rpx;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        border-radius: 24rpx;
-        font-size: 24rpx;
+  .tags-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    margin-top: 16rpx;
 
-        .tag-text {
-          max-width: 200rpx;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+    .tag-preview-item {
+      padding: 6rpx 16rpx;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 24rpx;
+      font-size: 22rpx;
 
-        .tag-remove {
-          font-size: 32rpx;
-          line-height: 1;
-          cursor: pointer;
-          opacity: 0.8;
-
-          &:active {
-            opacity: 1;
-          }
-        }
-      }
-
-      .tag-input {
-        flex: 1;
-        min-width: 120rpx;
-        padding: 8rpx 16rpx;
-        background: #f8f9fa;
-        border-radius: 24rpx;
-        font-size: 24rpx;
-        border: 2rpx solid #eee;
-
-        &:focus {
-          background: #fff;
-          border-color: #667eea;
-        }
+      .tag-text {
+        max-width: 200rpx;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
   }
@@ -2383,6 +3175,7 @@ onShareAppMessage(() => {
 }
 
 .content-block {
+  margin-top: 8rpx;
   background: #fff;
   border-radius: 0;
   overflow: hidden;
@@ -2773,28 +3566,117 @@ onShareAppMessage(() => {
   }
 }
 
-.add-block-bar {
-  flex-shrink: 0;
+// FAB 悬浮按钮容器 - 固定定位，主按钮始终在底部
+.fab-container {
+  position: fixed;
+  right: 32rpx;
+  bottom: 200rpx;
+  z-index: 100;
   display: flex;
-  justify-content: center;
-  gap: 32rpx;
-  padding: 24rpx;
-  background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  flex-direction: column;
+  align-items: flex-end;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
-  .add-block-btn {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    padding: 20rpx 40rpx;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    border-radius: 40rpx;
+// FAB 遮罩层
+.fab-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: -1;
+}
+
+// FAB 子按钮容器 - 绝对定位在主按钮上方
+.fab-actions {
+  position: absolute;
+  bottom: 130rpx;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16rpx;
+  opacity: 0;
+  transform: translateY(20rpx) scale(0.8);
+  pointer-events: none;
+  transition: all 0.2s ease-out;
+  
+  &.expanded {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+}
+
+// FAB 子按钮
+.fab-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 24rpx;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 40rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  
+  .fab-action-icon {
+    font-size: 32rpx;
+  }
+  
+  .fab-action-text {
     font-size: 28rpx;
-
-    .btn-icon {
-      font-size: 32rpx;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  &.route {
+    .fab-action-text {
+      color: #11998e;
     }
+  }
+  
+  &:active {
+    transform: scale(0.95);
+    background: rgba(240, 240, 240, 0.95);
+  }
+}
+
+// FAB 主按钮 - 始终固定在容器底部
+.fab-main-btn {
+  width: 112rpx;
+  height: 112rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  box-shadow: 0 8rpx 30rpx rgba(118, 75, 162, 0.4);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  flex-shrink: 0;
+  
+  .fab-main-icon {
+    font-size: 56rpx;
+    color: #fff;
+    font-weight: 300;
+    line-height: 1;
+  }
+  
+  &.active {
+    box-shadow: 0 8rpx 40rpx rgba(118, 75, 162, 0.6);
+    transform: rotate(45deg);
+  }
+  
+  &:active {
+    transform: scale(0.9);
+  }
+  
+  &.active:active {
+    transform: scale(0.9) rotate(45deg);
   }
 }
 
@@ -3503,6 +4385,774 @@ onShareAppMessage(() => {
           color: #999;
         }
       }
+    }
+  }
+}
+
+// 路径块编辑器样式
+.route-block {
+  background: #fff;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.route-edit-container {
+  padding: 24rpx;
+  background: #f8f9fa;
+}
+
+.route-node-editor {
+  position: relative;
+}
+
+.insert-node-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 16rpx;
+  margin: 16rpx 0;
+  background: #fff;
+  border: 2rpx dashed #667eea;
+  border-radius: 8rpx;
+  color: #667eea;
+  font-size: 24rpx;
+  
+  .insert-icon {
+    font-size: 28rpx;
+  }
+  
+  &:active {
+    background: #f0f5ff;
+  }
+}
+
+.node-content {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 16rpx;
+  border-left: 6rpx solid #e0e0e0;
+  
+  &.is-transfer {
+    border-left-color: #667eea;
+    background: #fafbff;
+  }
+  
+  &.is-end {
+    border-left-color: #52c41a;
+    background: #f6ffed;
+  }
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+  
+  .node-index {
+    width: 40rpx;
+    height: 40rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    font-weight: 600;
+  }
+  
+  .node-type-label {
+    font-size: 26rpx;
+    color: #666;
+    flex: 1;
+  }
+  
+  .node-delete-btn {
+    width: 48rpx;
+    height: 48rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffebee;
+    color: #f44336;
+    border-radius: 50%;
+    font-size: 32rpx;
+    
+    &:active {
+      background: #ffcdd2;
+    }
+  }
+}
+
+.node-input-group {
+  margin-bottom: 16rpx;
+  
+  &.half {
+    flex: 1;
+  }
+  
+  .input-label {
+    display: block;
+    font-size: 24rpx;
+    color: #999;
+    margin-bottom: 8rpx;
+  }
+  
+  .node-input {
+    width: 100%;
+    padding: 16rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 8rpx;
+    font-size: 28rpx;
+    
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+}
+
+.node-input-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.node-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-top: 2rpx solid #f0f0f0;
+  margin-top: 8rpx;
+  
+  .switch-label {
+    font-size: 26rpx;
+    color: #666;
+  }
+}
+
+.add-route-node-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  margin-top: 8rpx;
+  
+  .add-icon {
+    font-size: 36rpx;
+    color: #667eea;
+  }
+  
+  .add-text {
+    font-size: 28rpx;
+    color: #667eea;
+  }
+  
+  &:active {
+    background: #f0f5ff;
+  }
+}
+
+// 工具栏路径按钮样式
+.add-block-btn.route {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+// 路径编辑工具栏
+.route-toolbar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #e0e0e0;
+}
+
+.route-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 20rpx;
+  background: #fff;
+  border: 2rpx solid #667eea;
+  border-radius: 8rpx;
+  color: #667eea;
+  font-size: 24rpx;
+  
+  .toolbar-icon {
+    font-size: 28rpx;
+  }
+  
+  &:active {
+    background: #f0f5ff;
+  }
+}
+
+// JSON 导入弹窗
+.json-import-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.json-import-content {
+  width: 100%;
+  max-width: 680rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.json-import-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+  
+  .json-import-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .json-import-close {
+    font-size: 40rpx;
+    color: #999;
+    padding: 8rpx;
+  }
+}
+
+.json-import-body {
+  padding: 32rpx;
+}
+
+.json-textarea {
+  width: 100%;
+  min-height: 300rpx;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  font-family: monospace;
+  line-height: 1.6;
+  
+  &:focus {
+    background: #fff;
+    border-color: #667eea;
+  }
+}
+
+.json-import-tip {
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: #fffbe6;
+  border-radius: 8rpx;
+  
+  text {
+    font-size: 24rpx;
+    color: #d48806;
+  }
+}
+
+.json-import-footer {
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 32rpx 32rpx;
+  
+  .json-btn {
+    flex: 1;
+    height: 80rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40rpx;
+    font-size: 28rpx;
+    
+    &.cancel {
+      background: #f0f0f0;
+      color: #666;
+    }
+    
+    &.confirm {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+    
+    &:active {
+      opacity: 0.8;
+    }
+  }
+}
+
+// 设置面板样式
+.settings-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.settings-content {
+  width: 100%;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+  flex-shrink: 0;
+  
+  .settings-title {
+    font-size: 34rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .settings-close {
+    font-size: 44rpx;
+    color: #999;
+    padding: 8rpx;
+    line-height: 1;
+  }
+}
+
+.settings-body {
+  flex: 1;
+  padding: 0 32rpx;
+  max-height: 60vh;
+  box-sizing: border-box;
+}
+
+.settings-section {
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid #f5f5f5;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20rpx;
+  }
+}
+
+.tags-manager {
+  .tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    margin-bottom: 16rpx;
+  }
+  
+  .tag-editable {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    padding: 8rpx 16rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 24rpx;
+    font-size: 24rpx;
+    
+    .tag-text {
+      max-width: 200rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .tag-remove {
+      font-size: 28rpx;
+      line-height: 1;
+      opacity: 0.8;
+      
+      &:active {
+        opacity: 1;
+      }
+    }
+  }
+  
+  .tag-add-row {
+    display: flex;
+    gap: 12rpx;
+    align-items: center;
+  }
+  
+  .tag-add-input {
+    flex: 1;
+    height: 72rpx;
+    padding: 0 20rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 36rpx;
+    font-size: 26rpx;
+    
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+  
+  .tag-add-btn {
+    height: 72rpx;
+    padding: 0 28rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 36rpx;
+    font-size: 26rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:active {
+      opacity: 0.8;
+    }
+  }
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  
+  .setting-info {
+    flex: 1;
+    
+    .setting-label {
+      display: block;
+      font-size: 28rpx;
+      color: #333;
+      margin-bottom: 4rpx;
+    }
+    
+    .setting-desc {
+      display: block;
+      font-size: 24rpx;
+      color: #999;
+    }
+  }
+}
+
+// 边距设置网格
+.padding-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+}
+
+.padding-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  
+  .padding-label {
+    font-size: 24rpx;
+    color: #666;
+  }
+  
+  .padding-input {
+    width: 100%;
+    height: 64rpx;
+    text-align: center;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 12rpx;
+    font-size: 26rpx;
+    
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+}
+
+// 边框设置网格
+.border-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.border-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 16rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  
+  .border-label {
+    font-size: 24rpx;
+    color: #666;
+  }
+  
+  .border-controls {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+  }
+  
+  .border-width-input {
+    width: 80rpx;
+    height: 48rpx;
+    text-align: center;
+    background: #fff;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 8rpx;
+    font-size: 24rpx;
+    
+    &:focus {
+      border-color: #667eea;
+    }
+  }
+  
+  .border-unit {
+    font-size: 22rpx;
+    color: #999;
+  }
+}
+
+.border-color-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 0;
+  
+  .border-color-label {
+    font-size: 26rpx;
+    color: #333;
+    flex-shrink: 0;
+  }
+  
+  .border-color-input {
+    flex: 1;
+    height: 56rpx;
+    padding: 0 16rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 12rpx;
+    font-size: 26rpx;
+    font-family: monospace;
+    
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+  
+  .border-color-preview {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 12rpx;
+    border: 2rpx solid #e0e0e0;
+    flex-shrink: 0;
+  }
+}
+
+// 子标题
+.subsection-title {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+// 莫兰迪配色面板
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.palette-item {
+  height: 80rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  
+  &.active {
+    border-color: #667eea;
+    border-width: 4rpx;
+  }
+  
+  .palette-check {
+    color: #667eea;
+    font-size: 32rpx;
+    font-weight: bold;
+  }
+}
+
+// 设置行
+.setting-row {
+  margin-bottom: 20rpx;
+  
+  .setting-row-label {
+    display: block;
+    font-size: 26rpx;
+    color: #333;
+    margin-bottom: 12rpx;
+  }
+}
+
+// 背景图片控制
+.bg-image-controls {
+  display: flex;
+  gap: 12rpx;
+  
+  .bg-image-input {
+    flex: 1;
+    height: 64rpx;
+    padding: 0 16rpx;
+    background: #f8f9fa;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 12rpx;
+    font-size: 24rpx;
+    
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+  
+  .bg-image-upload {
+    height: 64rpx;
+    padding: 0 24rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 12rpx;
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:active {
+      opacity: 0.8;
+    }
+  }
+}
+
+// 滑块行
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+  
+  .slider-label {
+    font-size: 24rpx;
+    color: #666;
+    width: 80rpx;
+    flex-shrink: 0;
+  }
+  
+  slider {
+    flex: 1;
+  }
+  
+  .slider-value {
+    font-size: 24rpx;
+    color: #333;
+    width: 80rpx;
+    text-align: right;
+    flex-shrink: 0;
+  }
+}
+
+// 字号档位选项卡
+.font-size-tabs {
+  display: flex;
+  gap: 12rpx;
+}
+
+.font-size-tab {
+  flex: 1;
+  padding: 16rpx 12rpx;
+  background: #f8f9fa;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  text-align: center;
+  
+  &.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    
+    .tab-label, .tab-size {
+      color: #fff;
+    }
+  }
+  
+  .tab-label {
+    display: block;
+    font-size: 26rpx;
+    color: #333;
+    font-weight: 500;
+  }
+  
+  .tab-size {
+    display: block;
+    font-size: 22rpx;
+    color: #999;
+    margin-top: 4rpx;
+  }
+}
+
+.settings-footer {
+  padding: 24rpx 32rpx;
+  flex-shrink: 0;
+  
+  .settings-done-btn {
+    height: 88rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-radius: 44rpx;
+    font-size: 30rpx;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:active {
+      opacity: 0.8;
     }
   }
 }
