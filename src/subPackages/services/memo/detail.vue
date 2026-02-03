@@ -31,7 +31,7 @@
     </view>
 
     <!-- 未登录提示 -->
-    <view v-if="!loading && !isLoggedIn" class="login-tip">
+    <view v-if="!settings.hideNavActions && !loading && !isLoggedIn" class="login-tip">
       <text class="tip-text">👀 您正在以访客模式查看</text>
       <button class="login-btn" @click="goToLogin">登录后可编辑</button>
     </view>
@@ -87,7 +87,7 @@
               <view 
                 v-if="block.isMarkdown"
                 class="markdown-body" 
-                :class="{ 'link-text': item.linkInfo }"
+                :class="{ 'link-text': item.linkInfo, 'glass-mode': hasCustomBackground }"
                 :style="getTextStyleWithVars(item.style)"
                 @click="handleMarkdownClick"
               >
@@ -150,7 +150,7 @@
           </view>
 
           <!-- 路径块 - 垂直时间轴 -->
-          <view v-if="block.type === 'route'" class="route-container">
+          <view v-if="block.type === 'route'" class="route-container" :style="getBlockStyle(block.style)">
             <view 
               v-for="(node, nodeIndex) in block.content" 
               :key="nodeIndex"
@@ -200,6 +200,26 @@
             </view>
           </view>
 
+          <!-- 附件块 -->
+          <view v-if="block.type === 'attachment'" class="attachment-container" :style="getBlockStyle(block.style)">
+            <view 
+              v-for="(item, itemIndex) in block.children" 
+              :key="itemIndex"
+              class="attachment-capsule"
+              :class="{ 'is-tencent-doc': isTencentDocUrl(item.url) }"
+              hover-class="capsule-hover"
+              :hover-stay-time="100"
+              @click="openAttachment(item)"
+            >
+              <view class="capsule-icon" :class="{ 'tencent-icon': isTencentDocUrl(item.url) }">📄</view>
+              <view class="capsule-content">
+                <text class="capsule-title">{{ item.title || '未命名附件' }}</text>
+                <text class="capsule-hint">{{ isTencentDocUrl(item.url) ? '点击打开腾讯文档' : '点击查看文档' }}</text>
+              </view>
+              <view class="capsule-arrow">›</view>
+            </view>
+          </view>
+
         </view>
       </view>
       
@@ -207,6 +227,19 @@
       <view v-if="settings.features.showWatermark" class="watermark">
         <text class="watermark-text">Powered by Memo</text>
       </view>
+    </view>
+
+    <!-- 全局文档关联底部栏 -->
+    <view 
+      v-if="settings.globalAttachment.enabled && settings.globalAttachment.url" 
+      class="global-attachment-bar"
+      @click="openGlobalAttachment"
+    >
+      <view class="bar-content">
+        <text class="bar-icon">📄</text>
+        <text class="bar-title">{{ settings.globalAttachment.title || '查看原始文档' }}</text>
+      </view>
+      <text class="bar-arrow">›</text>
     </view>
 
     <!-- 错误提示 -->
@@ -221,7 +254,9 @@
       v-if="showBackToTopBtn" 
       @click="backToTop"
     >
-      <text class="back-to-top-icon">↑</text>
+      <!-- <text class="back-to-top-icon">↑</text> -->
+      <text class="icon">↑</text>
+      <text class="btn-text">顶部</text>
     </view>
     
   </view>
@@ -268,7 +303,12 @@ const settings = reactive({
     enableComments: false
   },
   showBackToTop: true,
-  hideNavActions: false
+  hideNavActions: false,
+  globalAttachment: {
+    enabled: false,
+    url: '',
+    title: '查看原始文档'
+  }
 })
 
 // 滚动状态 - 用于回到顶部按钮
@@ -299,6 +339,14 @@ const backgroundLayerStyle = computed(() => {
     filter: 'blur(' + settings.appearance.backgroundBlur + 'px)',
     opacity: settings.appearance.backgroundOpacity
   }
+})
+
+// 是否存在自定义背景（用于开启毛玻璃模式）
+const hasCustomBackground = computed(() => {
+  // 有全局背景图 OR 有容器背景色/背景图时，开启透视模式
+  return !!backgroundLayerStyle.value || 
+         !!(memoData.value && memoData.value.containerStyle) ||
+         !!(settings.appearance.backgroundColor && settings.appearance.backgroundColor !== '#ffffff')
 })
 
 // 文本全局样式
@@ -414,19 +462,27 @@ const renderMarkdown = (content: string, blockStyle?: any, anchorId?: string, is
     const textDecoration = blockStyle?.underline ? 'underline' : (blockStyle?.lineThrough ? 'line-through' : 'none')
     const cellStyle = `border:1px solid #e0e0e0;padding:12rpx;color:${color};font-size:${fontSize};`
 
+    let thStyle = `${cellStyle}font-weight:bold;`
+    if (hasCustomBackground.value) {
+      thStyle += `background-color: transparent;`
+    } else {
+      thStyle += `background-color:#f8f9fa;`
+    }
+
     // 3. 强力内联注入 (绕过 WXSS 编译) - 使用边界匹配避免误伤
+    // 注意：背景色由 CSS 控制（通过 glass-mode class），这里只注入结构样式
     html = html
       .replace(/<table(?=\s|>)/gi, '<div style="overflow-x:auto;margin:20rpx 0;"><table style="width:100%;border-collapse:collapse;"')
       .replace(/<\/table>/gi, '</table></div>')
-      .replace(/<th(?=\s|>)/gi, `<th style="${cellStyle}background-color:#f8f9fa;font-weight:bold;"`)
+      .replace(/<th(?=\s|>)/gi, `<th style="${thStyle}"`)
       .replace(/<td(?=\s|>)/gi, `<td style="${cellStyle}"`)
       .replace(/<(p|li|span)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:${fontWeight};font-style:${fontStyle};text-decoration:${textDecoration};line-height:1.6;"`)
       .replace(/<(h[1-6])(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:bold;margin:16rpx 0;"`)
       .replace(/<(strong|b)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-weight:bold;"`)
       .replace(/<(em|i)(?=\s|>)/gi, `<$1 style="color:${color};font-size:${fontSize};font-style:italic;"`)
-      .replace(/<code(?=\s|>)/gi, `<code style="background-color:#f1f3f4;color:${color};font-size:${fontSize};padding:2rpx 6rpx;border-radius:4rpx;font-family:monospace;"`)
-      .replace(/<pre(?=\s|>)/gi, `<pre style="background-color:#f8f9fa;color:${color};font-size:${fontSize};padding:16rpx;border-radius:8rpx;overflow-x:auto;"`)
-      .replace(/<blockquote(?=\s|>)/gi, `<blockquote style="border-left:4rpx solid #667eea;margin:0;padding:0 16rpx;background-color:transparent;color:${color};font-size:${fontSize};"`)
+      .replace(/<code(?=\s|>)/gi, `<code style="color:${color};font-size:${fontSize};padding:2rpx 6rpx;border-radius:4rpx;font-family:monospace;"`)
+      .replace(/<pre(?=\s|>)/gi, `<pre style="color:${color};font-size:${fontSize};padding:16rpx;border-radius:8rpx;overflow-x:auto;"`)
+      .replace(/<blockquote(?=\s|>)/gi, `<blockquote style="border-left:4rpx solid #667eea;margin:0;padding:0 16rpx;color:${color};font-size:${fontSize};"`)
       .replace(/<a(?=\s|>)/gi, `<a style="color:#007bff;text-decoration:underline;font-size:${fontSize};"`)
     
     // 调试补丁：检查生成的 HTML 是否异常
@@ -452,22 +508,6 @@ const renderMarkdown = (content: string, blockStyle?: any, anchorId?: string, is
   }
 }
 
-// 导出模式的 Markdown 渲染包装器
-const renderMarkdownForExport = (content: string, style?: any, anchorId?: string): string => {
-  return renderMarkdown(content, style, anchorId, true) // isForExport = true
-}
-
-// 获取块的锚点ID（从第一个文本项的linkInfo中获取）
-const getBlockAnchorId = (block: any): string | undefined => {
-  if (block.type === 'text' && block.children && block.children.length > 0) {
-    const firstTextItem = block.children[0]
-    if (firstTextItem.linkInfo && firstTextItem.linkInfo.linkType === 'anchor' && firstTextItem.linkInfo.anchorId) {
-      return firstTextItem.linkInfo.anchorId
-    }
-  }
-  return undefined
-}
-
 // 滚动到指定锚点（兼容H5和微信小程序，优化版本）
 const scrollToAnchor = (anchorId: string) => {
   if (!anchorId) return
@@ -488,20 +528,20 @@ const scrollToAnchor = (anchorId: string) => {
           // #ifdef H5
           // H5环境：需要考虑已滚动的偏移量
           const currentScrollTop = window?.pageYOffset || document.documentElement.scrollTop || 0
-          targetScrollTop = data.top + currentScrollTop - 60 // H5减去60px顶栏间距
+          targetScrollTop = data.top + currentScrollTop - 80 // H5减去60px顶栏间距
           console.log('H5 scrolling - current:', currentScrollTop, 'element top:', data.top, 'target:', targetScrollTop)
           // #endif
           
           // #ifdef MP-WEIXIN
           // 微信小程序环境：直接使用元素的top值
-          targetScrollTop = data.top - 50 // 微信小程序减去50px顶栏间距
+          targetScrollTop = data.top - 70 // 微信小程序减去50px顶栏间距
           console.log('WeChat scrolling - element top:', data.top, 'target:', targetScrollTop)
           // #endif
           
           // #ifndef H5
           // #ifndef MP-WEIXIN
           // 其他平台（如其他小程序）
-          targetScrollTop = data.top - 50
+          targetScrollTop = data.top - 70
           console.log('Other platform scrolling - element top:', data.top, 'target:', targetScrollTop)
           // #endif
           // #endif
@@ -635,17 +675,62 @@ const formatTime = (timestamp: string) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-// 获取块边框样式 - 与editor.vue的getBlockBorderStyle一致
+// 获取块边框样式 - 支持新版块级样式系统
 const getBlockStyle = (style: any) => {
   if (!style) return {}
-  return {
-    borderTop: style.borderTop ? '2rpx solid #333' : 'none',
-    borderBottom: style.borderBottom ? '2rpx solid #333' : 'none',
-    borderLeft: style.borderLeft ? '2rpx solid #333' : 'none',
-    borderRight: style.borderRight ? '2rpx solid #333' : 'none',
-    padding: (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight) ? '16rpx' : '0',
-    textAlign: style.textAlign || 'left'
+  const result: Record<string, string> = {}
+  
+  // 新版块级样式优先
+  if (style.padding) {
+    result.paddingTop = (style.padding.top || 0) + 'rpx'
+    result.paddingBottom = (style.padding.bottom || 0) + 'rpx'
+    result.paddingLeft = (style.padding.left || 0) + 'rpx'
+    result.paddingRight = (style.padding.right || 0) + 'rpx'
   }
+  
+  // 新版边框样式
+  if (style.border) {
+    if (style.border.top && style.border.top.width) {
+      result.borderTop = style.border.top.width + 'rpx solid ' + (style.border.top.color || '#eeeeee')
+    }
+    if (style.border.bottom && style.border.bottom.width) {
+      result.borderBottom = style.border.bottom.width + 'rpx solid ' + (style.border.bottom.color || '#eeeeee')
+    }
+    if (style.border.left && style.border.left.width) {
+      result.borderLeft = style.border.left.width + 'rpx solid ' + (style.border.left.color || '#eeeeee')
+    }
+    if (style.border.right && style.border.right.width) {
+      result.borderRight = style.border.right.width + 'rpx solid ' + (style.border.right.color || '#eeeeee')
+    }
+  } else {
+    // 旧版简单边框开关（向后兼容）
+    if (style.borderTop) result.borderTop = '2rpx solid #333'
+    if (style.borderBottom) result.borderBottom = '2rpx solid #333'
+    if (style.borderLeft) result.borderLeft = '2rpx solid #333'
+    if (style.borderRight) result.borderRight = '2rpx solid #333'
+    
+    // 旧版有边框时默认 padding
+    if (!style.padding && (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight)) {
+      result.padding = '16rpx'
+    }
+  }
+  
+  // 背景色
+  if (style.backgroundColor) {
+    result.backgroundColor = style.backgroundColor
+  }
+  
+  // 圆角
+  if (style.borderRadius) {
+    result.borderRadius = style.borderRadius + 'rpx'
+  }
+  
+  // 文本对齐
+  if (style.textAlign) {
+    result.textAlign = style.textAlign
+  }
+  
+  return result
 }
 
 // 获取文本样式 - 与editor.vue的getTextStyle一致
@@ -836,6 +921,193 @@ const handleLinkClick = (linkInfo: any) => {
       })
     }
   }
+}
+
+// 腾讯文档小程序 AppID（官方正确 AppID）
+var TENCENT_DOC_APPID = 'wxd44b036e1369325'
+
+// 解析结果类型
+interface TencentDocParseResult {
+  type: 'shortLink' | 'url' | 'unknown'
+  isTencentDoc: boolean
+  isTencent: boolean
+  url: string
+  cleanUrl: string
+}
+
+// 解析腾讯文档 URL，清洗并识别（支持 HTTPS 和小程序 Scheme 格式）
+var parseTencentDocUrl = function(url: string): TencentDocParseResult {
+  if (!url) {
+    return { type: 'unknown', isTencentDoc: false, isTencent: false, url: '', cleanUrl: '' }
+  }
+  
+  // 先 trim 去除首尾空格
+  var trimmedUrl = url.trim()
+  
+  // 检查是否为小程序 Scheme 格式：#小程序://腾讯文档/xxx
+  // 使用微信原生 shortLink 属性跳转
+  if (trimmedUrl.indexOf('#小程序://') === 0) {
+    return {
+      type: 'shortLink',
+      isTencentDoc: true,
+      isTencent: true,
+      url: trimmedUrl,
+      cleanUrl: trimmedUrl
+    }
+  }
+  
+  // 检查是否为 HTTPS 腾讯文档链接
+  var isTencentDoc = trimmedUrl.indexOf('docs.qq.com') !== -1 || trimmedUrl.indexOf('doc.weixin.qq.com') !== -1
+  
+  // 清洗 URL：去除 ? 后的所有查询参数
+  var cleanUrl = trimmedUrl.split('?')[0]
+  
+  // 去除 # 后的锚点
+  cleanUrl = cleanUrl.split('#')[0]
+  
+  // 去除末尾斜杠
+  while (cleanUrl.length > 0 && cleanUrl.charAt(cleanUrl.length - 1) === '/') {
+    cleanUrl = cleanUrl.slice(0, -1)
+  }
+  
+  // 强制使用 https 协议
+  if (cleanUrl.indexOf('http://') === 0) {
+    cleanUrl = 'https://' + cleanUrl.slice(7)
+  }
+  
+  // 确保有 https 前缀
+  if (cleanUrl.indexOf('https://') !== 0 && cleanUrl.indexOf('docs.qq.com') === 0) {
+    cleanUrl = 'https://' + cleanUrl
+  }
+  
+  return { 
+    type: isTencentDoc ? 'url' : 'unknown', 
+    isTencentDoc: isTencentDoc,
+    isTencent: isTencentDoc,
+    url: trimmedUrl, 
+    cleanUrl: cleanUrl 
+  }
+}
+
+// 判断是否为腾讯文档链接（用于模板中显示图标）
+var isTencentDocUrl = function(url: string): boolean {
+  if (!url) return false
+  var trimmedUrl = url.trim()
+  // 支持 HTTPS 链接和小程序 Scheme 格式
+  return trimmedUrl.indexOf('docs.qq.com') !== -1 || 
+         trimmedUrl.indexOf('doc.weixin.qq.com') !== -1 ||
+         trimmedUrl.indexOf('#小程序://') === 0
+}
+
+// 跳转失败处理函数
+var handleJumpFail = function(originalUrl: string, err: any) {
+  console.error('[handleJumpFail] 跳转小程序失败:', err)
+  // 弹窗提示并提供复制功能
+  uni.showModal({
+    title: '跳转受限',
+    content: '由于系统限制，无法直接打开文档。是否复制链接后手动打开？',
+    confirmText: '复制链接',
+    cancelText: '取消',
+    success: function(res) {
+      if (res.confirm) {
+        uni.setClipboardData({
+          data: originalUrl,
+          success: function() {
+            uni.showToast({ title: '链接已复制', icon: 'success' })
+          }
+        })
+      }
+    }
+  })
+}
+
+// 打开附件（跳转腾讯文档小程序）
+// 注意：此方法必须由 @click 直接调用，中间不能有异步操作
+var openAttachment = function(item: any) {
+  if (!item || !item.url) {
+    uni.showToast({ title: '附件链接为空', icon: 'none' })
+    return
+  }
+  
+  var originalUrl = item.url.trim()
+  var parsed = parseTencentDocUrl(originalUrl)
+  
+  console.log('[openAttachment] 原始URL:', originalUrl)
+  console.log('[openAttachment] 解析结果:', parsed)
+  
+  // #ifdef MP-WEIXIN
+  if (parsed.type === 'shortLink') {
+    // 显示加载状态
+    uni.showLoading({ title: '正在打开文档', mask: true })
+    // 小程序 Scheme 格式：使用微信原生 shortLink 属性
+    console.log('[openAttachment] 使用 shortLink 模式跳转')
+    uni.navigateToMiniProgram({
+      appId: TENCENT_DOC_APPID,
+      shortLink: parsed.url,
+      complete: function() {
+        uni.hideLoading()
+      },
+      fail: function(err) {
+        handleJumpFail(originalUrl, err)
+      }
+    })
+  } else if (parsed.type === 'url' && parsed.isTencentDoc) {
+    // 显示加载状态
+    uni.showLoading({ title: '正在打开文档', mask: true })
+    // HTTPS 链接格式：使用 path + url 参数跳转
+    var jumpPath = 'pages/tabs/index/index?url=' + encodeURIComponent(parsed.cleanUrl)
+    console.log('[openAttachment] 使用 path 模式跳转:', jumpPath)
+    uni.navigateToMiniProgram({
+      appId: TENCENT_DOC_APPID,
+      path: jumpPath,
+      complete: function() {
+        uni.hideLoading()
+      },
+      fail: function(err) {
+        handleJumpFail(originalUrl, err)
+      }
+    })
+  } else {
+    // 非腾讯文档：复制链接
+    uni.setClipboardData({
+      data: originalUrl,
+      success: function() {
+        uni.showToast({ title: '链接已复制，请在浏览器打开', icon: 'none' })
+      }
+    })
+  }
+  // #endif
+  
+  // #ifdef H5
+  window.open(originalUrl, '_blank')
+  // #endif
+  
+  // #ifndef MP-WEIXIN
+  // #ifndef H5
+  // 其他平台复制链接
+  uni.setClipboardData({
+    data: originalUrl,
+    success: function() {
+      uni.showToast({ title: '链接已复制，请在浏览器中打开', icon: 'none' })
+    }
+  })
+  // #endif
+  // #endif
+}
+
+// 打开全局关联文档
+const openGlobalAttachment = () => {
+  const url = settings.globalAttachment.url
+  if (!url) {
+    uni.showToast({ title: '文档链接为空', icon: 'none' })
+    return
+  }
+  
+  openAttachment({
+    url: url,
+    appId: TENCENT_DOC_APPID,
+    title: settings.globalAttachment.title
+  })
 }
 
 // 检查文本中是否包含锚点链接
@@ -1534,12 +1806,14 @@ onShareTimeline(() => {
   min-height: 100vh;
   background: #f5f7fa;
   position: relative;
-  overflow: hidden;
+  // 移除 overflow: hidden，否则 sticky 定位会失效
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
-// 背景图层
+// 背景图层 - 确保不干扰导航栏
 .background-layer {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -1730,6 +2004,66 @@ onShareTimeline(() => {
   -webkit-user-select: text !important;
   user-select: text !important;
   pointer-events: auto !important;
+  
+  // 默认状态（纯白底时）- 实心浅灰背景
+  // th {
+  //   background-color: #f8f9fa;
+  // }
+  
+  td {
+    background-color: transparent;
+  }
+  
+  code {
+    background-color: #f1f3f4;
+  }
+  
+  pre {
+    background-color: #f8f9fa;
+  }
+  
+  blockquote {
+    background-color: transparent;
+  }
+  
+  // 透视状态（有自定义背景时）- 半透明毛玻璃效果
+  &.glass-mode {
+    // th {
+    //   background-color: rgba(255, 255, 255, 0.15) !important;
+    // }
+    
+    // td {
+    //   background-color: rgba(255, 255, 255, 0.05) !important;
+    // }
+    
+    code {
+      background-color: rgba(255, 255, 255, 0.25) !important;
+    }
+    
+    pre {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      // #ifdef H5
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      // #endif
+    }
+    
+    blockquote {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    table {
+      background-color: transparent !important;
+    }
+    
+    tr {
+      background-color: transparent !important;
+      
+      &:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+      }
+    }
+  }
 }
 
 // 表格容器样式（仅保留布局）
@@ -1995,32 +2329,298 @@ onShareTimeline(() => {
 }
 
 // 回到顶部按钮
+// .back-to-top-btn {
+//   position: fixed;
+//   right: 32rpx;
+//   bottom: 200rpx;
+//   width: 88rpx;
+//   height: 88rpx;
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   background: rgba(255, 255, 255, 0.95);
+//   backdrop-filter: blur(10px);
+//   border-radius: 50%;
+//   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
+//   z-index: 99;
+//   padding-bottom: constant(safe-area-inset-bottom);
+//   padding-bottom: env(safe-area-inset-bottom);
+  
+//   .back-to-top-icon {
+//     font-size: 40rpx;
+//     color: #667eea;
+//     font-weight: bold;
+//   }
+  
+//   &:active {
+//     transform: scale(0.9);
+//     background: rgba(240, 240, 240, 0.95);
+//   }
+// }
+
 .back-to-top-btn {
   position: fixed;
-  right: 32rpx;
-  bottom: 200rpx;
-  width: 88rpx;
-  height: 88rpx;
+  right: 40rpx;
+  bottom: 60rpx;
+  /* 强制固定宽高，确保正圆 */
+  width: 96rpx;
+  height: 96rpx;
+  background-color: #ffffff;
+  border-radius: 50%;
+  /* 增加阴影提升悬浮感 */
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 50%;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
-  z-index: 99;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
-  
-  .back-to-top-icon {
-    font-size: 40rpx;
-    color: #667eea;
+  z-index: 999;
+  padding: 0; /* 清除边距干扰 */
+  border: 1rpx solid rgba(102, 126, 234, 0.1);
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.9);
+    background-color: #f0f2ff;
+  }
+
+  .icon {
+    font-size: 36rpx;
     font-weight: bold;
+    color: #667eea;
+    line-height: 1;
+    margin-bottom: 4rpx;
+  }
+
+  .btn-text {
+    font-size: 20rpx;
+    color: #667eea;
+    font-weight: 500;
+    line-height: 1;
+  }
+}
+
+// 附件块样式 - 适配块级样式引擎
+.attachment-container {
+  // 默认无边距，由块级样式控制
+  background: transparent;
+  
+  // 当有块级背景色时，附件卡片自动居中填充
+  &[style*="background"] {
+    .attachment-capsule {
+      background: rgba(255, 255, 255, 0.6);
+    }
+  }
+}
+
+.attachment-capsule {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  margin: 12rpx 0;
+  background: rgba(102, 126, 234, 0.08);
+  border: 2rpx solid rgba(102, 126, 234, 0.2);
+  border-radius: 16rpx;
+  transition: all 0.15s ease;
+  
+  &:first-child {
+    margin-top: 0;
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  // 腾讯文档特殊样式
+  &.is-tencent-doc {
+    background: rgba(7, 193, 96, 0.08);
+    border-color: rgba(7, 193, 96, 0.25);
+    
+    .capsule-icon {
+      color: #07c160;
+    }
+    
+    .capsule-arrow {
+      color: #07c160;
+    }
+  }
+  
+  // 点击态反馈（hover-class）
+  &.capsule-hover {
+    transform: scale(0.98);
+    background: rgba(102, 126, 234, 0.18);
+  }
+  
+  &.is-tencent-doc.capsule-hover {
+    background: rgba(7, 193, 96, 0.18);
   }
   
   &:active {
-    transform: scale(0.9);
-    background: rgba(240, 240, 240, 0.95);
+    background: rgba(102, 126, 234, 0.15);
+  }
+  
+  .capsule-icon {
+    font-size: 40rpx;
+    margin-right: 20rpx;
+    flex-shrink: 0;
+  }
+  
+  .capsule-content {
+    flex: 1;
+    min-width: 0;
+    
+    .capsule-title {
+      display: block;
+      font-size: 30rpx;
+      font-weight: 500;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .capsule-hint {
+      display: block;
+      font-size: 24rpx;
+      color: #999;
+      margin-top: 4rpx;
+    }
+  }
+  
+  .capsule-arrow {
+    font-size: 36rpx;
+    color: #999;
+    margin-left: 16rpx;
+    flex-shrink: 0;
+  }
+}
+
+// 全局文档关联底部栏
+.global-attachment-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 40rpx;
+  padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  
+  .bar-content {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    
+    .bar-icon {
+      font-size: 36rpx;
+    }
+    
+    .bar-title {
+      font-size: 30rpx;
+      font-weight: 500;
+      color: #667eea;
+    }
+  }
+  
+  .bar-arrow {
+    font-size: 40rpx;
+    color: #667eea;
+  }
+  
+  &:active {
+    background: rgba(240, 240, 250, 0.95);
+  }
+}
+
+// Markdown 表格透明化 - 与全局背景融合
+.markdown-body {
+  // 表格背景透明
+  table {
+    background: transparent !important;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16rpx 0;
+  }
+  
+  thead {
+    background: transparent !important;
+  }
+  
+  tr {
+    background: transparent !important;
+    
+    &:nth-child(even) {
+      background: rgba(0, 0, 0, 0.02) !important;
+    }
+  }
+  
+  th {
+    background: transparent !important;
+    border-bottom: 2rpx solid rgba(0, 0, 0, 0.1) !important;
+    padding: 16rpx 20rpx;
+    font-weight: 600;
+    text-align: left;
+  }
+  
+  td {
+    background: transparent !important;
+    border-bottom: 1rpx solid rgba(0, 0, 0, 0.05) !important;
+    padding: 12rpx 20rpx;
+  }
+  
+  // 行内代码块样式优化 - 半透明底色适配全局背景
+  code {
+    background: rgba(0, 0, 0, 0.05) !important;
+    padding: 4rpx 10rpx !important;
+    border-radius: 8rpx !important;
+    font-family: Consolas, Monaco, monospace !important;
+    font-size: 0.9em !important;
+    color: inherit !important;
+  }
+  
+  // 代码块样式
+  pre {
+    background: rgba(0, 0, 0, 0.04) !important;
+    padding: 20rpx !important;
+    border-radius: 12rpx !important;
+    overflow-x: auto;
+    
+    code {
+      background: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+    }
+  }
+}
+
+// 深色模式下的代码块样式
+@media (prefers-color-scheme: dark) {
+  .markdown-body {
+    code {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    pre {
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+    
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.03) !important;
+    }
+    
+    th {
+      border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    td {
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
   }
 }
 </style>

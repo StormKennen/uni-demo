@@ -59,6 +59,7 @@ const onBack = async () => {
 </script>
 
 <template>
+  <!-- 固定定位的导航栏 -->
   <view class="nav-container" :style="{
     backgroundColor: props.bgColor,
     paddingTop: (getStatusBarHeight() || '0') + 'px', // 导航栏
@@ -84,13 +85,17 @@ const onBack = async () => {
       </view>
     </view>
   </view>
+  <!-- 占位块：撑开页面内容，防止被固定导航栏遮挡 -->
+  <view class="nav-placeholder" :style="{ height: navHeight + (getStatusBarHeight() || 0) + 'px' }"></view>
 </template>
 <style scoped lang="scss">
 .nav-container {
   width: 100%;
   z-index: 9999;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   transition: background-color 0.3s ease;
   
   /* 定义导航栏高度CSS变量 */
@@ -149,5 +154,11 @@ const onBack = async () => {
       }
     }
   }
+}
+
+// 占位块样式
+.nav-placeholder {
+  width: 100%;
+  flex-shrink: 0;
 }
 </style>

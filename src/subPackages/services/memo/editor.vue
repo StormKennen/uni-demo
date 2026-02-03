@@ -55,7 +55,7 @@
               <view class="block-actions">
                 <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙️</view>
+                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
             </view>
@@ -96,7 +96,7 @@
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <view class="action-btn" @click.stop="selectBlock(blockIndex)">⚙️</view>
+                <view class="action-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
             </view>
@@ -123,7 +123,7 @@
           </view>
 
           <!-- 路径块 -->
-          <view v-if="block.type === 'route'" class="route-block">
+          <view v-if="block.type === 'route'" class="route-block" :style="getBlockBorderStyle(block)">
             <view class="block-header" @click="selectBlock(blockIndex)">
               <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
                 <text class="anchor-tag">行程路径#L{{ blockIndex + 1 }}</text>
@@ -131,6 +131,7 @@
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
             </view>
@@ -235,6 +236,48 @@
             </view>
           </view>
 
+          <!-- 附件块 -->
+          <view v-if="block.type === 'attachment'" class="attachment-block" :style="getBlockBorderStyle(block)">
+            <view class="block-header" @click="selectBlock(blockIndex)">
+              <text class="anchor-id-badge">
+                <text class="anchor-tag">附件容器#L{{ blockIndex + 1 }}</text>
+              </text>
+              <view class="block-actions">
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+              </view>
+            </view>
+
+            <view v-for="(item, itemIndex) in (block as AttachmentBlock).children" :key="itemIndex" class="attachment-item">
+              <view class="attachment-card">
+                <view class="attachment-icon">📄</view>
+                <view class="attachment-info">
+                  <input 
+                    class="attachment-title-input" 
+                    v-model="item.title" 
+                    placeholder="附件标题" 
+                    :maxlength="50"
+                  />
+                  <input 
+                    class="attachment-url-input" 
+                    v-model="item.url" 
+                    placeholder="粘贴腾讯文档链接" 
+                    :maxlength="500"
+                    @blur="onAttachmentUrlBlur(item)"
+                  />
+                </view>
+                <view class="attachment-delete" @click="deleteAttachmentItem(blockIndex, itemIndex)">×</view>
+              </view>
+            </view>
+
+            <view class="add-item-btn" @click="addAttachmentItem(blockIndex)">
+              <text class="add-icon">+</text>
+              <text class="add-text">添加附件</text>
+            </view>
+          </view>
+
         </view>
       </view>
     </scroll-view>
@@ -256,6 +299,10 @@
         <view class="fab-action-btn route" @click="addRouteBlockAndClose">
           <text class="fab-action-icon">🗺️</text>
           <text class="fab-action-text">+ 路径</text>
+        </view>
+        <view class="fab-action-btn attachment" @click="addAttachmentBlockAndClose">
+          <text class="fab-action-icon">📎</text>
+          <text class="fab-action-text">+ 附件</text>
         </view>
       </view>
       <!-- 主按钮 -->
@@ -675,6 +722,49 @@
               />
             </view>
           </view>
+
+          <!-- 腾讯文档关联 -->
+          <view class="settings-section">
+            <view class="section-title">腾讯文档关联</view>
+            
+            <view class="setting-item">
+              <view class="setting-info">
+                <text class="setting-label">启用全局文档关联</text>
+                <text class="setting-desc">在详情页底部显示跳转腾讯文档按钮</text>
+              </view>
+              <switch 
+                :checked="settings.globalAttachment.enabled" 
+                @change="settings.globalAttachment.enabled = !settings.globalAttachment.enabled"
+                color="#667eea"
+              />
+            </view>
+            
+            <view v-if="settings.globalAttachment.enabled" class="attachment-config">
+              <view class="setting-row">
+                <text class="setting-row-label">按钮文案</text>
+                <input 
+                  class="setting-row-input" 
+                  :value="settings.globalAttachment.title" 
+                  @input="settings.globalAttachment.title = $event.detail.value"
+                  placeholder="查看原始文档"
+                  :maxlength="30"
+                />
+              </view>
+              <view class="setting-row">
+                <text class="setting-row-label">文档链接</text>
+                <input 
+                  class="setting-row-input" 
+                  :value="settings.globalAttachment.url" 
+                  @input="settings.globalAttachment.url = $event.detail.value"
+                  placeholder="粘贴腾讯文档链接"
+                  :maxlength="500"
+                />
+              </view>
+              <view class="attachment-tip">
+                <text>支持腾讯文档/表格/收集表等链接，点击将跳转到腾讯文档小程序</text>
+              </view>
+            </view>
+          </view>
         </scroll-view>
         
         <view class="settings-footer">
@@ -941,6 +1031,252 @@
       </view>
     </view>
 
+    <!-- 块级样式设置面板 - 统一业务属性+视觉属性 -->
+    <view class="block-style-panel-overlay" v-if="blockStylePanelVisible" @click="blockStylePanelVisible = false">
+      <view class="block-style-panel" @click.stop>
+        <view class="panel-header">
+          <text class="panel-title">{{ getEditingBlockTypeLabel() }} 设置</text>
+          <view class="panel-close" @click="blockStylePanelVisible = false">×</view>
+        </view>
+        
+        <scroll-view scroll-y class="panel-scroll">
+          <!-- 第一部分：业务属性（根据块类型显示） -->
+          <view class="style-section business-section" v-if="editingBlockIndex !== null">
+            <view class="section-title">📋 业务属性</view>
+            
+            <!-- 文本块：Markdown 模式开关 -->
+            <view v-if="getEditingBlockType() === 'text'" class="business-item">
+              <view class="business-row">
+                <text class="business-label">Markdown 模式</text>
+                <switch 
+                  :checked="getEditingBlockMarkdown()" 
+                  @change="toggleEditingBlockMarkdown"
+                  color="#667eea"
+                />
+              </view>
+              <text class="business-hint">开启后支持 Markdown 语法渲染</text>
+            </view>
+            
+            <!-- 路径块：显示时间开关 -->
+            <view v-if="getEditingBlockType() === 'route'" class="business-item">
+              <view class="business-row">
+                <text class="business-label">显示耗时信息</text>
+                <switch 
+                  :checked="getEditingBlockSettings()?.showTime !== false" 
+                  @change="toggleEditingBlockSetting('showTime')"
+                  color="#667eea"
+                />
+              </view>
+              <text class="business-hint">在路径节点旁显示时间和交通方式</text>
+            </view>
+            
+            <!-- 附件块：AppID 和路径配置 -->
+            <view v-if="getEditingBlockType() === 'attachment'" class="business-item">
+              <view class="business-input-group">
+                <text class="business-label">小程序 AppID</text>
+                <input 
+                  type="text" 
+                  class="business-input"
+                  :value="getEditingBlockSettings()?.appId || 'wxd45c635d754dbf59'"
+                  @input="setEditingBlockSetting('appId', $event.detail.value)"
+                  placeholder="腾讯文档: wxd45c635d754dbf59"
+                />
+              </view>
+              <text class="business-hint">默认跳转腾讯文档小程序</text>
+            </view>
+            
+            <!-- 图片块：无特殊业务属性 -->
+            <view v-if="getEditingBlockType() === 'image'" class="business-item">
+              <text class="business-hint">图片块暂无额外业务属性，可在下方设置视觉样式</text>
+            </view>
+          </view>
+
+          <!-- 第二部分：视觉属性（所有块通用） -->
+          <view class="style-section">
+            <view class="section-title">🎨 视觉属性</view>
+          </view>
+
+          <!-- 背景颜色 -->
+          <view class="style-section">
+            <view class="section-title">背景颜色</view>
+            <view class="color-grid">
+              <view 
+                v-for="color in morandiColors" 
+                :key="color.value"
+                class="color-option"
+                :class="{ active: editingBlockStyle.backgroundColor === color.value }"
+                :style="{ backgroundColor: color.value }"
+                @click="editingBlockStyle.backgroundColor = color.value"
+              >
+                <text v-if="editingBlockStyle.backgroundColor === color.value" class="check-icon">✓</text>
+              </view>
+              <view 
+                class="color-option transparent"
+                :class="{ active: !editingBlockStyle.backgroundColor }"
+                @click="editingBlockStyle.backgroundColor = ''"
+              >
+                <text class="transparent-label">透明</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 内边距 -->
+          <view class="style-section">
+            <view class="section-title">内边距 (rpx)</view>
+            <view class="padding-grid">
+              <view class="padding-item">
+                <text class="padding-label">上</text>
+                <slider 
+                  :value="editingBlockStyle.padding?.top || 0" 
+                  :min="0" :max="100" :step="4"
+                  activeColor="#667eea"
+                  @change="editingBlockStyle.padding!.top = $event.detail.value"
+                />
+                <text class="padding-value">{{ editingBlockStyle.padding?.top || 0 }}</text>
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">下</text>
+                <slider 
+                  :value="editingBlockStyle.padding?.bottom || 0" 
+                  :min="0" :max="100" :step="4"
+                  activeColor="#667eea"
+                  @change="editingBlockStyle.padding!.bottom = $event.detail.value"
+                />
+                <text class="padding-value">{{ editingBlockStyle.padding?.bottom || 0 }}</text>
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">左</text>
+                <slider 
+                  :value="editingBlockStyle.padding?.left || 0" 
+                  :min="0" :max="100" :step="4"
+                  activeColor="#667eea"
+                  @change="editingBlockStyle.padding!.left = $event.detail.value"
+                />
+                <text class="padding-value">{{ editingBlockStyle.padding?.left || 0 }}</text>
+              </view>
+              <view class="padding-item">
+                <text class="padding-label">右</text>
+                <slider 
+                  :value="editingBlockStyle.padding?.right || 0" 
+                  :min="0" :max="100" :step="4"
+                  activeColor="#667eea"
+                  @change="editingBlockStyle.padding!.right = $event.detail.value"
+                />
+                <text class="padding-value">{{ editingBlockStyle.padding?.right || 0 }}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 边框 -->
+          <view class="style-section">
+            <view class="section-title">边框</view>
+            <view class="border-grid">
+              <view class="border-item">
+                <text class="border-label">上边框</text>
+                <view class="border-controls">
+                  <slider 
+                    :value="editingBlockStyle.border?.top?.width || 0" 
+                    :min="0" :max="10" :step="1"
+                    activeColor="#667eea"
+                    @change="editingBlockStyle.border!.top!.width = $event.detail.value"
+                    class="border-slider"
+                  />
+                  <text class="border-value">{{ editingBlockStyle.border?.top?.width || 0 }}rpx</text>
+                  <input 
+                    type="text" 
+                    class="border-color-input"
+                    :value="editingBlockStyle.border?.top?.color || '#eeeeee'"
+                    @input="editingBlockStyle.border!.top!.color = $event.detail.value"
+                    placeholder="#颜色"
+                  />
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">下边框</text>
+                <view class="border-controls">
+                  <slider 
+                    :value="editingBlockStyle.border?.bottom?.width || 0" 
+                    :min="0" :max="10" :step="1"
+                    activeColor="#667eea"
+                    @change="editingBlockStyle.border!.bottom!.width = $event.detail.value"
+                    class="border-slider"
+                  />
+                  <text class="border-value">{{ editingBlockStyle.border?.bottom?.width || 0 }}rpx</text>
+                  <input 
+                    type="text" 
+                    class="border-color-input"
+                    :value="editingBlockStyle.border?.bottom?.color || '#eeeeee'"
+                    @input="editingBlockStyle.border!.bottom!.color = $event.detail.value"
+                    placeholder="#颜色"
+                  />
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">左边框</text>
+                <view class="border-controls">
+                  <slider 
+                    :value="editingBlockStyle.border?.left?.width || 0" 
+                    :min="0" :max="10" :step="1"
+                    activeColor="#667eea"
+                    @change="editingBlockStyle.border!.left!.width = $event.detail.value"
+                    class="border-slider"
+                  />
+                  <text class="border-value">{{ editingBlockStyle.border?.left?.width || 0 }}rpx</text>
+                  <input 
+                    type="text" 
+                    class="border-color-input"
+                    :value="editingBlockStyle.border?.left?.color || '#eeeeee'"
+                    @input="editingBlockStyle.border!.left!.color = $event.detail.value"
+                    placeholder="#颜色"
+                  />
+                </view>
+              </view>
+              <view class="border-item">
+                <text class="border-label">右边框</text>
+                <view class="border-controls">
+                  <slider 
+                    :value="editingBlockStyle.border?.right?.width || 0" 
+                    :min="0" :max="10" :step="1"
+                    activeColor="#667eea"
+                    @change="editingBlockStyle.border!.right!.width = $event.detail.value"
+                    class="border-slider"
+                  />
+                  <text class="border-value">{{ editingBlockStyle.border?.right?.width || 0 }}rpx</text>
+                  <input 
+                    type="text" 
+                    class="border-color-input"
+                    :value="editingBlockStyle.border?.right?.color || '#eeeeee'"
+                    @input="editingBlockStyle.border!.right!.color = $event.detail.value"
+                    placeholder="#颜色"
+                  />
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 圆角 -->
+          <view class="style-section">
+            <view class="section-title">圆角</view>
+            <view class="radius-row">
+              <slider 
+                :value="editingBlockStyle.borderRadius || 0" 
+                :min="0" :max="40" :step="2"
+                activeColor="#667eea"
+                @change="editingBlockStyle.borderRadius = $event.detail.value"
+                class="radius-slider"
+              />
+              <text class="radius-value">{{ editingBlockStyle.borderRadius || 0 }}rpx</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="panel-footer">
+          <view class="panel-btn reset" @click="resetBlockStyle">重置</view>
+          <view class="panel-btn confirm" @click="saveBlockStyle">确定</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部操作按钮 -->
     <view class="footer-actions">
       <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
@@ -957,7 +1293,7 @@
 import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
 import { getGeminiSessions } from '@/services/apifox/NODEJSDEMO/GEMINI/apifox';
 
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { onLoad, onReady, onShareAppMessage } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
@@ -973,13 +1309,35 @@ interface TextStyle {
   color?: string
 }
 
-// 行样式（边框、对齐等）
+// 块级边框样式
+interface BlockBorderSide {
+  width?: number
+  color?: string
+}
+
+// 行样式（边框、对齐等）- 扩展为完整块级样式
 interface BlockStyle {
+  // 旧版简单边框开关（向后兼容）
   borderTop?: boolean
   borderBottom?: boolean
   borderLeft?: boolean
   borderRight?: boolean
   textAlign?: 'left' | 'center' | 'right'
+  // 新版块级独立样式
+  padding?: {
+    top?: number
+    bottom?: number
+    left?: number
+    right?: number
+  }
+  border?: {
+    top?: BlockBorderSide
+    bottom?: BlockBorderSide
+    left?: BlockBorderSide
+    right?: BlockBorderSide
+  }
+  backgroundColor?: string
+  borderRadius?: number
 }
 
 interface ImageStyle {
@@ -1041,6 +1399,21 @@ interface RouteBlock {
   style?: BlockStyle
 }
 
+// 附件块（腾讯文档等）
+interface AttachmentItem {
+  title: string
+  url: string
+  appId?: string  // 小程序 AppID，如腾讯文档: wxd45c635d754dbf59
+  path?: string   // 小程序路径
+  icon?: string   // 图标
+}
+
+interface AttachmentBlock {
+  type: 'attachment'
+  children: AttachmentItem[]
+  style?: BlockStyle
+}
+
 // 链接信息
 interface LinkInfo {
   label: string // 显示的文本
@@ -1067,7 +1440,7 @@ interface ChatSession {
 }
 
 interface PageData {
-  content: (TextBlock | ImageBlock | RouteBlock)[]
+  content: (TextBlock | ImageBlock | RouteBlock | AttachmentBlock)[]
 }
 
 // 页面数据
@@ -1172,7 +1545,13 @@ const settings = reactive({
     enableComments: false
   },
   showBackToTop: true,
-  hideNavActions: false
+  hideNavActions: false,
+  // 腾讯文档全局关联
+  globalAttachment: {
+    enabled: false,
+    url: '',
+    title: '查看原始文档'
+  }
 })
 
 // 莫兰迪配色方案
@@ -1222,6 +1601,155 @@ const getSelectedItem = () => {
 // 选中行状态
 const selectedBlock = ref<number | null>(null)
 
+// 块级样式设置面板状态
+const blockStylePanelVisible = ref(false)
+const editingBlockIndex = ref<number | null>(null)
+const editingBlockStyle = reactive<BlockStyle>({
+  padding: { top: 0, bottom: 0, left: 0, right: 0 },
+  border: {
+    top: { width: 0, color: '#eeeeee' },
+    bottom: { width: 0, color: '#eeeeee' },
+    left: { width: 0, color: '#eeeeee' },
+    right: { width: 0, color: '#eeeeee' }
+  },
+  backgroundColor: '',
+  borderRadius: 0,
+  textAlign: 'left'
+})
+
+// 打开块级样式设置面板
+const openBlockStylePanel = (blockIndex: number) => {
+  editingBlockIndex.value = blockIndex
+  const block = pageData.content[blockIndex]
+  const style = block?.style || {}
+  
+  // 初始化编辑状态
+  editingBlockStyle.padding = {
+    top: style.padding?.top ?? 0,
+    bottom: style.padding?.bottom ?? 0,
+    left: style.padding?.left ?? 0,
+    right: style.padding?.right ?? 0
+  }
+  editingBlockStyle.border = {
+    top: { width: style.border?.top?.width ?? 0, color: style.border?.top?.color ?? '#eeeeee' },
+    bottom: { width: style.border?.bottom?.width ?? 0, color: style.border?.bottom?.color ?? '#eeeeee' },
+    left: { width: style.border?.left?.width ?? 0, color: style.border?.left?.color ?? '#eeeeee' },
+    right: { width: style.border?.right?.width ?? 0, color: style.border?.right?.color ?? '#eeeeee' }
+  }
+  editingBlockStyle.backgroundColor = style.backgroundColor ?? ''
+  editingBlockStyle.borderRadius = style.borderRadius ?? 0
+  editingBlockStyle.textAlign = style.textAlign ?? 'left'
+  
+  blockStylePanelVisible.value = true
+  selectedBlock.value = null
+  selectedItem.value = null
+}
+
+// 保存块级样式
+const saveBlockStyle = () => {
+  if (editingBlockIndex.value === null) return
+  
+  const block = pageData.content[editingBlockIndex.value]
+  if (!block) return
+  
+  // 合并样式到块对象
+  if (!block.style) {
+    block.style = {}
+  }
+  
+  block.style.padding = { ...editingBlockStyle.padding }
+  block.style.border = {
+    top: { ...editingBlockStyle.border?.top },
+    bottom: { ...editingBlockStyle.border?.bottom },
+    left: { ...editingBlockStyle.border?.left },
+    right: { ...editingBlockStyle.border?.right }
+  }
+  block.style.backgroundColor = editingBlockStyle.backgroundColor
+  block.style.borderRadius = editingBlockStyle.borderRadius
+  block.style.textAlign = editingBlockStyle.textAlign
+  
+  blockStylePanelVisible.value = false
+  editingBlockIndex.value = null
+  
+  uni.showToast({ title: '样式已保存', icon: 'success' })
+}
+
+// 重置块级样式
+const resetBlockStyle = () => {
+  editingBlockStyle.padding = { top: 0, bottom: 0, left: 0, right: 0 }
+  editingBlockStyle.border = {
+    top: { width: 0, color: '#eeeeee' },
+    bottom: { width: 0, color: '#eeeeee' },
+    left: { width: 0, color: '#eeeeee' },
+    right: { width: 0, color: '#eeeeee' }
+  }
+  editingBlockStyle.backgroundColor = ''
+  editingBlockStyle.borderRadius = 0
+  editingBlockStyle.textAlign = 'left'
+}
+
+// 获取当前编辑块的类型
+const getEditingBlockType = () => {
+  if (editingBlockIndex.value === null) return null
+  const block = pageData.content[editingBlockIndex.value]
+  return block?.type || null
+}
+
+// 获取当前编辑块的类型标签
+const getEditingBlockTypeLabel = () => {
+  const type = getEditingBlockType()
+  switch (type) {
+    case 'text': return '📝 文本块'
+    case 'image': return '🖼️ 图片块'
+    case 'route': return '🗺️ 路径块'
+    case 'attachment': return '📎 附件块'
+    default: return '块'
+  }
+}
+
+// 获取当前编辑块的 Markdown 状态（仅文本块）
+const getEditingBlockMarkdown = () => {
+  if (editingBlockIndex.value === null) return false
+  const block = pageData.content[editingBlockIndex.value]
+  if (block?.type !== 'text') return false
+  return (block as TextBlock).isMarkdown || false
+}
+
+// 切换当前编辑块的 Markdown 状态
+const toggleEditingBlockMarkdown = () => {
+  if (editingBlockIndex.value === null) return
+  const block = pageData.content[editingBlockIndex.value]
+  if (block?.type !== 'text') return
+  ;(block as TextBlock).isMarkdown = !(block as TextBlock).isMarkdown
+}
+
+// 获取当前编辑块的 settings（业务属性）
+const getEditingBlockSettings = () => {
+  if (editingBlockIndex.value === null) return null
+  const block = pageData.content[editingBlockIndex.value] as any
+  return block?.settings || {}
+}
+
+// 切换当前编辑块的 settings 布尔值
+const toggleEditingBlockSetting = (key: string) => {
+  if (editingBlockIndex.value === null) return
+  const block = pageData.content[editingBlockIndex.value] as any
+  if (!block.settings) {
+    block.settings = {}
+  }
+  block.settings[key] = !block.settings[key]
+}
+
+// 设置当前编辑块的 settings 值
+const setEditingBlockSetting = (key: string, value: any) => {
+  if (editingBlockIndex.value === null) return
+  const block = pageData.content[editingBlockIndex.value] as any
+  if (!block.settings) {
+    block.settings = {}
+  }
+  block.settings[key] = value
+}
+
 // 选中行
 const selectBlock = (blockIndex: number) => {
   selectedBlock.value = blockIndex
@@ -1245,17 +1773,60 @@ const toggleBlockBorder = (blockIndex: number, key: 'borderTop' | 'borderBottom'
   block.style[key] = !block.style[key]
 }
 
-// 获取行样式（边框、对齐等，用于渲染）
-const getBlockBorderStyle = (block: TextBlock | ImageBlock) => {
+// 获取行样式（边框、对齐等，用于渲染）- 支持新版块级样式
+const getBlockBorderStyle = (block: TextBlock | ImageBlock | RouteBlock | AttachmentBlock) => {
   const style = block.style || {}
-  return {
-    borderTop: style.borderTop ? '2rpx solid #333' : 'none',
-    borderBottom: style.borderBottom ? '2rpx solid #333' : 'none',
-    borderLeft: style.borderLeft ? '2rpx solid #333' : 'none',
-    borderRight: style.borderRight ? '2rpx solid #333' : 'none',
-    padding: (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight) ? '16rpx' : '0',
-    textAlign: style.textAlign || 'left'
+  const result: Record<string, string> = {}
+  
+  // 新版块级样式优先
+  if (style.padding) {
+    result.paddingTop = (style.padding.top || 0) + 'rpx'
+    result.paddingBottom = (style.padding.bottom || 0) + 'rpx'
+    result.paddingLeft = (style.padding.left || 0) + 'rpx'
+    result.paddingRight = (style.padding.right || 0) + 'rpx'
   }
+  
+  // 新版边框样式
+  if (style.border) {
+    if (style.border.top && style.border.top.width) {
+      result.borderTop = style.border.top.width + 'rpx solid ' + (style.border.top.color || '#eeeeee')
+    }
+    if (style.border.bottom && style.border.bottom.width) {
+      result.borderBottom = style.border.bottom.width + 'rpx solid ' + (style.border.bottom.color || '#eeeeee')
+    }
+    if (style.border.left && style.border.left.width) {
+      result.borderLeft = style.border.left.width + 'rpx solid ' + (style.border.left.color || '#eeeeee')
+    }
+    if (style.border.right && style.border.right.width) {
+      result.borderRight = style.border.right.width + 'rpx solid ' + (style.border.right.color || '#eeeeee')
+    }
+  } else {
+    // 旧版简单边框开关（向后兼容）
+    result.borderTop = style.borderTop ? '2rpx solid #333' : 'none'
+    result.borderBottom = style.borderBottom ? '2rpx solid #333' : 'none'
+    result.borderLeft = style.borderLeft ? '2rpx solid #333' : 'none'
+    result.borderRight = style.borderRight ? '2rpx solid #333' : 'none'
+    
+    // 旧版有边框时默认 padding
+    if (!style.padding && (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight)) {
+      result.padding = '16rpx'
+    }
+  }
+  
+  // 背景色
+  if (style.backgroundColor) {
+    result.backgroundColor = style.backgroundColor
+  }
+  
+  // 圆角
+  if (style.borderRadius) {
+    result.borderRadius = style.borderRadius + 'rpx'
+  }
+  
+  // 文本对齐
+  result.textAlign = style.textAlign || 'left'
+  
+  return result
 }
 
 // 保存并跳转到详情页
@@ -1530,6 +2101,76 @@ const addRouteBlock = () => {
   })
 }
 
+// 添加附件块
+const addAttachmentBlock = () => {
+  pageData.content.push({
+    type: 'attachment',
+    children: [{
+      title: '',
+      url: '',
+      appId: 'wxd45c635d754dbf59',  // 腾讯文档小程序 AppID
+      icon: '📄'
+    }]
+  })
+}
+
+// 添加附件项
+const addAttachmentItem = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as AttachmentBlock
+  if (block && block.type === 'attachment') {
+    block.children.push({
+      title: '',
+      url: '',
+      appId: 'wxd45c635d754dbf59',
+      icon: '📄'
+    })
+  }
+}
+
+// 删除附件项
+const deleteAttachmentItem = (blockIndex: number, itemIndex: number) => {
+  const block = pageData.content[blockIndex] as AttachmentBlock
+  if (block && block.type === 'attachment' && block.children.length > 1) {
+    block.children.splice(itemIndex, 1)
+  } else if (block && block.type === 'attachment' && block.children.length === 1) {
+    // 只剩一个附件时，删除整个块
+    pageData.content.splice(blockIndex, 1)
+  }
+}
+
+// 附件 URL 输入框失焦时自动识别格式
+const onAttachmentUrlBlur = (item: any) => {
+  if (!item || !item.url) return
+  
+  var url = item.url.trim()
+  var schemePrefix = '#小程序://腾讯文档/'
+  
+  // 检查是否为小程序 Scheme 格式
+  if (url.indexOf(schemePrefix) === 0) {
+    // 提取 Scheme ID
+    var schemeId = url.slice(schemePrefix.length).trim()
+    // 标记为小程序 Scheme 格式
+    item.isMiniProgramScheme = true
+    item.schemeId = schemeId
+    // 更新 AppID 为腾讯文档官方 AppID
+    item.appId = 'wxd44b036e1369325'
+    item.icon = '📊'
+    console.log('[onAttachmentUrlBlur] 识别到小程序Scheme格式，ID:', schemeId)
+  } else if (url.indexOf('docs.qq.com') !== -1 || url.indexOf('doc.weixin.qq.com') !== -1) {
+    // HTTPS 腾讯文档链接
+    item.isMiniProgramScheme = false
+    item.schemeId = ''
+    item.appId = 'wxd44b036e1369325'
+    item.icon = '📊'
+    console.log('[onAttachmentUrlBlur] 识别到腾讯文档HTTPS链接')
+  } else {
+    // 其他链接
+    item.isMiniProgramScheme = false
+    item.schemeId = ''
+    item.icon = '📄'
+  }
+}
+
 // FAB 按钮操作（添加后关闭菜单）
 const addTextBlockAndClose = () => {
   addTextBlock()
@@ -1538,6 +2179,11 @@ const addTextBlockAndClose = () => {
 
 const addImageBlockAndClose = () => {
   addImageBlock()
+  fabExpanded.value = false
+}
+
+const addAttachmentBlockAndClose = () => {
+  addAttachmentBlock()
   fabExpanded.value = false
 }
 
@@ -2854,6 +3500,57 @@ const saveData = async () => {
   }
 }
 
+// 重置所有数据字段（防止数据串号）
+const resetFields = () => {
+  // 清空备忘录基础信息
+  memoId.value = null
+  memoName.value = ''
+  tags.value = []
+  tagInput.value = ''
+  
+  // 清空内容
+  pageData.content = []
+  
+  // 重置设置为默认值
+  settings.padding = { top: 32, bottom: 32, left: 32, right: 32 }
+  settings.border = { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' }
+  settings.appearance = {
+    backgroundColor: '#ffffff',
+    backgroundImage: '',
+    backgroundBlur: 0,
+    backgroundOpacity: 1
+  }
+  settings.typography = {
+    fontSize: 'standard',
+    lineHeight: 1.6
+  }
+  settings.layout = {
+    contentWidth: 'full'
+  }
+  settings.features = {
+    showWatermark: false,
+    enableComments: false
+  }
+  settings.showBackToTop = true
+  settings.hideNavActions = false
+  settings.globalAttachment = {
+    enabled: false,
+    url: '',
+    title: '查看原始文档'
+  }
+  
+  // 关闭所有面板状态
+  selectedBlock.value = null
+  selectedItem.value = null
+  blockStylePanelVisible.value = false
+  editingBlockIndex.value = null
+  settingsVisible.value = false
+  colorPickerVisible.value = false
+  filePickerVisible.value = false
+  jsonImportVisible.value = false
+  fabExpanded.value = false
+}
+
 // 加载数据
 const loadData = async () => {
   try {
@@ -2866,7 +3563,8 @@ const loadData = async () => {
 
       // 调用 API 获取备忘录详情
       const result = await getMemosMemoId(memoId.value)
-
+      console.log('请求到的数据', result);
+      
       uni.hideLoading()
 
       // 处理返回数据 - HTTP拦截器已经返回data字段，所以直接使用result
@@ -3014,6 +3712,9 @@ const loadData = async () => {
 
 // 页面加载时初始化数据
 onMounted(() => {
+  // 【关键】先重置所有数据，防止数据串号
+  resetFields()
+  
   // 从 URL 参数获取模式和 memoId
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
@@ -3022,6 +3723,9 @@ onMounted(() => {
   // 如果有 id，设置 memoId
   if (options.id) {
     memoId.value = options.id
+    console.log('[editor] 加载备忘录 ID:', options.id)
+  } else {
+    console.log('[editor] 新建备忘录模式')
   }
 
   loadData()
@@ -3264,6 +3968,11 @@ onShareAppMessage(() => {
       opacity: 0.8;
     }
   }
+}
+
+.text-item {
+  max-height: 160rpx;
+  overflow: hidden;
 }
 
 .text-item,
@@ -3640,9 +4349,77 @@ onShareAppMessage(() => {
     }
   }
   
+  &.attachment {
+    .fab-action-text {
+      color: #667eea;
+    }
+  }
+  
   &:active {
     transform: scale(0.95);
     background: rgba(240, 240, 240, 0.95);
+  }
+}
+
+// 附件块样式
+.attachment-block {
+  margin: 16rpx 0;
+  padding: 16rpx;
+  background: rgba(102, 126, 234, 0.04);
+  border-radius: 12rpx;
+}
+
+.attachment-item {
+  margin: 12rpx 0;
+}
+
+.attachment-card {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  background: #fff;
+  border: 2rpx solid rgba(102, 126, 234, 0.2);
+  border-radius: 12rpx;
+  
+  .attachment-icon {
+    font-size: 40rpx;
+    margin-right: 16rpx;
+    flex-shrink: 0;
+  }
+  
+  .attachment-info {
+    flex: 1;
+    min-width: 0;
+    
+    .attachment-title-input {
+      width: 100%;
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #333;
+      padding: 8rpx 0;
+      border: none;
+      background: transparent;
+    }
+    
+    .attachment-url-input {
+      width: 100%;
+      font-size: 24rpx;
+      color: #999;
+      padding: 8rpx 0;
+      border: none;
+      background: transparent;
+    }
+  }
+  
+  .attachment-delete {
+    font-size: 36rpx;
+    color: #999;
+    padding: 8rpx 16rpx;
+    margin-left: 8rpx;
+    
+    &:active {
+      color: #ff4757;
+    }
   }
 }
 
@@ -3704,6 +4481,8 @@ onShareAppMessage(() => {
     .panel-text-input {
       width: 100%;
       min-height: 120rpx;
+      max-height: 240px;
+      overflow-y: auto;
       padding: 16rpx;
       background: #f8f9fa;
       border-radius: 8rpx;
@@ -4877,9 +5656,9 @@ onShareAppMessage(() => {
 
 .padding-item {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
+  // flex-direction: column;
+  // align-items: center;
+  // gap: 8rpx;
   
   .padding-label {
     font-size: 24rpx;
@@ -4925,8 +5704,7 @@ onShareAppMessage(() => {
   
   .border-controls {
     display: flex;
-    align-items: center;
-    gap: 4rpx;
+    flex: 1;
   }
   
   .border-width-input {
@@ -5153,6 +5931,325 @@ onShareAppMessage(() => {
     
     &:active {
       opacity: 0.8;
+    }
+  }
+}
+
+// 块级样式设置面板
+.block-style-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.block-style-panel {
+  width: 100%;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  flex-shrink: 0;
+  
+  .panel-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .panel-close {
+    font-size: 40rpx;
+    color: #999;
+    padding: 8rpx 16rpx;
+    
+    &:active {
+      color: #333;
+    }
+  }
+}
+
+.panel-scroll {
+  flex: 1;
+  padding: 0 32rpx;
+  max-height: 60vh;
+}
+
+.style-section {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+  
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 20rpx;
+  }
+}
+
+// 颜色选择网格
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.color-option {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  
+  &.active {
+    border-color: #667eea;
+    border-width: 4rpx;
+  }
+  
+  &.transparent {
+    background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%),
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%);
+    background-size: 20rpx 20rpx;
+    background-position: 0 0, 10rpx 10rpx;
+    
+    .transparent-label {
+      font-size: 20rpx;
+      color: #999;
+    }
+  }
+  
+  .check-icon {
+    font-size: 28rpx;
+    color: #667eea;
+    font-weight: bold;
+  }
+}
+
+// 内边距设置
+.padding-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.padding-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  
+  .padding-label {
+    width: 48rpx;
+    font-size: 26rpx;
+    color: #666;
+    flex-shrink: 0;
+  }
+  
+  slider {
+    flex: 1;
+  }
+  
+  .padding-value {
+    width: 60rpx;
+    font-size: 24rpx;
+    color: #999;
+    text-align: right;
+    flex-shrink: 0;
+  }
+}
+
+// 边框设置
+.border-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.border-item {
+  .border-label {
+    font-size: 26rpx;
+    color: #666;
+    margin-bottom: 12rpx;
+    display: block;
+  }
+  
+  .border-controls {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    
+    .border-slider {
+      flex: 1;
+    }
+    
+    .border-value {
+      width: 80rpx;
+      font-size: 24rpx;
+      color: #999;
+      flex-shrink: 0;
+    }
+    
+    .border-color-input {
+      width: 140rpx;
+      height: 56rpx;
+      border: 2rpx solid #e0e0e0;
+      border-radius: 8rpx;
+      padding: 0 12rpx;
+      font-size: 24rpx;
+      color: #333;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// 圆角设置
+.radius-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  
+  .radius-slider {
+    flex: 1;
+  }
+  
+  .radius-value {
+    width: 80rpx;
+    font-size: 24rpx;
+    color: #999;
+    text-align: right;
+    flex-shrink: 0;
+  }
+}
+
+// 面板底部按钮
+.panel-footer {
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #f0f0f0;
+  flex-shrink: 0;
+  
+  .panel-btn {
+    flex: 1;
+    height: 80rpx;
+    border-radius: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28rpx;
+    font-weight: 500;
+    
+    &.reset {
+      background: #f5f5f5;
+      color: #666;
+      
+      &:active {
+        background: #e8e8e8;
+      }
+    }
+    
+    &.confirm {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      
+      &:active {
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+// 设置按钮高亮样式
+.action-btn.style-btn {
+  &:active {
+    background: rgba(102, 126, 234, 0.1);
+  }
+}
+
+// 业务属性区域样式
+.business-section {
+  background: rgba(102, 126, 234, 0.04);
+  margin: 0 -32rpx;
+  padding: 24rpx 32rpx !important;
+  border-bottom: none !important;
+}
+
+.business-item {
+  margin-bottom: 16rpx;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.business-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.business-label {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.business-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+.business-input-group {
+  margin-bottom: 12rpx;
+  
+  .business-label {
+    display: block;
+    margin-bottom: 8rpx;
+  }
+  
+  .business-input {
+    width: 100%;
+    height: 72rpx;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 12rpx;
+    padding: 0 20rpx;
+    font-size: 26rpx;
+    color: #333;
+    background: #fff;
+    
+    &:focus {
+      border-color: #667eea;
     }
   }
 }

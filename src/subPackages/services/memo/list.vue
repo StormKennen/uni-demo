@@ -193,7 +193,7 @@
             </view>
             
             <view class="memo-meta">
-              <text class="memo-time">{{ formatTime(memo.updated_at) }}</text>
+              <text class="memo-time">{{ formatTime(memo.updatedAt) }}</text>
               <view class="memo-actions">
                 <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text> -->
                 <text class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
@@ -266,7 +266,7 @@ interface Memo {
   tags: string[]
   is_pinned: boolean
   is_favorite: boolean
-  updated_at: number
+  updatedAt: number
 }
 
 // 文件夹相关
@@ -1024,7 +1024,7 @@ onUnmounted(() => {
   
   .memo-list {
     flex: 1;
-    
+    overflow-y: auto;
     .loading-state,
     .empty-state {
       display: flex;

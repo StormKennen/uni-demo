@@ -189,24 +189,6 @@
       "name": "common",
       "pages": [
         {
-          "path": "middle/index",
-          "style": {
-            "navigationBarTitleText": "E签"
-          }
-        },
-        {
-          "path": "middle/pay",
-          "style": {
-            "navigationBarTitleText": "支付"
-          }
-        },
-        {
-          "path": "middle/app",
-          "style": {
-            "navigationBarTitleText": "港生活APP"
-          }
-        },
-        {
           "path": "webview/webview"
         },
         {
