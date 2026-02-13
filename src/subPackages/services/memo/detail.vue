@@ -3,6 +3,15 @@
     <!-- 背景图层 -->
     <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
     
+    <!-- 动态光斑效果 -->
+    <view v-if="settings.appearance.enableBlob" class="blob-container">
+      <view class="blob-circle blob-1" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
+      <view class="blob-circle blob-2" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
+    </view>
+    
+    <!-- 科技感网格背景 -->
+    <view v-if="settings.appearance.enableCyberGrid" class="cyber-grid"></view>
+    
     <nav-bar 
       always-title
       :title="memoTitle"
@@ -61,28 +70,79 @@
         <view 
           v-for="(block, blockIndex) in parsedContent" 
           :key="blockIndex"
-          :id="'L' + (blockIndex + 1)"
+          :id="block.anchor || ('L' + (blockIndex + 1))"
           class="content-block"
+          :class="{ 'is-popup-source': isBlockPopupTarget(block) }"
+          v-show="!isBlockPopupTarget(block)"
         >
+          <!-- 扑克牌翻转容器 -->
+          <view 
+            v-if="block.style?.enablePokerCard" 
+            class="poker-card-container"
+            @click="handlePokerFlip(Number(blockIndex))"
+          >
+            <view class="poker-card-inner" :class="{ 'is-flipped': isBlockFlipped(Number(blockIndex)) }">
+              <!-- 扑克牌背面 - 黑金高级感设计 -->
+              <view class="card-back">
+                <view class="card-back-logo">
+                  <text class="logo-icon">✦</text>
+                </view>
+                <text class="card-corner-suits">♠ ♥ ♣ ♦</text>
+                <view class="card-shine"></view>
+              </view>
+              <!-- 扑克牌正面（内容） -->
+              <view class="card-front">
+                <!-- 文本块 -->
+                <view 
+                  v-if="block.type === 'text'" 
+                  class="text-block" 
+                  :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
+                  :style="getBlockStyle(block.style)"
+                >
+                  <view 
+                    v-for="(item, itemIndex) in block.children" 
+                    :key="itemIndex"
+                    class="text-item"
+                    :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
+                    @click.stop="handleTextItemClick(item)"
+                  >
+                    <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
+                    <text class="text-preview" :class="{ 'link-text': item.linkInfo }" :style="getTextStyle(item.style)">{{ item.value || '' }}</text>
+                  </view>
+                </view>
+                <!-- 图片块 -->
+                <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
+                  <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
+                    <view class="image-preview" v-if="item.value && item.value.url" @click.stop="previewImage(item.value.url)">
+                      <view class="image-container">
+                        <image :src="item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 普通内容块（无扑克牌效果） -->
+          <template v-else>
           <!-- 锚点标签显示 -->
           <!-- <text class="anchor-tag">#L{{ blockIndex + 1 }}</text> -->
           <!-- 文本块 -->
           <view 
             v-if="block.type === 'text'" 
             class="text-block" 
-            :class="{ 'is-markdown': block.isMarkdown }"
+            :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
             :style="getBlockStyle(block.style)"
           >
             <view 
               v-for="(item, itemIndex) in block.children" 
               :key="itemIndex"
               class="text-item"
-              :class="{ 'has-link': item.linkInfo }"
-              @click="item.linkInfo ? handleTextLinkClick(item.linkInfo) : null"
+              :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
+              @click="handleTextItemClick(item)"
             >
-              <text v-if="item.linkInfo" class="link-indicator">
-                {{ item.linkInfo.linkType === 'navigation' ? '📍' : (item.linkInfo.linkType === 'internal' ? '📄' : '🔗') }}
-              </text>
+              <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
               <!-- Markdown 模式 -->
               <view 
                 v-if="block.isMarkdown"
@@ -220,6 +280,37 @@
             </view>
           </view>
 
+          <!-- 多媒体块 -->
+          <view v-if="block.type === 'media'" class="media-container" :style="getBlockStyle(block.style)">
+            <view 
+              v-for="(item, itemIndex) in block.children" 
+              :key="itemIndex"
+              class="media-item"
+            >
+              <text v-if="item.title" class="media-title">{{ item.title }}</text>
+              <video 
+                v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov') || item.url.includes('.avi'))" 
+                :src="item.url" 
+                class="media-video" 
+                :controls="item.controls !== false"
+                :autoplay="item.autoplay === true"
+                :loop="item.loop === true"
+                :show-center-play-btn="true"
+                :show-play-btn="true"
+              ></video>
+              <view 
+                v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a') || item.url.includes('.wav'))" 
+                class="media-audio-wrapper"
+                :class="{ 'has-controls': item.controls !== false }"
+              >
+                <view class="audio-icon">🎵</view>
+                <text class="audio-name">{{ item.title || '音频文件' }}</text>
+                <text v-if="item.loop" class="audio-loop-tag">循环</text>
+              </view>
+            </view>
+          </view>
+          </template>
+
         </view>
       </view>
       
@@ -258,6 +349,89 @@
       <text class="icon">↑</text>
       <text class="btn-text">顶部</text>
     </view>
+
+    <!-- 浪漫毛玻璃弹窗 -->
+    <view 
+      v-if="glassModalVisible" 
+      class="glass-modal"
+      @click="closeGlassModal"
+    >
+      <view 
+        class="glass-content"
+        :class="[
+          glassModalAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
+          settings.romanticEffects.enableGlassBlur ? 'popup-glass' : '',
+          'romantic-content'
+        ]"
+        @click.stop
+      >
+        <view class="glass-close" @click="closeGlassModal">✕</view>
+        <view class="glass-text">{{ glassModalContent }}</view>
+      </view>
+    </view>
+
+    <!-- 锚点弹窗 - 渲染隐藏的block内容 -->
+    <view 
+      v-if="popupBlockVisible && popupBlockData" 
+      class="anchor-popup-overlay"
+      :class="{ 'glass-blur': settings.romanticEffects.enableGlassBlur }"
+      @click="closePopupBlock"
+    >
+      <view 
+        class="anchor-popup-content"
+        :class="[
+          settings.romanticEffects.popupAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
+          settings.romanticEffects.enableGlassBlur ? 'popup-glass' : ''
+        ]"
+        @click.stop
+      >
+        <view class="anchor-popup-header">
+          <text class="anchor-popup-title">💫 详细内容</text>
+          <view class="anchor-popup-close" @click="closePopupBlock">✕</view>
+        </view>
+        <scroll-view class="anchor-popup-body" scroll-y>
+          <!-- 文本块渲染 -->
+          <view v-if="popupBlockData.type === 'text'" class="popup-text-block">
+            <view 
+              v-for="(item, idx) in popupBlockData.children" 
+              :key="idx"
+              class="popup-text-item"
+            >
+              <text :style="getTextStyle(item.style)">{{ item.value }}</text>
+            </view>
+          </view>
+          
+          <!-- 图片块渲染 -->
+          <view v-if="popupBlockData.type === 'image'" class="popup-image-block">
+            <image 
+              v-for="(item, idx) in popupBlockData.children" 
+              :key="idx"
+              :src="item.value?.url || item.value"
+              mode="widthFix"
+              class="popup-image"
+              @click="previewImage(item.value?.url || item.value)"
+            />
+          </view>
+          
+          <!-- 多媒体块渲染 -->
+          <view v-if="popupBlockData.type === 'media'" class="popup-media-block">
+            <view 
+              v-for="(item, idx) in popupBlockData.children" 
+              :key="idx"
+              class="popup-media-item"
+            >
+              <text v-if="item.title" class="media-title">{{ item.title }}</text>
+              <video 
+                v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov'))"
+                :src="item.url"
+                class="popup-video"
+                controls
+              />
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
     
   </view>
 </template>
@@ -282,6 +456,11 @@ const loading = ref(true)
 const error = ref('')
 
 // 设置（从 memoData 中读取）
+// 浪漫弹窗状态
+const glassModalVisible = ref(false)
+const glassModalContent = ref('')
+const glassModalAnimation = ref('zoom-in')
+
 const settings = reactive({
   padding: { top: 32, bottom: 32, left: 32, right: 32 },
   border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
@@ -289,7 +468,14 @@ const settings = reactive({
     backgroundColor: '#ffffff',
     backgroundImage: '',
     backgroundBlur: 0,
-    backgroundOpacity: 1
+    backgroundOpacity: 1,
+    enableBlob: false,
+    blobBlur: 80,
+    enableCyberGrid: false
+  },
+  romanticEffects: {
+    popupAnimation: 'zoom-in', // 'zoom-in' | 'slide-up'
+    enableGlassBlur: true
   },
   typography: {
     fontSize: 'standard' as 'standard' | 'medium' | 'large',
@@ -314,6 +500,78 @@ const settings = reactive({
 // 滚动状态 - 用于回到顶部按钮
 const scrollTop = ref(0)
 const showBackToTopBtn = computed(() => settings.showBackToTop && scrollTop.value > 400)
+
+// 锚点弹窗系统 - 获取所有被引用为弹窗目标的锚点集合
+const popupTargetAnchors = computed(() => {
+  const anchors = new Set<string>()
+  if (!parsedContent.value) return anchors
+  
+  parsedContent.value.forEach((block: any) => {
+    if (block.type === 'text' && block.children) {
+      block.children.forEach((item: any) => {
+        if (item.linkInfo?.linkType === 'popup' && item.linkInfo?.targetAnchor) {
+          anchors.add(item.linkInfo.targetAnchor)
+        }
+      })
+    }
+  })
+  return anchors
+})
+
+// 判断某个block是否被引用为弹窗目标（应该隐藏）
+const isBlockPopupTarget = (block: any): boolean => {
+  if (!block.anchor) return false
+  return popupTargetAnchors.value.has(block.anchor)
+}
+
+// 根据锚点ID查找对应的block数据
+const findBlockByAnchor = (anchor: string): any => {
+  if (!parsedContent.value) return null
+  return parsedContent.value.find((block: any) => block.anchor === anchor)
+}
+
+// 弹窗内容block状态
+const popupBlockData = ref<any>(null)
+const popupBlockVisible = ref(false)
+
+// 扑克牌翻转状态 - 记录哪些块已被翻开
+const flippedBlocks = reactive<Record<number, boolean>>({})
+// 翻转动画进行中的状态 - 防止动画期间误触
+const flippingBlocks = reactive<Record<number, boolean>>({})
+
+// 处理扑克牌翻转点击
+const handlePokerFlip = (blockIndex: number) => {
+  // 如果已经翻开或正在翻转中，不执行任何操作
+  if (flippedBlocks[blockIndex] || flippingBlocks[blockIndex]) return
+  
+  // 标记为翻转中
+  flippingBlocks[blockIndex] = true
+  
+  // 触发震动反馈
+  try {
+    uni.vibrateShort({ type: 'medium' })
+  } catch (e) {
+    console.log('震动功能不可用')
+  }
+  
+  // 设置为已翻开
+  flippedBlocks[blockIndex] = true
+  
+  // 动画完成后解除翻转中状态（与 CSS 动画时长一致 2.5s）
+  setTimeout(() => {
+    flippingBlocks[blockIndex] = false
+  }, 2500)
+}
+
+// 检查块是否已翻开（用于导出时强制翻开）
+const isBlockFlipped = (blockIndex: number, forExport = false): boolean => {
+  // 导出模式下强制显示已翻开状态
+  if (forExport || isExporting.value) return true
+  return !!flippedBlocks[blockIndex]
+}
+
+// 导出状态标记
+const isExporting = ref(false)
 
 // 字号映射
 const fontSizeMap: Record<string, string> = {
@@ -614,6 +872,12 @@ const loadMemoData = async () => {
     })
     if (res) {
       memoData.value = res
+      
+      // 同步导航栏标题
+      uni.setNavigationBarTitle({
+        title: res?.name ?? '备忘录详情'
+      })
+      
       // 加载设置
       if (res.settings) {
         if (res.settings.padding) {
@@ -634,6 +898,9 @@ const loadMemoData = async () => {
           settings.appearance.backgroundImage = res.settings.appearance.backgroundImage || ''
           settings.appearance.backgroundBlur = res.settings.appearance.backgroundBlur ?? 0
           settings.appearance.backgroundOpacity = res.settings.appearance.backgroundOpacity ?? 1
+          settings.appearance.enableBlob = res.settings.appearance.enableBlob === true
+          settings.appearance.blobBlur = res.settings.appearance.blobBlur ?? 80
+          settings.appearance.enableCyberGrid = res.settings.appearance.enableCyberGrid === true
         }
         if (res.settings.typography) {
           settings.typography.fontSize = res.settings.typography.fontSize || 'standard'
@@ -865,16 +1132,21 @@ const handleLinkClick = (linkInfo: any) => {
       })
     }
   } else if (linkInfo.linkType === 'internal') {
-    // 内部链接类型
-    if (linkInfo.internalPath) {
+    // 内部链接类型：区分「笔记」与「备忘录」
+    const targetUrl =
+      linkInfo.internalScene === 'memo' && linkInfo.internalId
+        ? `/subPackages/services/memo/detail?id=${linkInfo.internalId}`
+        : linkInfo.internalScene === 'chat' && linkInfo.internalPath
+          ? linkInfo.internalPath
+          : linkInfo.internalPath || null
+    if (targetUrl) {
       // #ifdef H5
-      // H5 环境下使用 router 或直接跳转
       const basePath = window.location.origin
-      window.location.href = `${basePath}${linkInfo.internalPath}`
+      window.location.href = `${basePath}${targetUrl}`
       // #endif
       // #ifndef H5
       uni.navigateTo({
-        url: linkInfo.internalPath
+        url: targetUrl
       })
       // #endif
     } else {
@@ -1240,6 +1512,78 @@ const handleMarkdownClick = (event: any) => {
 // 处理文本项链接点击（复用handleLinkClick）
 const handleTextLinkClick = handleLinkClick
 
+// 关闭浪漫弹窗
+const closeGlassModal = () => {
+  glassModalVisible.value = false
+  glassModalContent.value = ''
+}
+
+// 打开浪漫弹窗
+const openGlassModal = (content: string) => {
+  glassModalContent.value = content
+  glassModalAnimation.value = settings.romanticEffects.popupAnimation
+  glassModalVisible.value = true
+}
+
+// 处理文本项点击（优先链接，其次弹窗）
+const handleTextItemClick = (item: any) => {
+  // 1. 处理锚点弹窗链接（linkType === 'popup' 且有 targetAnchor）
+  if (item.linkInfo?.linkType === 'popup' && item.linkInfo?.targetAnchor) {
+    const targetBlock = findBlockByAnchor(item.linkInfo.targetAnchor)
+    if (targetBlock) {
+      // 找到目标block，显示在弹窗中
+      popupBlockData.value = targetBlock
+      popupBlockVisible.value = true
+      
+      // 触发震动反馈
+      try {
+        uni.vibrateShort()
+      } catch (e) {
+        console.log('震动功能不可用')
+      }
+    } else {
+      uni.showToast({
+        title: '未找到目标内容',
+        icon: 'none'
+      })
+    }
+    return
+  }
+  
+  // 2. 处理其他链接跳转
+  if (item.linkInfo && (item.linkInfo.url || item.linkInfo.linkType)) {
+    handleLinkClick(item.linkInfo)
+    return
+  }
+  
+  // 3. 处理旧版弹窗展示（interactionType === 'popup'）
+  if (item.interactionType === 'popup') {
+    if (settings.romanticEffects.enableGlassBlur) {
+      // 使用浪漫毛玻璃弹窗
+      openGlassModal(item.value || '暂无内容')
+    } else {
+      // 使用默认系统弹窗
+      uni.showModal({
+        title: '详细内容',
+        content: item.value || '',
+        showCancel: false,
+        confirmText: '关闭'
+      })
+    }
+  }
+}
+
+// 关闭锚点弹窗
+const closePopupBlock = () => {
+  popupBlockVisible.value = false
+  popupBlockData.value = null
+  try {
+    uni.vibrateShort()
+  } catch (e) {
+    console.log('震动功能不可用')
+  }
+}
+
 // 获取图片容器样式（用于inline-block布局中的宽度控制）
 const getImageContainerStyle = (style: any) => {
   if (!style) return {}
@@ -1356,7 +1700,8 @@ const exportImage = async () => {
   
   try {
     exportLoading.value = true
-    console.log('设置exportLoading为true')
+    isExporting.value = true  // 导出模式：强制所有扑克牌翻开
+    console.log('设置exportLoading为true, isExporting为true')
     
     // 任务三：导出时的确定性检查 - 显式判断 isRendered 状态
     if (!isRendered.value) {
@@ -1469,7 +1814,8 @@ const exportImage = async () => {
   } finally {
     // 确保在任何情况下都重置loading状态
     exportLoading.value = false
-    console.log('exportLoading已重置为false')
+    isExporting.value = false  // 重置导出模式
+    console.log('exportLoading和isExporting已重置为false')
   }
 }
 
@@ -1822,6 +2168,103 @@ onShareTimeline(() => {
   pointer-events: none;
 }
 
+// 动态光斑容器
+.blob-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+// 光斑圆形
+.blob-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.6;
+  
+  &.blob-1 {
+    width: 400rpx;
+    height: 400rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    top: 10%;
+    left: -10%;
+    animation: blob-move-1 15s ease-in-out infinite;
+  }
+  
+  &.blob-2 {
+    width: 300rpx;
+    height: 300rpx;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    bottom: 20%;
+    right: -5%;
+    animation: blob-move-2 18s ease-in-out infinite;
+  }
+}
+
+@keyframes blob-move-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(100rpx, 50rpx) scale(1.1);
+  }
+  50% {
+    transform: translate(50rpx, 100rpx) scale(0.9);
+  }
+  75% {
+    transform: translate(-50rpx, 50rpx) scale(1.05);
+  }
+}
+
+@keyframes blob-move-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-80rpx, -60rpx) scale(1.15);
+  }
+  66% {
+    transform: translate(40rpx, -80rpx) scale(0.85);
+  }
+}
+
+// 科技感网格背景
+.cyber-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+  background-size: 40rpx 40rpx;
+}
+
+// 3D卡片效果
+.card-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-8rpx) rotateX(2deg) rotateY(-2deg);
+    box-shadow: 
+      0 20rpx 40rpx rgba(102, 126, 234, 0.15),
+      0 10rpx 20rpx rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(-4rpx) rotateX(1deg) rotateY(-1deg);
+  }
+}
+
 // 水印
 .watermark {
   padding: 40rpx 32rpx;
@@ -1835,7 +2278,7 @@ onShareTimeline(() => {
 }
 
 .nav-actions {
-  // padding-left: 32rpx;
+  padding-left: 32rpx;
   display: flex;
   gap: 16rpx;
   background-color: #ffeaa7;
@@ -1986,6 +2429,13 @@ onShareTimeline(() => {
 .text-item, .image-item {
   border-radius: 8rpx;
   display: inline-block;
+}
+
+// 弹窗类型文本不可选中
+.text-item.no-select {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  cursor: pointer;
 }
 
 .text-preview {
@@ -2494,6 +2944,62 @@ onShareTimeline(() => {
   }
 }
 
+// 多媒体块样式 - 强制100%宽度
+.media-container {
+  background: transparent;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  
+  .media-item {
+    margin: 16rpx 0;
+    
+    &:first-child {
+      margin-top: 0;
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .media-title {
+      display: block;
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 12rpx;
+    }
+    
+    .media-video {
+      width: 100%;
+      height: 400rpx;
+      border-radius: 12rpx;
+      background: #000;
+    }
+    
+    .media-audio-wrapper {
+      display: flex;
+      align-items: center;
+      padding: 32rpx;
+      background: rgba(118, 75, 162, 0.08);
+      border: 2rpx solid rgba(118, 75, 162, 0.2);
+      border-radius: 12rpx;
+      
+      .audio-icon {
+        font-size: 48rpx;
+        margin-right: 20rpx;
+      }
+      
+      .audio-name {
+        font-size: 28rpx;
+        color: #333;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
 // 全局文档关联底部栏
 .global-attachment-bar {
   position: fixed;
@@ -2621,6 +3127,406 @@ onShareTimeline(() => {
     td {
       border-bottom-color: rgba(255, 255, 255, 0.08) !important;
     }
+  }
+}
+
+// 浪漫弹窗动画系统
+.popup-glass {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.65);
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 20rpx 60rpx rgba(102, 126, 234, 0.2),
+    0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+}
+
+// 缩放进入动画
+.zoom-in-enter {
+  transform: scale(0.8);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.zoom-in-enter-active {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.zoom-in-leave {
+  transform: scale(1);
+  opacity: 1;
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.zoom-in-leave-active {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+// 滑动进入动画
+.slide-up-enter {
+  transform: translateY(100rpx);
+  opacity: 0;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-up-enter-active {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.slide-up-leave {
+  transform: translateY(0);
+  opacity: 1;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-up-leave-active {
+  transform: translateY(50rpx);
+  opacity: 0;
+}
+
+// 浪漫质感增强
+.romantic-content {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 107, 157, 0.1) 50%,
+      transparent 70%
+    );
+    animation: romantic-shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes romantic-shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-50%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+// 锚点弹窗样式
+.anchor-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+
+  &.glass-blur {
+    backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.anchor-popup-content {
+  width: 90%;
+  max-height: 80vh;
+  background: white;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
+
+  &.popup-glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+  }
+}
+
+.anchor-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(255, 107, 157, 0.1));
+}
+
+.anchor-popup-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.anchor-popup-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 50%;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.anchor-popup-body {
+  max-height: 60vh;
+  padding: 32rpx;
+}
+
+.popup-text-block {
+  .popup-text-item {
+    margin-bottom: 16rpx;
+    line-height: 1.8;
+  }
+}
+
+.popup-image-block {
+  .popup-image {
+    width: 100%;
+    border-radius: 12rpx;
+    margin-bottom: 16rpx;
+  }
+}
+
+.popup-media-block {
+  .popup-media-item {
+    margin-bottom: 24rpx;
+
+    .media-title {
+      font-size: 28rpx;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 12rpx;
+      display: block;
+    }
+
+    .popup-video {
+      width: 100%;
+      border-radius: 12rpx;
+    }
+  }
+}
+
+// 毛玻璃弹窗容器
+.glass-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 40rpx;
+}
+
+.glass-content {
+  max-width: 90%;
+  max-height: 80%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-radius: 32rpx;
+  padding: 40rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 32rpx 80rpx rgba(102, 126, 234, 0.25),
+    0 12rpx 32rpx rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2rpx;
+    background: linear-gradient(90deg, 
+      transparent,
+      rgba(255, 107, 157, 0.6),
+      rgba(116, 185, 255, 0.6),
+      transparent
+    );
+  }
+
+  .glass-text {
+    font-size: 32rpx;
+    line-height: 1.8;
+    color: #2d3436;
+    text-align: center;
+  }
+
+  .glass-close {
+    position: absolute;
+    top: 20rpx;
+    right: 20rpx;
+    width: 60rpx;
+    height: 60rpx;
+    background: rgba(255, 107, 157, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    color: #e84393;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+  }
+}
+
+// ==================== 扑克牌翻转效果 ====================
+/* 扑克牌容器 */
+.poker-card-container {
+  perspective: 1500rpx;
+  -webkit-perspective: 1500rpx;
+  margin: 30rpx 0;
+  cursor: pointer;
+
+  .poker-card-inner {
+    position: relative;
+    width: 100%;
+    min-height: 300rpx;
+    /* 增加旋转圈数: 180deg (半圈) -> 540deg (一圈半) */
+    transition: transform 2.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    -webkit-transition: -webkit-transform 2.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    color: #fff;
+    &.is-flipped {
+      transform: rotateY(540deg);
+      -webkit-transform: rotateY(540deg);
+    }
+  }
+
+  .card-front, .card-back {
+    width: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 24rpx;
+    box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.15);
+  }
+
+  /* 扑克正面：内容展示 */
+  .card-front {
+    transform: rotateY(540deg); /* 初始状态与 inner 抵消 */
+    -webkit-transform: rotateY(540deg);
+  }
+
+  /* 扑克背面：高级感设计 */
+  .card-back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 2;
+    background-color: #1a1a1a; /* 深色底底 */
+    /* 精致的几何网格背景 */
+    background-image: 
+      radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 60%),
+      repeating-conic-gradient(#2a2a2a 0% 25%, #1a1a1a 0% 50%) 0% 0% / 40rpx 40rpx;
+    border: 6rpx solid #d4af37; /* 经典金边 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    /* 内部装饰装饰框 */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 20rpx;
+      left: 20rpx;
+      right: 20rpx;
+      bottom: 20rpx;
+      border: 2rpx solid rgba(212, 175, 55, 0.4);
+      border-radius: 12rpx;
+      pointer-events: none;
+    }
+
+    /* 中心图标装饰 */
+    .card-back-logo {
+      width: 120rpx;
+      height: 120rpx;
+      background: linear-gradient(135deg, #d4af37, #f9f295, #b8860b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30rpx rgba(212, 175, 55, 0.5);
+      
+      .logo-icon {
+        font-size: 60rpx;
+        filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.3));
+      }
+    }
+    
+    /* 四角的装饰细节 - 使用单独元素 */
+    .card-corner-suits {
+      position: absolute;
+      bottom: 10rpx;
+      right: 15rpx;
+      font-size: 20rpx;
+      color: rgba(212, 175, 55, 0.6);
+      letter-spacing: 4rpx;
+    }
+    
+    /* 扫光流光效果 */
+    .card-shine {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+      );
+      animation: shine-sweep 3s ease-in-out infinite;
+      pointer-events: none;
+    }
+  }
+}
+
+/* 扫光动画 */
+@keyframes shine-sweep {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 150%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+@keyframes pulse-hint {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.95);
   }
 }
 </style>

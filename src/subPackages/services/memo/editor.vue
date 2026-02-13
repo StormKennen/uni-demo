@@ -18,7 +18,7 @@
       <view class="memo-info-section">
         <view class="memo-header-row">
           <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
-          <view class="settings-btn" @click="settingsVisible = true">
+          <view class="settings-btn" @click="openConfigPanel">
             <text class="settings-icon">⚙️</text>
           </view>
         </view>
@@ -145,17 +145,10 @@
                 </view>
               </view>
 
-              <view 
-                v-for="(node, nodeIndex) in (block as RouteBlock).content" 
-                :key="nodeIndex" 
-                class="route-node-editor"
-              >
+              <view v-for="(node, nodeIndex) in (block as RouteBlock).content" :key="nodeIndex"
+                class="route-node-editor">
                 <!-- 插入节点按钮（非第一个节点前显示） -->
-                <view 
-                  v-if="nodeIndex > 0" 
-                  class="insert-node-btn" 
-                  @click="insertRouteNode(blockIndex, nodeIndex)"
-                >
+                <view v-if="nodeIndex > 0" class="insert-node-btn" @click="insertRouteNode(blockIndex, nodeIndex)">
                   <text class="insert-icon">+</text>
                   <text class="insert-text">插入节点</text>
                 </view>
@@ -163,24 +156,17 @@
                 <view class="node-content" :class="{ 'is-end': node.isEnd, 'is-transfer': node.type === 'transfer' }">
                   <view class="node-header">
                     <text class="node-index">{{ nodeIndex + 1 }}</text>
-                    <text class="node-type-label">{{ node.isEnd ? '终点' : (node.type === 'transfer' ? '换乘站' : '途经站') }}</text>
+                    <text class="node-type-label">{{ node.isEnd ? '终点' : (node.type === 'transfer' ? '换乘站' : '途经站')
+                      }}</text>
                     <!-- 删除按钮（终点不可删除，且至少保留2个节点） -->
-                    <view 
-                      v-if="!node.isEnd && (block as RouteBlock).content.length > 2" 
-                      class="node-delete-btn" 
-                      @click="deleteRouteNode(blockIndex, nodeIndex)"
-                    >×</view>
+                    <view v-if="!node.isEnd && (block as RouteBlock).content.length > 2" class="node-delete-btn"
+                      @click="deleteRouteNode(blockIndex, nodeIndex)">×</view>
                   </view>
 
                   <!-- 站点名称（所有节点都有） -->
                   <view class="node-input-group">
                     <text class="input-label">站点名称</text>
-                    <input 
-                      class="node-input" 
-                      v-model="node.name" 
-                      placeholder="请输入站点名称" 
-                      :maxlength="50"
-                    />
+                    <input class="node-input" v-model="node.name" placeholder="请输入站点名称" :maxlength="50" />
                   </view>
 
                   <!-- 非终点节点的额外字段 -->
@@ -188,41 +174,23 @@
                     <view class="node-input-row">
                       <view class="node-input-group half">
                         <text class="input-label">耗时</text>
-                        <input 
-                          class="node-input" 
-                          v-model="node.time" 
-                          placeholder="如 1h" 
-                          :maxlength="20"
-                        />
+                        <input class="node-input" v-model="node.time" placeholder="如 1h" :maxlength="20" />
                       </view>
                       <view class="node-input-group half">
                         <text class="input-label">交通图标</text>
-                        <input 
-                          class="node-input" 
-                          v-model="node.icon" 
-                          placeholder="如 🚗" 
-                          :maxlength="20"
-                        />
+                        <input class="node-input" v-model="node.icon" placeholder="如 🚗" :maxlength="20" />
                       </view>
                     </view>
 
                     <view class="node-input-group">
                       <text class="input-label">描述</text>
-                      <input 
-                        class="node-input" 
-                        v-model="node.desc" 
-                        placeholder="如 接机、换乘等" 
-                        :maxlength="100"
-                      />
+                      <input class="node-input" v-model="node.desc" placeholder="如 接机、换乘等" :maxlength="100" />
                     </view>
 
                     <view class="node-switch-row">
                       <text class="switch-label">换乘站点</text>
-                      <switch 
-                        :checked="node.type === 'transfer'" 
-                        @change="toggleRouteNodeType(blockIndex, nodeIndex)"
-                        color="#667eea"
-                      />
+                      <switch :checked="node.type === 'transfer'" @change="toggleRouteNodeType(blockIndex, nodeIndex)"
+                        color="#667eea" />
                     </view>
                   </template>
                 </view>
@@ -250,23 +218,14 @@
               </view>
             </view>
 
-            <view v-for="(item, itemIndex) in (block as AttachmentBlock).children" :key="itemIndex" class="attachment-item">
+            <view v-for="(item, itemIndex) in (block as AttachmentBlock).children" :key="itemIndex"
+              class="attachment-item">
               <view class="attachment-card">
                 <view class="attachment-icon">📄</view>
                 <view class="attachment-info">
-                  <input 
-                    class="attachment-title-input" 
-                    v-model="item.title" 
-                    placeholder="附件标题" 
-                    :maxlength="50"
-                  />
-                  <input 
-                    class="attachment-url-input" 
-                    v-model="item.url" 
-                    placeholder="粘贴腾讯文档链接" 
-                    :maxlength="500"
-                    @blur="onAttachmentUrlBlur(item)"
-                  />
+                  <input class="attachment-title-input" v-model="item.title" placeholder="附件标题" :maxlength="50" />
+                  <input class="attachment-url-input" v-model="item.url" placeholder="粘贴腾讯文档链接" :maxlength="500"
+                    @blur="onAttachmentUrlBlur(item)" />
                 </view>
                 <view class="attachment-delete" @click="deleteAttachmentItem(blockIndex, itemIndex)">×</view>
               </view>
@@ -278,12 +237,57 @@
             </view>
           </view>
 
+          <!-- 多媒体块 -->
+          <view v-if="block.type === 'media'" class="media-block" :style="getBlockBorderStyle(block)">
+            <view class="block-header" @click="selectBlock(blockIndex)">
+              <text class="anchor-tag">多媒体容器#L{{ blockIndex + 1 }}</text>
+              <view class="block-actions">
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+              </view>
+            </view>
+
+            <view v-for="(item, itemIndex) in (block as MediaBlock).children" :key="itemIndex" class="media-card">
+              <view class="media-info">
+                <input class="media-title-input" v-model="item.title" placeholder="视频/音频名称" :maxlength="50" />
+                <view class="media-status-row">
+                  <text class="media-url-preview" v-if="item.url">{{ item.url.substring(0, 40) }}{{ item.url.length > 40
+                    ?
+                    '...' : '' }}</text>
+                  <text class="media-url-preview empty" v-else>未设置媒体源</text>
+                  <view class="media-props-tags">
+                    <text v-if="item.autoplay" class="prop-tag">自动播放</text>
+                    <text v-if="item.loop" class="prop-tag">循环</text>
+                    <text v-if="item.controls !== false" class="prop-tag">控制条</text>
+                  </view>
+                </view>
+              </view>
+              <video v-if="item.url && item.url.includes('.mp4')" :src="item.url" class="mini-preview" controls></video>
+              <view v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a'))"
+                class="audio-placeholder">
+                <text class="audio-icon">🎵</text>
+                <text class="audio-text">音频文件</text>
+              </view>
+              <view class="media-card-actions">
+                <view class="media-settings-btn" @click="openMediaItemSettings(blockIndex, itemIndex)">⚙️</view>
+                <view class="media-delete" @click="deleteMediaItem(blockIndex, itemIndex)">×</view>
+              </view>
+            </view>
+
+            <view class="add-item-btn" @click="addMediaItem(blockIndex)">
+              <text class="add-icon">+</text>
+              <text class="add-text">添加媒体</text>
+            </view>
+          </view>
+
         </view>
       </view>
     </scroll-view>
 
     <!-- FAB 悬浮按钮（仅编辑模式，控制面板显示时隐藏） -->
-    <view class="fab-container" v-if="!selectedItem && selectedBlock === null">
+    <view class="fab-container" v-if="!selectedItem && selectedBlock === null && !isAnyPanelOpen">
       <!-- 遮罩层 -->
       <view class="fab-overlay" v-if="fabExpanded" @click="fabExpanded = false"></view>
       <!-- 子按钮 -->
@@ -303,6 +307,10 @@
         <view class="fab-action-btn attachment" @click="addAttachmentBlockAndClose">
           <text class="fab-action-icon">📎</text>
           <text class="fab-action-text">+ 附件</text>
+        </view>
+        <view class="fab-action-btn media" @click="addMediaBlockAndClose">
+          <text class="fab-action-icon">🎬</text>
+          <text class="fab-action-text">+ 视频/音频</text>
         </view>
       </view>
       <!-- 主按钮 -->
@@ -375,11 +383,41 @@
           <text>暂无笔记</text>
         </view>
         <scroll-view v-else scroll-y class="chat-session-list">
-          <view v-for="session in chatSessions" :key="session.id" class="chat-session-item" @click="selectChatSession(session)">
+          <view v-for="session in chatSessions" :key="session.id" class="chat-session-item"
+            @click="selectChatSession(session)">
             <view class="session-icon">📄</view>
             <view class="session-info">
               <text class="session-title">{{ session.title || '新建草稿' }}</text>
-              <text class="session-meta">{{ session.messageCount || 0 }} 条素材 · {{ session.updatedAt || session.createdAt }}</text>
+              <text class="session-meta">{{ session.messageCount || 0 }} 条素材 · {{ session.updatedAt || session.createdAt
+                }}</text>
+            </view>
+            <view class="session-select-icon">›</view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <!-- 备忘录选择弹窗 -->
+    <view class="chat-session-modal" v-if="memoPickerVisible" @click="memoPickerVisible = false">
+      <view class="chat-session-content" @click.stop>
+        <view class="chat-session-header">
+          <text class="chat-session-title">选择备忘录</text>
+          <text class="chat-session-close" @click="memoPickerVisible = false">×</text>
+        </view>
+        <view v-if="loadingMemosForPicker" class="loading-sessions">
+          <text class="loading-icon">⏳</text>
+          <text>加载中...</text>
+        </view>
+        <view v-else-if="memoListForPicker.length === 0" class="empty-sessions">
+          <text class="empty-icon">📋</text>
+          <text>暂无备忘录</text>
+        </view>
+        <scroll-view v-else scroll-y class="chat-session-list">
+          <view v-for="memo in memoListForPicker" :key="memo.id" class="chat-session-item" @click="selectMemo(memo)">
+            <view class="session-icon">📋</view>
+            <view class="session-info">
+              <text class="session-title">{{ memo.name || '未命名' }}</text>
+              <text class="session-meta">{{ memo.updatedAt ? formatMemoDate(memo.updatedAt) : '' }}</text>
             </view>
             <view class="session-select-icon">›</view>
           </view>
@@ -395,12 +433,8 @@
           <text class="json-import-close" @click="jsonImportVisible = false">×</text>
         </view>
         <view class="json-import-body">
-          <textarea 
-            class="json-textarea" 
-            v-model="jsonImportText" 
-            placeholder="请粘贴 JSON 数组，如：[{name:机场,time:1h},{name:酒店,isEnd:true}]"
-            :maxlength="10000"
-          />
+          <textarea class="json-textarea" v-model="jsonImportText"
+            placeholder="请粘贴 JSON 数组，如：[{name:机场,time:1h},{name:酒店,isEnd:true}]" :maxlength="100000" />
           <view class="json-import-tip">
             <text>提示：最后一个节点会自动设置为终点</text>
           </view>
@@ -412,885 +446,913 @@
       </view>
     </view>
 
-    <!-- 设置面板 -->
-    <view class="settings-modal" v-if="settingsVisible" @click="settingsVisible = false">
-      <view class="settings-content" @click.stop>
-        <view class="settings-header">
-          <text class="settings-title">页面设置</text>
-          <text class="settings-close" @click="settingsVisible = false">×</text>
+    <!-- 全屏设置面板 -->
+    <view class="full-screen-panel" v-if="configPanelVisible">
+      <view class="panel-header">
+        <text class="panel-title">🎨 内容配置</text>
+        <button class="save-btn" @click="closeConfigPanel">保存并完成</button>
+      </view>
+
+      <!-- 标签切换 -->
+      <view class="config-tabs">
+        <view class="tab-item" :class="{ active: activeConfigTab === 'global' }" @click="activeConfigTab = 'global'">
+          <text>✨ 全局样式</text>
         </view>
-        
-        <scroll-view class="settings-body" scroll-y>
-          <!-- 标签管理 -->
-          <view class="settings-section">
-            <view class="section-title">标签管理</view>
-            <view class="tags-manager">
-              <view class="tags-list" v-if="tags.length > 0">
-                <view v-for="(tag, index) in tags" :key="index" class="tag-editable">
-                  <text class="tag-text">{{ tag }}</text>
-                  <text class="tag-remove" @click="removeTag(index)">×</text>
-                </view>
-              </view>
-              <view class="tag-add-row">
-                <input 
-                  class="tag-add-input" 
-                  v-model="tagInput" 
-                  placeholder="输入标签后回车添加" 
-                  @confirm="addTag" 
-                  :maxlength="20"
-                />
-                <view class="tag-add-btn" @click="addTag">添加</view>
-              </view>
-            </view>
-          </view>
-
-          <!-- 边距设置 -->
-          <view class="settings-section">
-            <view class="section-title">内容边距 (rpx)</view>
-            <view class="padding-grid">
-              <view class="padding-item">
-                <text class="padding-label">上</text>
-                <input 
-                  type="number" 
-                  class="padding-input" 
-                  :value="settings.padding.top" 
-                  @input="settings.padding.top = Number($event.detail.value) || 0"
-                />
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">下</text>
-                <input 
-                  type="number" 
-                  class="padding-input" 
-                  :value="settings.padding.bottom" 
-                  @input="settings.padding.bottom = Number($event.detail.value) || 0"
-                />
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">左</text>
-                <input 
-                  type="number" 
-                  class="padding-input" 
-                  :value="settings.padding.left" 
-                  @input="settings.padding.left = Number($event.detail.value) || 0"
-                />
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">右</text>
-                <input 
-                  type="number" 
-                  class="padding-input" 
-                  :value="settings.padding.right" 
-                  @input="settings.padding.right = Number($event.detail.value) || 0"
-                />
-              </view>
-            </view>
-          </view>
-
-          <!-- 边框设置 -->
-          <view class="settings-section">
-            <view class="section-title">内容边框</view>
-            <view class="border-grid">
-              <view class="border-item">
-                <text class="border-label">上边框</text>
-                <view class="border-controls">
-                  <input 
-                    type="number" 
-                    class="border-width-input" 
-                    :value="settings.border.top" 
-                    @input="settings.border.top = Number($event.detail.value) || 0"
-                    placeholder="0"
-                  />
-                  <text class="border-unit">rpx</text>
-                </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">下边框</text>
-                <view class="border-controls">
-                  <input 
-                    type="number" 
-                    class="border-width-input" 
-                    :value="settings.border.bottom" 
-                    @input="settings.border.bottom = Number($event.detail.value) || 0"
-                    placeholder="0"
-                  />
-                  <text class="border-unit">rpx</text>
-                </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">左边框</text>
-                <view class="border-controls">
-                  <input 
-                    type="number" 
-                    class="border-width-input" 
-                    :value="settings.border.left" 
-                    @input="settings.border.left = Number($event.detail.value) || 0"
-                    placeholder="0"
-                  />
-                  <text class="border-unit">rpx</text>
-                </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">右边框</text>
-                <view class="border-controls">
-                  <input 
-                    type="number" 
-                    class="border-width-input" 
-                    :value="settings.border.right" 
-                    @input="settings.border.right = Number($event.detail.value) || 0"
-                    placeholder="0"
-                  />
-                  <text class="border-unit">rpx</text>
-                </view>
-              </view>
-            </view>
-            <view class="border-color-row">
-              <text class="border-color-label">边框颜色</text>
-              <input 
-                class="border-color-input" 
-                :value="settings.border.color" 
-                @input="settings.border.color = $event.detail.value"
-                placeholder="#eeeeee"
-              />
-              <view class="border-color-preview" :style="{ backgroundColor: settings.border.color }"></view>
-            </view>
-          </view>
-
-          <!-- 背景配置 -->
-          <view class="settings-section">
-            <view class="section-title">背景配置</view>
-            
-            <view class="subsection-title">莫兰迪配色</view>
-            <view class="color-palette">
-              <view 
-                v-for="color in morandiColors" 
-                :key="color.value"
-                class="palette-item"
-                :class="{ active: settings.appearance.backgroundColor === color.value }"
-                :style="{ backgroundColor: color.value }"
-                @click="settings.appearance.backgroundColor = color.value"
-              >
-                <text class="palette-check" v-if="settings.appearance.backgroundColor === color.value">✓</text>
-              </view>
-            </view>
-            
-            <view class="setting-row">
-              <text class="setting-row-label">背景图片</text>
-              <view class="bg-image-controls">
-                <input 
-                  class="bg-image-input" 
-                  :value="settings.appearance.backgroundImage" 
-                  @input="settings.appearance.backgroundImage = $event.detail.value"
-                  placeholder="输入图片URL或上传"
-                />
-                <view class="bg-image-upload" @click="uploadBackgroundImage">上传</view>
-              </view>
-            </view>
-            
-            <view class="slider-row" v-if="settings.appearance.backgroundImage">
-              <text class="slider-label">模糊度</text>
-              <slider 
-                :value="settings.appearance.backgroundBlur" 
-                :min="0" 
-                :max="30" 
-                :step="1"
-                activeColor="#667eea"
-                @change="settings.appearance.backgroundBlur = $event.detail.value"
-              />
-              <text class="slider-value">{{ settings.appearance.backgroundBlur }}px</text>
-            </view>
-            
-            <view class="slider-row" v-if="settings.appearance.backgroundImage">
-              <text class="slider-label">透明度</text>
-              <slider 
-                :value="settings.appearance.backgroundOpacity * 100" 
-                :min="0" 
-                :max="100" 
-                :step="5"
-                activeColor="#667eea"
-                @change="settings.appearance.backgroundOpacity = $event.detail.value / 100"
-              />
-              <text class="slider-value">{{ Math.round(settings.appearance.backgroundOpacity * 100) }}%</text>
-            </view>
-          </view>
-
-          <!-- 文字排版 -->
-          <view class="settings-section">
-            <view class="section-title">文字排版</view>
-            
-            <view class="setting-row">
-              <text class="setting-row-label">字号档位</text>
-              <view class="font-size-tabs">
-                <view 
-                  v-for="opt in fontSizeOptions" 
-                  :key="opt.value"
-                  class="font-size-tab"
-                  :class="{ active: settings.typography.fontSize === opt.value }"
-                  @click="settings.typography.fontSize = opt.value"
-                >
-                  <text class="tab-label">{{ opt.label }}</text>
-                  <text class="tab-size">{{ opt.size }}</text>
-                </view>
-              </view>
-            </view>
-            
-            <view class="slider-row">
-              <text class="slider-label">行高</text>
-              <slider 
-                :value="settings.typography.lineHeight * 10" 
-                :min="14" 
-                :max="22" 
-                :step="1"
-                activeColor="#667eea"
-                @change="settings.typography.lineHeight = $event.detail.value / 10"
-              />
-              <text class="slider-value">{{ settings.typography.lineHeight.toFixed(1) }}x</text>
-            </view>
-          </view>
-
-          <!-- 布局设置 -->
-          <view class="settings-section">
-            <view class="section-title">布局设置</view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">居中窄屏模式</text>
-                <text class="setting-desc">内容最大宽度1200rpx，适合大屏阅读</text>
-              </view>
-              <switch 
-                :checked="settings.layout.contentWidth === 'narrow'" 
-                @change="settings.layout.contentWidth = settings.layout.contentWidth === 'narrow' ? 'full' : 'narrow'"
-                color="#667eea"
-              />
-            </view>
-          </view>
-
-          <!-- 功能开关 -->
-          <view class="settings-section">
-            <view class="section-title">功能开关</view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">显示水印</text>
-                <text class="setting-desc">在详情页底部显示水印标识</text>
-              </view>
-              <switch 
-                :checked="settings.features.showWatermark" 
-                @change="settings.features.showWatermark = !settings.features.showWatermark"
-                color="#667eea"
-              />
-            </view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">启用评论</text>
-                <text class="setting-desc">允许访客在详情页留言互动</text>
-              </view>
-              <switch 
-                :checked="settings.features.enableComments" 
-                @change="settings.features.enableComments = !settings.features.enableComments"
-                color="#667eea"
-              />
-            </view>
-          </view>
-
-          <!-- 显示设置 -->
-          <view class="settings-section">
-            <view class="section-title">显示设置</view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">显示回到顶部</text>
-                <text class="setting-desc">详情页滚动时显示回到顶部按钮</text>
-              </view>
-              <switch 
-                :checked="settings.showBackToTop" 
-                @change="settings.showBackToTop = !settings.showBackToTop"
-                color="#667eea"
-              />
-            </view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">隐藏操作栏</text>
-                <text class="setting-desc">隐藏详情页右上角的导出/分享/编辑按钮</text>
-              </view>
-              <switch 
-                :checked="settings.hideNavActions" 
-                @change="settings.hideNavActions = !settings.hideNavActions"
-                color="#667eea"
-              />
-            </view>
-          </view>
-
-          <!-- 腾讯文档关联 -->
-          <view class="settings-section">
-            <view class="section-title">腾讯文档关联</view>
-            
-            <view class="setting-item">
-              <view class="setting-info">
-                <text class="setting-label">启用全局文档关联</text>
-                <text class="setting-desc">在详情页底部显示跳转腾讯文档按钮</text>
-              </view>
-              <switch 
-                :checked="settings.globalAttachment.enabled" 
-                @change="settings.globalAttachment.enabled = !settings.globalAttachment.enabled"
-                color="#667eea"
-              />
-            </view>
-            
-            <view v-if="settings.globalAttachment.enabled" class="attachment-config">
-              <view class="setting-row">
-                <text class="setting-row-label">按钮文案</text>
-                <input 
-                  class="setting-row-input" 
-                  :value="settings.globalAttachment.title" 
-                  @input="settings.globalAttachment.title = $event.detail.value"
-                  placeholder="查看原始文档"
-                  :maxlength="30"
-                />
-              </view>
-              <view class="setting-row">
-                <text class="setting-row-label">文档链接</text>
-                <input 
-                  class="setting-row-input" 
-                  :value="settings.globalAttachment.url" 
-                  @input="settings.globalAttachment.url = $event.detail.value"
-                  placeholder="粘贴腾讯文档链接"
-                  :maxlength="500"
-                />
-              </view>
-              <view class="attachment-tip">
-                <text>支持腾讯文档/表格/收集表等链接，点击将跳转到腾讯文档小程序</text>
-              </view>
-            </view>
-          </view>
-        </scroll-view>
-        
-        <view class="settings-footer">
-          <view class="settings-done-btn" @click="settingsVisible = false">完成</view>
+        <view class="tab-item" :class="{ active: activeConfigTab === 'block' }" @click="activeConfigTab = 'block'">
+          <text>📝 当前块设置</text>
         </view>
       </view>
-    </view>
 
-    <!-- 底部样式面板 -->
-    <view class="bottom-style-panel" v-if="selectedItem">
-      <!-- 文本样式面板 -->
-      <view class="style-panel-content" v-if="selectedItem.type === 'text'">
-        <view class="panel-header">
-          <view class="panel-title">文本样式</view>
-          <view class="panel-close" @click="selectedItem = null">×</view>
-        </view>
-        <scroll-view class="panel-scroll-content" scroll-y>
-          <!-- 文本编辑区 -->
-          <textarea class="panel-text-input" v-model="getSelectedItem().value" placeholder="输入文本内容..."
-            :style="getTextStyle(getSelectedItem().style)" auto-height :maxlength="10000" />
-          <view class="text-style-bar">
-            <view class="style-btn" :class="{ active: getSelectedItem()?.style.bold }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'bold')">B</view>
-            <view class="style-btn italic" :class="{ active: getSelectedItem()?.style.italic }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'italic')">I</view>
-            <view class="style-btn" :class="{ active: getSelectedItem()?.style.underline }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'underline')">U</view>
-            <view class="style-btn" :class="{ active: getSelectedItem()?.style.lineThrough }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'lineThrough')">S</view>
-            <picker :value="fontSizeIndex(getSelectedItem()?.style.fontSize)" :range="fontSizes"
-              @change="(e) => setTextFontSize(selectedItem.blockIndex, selectedItem.itemIndex, e)">
-              <view class="style-btn size-btn">{{ getSelectedItem()?.style.fontSize || 16 }}px</view>
-            </picker>
-            <view class="style-btn color-btn" :style="{ backgroundColor: getSelectedItem()?.style.color || '#333' }"
-              @click="showColorPicker(selectedItem.blockIndex, selectedItem.itemIndex)"></view>
-            <view class="style-btn delete-item"
-              v-if="pageData.content[selectedItem.blockIndex].children.length > 1 && !isTitleItem(selectedItem.blockIndex, selectedItem.itemIndex)"
-              @click="deleteTextItem(selectedItem.blockIndex, selectedItem.itemIndex)">🗑</view>
-          </view>
-
-          <!-- 链接设置区域 -->
-          <view class="link-settings-section">
-            <view class="section-header">
-              <view class="section-title">🔗 链接设置</view>
-              <view class="link-toggle" :class="{ active: getSelectedItem()?.linkInfo }" @click="toggleTextLink()">
-                {{ getSelectedItem()?.linkInfo ? '已启用' : '未启用' }}
+      <!-- 全局样式标签页 -->
+      <scroll-view v-if="activeConfigTab === 'global'" class="tab-content" scroll-y="true">
+        <!-- 标签管理 -->
+        <view class="settings-section">
+          <view class="section-title">标签管理</view>
+          <view class="tags-manager">
+            <view class="tags-list" v-if="tags.length > 0">
+              <view v-for="(tag, index) in tags" :key="index" class="tag-editable">
+                <text class="tag-text">{{ tag }}</text>
+                <text class="tag-remove" @click="removeTag(index)">×</text>
               </view>
             </view>
+            <view class="tag-add-row">
+              <input class="tag-add-input" v-model="tagInput" placeholder="输入标签后回车添加" @confirm="addTag"
+                :maxlength="20" />
+              <view class="tag-add-btn" @click="addTag">添加</view>
+            </view>
+          </view>
+        </view>
 
-            <view v-if="getSelectedItem()?.linkInfo" class="link-settings-content">
-              <!-- 链接类型选择 -->
-              <view class="link-type-selector compact">
-                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'url' }"
-                  @click="setTextLinkType('url')">
-                  <text class="type-icon">🔗</text>
-                  <text>超链接</text>
-                </view>
-                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'navigation' }"
-                  @click="setTextLinkType('navigation')">
-                  <text class="type-icon">📍</text>
-                  <text>导航</text>
-                </view>
-                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'internal' }"
-                  @click="setTextLinkType('internal')">
-                  <text class="type-icon">📄</text>
-                  <text>关联素材</text>
-                </view>
-                <view class="type-btn" :class="{ active: getSelectedItem()?.linkInfo?.linkType === 'anchor' }"
-                  @click="setTextLinkType('anchor')">
-                  <text class="type-icon">⚓</text>
-                  <text>锚点</text>
-                </view>
+        <!-- 边距设置 -->
+        <view class="settings-section">
+          <view class="section-title">内容边距 (rpx)</view>
+          <view class="padding-grid">
+            <view class="padding-item">
+              <text class="padding-label">上</text>
+              <input type="number" class="padding-input" :value="settings.padding.top"
+                @input="settings.padding.top = Number($event.detail.value) || 0" />
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">下</text>
+              <input type="number" class="padding-input" :value="settings.padding.bottom"
+                @input="settings.padding.bottom = Number($event.detail.value) || 0" />
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">左</text>
+              <input type="number" class="padding-input" :value="settings.padding.left"
+                @input="settings.padding.left = Number($event.detail.value) || 0" />
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">右</text>
+              <input type="number" class="padding-input" :value="settings.padding.right"
+                @input="settings.padding.right = Number($event.detail.value) || 0" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 边框设置 -->
+        <view class="settings-section">
+          <view class="section-title">内容边框</view>
+          <view class="border-grid">
+            <view class="border-item">
+              <text class="border-label">上边框</text>
+              <view class="border-controls">
+                <input type="number" class="border-width-input" :value="settings.border.top"
+                  @input="settings.border.top = Number($event.detail.value) || 0" placeholder="0" />
+                <text class="border-unit">rpx</text>
               </view>
-
-              <!-- 超链接输入 -->
-              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'url'">
-                <input class="link-input" v-model="getSelectedItem().linkInfo.url"
-                  placeholder="请输入链接地址，如 https://example.com" :maxlength="500" />
+            </view>
+            <view class="border-item">
+              <text class="border-label">下边框</text>
+              <view class="border-controls">
+                <input type="number" class="border-width-input" :value="settings.border.bottom"
+                  @input="settings.border.bottom = Number($event.detail.value) || 0" placeholder="0" />
+                <text class="border-unit">rpx</text>
               </view>
+            </view>
+            <view class="border-item">
+              <text class="border-label">左边框</text>
+              <view class="border-controls">
+                <input type="number" class="border-width-input" :value="settings.border.left"
+                  @input="settings.border.left = Number($event.detail.value) || 0" placeholder="0" />
+                <text class="border-unit">rpx</text>
+              </view>
+            </view>
+            <view class="border-item">
+              <text class="border-label">右边框</text>
+              <view class="border-controls">
+                <input type="number" class="border-width-input" :value="settings.border.right"
+                  @input="settings.border.right = Number($event.detail.value) || 0" placeholder="0" />
+                <text class="border-unit">rpx</text>
+              </view>
+            </view>
+          </view>
+          <view class="border-color-row">
+            <text class="border-color-label">边框颜色</text>
+            <input class="border-color-input" :value="settings.border.color"
+              @input="settings.border.color = $event.detail.value" placeholder="#eeeeee" />
+            <view class="border-color-preview" :style="{ backgroundColor: settings.border.color }"></view>
+          </view>
+        </view>
 
-              <!-- 关联素材选择 -->
-              <view v-if="getSelectedItem()?.linkInfo?.linkType === 'internal'" class="internal-link-section">
-                <!-- 场景选择 -->
-                <view class="link-input-group">
-                  <view class="input-label">素材类型</view>
-                  <picker :value="0" :range="internalLinkScenes" range-key="label" @change="onInternalSceneChange">
-                    <view class="scene-picker-btn">
-                      <text>{{ getSelectedItem()?.linkInfo?.internalScene === 'chat' ? '笔记' : '请选择类型' }}</text>
-                      <text class="picker-arrow">›</text>
+        <!-- 背景配置 -->
+        <view class="settings-section">
+          <view class="section-title">背景配置</view>
+
+          <view class="subsection-title">莫兰迪配色</view>
+          <view class="color-palette">
+            <view v-for="color in morandiColors" :key="color.value" class="palette-item"
+              :class="{ active: settings.appearance.backgroundColor === color.value }"
+              :style="{ backgroundColor: color.value }" @click="settings.appearance.backgroundColor = color.value">
+              <text class="palette-check" v-if="settings.appearance.backgroundColor === color.value">✓</text>
+            </view>
+          </view>
+
+          <view class="setting-row">
+            <text class="setting-row-label">背景图片</text>
+            <view class="bg-image-controls">
+              <input class="bg-image-input" :value="settings.appearance.backgroundImage"
+                @input="settings.appearance.backgroundImage = $event.detail.value" placeholder="输入图片URL或上传" />
+              <view class="bg-image-upload" @click="uploadBackgroundImage">上传</view>
+            </view>
+          </view>
+
+          <view class="slider-row" v-if="settings.appearance.backgroundImage">
+            <text class="slider-label">模糊度</text>
+            <slider :value="settings.appearance.backgroundBlur" :min="0" :max="30" :step="1" activeColor="#667eea"
+              @change="settings.appearance.backgroundBlur = $event.detail.value" />
+            <text class="slider-value">{{ settings.appearance.backgroundBlur }}px</text>
+          </view>
+
+          <view class="slider-row" v-if="settings.appearance.backgroundImage">
+            <text class="slider-label">透明度</text>
+            <slider :value="settings.appearance.backgroundOpacity * 100" :min="0" :max="100" :step="5"
+              activeColor="#667eea" @change="settings.appearance.backgroundOpacity = $event.detail.value / 100" />
+            <text class="slider-value">{{ Math.round(settings.appearance.backgroundOpacity * 100) }}%</text>
+          </view>
+
+          <!-- 视觉特效 -->
+          <view class="subsection-title" style="margin-top: 24rpx;">视觉特效</view>
+
+          <view class="setting-item">
+            <text class="setting-item-label">动态光斑</text>
+            <switch :checked="settings.appearance.enableBlob"
+              @change="settings.appearance.enableBlob = $event.detail.value" color="#667eea" />
+          </view>
+
+          <view class="slider-row" v-if="settings.appearance.enableBlob">
+            <text class="slider-label">光斑模糊度</text>
+            <slider :value="settings.appearance.blobBlur" :min="40" :max="120" :step="10" activeColor="#667eea"
+              @change="settings.appearance.blobBlur = $event.detail.value" />
+            <text class="slider-value">{{ settings.appearance.blobBlur }}px</text>
+          </view>
+
+          <view class="setting-item">
+            <text class="setting-item-label">科技感网格</text>
+            <switch :checked="settings.appearance.enableCyberGrid"
+              @change="settings.appearance.enableCyberGrid = $event.detail.value" color="#667eea" />
+          </view>
+        </view>
+
+        <!-- 浪漫交互效果 -->
+        <view class="config-card">
+          <view class="card-title">💫 浪漫交互效果</view>
+          <view class="card-content">
+
+            <view class="setting-item">
+              <text class="setting-item-label">毛玻璃滤镜</text>
+              <switch :checked="settings.romanticEffects.enableGlassBlur"
+                @change="settings.romanticEffects.enableGlassBlur = $event.detail.value" color="#ff6b9d" />
+            </view>
+
+            <view class="setting-item">
+              <text class="setting-item-label">弹窗动画</text>
+              <picker :range="['缩放进入', '滑动进入']" :value="settings.romanticEffects.popupAnimation === 'zoom-in' ? 0 : 1"
+                @change="settings.romanticEffects.popupAnimation = $event.detail.value === 0 ? 'zoom-in' : 'slide-up'">
+                <view class="picker-display">
+                  {{ settings.romanticEffects.popupAnimation === 'zoom-in' ? '缩放进入' : '滑动进入' }}
+                </view>
+              </picker>
+            </view>
+
+            <view class="romantic-hint">
+              <text>🌸 开启后，弹窗将具有梦幻般的毛玻璃质感和柔美动画效果</text>
+            </view>
+
+          </view>
+        </view>
+
+        <!-- 文字排版 -->
+        <view class="settings-section">
+          <view class="section-title">文字排版</view>
+
+          <view class="setting-row">
+            <text class="setting-row-label">字号档位</text>
+            <view class="font-size-tabs">
+              <view v-for="opt in fontSizeOptions" :key="opt.value" class="font-size-tab"
+                :class="{ active: settings.typography.fontSize === opt.value }"
+                @click="settings.typography.fontSize = opt.value">
+                <text class="tab-label">{{ opt.label }}</text>
+                <text class="tab-size">{{ opt.size }}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="slider-row">
+            <text class="slider-label">行高</text>
+            <slider :value="settings.typography.lineHeight * 10" :min="14" :max="22" :step="1" activeColor="#667eea"
+              @change="settings.typography.lineHeight = $event.detail.value / 10" />
+            <text class="slider-value">{{ settings.typography.lineHeight.toFixed(1) }}x</text>
+          </view>
+        </view>
+
+        <!-- 布局设置 -->
+        <view class="settings-section">
+          <view class="section-title">布局设置</view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">居中窄屏模式</text>
+              <text class="setting-desc">内容最大宽度1200rpx，适合大屏阅读</text>
+            </view>
+            <switch :checked="settings.layout.contentWidth === 'narrow'"
+              @change="settings.layout.contentWidth = settings.layout.contentWidth === 'narrow' ? 'full' : 'narrow'"
+              color="#667eea" />
+          </view>
+        </view>
+
+        <!-- 功能开关 -->
+        <view class="settings-section">
+          <view class="section-title">功能开关</view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">显示水印</text>
+              <text class="setting-desc">在详情页底部显示水印标识</text>
+            </view>
+            <switch :checked="settings.features.showWatermark"
+              @change="settings.features.showWatermark = !settings.features.showWatermark" color="#667eea" />
+          </view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">启用评论</text>
+              <text class="setting-desc">允许访客在详情页留言互动</text>
+            </view>
+            <switch :checked="settings.features.enableComments"
+              @change="settings.features.enableComments = !settings.features.enableComments" color="#667eea" />
+          </view>
+        </view>
+
+        <!-- 显示设置 -->
+        <view class="settings-section">
+          <view class="section-title">显示设置</view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">显示回到顶部</text>
+              <text class="setting-desc">详情页滚动时显示回到顶部按钮</text>
+            </view>
+            <switch :checked="settings.showBackToTop" @change="settings.showBackToTop = !settings.showBackToTop"
+              color="#667eea" />
+          </view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">隐藏操作栏</text>
+              <text class="setting-desc">隐藏详情页右上角的导出/分享/编辑按钮</text>
+            </view>
+            <switch :checked="settings.hideNavActions" @change="settings.hideNavActions = !settings.hideNavActions"
+              color="#667eea" />
+          </view>
+        </view>
+
+        <!-- 腾讯文档关联 -->
+        <view class="settings-section">
+          <view class="section-title">腾讯文档关联</view>
+
+          <view class="setting-item">
+            <view class="setting-info">
+              <text class="setting-label">启用全局文档关联</text>
+              <text class="setting-desc">在详情页底部显示跳转腾讯文档按钮</text>
+            </view>
+            <switch :checked="settings.globalAttachment.enabled"
+              @change="settings.globalAttachment.enabled = !settings.globalAttachment.enabled" color="#667eea" />
+          </view>
+
+          <view v-if="settings.globalAttachment.enabled" class="attachment-config">
+            <view class="setting-row">
+              <text class="setting-row-label">按钮文案</text>
+              <input class="setting-row-input" :value="settings.globalAttachment.title"
+                @input="settings.globalAttachment.title = $event.detail.value" placeholder="查看原始文档" :maxlength="30" />
+            </view>
+            <view class="setting-row">
+              <text class="setting-row-label">文档链接</text>
+              <input class="setting-row-input" :value="settings.globalAttachment.url"
+                @input="settings.globalAttachment.url = $event.detail.value" placeholder="粘贴腾讯文档链接" :maxlength="500" />
+            </view>
+            <view class="attachment-tip">
+              <text>支持腾讯文档/表格/收集表等链接，点击将跳转到腾讯文档小程序</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 当前块设置标签页 -->
+      <scroll-view v-if="activeConfigTab === 'block'" class="tab-content" scroll-y="true">
+        <view class="config-card">
+          <view class="card-title">📝 块级配置</view>
+          <view class="card-content">
+            <view class="config-hint">
+              <text>选择内容块后在此配置其样式和交互效果</text>
+            </view>
+
+            <!-- 弹窗内容编辑器 -->
+            <view class="popup-content-section">
+              <view class="section-title">💫 弹窗内容物料</view>
+              <view class="popup-editor-card">
+                <textarea class="popup-content-input" v-model="popupContentEditor.content" placeholder="输入弹窗显示的文本内容..."
+                  :maxlength="1000" />
+                <view class="popup-controls">
+                  <button class="control-btn secondary" @click="uploadImageToPopup">📷 添加图片</button>
+                  <button class="control-btn primary" @click="previewPopup">👁 模拟弹窗</button>
+                </view>
+
+                <!-- 图片预览区 -->
+                <view v-if="popupContentEditor.images.length > 0" class="popup-images">
+                  <view class="images-title">📸 已添加的图片:</view>
+                  <view class="images-grid">
+                    <view v-for="(img, index) in popupContentEditor.images" :key="index" class="image-item">
+                      <image :src="img" class="image-preview" mode="aspectFill" />
+                      <view class="image-remove" @click="popupContentEditor.images.splice(index, 1)">×</view>
                     </view>
-                  </picker>
-                </view>
-                
-                <!-- 写作素材选择 -->
-                <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'chat'" class="chat-session-picker">
-                  <view class="input-label">选择笔记</view>
-                  <view class="session-picker-btn" @click="showChatSessionPicker">
-                    <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
-                    <text v-else class="placeholder">点击选择笔记</text>
-                    <text class="picker-arrow">›</text>
                   </view>
                 </view>
               </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+  </view>
 
-              <!-- 锚点输入 -->
-              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'anchor'">
-                <view class="input-label">锚点ID（用于跳转定位）</view>
-                <input class="link-input" v-model="getSelectedItem().linkInfo.anchorId"
-                  placeholder="请输入唯一的锚点ID，如 section-1" :maxlength="50" />
-                <!-- <view class="anchor-tip">
-                  <text>💡 提示：锚点ID应该是唯一的，建议使用英文和数字，如 section-1、intro、conclusion 等</text>
-                </view> -->
-              </view>
+  <!-- 底部样式面板 -->
+  <view class="bottom-style-panel" v-if="selectedItem">
+    <!-- 文本样式面板 -->
+    <view class="style-panel-content" v-if="selectedItem.type === 'text'">
+      <view class="panel-header">
+        <view class="panel-title">文本样式</view>
+        <view class="panel-close" @click="selectedItem = null">×</view>
+      </view>
+      <scroll-view class="panel-scroll-content" scroll-y>
+        <!-- 文本编辑区 -->
+        <textarea class="panel-text-input" v-model="getSelectedItem().value" placeholder="输入文本内容..."
+          :style="getTextStyle(getSelectedItem().style)" auto-height :maxlength="100000" />
+        <view class="text-style-bar">
+          <view class="style-btn" :class="{ active: getSelectedItem()?.style.bold }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'bold')">B</view>
+          <view class="style-btn italic" :class="{ active: getSelectedItem()?.style.italic }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'italic')">I</view>
+          <view class="style-btn" :class="{ active: getSelectedItem()?.style.underline }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'underline')">U</view>
+          <view class="style-btn" :class="{ active: getSelectedItem()?.style.lineThrough }"
+            @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'lineThrough')">S</view>
+          <picker :value="fontSizeIndex(getSelectedItem()?.style.fontSize)" :range="fontSizes"
+            @change="(e) => setTextFontSize(selectedItem.blockIndex, selectedItem.itemIndex, e)">
+            <view class="style-btn size-btn">{{ getSelectedItem()?.style.fontSize || 16 }}px</view>
+          </picker>
+          <view class="style-btn color-btn" :style="{ backgroundColor: getSelectedItem()?.style.color || '#333' }"
+            @click="showColorPicker(selectedItem.blockIndex, selectedItem.itemIndex)"></view>
+          <view class="style-btn delete-item"
+            v-if="pageData.content[selectedItem.blockIndex].children.length > 1 && !isTitleItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+            @click="deleteTextItem(selectedItem.blockIndex, selectedItem.itemIndex)">🗑</view>
+        </view>
 
-              <!-- 导航输入 -->
-              <view v-if="getSelectedItem()?.linkInfo?.linkType === 'navigation'">
-                <!-- 地图选点按钮 -->
-                <view class="location-picker-btn" @click="onSelectLocationForText">
-                  <text class="picker-icon">📍</text>
-                  <text class="picker-text">从地图选择位置</text>
+        <!-- 弹窗模式设置 -->
+        <view class="popup-mode-section">
+          <view class="section-header">
+            <view class="section-title">💬 弹窗模式</view>
+            <switch :checked="getSelectedItem()?.interactionType === 'popup'" @change="togglePopupMode"
+              color="#667eea" />
+          </view>
+          <view class="popup-hint" v-if="getSelectedItem()?.interactionType === 'popup'">
+            <text>点击此文本将弹出完整内容，而非跳转链接</text>
+          </view>
+        </view>
+
+        <!-- 链接设置区域 -->
+        <view class="link-settings-section">
+          <view class="section-header">
+            <view class="section-title">🔗 链接设置</view>
+            <view class="link-toggle" :class="{ active: getSelectedItem()?.linkInfo }" @click="toggleTextLink()">
+              {{ getSelectedItem()?.linkInfo ? '已启用' : '未启用' }}
+            </view>
+          </view>
+
+          <view v-if="getSelectedItem()?.linkInfo" class="link-settings-content">
+            <!-- 链接类型选择 - 改为下拉选择器 -->
+            <view class="link-input-group">
+              <view class="input-label">链接类型</view>
+              <picker :value="linkTypeIndex" :range="linkTypes" range-key="label" @change="onLinkTypeChange">
+                <view class="link-type-picker-btn">
+                  <text>{{ linkTypeLabel }}</text>
                   <text class="picker-arrow">›</text>
                 </view>
+              </picker>
+            </view>
 
-                <view class="link-input-group">
-                  <view class="input-label">地点名称</view>
-                  <input class="link-input" v-model="getSelectedItem().linkInfo.address" placeholder="请输入地点名称"
-                    :maxlength="100" />
-                </view>
-                <view class="link-input-row">
-                  <view class="link-input-group half">
-                    <view class="input-label">纬度</view>
-                    <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.latitude"
-                      placeholder="如 39.908823" />
+            <!-- 链接图标自定义 -->
+            <view class="link-input-group">
+              <view class="input-label">链接图标</view>
+              <input class="link-input link-icon-input" v-model="getSelectedItem().linkIcon" placeholder="默认 🔗，可自定义或清空"
+                :maxlength="10" />
+              <view class="icon-hint">留空则不显示图标</view>
+            </view>
+
+            <!-- 超链接输入 -->
+            <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'url'">
+              <input class="link-input" v-model="getSelectedItem().linkInfo.url"
+                placeholder="请输入链接地址，如 https://example.com" :maxlength="500" />
+            </view>
+
+            <!-- 关联素材选择 -->
+            <view v-if="getSelectedItem()?.linkInfo?.linkType === 'internal'" class="internal-link-section">
+              <!-- 场景选择 -->
+              <view class="link-input-group">
+                <view class="input-label">素材类型</view>
+                <picker :value="internalLinkSceneIndex" :range="internalLinkScenes" range-key="label"
+                  @change="onInternalSceneChange">
+                  <view class="scene-picker-btn">
+                    <text>{{ internalLinkSceneLabel }}</text>
+                    <text class="picker-arrow">›</text>
                   </view>
-                  <view class="link-input-group half">
-                    <view class="input-label">经度</view>
-                    <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.longitude"
-                      placeholder="如 116.39747" />
+                </picker>
+              </view>
+
+              <!-- 写作素材选择：笔记 -->
+              <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'chat'" class="chat-session-picker">
+                <view class="input-label">选择笔记</view>
+                <view class="session-picker-btn" @click="showChatSessionPicker">
+                  <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle
+                    }}</text>
+                  <text v-else class="placeholder">点击选择笔记</text>
+                  <text class="picker-arrow">›</text>
+                </view>
+              </view>
+              <!-- 备忘录选择 -->
+              <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'memo'" class="chat-session-picker">
+                <view class="input-label">选择备忘录</view>
+                <view class="session-picker-btn" @click="showMemoPicker">
+                  <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle
+                    }}</text>
+                  <text v-else class="placeholder">点击选择备忘录</text>
+                  <text class="picker-arrow">›</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 锚点输入 -->
+            <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'anchor'">
+              <view class="input-label">锚点ID（用于跳转定位）</view>
+              <input class="link-input" v-model="getSelectedItem().linkInfo.anchorId"
+                placeholder="请输入唯一的锚点ID，如 section-1" :maxlength="50" />
+            </view>
+
+            <!-- 内容弹窗目标锚点选择 -->
+            <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'popup'">
+              <view class="input-label">⚓ 目标锚点（弹窗内容来源）</view>
+              <input class="link-input" v-model="getSelectedItem().linkInfo.targetAnchor" placeholder="输入目标容器的锚点ID，如 L2"
+                :maxlength="50" />
+
+              <!-- 锚点快速选择列表 -->
+              <view class="anchor-suggestions" v-if="getAllAnchors.length > 0">
+                <view class="suggestions-title">💡 可用锚点：</view>
+                <view class="suggestions-list">
+                  <view v-for="item in getAllAnchors" :key="item.anchor" class="suggestion-item" :class="{
+                    'is-popup-target': item.isPopupTarget,
+                    'is-selected': getSelectedItem()?.linkInfo?.targetAnchor === item.anchor
+                  }" @click="getSelectedItem().linkInfo.targetAnchor = item.anchor">
+                    <text class="anchor-id">{{ item.anchor }}</text>
+                    <text class="anchor-type">{{ item.type }}</text>
+                    <text v-if="item.isPopupTarget" class="popup-badge">弹窗源</text>
                   </view>
                 </view>
               </view>
+              <view class="anchor-tip" v-else>
+                <text>暂无可用锚点，请先为其他容器设置锚点ID</text>
+              </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
 
-      <!-- 图片样式面板 -->
-      <view class="style-panel-content" v-if="selectedItem.type === 'image'">
-        <view class="panel-header">
-          <view class="panel-title">图片样式</view>
-          <view class="panel-close" @click="selectedItem = null">×</view>
-        </view>
-        <scroll-view class="panel-scroll-content" scroll-y>
-          <!-- 图片操作区 -->
-          <view class="image-actions-bar" v-if="getSelectedItem()?.value.url">
-            <view class="action-btn" @click="previewImage(getSelectedItem().value.url)">
-              <text class="action-icon">🔍</text>
-              <text>预览图片</text>
-            </view>
-            <view class="action-btn" @click="chooseImage(selectedItem.blockIndex, selectedItem.itemIndex)">
-              <text class="action-icon">📷</text>
-              <text>更换图片</text>
-            </view>
-          </view>
-          <view class="image-style-bar">
-            <view class="style-label">尺寸:</view>
-            <picker :value="imageSizeModeIndex(getSelectedItem()?.style.sizeMode)" :range="imageSizeModes"
-              :range-key="'label'"
-              @change="(e) => setImageSizeMode(selectedItem.blockIndex, selectedItem.itemIndex, e)">
-              <view class="style-btn size-mode-btn">
-                {{ getImageSizeModeLabel(getSelectedItem()?.style.sizeMode) }}
+            <!-- 导航输入 -->
+            <view v-if="getSelectedItem()?.linkInfo?.linkType === 'navigation'">
+              <!-- 地图选点按钮 -->
+              <view class="location-picker-btn" @click="onSelectLocationForText">
+                <text class="picker-icon">📍</text>
+                <text class="picker-text">从地图选择位置</text>
+                <text class="picker-arrow">›</text>
               </view>
-            </picker>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedWidth'">
-              <text>宽:</text>
-              <input type="number" v-model="getSelectedItem().style.width" class="size-input" placeholder="600" />
-              <text class="unit">rpx</text>
-            </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedHeight'">
-              <text>高:</text>
-              <input type="number" v-model="getSelectedItem().style.height" class="size-input" placeholder="400" />
-              <text class="unit">rpx</text>
-            </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentWidth'">
-              <text>宽:</text>
-              <input type="number" v-model="getSelectedItem().style.widthPercent" class="size-input" placeholder="80" />
-              <text class="unit">%</text>
-            </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentHeight'">
-              <text>高:</text>
-              <input type="number" v-model="getSelectedItem().style.heightPercent" class="size-input"
-                placeholder="50" />
-              <text class="unit">vh</text>
-            </view>
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">Z轴旋转 (平面): {{ getSelectedItem()?.style.rotate || 0 }}°</view>
-            <slider :value="getSelectedItem()?.style.rotate || 0"
-              @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'z')" min="0" max="360"
-              step="1" block-size="20" activeColor="#1890ff" backgroundColor="#e0e0e0" class="rotate-slider" />
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">X轴旋转 (上下翻转): {{ getSelectedItem()?.style.rotateX || 0 }}°</view>
-            <slider :value="getSelectedItem()?.style.rotateX || 0"
-              @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'x')" min="0" max="360"
-              step="1" block-size="20" activeColor="#52c41a" backgroundColor="#e0e0e0" class="rotate-slider" />
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">Y轴旋转 (左右翻转): {{ getSelectedItem()?.style.rotateY || 0 }}°</view>
-            <slider :value="getSelectedItem()?.style.rotateY || 0"
-              @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'y')" min="0" max="360"
-              step="1" block-size="20" activeColor="#faad14" backgroundColor="#e0e0e0" class="rotate-slider" />
-          </view>
-          <view class="rotate-tip">
-            <text>💡 提示：3D旋转效果在预览模式下可见，导出图片时仅支持Z轴(平面)旋转</text>
-          </view>
-          <view class="image-style-bar">
-            <view class="style-btn delete-item" v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
-              @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)">🗑 删除图片</view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
 
-    <!-- 行样式面板 -->
-    <view class="bottom-style-panel" v-if="selectedBlock !== null">
-      <view class="style-panel-content">
-        <view class="panel-header">
-          <view class="panel-title">行样式</view>
-          <view class="panel-close" @click="selectedBlock = null">×</view>
-        </view>
-        <view class="border-style-bar">
-          <view class="style-label">边框:</view>
-          <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderTop }"
-            @click="toggleBlockBorder(selectedBlock, 'borderTop')">上</view>
-          <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderBottom }"
-            @click="toggleBlockBorder(selectedBlock, 'borderBottom')">下</view>
-          <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderLeft }"
-            @click="toggleBlockBorder(selectedBlock, 'borderLeft')">左</view>
-          <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderRight }"
-            @click="toggleBlockBorder(selectedBlock, 'borderRight')">右</view>
-        </view>
-        <view class="align-style-bar">
-          <view class="style-label">对齐:</view>
-          <view class="align-btns">
-            <view class="style-btn align-btn"
-              :class="{ active: !getBlockStyle(selectedBlock)?.textAlign || getBlockStyle(selectedBlock)?.textAlign === 'left' }"
-              @click="setBlockAlign(selectedBlock, 'left')">左</view>
-            <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'center' }"
-              @click="setBlockAlign(selectedBlock, 'center')">中</view>
-            <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'right' }"
-              @click="setBlockAlign(selectedBlock, 'right')">右</view>
-          </view>
-        </view>
-        <!-- Markdown 模式开关（仅文本块） -->
-        <view class="markdown-toggle-bar" v-if="pageData.content[selectedBlock]?.type === 'text'">
-          <view class="style-label">Markdown 模式:</view>
-          <switch 
-            :checked="(pageData.content[selectedBlock] as TextBlock)?.isMarkdown || false" 
-            @change="toggleBlockMarkdown(selectedBlock)"
-            color="#667eea"
-          />
-        </view>
-      </view>
-    </view>
-
-    <!-- 块级样式设置面板 - 统一业务属性+视觉属性 -->
-    <view class="block-style-panel-overlay" v-if="blockStylePanelVisible" @click="blockStylePanelVisible = false">
-      <view class="block-style-panel" @click.stop>
-        <view class="panel-header">
-          <text class="panel-title">{{ getEditingBlockTypeLabel() }} 设置</text>
-          <view class="panel-close" @click="blockStylePanelVisible = false">×</view>
-        </view>
-        
-        <scroll-view scroll-y class="panel-scroll">
-          <!-- 第一部分：业务属性（根据块类型显示） -->
-          <view class="style-section business-section" v-if="editingBlockIndex !== null">
-            <view class="section-title">📋 业务属性</view>
-            
-            <!-- 文本块：Markdown 模式开关 -->
-            <view v-if="getEditingBlockType() === 'text'" class="business-item">
-              <view class="business-row">
-                <text class="business-label">Markdown 模式</text>
-                <switch 
-                  :checked="getEditingBlockMarkdown()" 
-                  @change="toggleEditingBlockMarkdown"
-                  color="#667eea"
-                />
+              <view class="link-input-group">
+                <view class="input-label">地点名称</view>
+                <input class="link-input" v-model="getSelectedItem().linkInfo.address" placeholder="请输入地点名称"
+                  :maxlength="100" />
               </view>
-              <text class="business-hint">开启后支持 Markdown 语法渲染</text>
-            </view>
-            
-            <!-- 路径块：显示时间开关 -->
-            <view v-if="getEditingBlockType() === 'route'" class="business-item">
-              <view class="business-row">
-                <text class="business-label">显示耗时信息</text>
-                <switch 
-                  :checked="getEditingBlockSettings()?.showTime !== false" 
-                  @change="toggleEditingBlockSetting('showTime')"
-                  color="#667eea"
-                />
-              </view>
-              <text class="business-hint">在路径节点旁显示时间和交通方式</text>
-            </view>
-            
-            <!-- 附件块：AppID 和路径配置 -->
-            <view v-if="getEditingBlockType() === 'attachment'" class="business-item">
-              <view class="business-input-group">
-                <text class="business-label">小程序 AppID</text>
-                <input 
-                  type="text" 
-                  class="business-input"
-                  :value="getEditingBlockSettings()?.appId || 'wxd45c635d754dbf59'"
-                  @input="setEditingBlockSetting('appId', $event.detail.value)"
-                  placeholder="腾讯文档: wxd45c635d754dbf59"
-                />
-              </view>
-              <text class="business-hint">默认跳转腾讯文档小程序</text>
-            </view>
-            
-            <!-- 图片块：无特殊业务属性 -->
-            <view v-if="getEditingBlockType() === 'image'" class="business-item">
-              <text class="business-hint">图片块暂无额外业务属性，可在下方设置视觉样式</text>
-            </view>
-          </view>
-
-          <!-- 第二部分：视觉属性（所有块通用） -->
-          <view class="style-section">
-            <view class="section-title">🎨 视觉属性</view>
-          </view>
-
-          <!-- 背景颜色 -->
-          <view class="style-section">
-            <view class="section-title">背景颜色</view>
-            <view class="color-grid">
-              <view 
-                v-for="color in morandiColors" 
-                :key="color.value"
-                class="color-option"
-                :class="{ active: editingBlockStyle.backgroundColor === color.value }"
-                :style="{ backgroundColor: color.value }"
-                @click="editingBlockStyle.backgroundColor = color.value"
-              >
-                <text v-if="editingBlockStyle.backgroundColor === color.value" class="check-icon">✓</text>
-              </view>
-              <view 
-                class="color-option transparent"
-                :class="{ active: !editingBlockStyle.backgroundColor }"
-                @click="editingBlockStyle.backgroundColor = ''"
-              >
-                <text class="transparent-label">透明</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 内边距 -->
-          <view class="style-section">
-            <view class="section-title">内边距 (rpx)</view>
-            <view class="padding-grid">
-              <view class="padding-item">
-                <text class="padding-label">上</text>
-                <slider 
-                  :value="editingBlockStyle.padding?.top || 0" 
-                  :min="0" :max="100" :step="4"
-                  activeColor="#667eea"
-                  @change="editingBlockStyle.padding!.top = $event.detail.value"
-                />
-                <text class="padding-value">{{ editingBlockStyle.padding?.top || 0 }}</text>
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">下</text>
-                <slider 
-                  :value="editingBlockStyle.padding?.bottom || 0" 
-                  :min="0" :max="100" :step="4"
-                  activeColor="#667eea"
-                  @change="editingBlockStyle.padding!.bottom = $event.detail.value"
-                />
-                <text class="padding-value">{{ editingBlockStyle.padding?.bottom || 0 }}</text>
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">左</text>
-                <slider 
-                  :value="editingBlockStyle.padding?.left || 0" 
-                  :min="0" :max="100" :step="4"
-                  activeColor="#667eea"
-                  @change="editingBlockStyle.padding!.left = $event.detail.value"
-                />
-                <text class="padding-value">{{ editingBlockStyle.padding?.left || 0 }}</text>
-              </view>
-              <view class="padding-item">
-                <text class="padding-label">右</text>
-                <slider 
-                  :value="editingBlockStyle.padding?.right || 0" 
-                  :min="0" :max="100" :step="4"
-                  activeColor="#667eea"
-                  @change="editingBlockStyle.padding!.right = $event.detail.value"
-                />
-                <text class="padding-value">{{ editingBlockStyle.padding?.right || 0 }}</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 边框 -->
-          <view class="style-section">
-            <view class="section-title">边框</view>
-            <view class="border-grid">
-              <view class="border-item">
-                <text class="border-label">上边框</text>
-                <view class="border-controls">
-                  <slider 
-                    :value="editingBlockStyle.border?.top?.width || 0" 
-                    :min="0" :max="10" :step="1"
-                    activeColor="#667eea"
-                    @change="editingBlockStyle.border!.top!.width = $event.detail.value"
-                    class="border-slider"
-                  />
-                  <text class="border-value">{{ editingBlockStyle.border?.top?.width || 0 }}rpx</text>
-                  <input 
-                    type="text" 
-                    class="border-color-input"
-                    :value="editingBlockStyle.border?.top?.color || '#eeeeee'"
-                    @input="editingBlockStyle.border!.top!.color = $event.detail.value"
-                    placeholder="#颜色"
-                  />
+              <view class="link-input-row">
+                <view class="link-input-group half">
+                  <view class="input-label">纬度</view>
+                  <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.latitude"
+                    placeholder="如 39.908823" />
                 </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">下边框</text>
-                <view class="border-controls">
-                  <slider 
-                    :value="editingBlockStyle.border?.bottom?.width || 0" 
-                    :min="0" :max="10" :step="1"
-                    activeColor="#667eea"
-                    @change="editingBlockStyle.border!.bottom!.width = $event.detail.value"
-                    class="border-slider"
-                  />
-                  <text class="border-value">{{ editingBlockStyle.border?.bottom?.width || 0 }}rpx</text>
-                  <input 
-                    type="text" 
-                    class="border-color-input"
-                    :value="editingBlockStyle.border?.bottom?.color || '#eeeeee'"
-                    @input="editingBlockStyle.border!.bottom!.color = $event.detail.value"
-                    placeholder="#颜色"
-                  />
-                </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">左边框</text>
-                <view class="border-controls">
-                  <slider 
-                    :value="editingBlockStyle.border?.left?.width || 0" 
-                    :min="0" :max="10" :step="1"
-                    activeColor="#667eea"
-                    @change="editingBlockStyle.border!.left!.width = $event.detail.value"
-                    class="border-slider"
-                  />
-                  <text class="border-value">{{ editingBlockStyle.border?.left?.width || 0 }}rpx</text>
-                  <input 
-                    type="text" 
-                    class="border-color-input"
-                    :value="editingBlockStyle.border?.left?.color || '#eeeeee'"
-                    @input="editingBlockStyle.border!.left!.color = $event.detail.value"
-                    placeholder="#颜色"
-                  />
-                </view>
-              </view>
-              <view class="border-item">
-                <text class="border-label">右边框</text>
-                <view class="border-controls">
-                  <slider 
-                    :value="editingBlockStyle.border?.right?.width || 0" 
-                    :min="0" :max="10" :step="1"
-                    activeColor="#667eea"
-                    @change="editingBlockStyle.border!.right!.width = $event.detail.value"
-                    class="border-slider"
-                  />
-                  <text class="border-value">{{ editingBlockStyle.border?.right?.width || 0 }}rpx</text>
-                  <input 
-                    type="text" 
-                    class="border-color-input"
-                    :value="editingBlockStyle.border?.right?.color || '#eeeeee'"
-                    @input="editingBlockStyle.border!.right!.color = $event.detail.value"
-                    placeholder="#颜色"
-                  />
+                <view class="link-input-group half">
+                  <view class="input-label">经度</view>
+                  <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.longitude"
+                    placeholder="如 116.39747" />
                 </view>
               </view>
             </view>
           </view>
+        </view>
+      </scroll-view>
+    </view>
 
-          <!-- 圆角 -->
-          <view class="style-section">
-            <view class="section-title">圆角</view>
-            <view class="radius-row">
-              <slider 
-                :value="editingBlockStyle.borderRadius || 0" 
-                :min="0" :max="40" :step="2"
-                activeColor="#667eea"
-                @change="editingBlockStyle.borderRadius = $event.detail.value"
-                class="radius-slider"
-              />
-              <text class="radius-value">{{ editingBlockStyle.borderRadius || 0 }}rpx</text>
-            </view>
+    <!-- 图片样式面板 -->
+    <view class="style-panel-content" v-if="selectedItem.type === 'image'">
+      <view class="panel-header">
+        <view class="panel-title">图片样式</view>
+        <view class="panel-close" @click="selectedItem = null">×</view>
+      </view>
+      <scroll-view class="panel-scroll-content" scroll-y>
+        <!-- 图片操作区 -->
+        <view class="image-actions-bar" v-if="getSelectedItem()?.value.url">
+          <view class="action-btn" @click="previewImage(getSelectedItem().value.url)">
+            <text class="action-icon">🔍</text>
+            <text>预览图片</text>
           </view>
-        </scroll-view>
+          <view class="action-btn" @click="chooseImage(selectedItem.blockIndex, selectedItem.itemIndex)">
+            <text class="action-icon">📷</text>
+            <text>更换图片</text>
+          </view>
+        </view>
+        <view class="image-style-bar">
+          <view class="style-label">尺寸:</view>
+          <picker :value="imageSizeModeIndex(getSelectedItem()?.style.sizeMode)" :range="imageSizeModes"
+            :range-key="'label'" @change="(e) => setImageSizeMode(selectedItem.blockIndex, selectedItem.itemIndex, e)">
+            <view class="style-btn size-mode-btn">
+              {{ getImageSizeModeLabel(getSelectedItem()?.style.sizeMode) }}
+            </view>
+          </picker>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedWidth'">
+            <text>宽:</text>
+            <input type="number" v-model="getSelectedItem().style.width" class="size-input" placeholder="600" />
+            <text class="unit">rpx</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedHeight'">
+            <text>高:</text>
+            <input type="number" v-model="getSelectedItem().style.height" class="size-input" placeholder="400" />
+            <text class="unit">rpx</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentWidth'">
+            <text>宽:</text>
+            <input type="number" v-model="getSelectedItem().style.widthPercent" class="size-input" placeholder="80" />
+            <text class="unit">%</text>
+          </view>
+          <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentHeight'">
+            <text>高:</text>
+            <input type="number" v-model="getSelectedItem().style.heightPercent" class="size-input" placeholder="50" />
+            <text class="unit">vh</text>
+          </view>
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">Z轴旋转 (平面): {{ getSelectedItem()?.style.rotate || 0 }}°</view>
+          <slider :value="getSelectedItem()?.style.rotate || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'z')" min="0" max="360"
+            step="1" block-size="20" activeColor="#1890ff" backgroundColor="#e0e0e0" class="rotate-slider" />
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">X轴旋转 (上下翻转): {{ getSelectedItem()?.style.rotateX || 0 }}°</view>
+          <slider :value="getSelectedItem()?.style.rotateX || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'x')" min="0" max="360"
+            step="1" block-size="20" activeColor="#52c41a" backgroundColor="#e0e0e0" class="rotate-slider" />
+        </view>
+        <view class="image-rotate-bar">
+          <view class="rotate-label">Y轴旋转 (左右翻转): {{ getSelectedItem()?.style.rotateY || 0 }}°</view>
+          <slider :value="getSelectedItem()?.style.rotateY || 0"
+            @change="(e) => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'y')" min="0" max="360"
+            step="1" block-size="20" activeColor="#faad14" backgroundColor="#e0e0e0" class="rotate-slider" />
+        </view>
+        <view class="rotate-tip">
+          <text>💡 提示：3D旋转效果在预览模式下可见，导出图片时仅支持Z轴(平面)旋转</text>
+        </view>
+        <view class="image-style-bar">
+          <view class="style-btn delete-item" v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
+            @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)">🗑 删除图片</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
 
-        <view class="panel-footer">
-          <view class="panel-btn reset" @click="resetBlockStyle">重置</view>
-          <view class="panel-btn confirm" @click="saveBlockStyle">确定</view>
+  <!-- 行样式面板 -->
+  <view class="bottom-style-panel" v-if="selectedBlock !== null">
+    <view class="style-panel-content">
+      <view class="panel-header">
+        <view class="panel-title">行样式</view>
+        <view class="panel-close" @click="selectedBlock = null">×</view>
+      </view>
+      <view class="border-style-bar">
+        <view class="style-label">边框:</view>
+        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderTop }"
+          @click="toggleBlockBorder(selectedBlock, 'borderTop')">上</view>
+        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderBottom }"
+          @click="toggleBlockBorder(selectedBlock, 'borderBottom')">下</view>
+        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderLeft }"
+          @click="toggleBlockBorder(selectedBlock, 'borderLeft')">左</view>
+        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderRight }"
+          @click="toggleBlockBorder(selectedBlock, 'borderRight')">右</view>
+      </view>
+      <view class="align-style-bar">
+        <view class="style-label">对齐:</view>
+        <view class="align-btns">
+          <view class="style-btn align-btn"
+            :class="{ active: !getBlockStyle(selectedBlock)?.textAlign || getBlockStyle(selectedBlock)?.textAlign === 'left' }"
+            @click="setBlockAlign(selectedBlock, 'left')">左</view>
+          <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'center' }"
+            @click="setBlockAlign(selectedBlock, 'center')">中</view>
+          <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'right' }"
+            @click="setBlockAlign(selectedBlock, 'right')">右</view>
         </view>
       </view>
+      <!-- Markdown 模式开关（仅文本块） -->
+      <view class="markdown-toggle-bar" v-if="pageData.content[selectedBlock]?.type === 'text'">
+        <view class="style-label">Markdown 模式:</view>
+        <switch :checked="(pageData.content[selectedBlock] as TextBlock)?.isMarkdown || false"
+          @change="toggleBlockMarkdown(selectedBlock)" color="#667eea" />
+      </view>
     </view>
+  </view>
 
-    <!-- 底部操作按钮 -->
-    <view class="footer-actions">
-      <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
-      <view class="footer-btn save" @click="saveData">保存</view>
+  <!-- 块级样式设置面板 - 统一业务属性+视觉属性 -->
+  <view class="block-style-panel-overlay" v-if="blockStylePanelVisible" @click="blockStylePanelVisible = false">
+    <view class="block-style-panel" @click.stop>
+      <view class="panel-header">
+        <text class="panel-title">{{ getEditingBlockTypeLabel() }} 设置</text>
+        <view class="panel-close" @click="blockStylePanelVisible = false">×</view>
+      </view>
+
+      <scroll-view scroll-y class="panel-scroll">
+        <!-- 第一部分：业务属性（根据块类型显示） -->
+        <view class="style-section business-section" v-if="editingBlockIndex !== null">
+          <view class="section-title">📋 业务属性</view>
+
+          <!-- 文本块：Markdown 模式开关 -->
+          <view v-if="getEditingBlockType() === 'text'" class="business-item">
+            <view class="business-row">
+              <text class="business-label">Markdown 模式</text>
+              <switch :checked="getEditingBlockMarkdown()" @change="toggleEditingBlockMarkdown" color="#667eea" />
+            </view>
+            <text class="business-hint">开启后支持 Markdown 语法渲染</text>
+          </view>
+
+          <!-- 路径块：显示时间开关 -->
+          <view v-if="getEditingBlockType() === 'route'" class="business-item">
+            <view class="business-row">
+              <text class="business-label">显示耗时信息</text>
+              <switch :checked="getEditingBlockSettings()?.showTime !== false"
+                @change="toggleEditingBlockSetting('showTime')" color="#667eea" />
+            </view>
+            <text class="business-hint">在路径节点旁显示时间和交通方式</text>
+          </view>
+
+          <!-- 附件块：AppID 和路径配置 -->
+          <view v-if="getEditingBlockType() === 'attachment'" class="business-item">
+            <view class="business-input-group">
+              <text class="business-label">小程序 AppID</text>
+              <input type="text" class="business-input"
+                :value="getEditingBlockSettings()?.appId || 'wxd45c635d754dbf59'"
+                @input="setEditingBlockSetting('appId', $event.detail.value)" placeholder="腾讯文档: wxd45c635d754dbf59" />
+            </view>
+            <text class="business-hint">默认跳转腾讯文档小程序</text>
+          </view>
+
+          <!-- 图片块：无特殊业务属性 -->
+          <view v-if="getEditingBlockType() === 'image'" class="business-item">
+            <text class="business-hint">图片块暂无额外业务属性，可在下方设置视觉样式</text>
+          </view>
+        </view>
+
+        <!-- 第二部分：视觉属性（所有块通用） -->
+        <view class="style-section">
+          <view class="section-title">🎨 视觉属性</view>
+        </view>
+
+        <!-- 背景颜色 -->
+        <view class="style-section">
+          <view class="section-title">背景颜色</view>
+          <view class="color-grid">
+            <view v-for="color in morandiColors" :key="color.value" class="color-option"
+              :class="{ active: editingBlockStyle.backgroundColor === color.value }"
+              :style="{ backgroundColor: color.value }" @click="editingBlockStyle.backgroundColor = color.value">
+              <text v-if="editingBlockStyle.backgroundColor === color.value" class="check-icon">✓</text>
+            </view>
+            <view class="color-option transparent" :class="{ active: !editingBlockStyle.backgroundColor }"
+              @click="editingBlockStyle.backgroundColor = ''">
+              <text class="transparent-label">透明</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 内边距 -->
+        <view class="style-section">
+          <view class="section-title">内边距 (rpx)</view>
+          <view class="padding-grid">
+            <view class="padding-item">
+              <text class="padding-label">上</text>
+              <slider :value="editingBlockStyle.padding?.top || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
+                @change="editingBlockStyle.padding!.top = $event.detail.value" />
+              <text class="padding-value">{{ editingBlockStyle.padding?.top || 0 }}</text>
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">下</text>
+              <slider :value="editingBlockStyle.padding?.bottom || 0" :min="0" :max="100" :step="4"
+                activeColor="#667eea" @change="editingBlockStyle.padding!.bottom = $event.detail.value" />
+              <text class="padding-value">{{ editingBlockStyle.padding?.bottom || 0 }}</text>
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">左</text>
+              <slider :value="editingBlockStyle.padding?.left || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
+                @change="editingBlockStyle.padding!.left = $event.detail.value" />
+              <text class="padding-value">{{ editingBlockStyle.padding?.left || 0 }}</text>
+            </view>
+            <view class="padding-item">
+              <text class="padding-label">右</text>
+              <slider :value="editingBlockStyle.padding?.right || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
+                @change="editingBlockStyle.padding!.right = $event.detail.value" />
+              <text class="padding-value">{{ editingBlockStyle.padding?.right || 0 }}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 边框 -->
+        <view class="style-section">
+          <view class="section-title">边框</view>
+          <view class="border-grid">
+            <view class="border-item">
+              <text class="border-label">上边框</text>
+              <view class="border-controls">
+                <slider :value="editingBlockStyle.border?.top?.width || 0" :min="0" :max="10" :step="1"
+                  activeColor="#667eea" @change="editingBlockStyle.border!.top!.width = $event.detail.value"
+                  class="border-slider" />
+                <text class="border-value">{{ editingBlockStyle.border?.top?.width || 0 }}rpx</text>
+                <input type="text" class="border-color-input" :value="editingBlockStyle.border?.top?.color || '#eeeeee'"
+                  @input="editingBlockStyle.border!.top!.color = $event.detail.value" placeholder="#颜色" />
+              </view>
+            </view>
+            <view class="border-item">
+              <text class="border-label">下边框</text>
+              <view class="border-controls">
+                <slider :value="editingBlockStyle.border?.bottom?.width || 0" :min="0" :max="10" :step="1"
+                  activeColor="#667eea" @change="editingBlockStyle.border!.bottom!.width = $event.detail.value"
+                  class="border-slider" />
+                <text class="border-value">{{ editingBlockStyle.border?.bottom?.width || 0 }}rpx</text>
+                <input type="text" class="border-color-input"
+                  :value="editingBlockStyle.border?.bottom?.color || '#eeeeee'"
+                  @input="editingBlockStyle.border!.bottom!.color = $event.detail.value" placeholder="#颜色" />
+              </view>
+            </view>
+            <view class="border-item">
+              <text class="border-label">左边框</text>
+              <view class="border-controls">
+                <slider :value="editingBlockStyle.border?.left?.width || 0" :min="0" :max="10" :step="1"
+                  activeColor="#667eea" @change="editingBlockStyle.border!.left!.width = $event.detail.value"
+                  class="border-slider" />
+                <text class="border-value">{{ editingBlockStyle.border?.left?.width || 0 }}rpx</text>
+                <input type="text" class="border-color-input"
+                  :value="editingBlockStyle.border?.left?.color || '#eeeeee'"
+                  @input="editingBlockStyle.border!.left!.color = $event.detail.value" placeholder="#颜色" />
+              </view>
+            </view>
+            <view class="border-item">
+              <text class="border-label">右边框</text>
+              <view class="border-controls">
+                <slider :value="editingBlockStyle.border?.right?.width || 0" :min="0" :max="10" :step="1"
+                  activeColor="#667eea" @change="editingBlockStyle.border!.right!.width = $event.detail.value"
+                  class="border-slider" />
+                <text class="border-value">{{ editingBlockStyle.border?.right?.width || 0 }}rpx</text>
+                <input type="text" class="border-color-input"
+                  :value="editingBlockStyle.border?.right?.color || '#eeeeee'"
+                  @input="editingBlockStyle.border!.right!.color = $event.detail.value" placeholder="#颜色" />
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 圆角 -->
+        <view class="style-section">
+          <view class="section-title">圆角</view>
+          <view class="radius-row">
+            <slider :value="editingBlockStyle.borderRadius || 0" :min="0" :max="40" :step="2" activeColor="#667eea"
+              @change="editingBlockStyle.borderRadius = $event.detail.value" class="radius-slider" />
+            <text class="radius-value">{{ editingBlockStyle.borderRadius || 0 }}rpx</text>
+          </view>
+        </view>
+
+        <!-- 3D效果 -->
+        <view class="style-section">
+          <view class="section-title">3D效果</view>
+          <view class="setting-item">
+            <text class="setting-item-label">3D悬浮模式</text>
+            <switch :checked="editingBlockStyle.enable3DMode === true"
+              @change="editingBlockStyle.enable3DMode = $event.detail.value" color="#667eea" />
+          </view>
+          <text class="setting-hint" v-if="editingBlockStyle.enable3DMode">开启后，该内容块在详情页将具有3D悬浮效果</text>
+        </view>
+
+        <!-- 扑克牌翻转效果 -->
+        <view class="style-section">
+          <view class="section-title">🃏 扑克牌效果</view>
+          <view class="setting-item">
+            <text class="setting-item-label">扑克牌翻转</text>
+            <switch :checked="editingBlockStyle.enablePokerCard === true"
+              @change="editingBlockStyle.enablePokerCard = $event.detail.value" color="#764ba2" />
+          </view>
+          <text class="setting-hint" v-if="editingBlockStyle.enablePokerCard">开启后，容器在详情页初次加载时将以扑克牌背面展示，点击后翻开显示内容</text>
+        </view>
+      </scroll-view>
+
+      <view class="panel-footer">
+        <view class="panel-btn reset" @click="resetBlockStyle">重置</view>
+        <view class="panel-btn confirm" @click="saveBlockStyle">确定</view>
+      </view>
     </view>
+  </view>
 
-    <!-- 导出用的隐藏Canvas -->
-    <canvas v-if="exportLoading" type="2d" id="exportCanvas" class="export-canvas"
-      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"></canvas>
+  <!-- 媒体项设置面板 -->
+  <view class="media-settings-panel-overlay" v-if="mediaSettingsPanelVisible" @click="closeMediaItemSettings">
+    <view class="media-settings-panel" @click.stop>
+      <view class="panel-header">
+        <text class="panel-title">🎬 媒体设置</text>
+        <view class="panel-close" @click="closeMediaItemSettings">×</view>
+      </view>
+
+      <scroll-view scroll-y class="panel-scroll" v-if="getEditingMediaItem()">
+        <!-- 媒体源URL -->
+        <view class="style-section">
+          <view class="section-title">媒体源地址</view>
+          <textarea class="media-url-textarea" v-model="getEditingMediaItem().url"
+            placeholder="粘贴视频或音频源路径，如 https://example.com/video.mp4" :maxlength="1000" auto-height />
+        </view>
+
+        <!-- 播放属性 -->
+        <view class="style-section">
+          <view class="section-title">播放属性</view>
+          <view class="media-prop-row">
+            <text class="prop-label">显示控制条</text>
+            <switch :checked="getEditingMediaItem().controls !== false"
+              @change="getEditingMediaItem().controls = $event.detail.value" color="#667eea" />
+          </view>
+          <view class="media-prop-row">
+            <text class="prop-label">自动播放</text>
+            <switch :checked="getEditingMediaItem().autoplay === true"
+              @change="getEditingMediaItem().autoplay = $event.detail.value" color="#667eea" />
+          </view>
+          <view class="media-prop-row">
+            <text class="prop-label">循环播放</text>
+            <switch :checked="getEditingMediaItem().loop === true"
+              @change="getEditingMediaItem().loop = $event.detail.value" color="#667eea" />
+          </view>
+        </view>
+
+        <!-- 预览 -->
+        <view class="style-section" v-if="getEditingMediaItem().url">
+          <view class="section-title">预览</view>
+          <video v-if="getEditingMediaItem().url.includes('.mp4')" :src="getEditingMediaItem().url"
+            class="media-preview-video" :controls="getEditingMediaItem().controls !== false" :autoplay="false"></video>
+          <view v-else-if="getEditingMediaItem().url.includes('.mp3') || getEditingMediaItem().url.includes('.m4a')"
+            class="media-preview-audio">
+            <text class="audio-icon">🎵</text>
+            <text class="audio-name">{{ getEditingMediaItem().title || '音频文件' }}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="panel-footer">
+        <view class="panel-btn confirm" @click="closeMediaItemSettings">完成</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view class="footer-actions">
+    <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
+    <view class="footer-btn save" @click="saveData">保存</view>
+  </view>
+
+  <!-- 导出用的隐藏Canvas -->
+  <canvas v-if="exportLoading" type="2d" id="exportCanvas" class="export-canvas"
+    :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"></canvas>
   </view>
 </template>
 
 <script setup lang="ts">
-import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
+import { postMemos, getMemosMemoId, patchMemosMemoId, getMemos } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
 import { getGeminiSessions } from '@/services/apifox/NODEJSDEMO/GEMINI/apifox';
 
 import { ref, reactive, computed, watch, onMounted } from 'vue'
@@ -1338,6 +1400,8 @@ interface BlockStyle {
   }
   backgroundColor?: string
   borderRadius?: number
+  enable3DMode?: boolean  // 3D悬浮模式
+  enablePokerCard?: boolean  // 扑克牌翻转效果
 }
 
 interface ImageStyle {
@@ -1362,6 +1426,8 @@ interface TextItem {
   value: string
   style: TextStyle
   linkInfo?: LinkInfo  // 可选的链接信息
+  interactionType?: 'normal' | 'popup'  // 交互类型：普通或弹窗
+  linkIcon?: string  // 自定义链接图标
 }
 
 interface ImageItem {
@@ -1374,12 +1440,14 @@ interface TextBlock {
   children: TextItem[]
   style?: BlockStyle
   isMarkdown?: boolean
+  anchor?: string // 锚点ID，用于隐藏-触发系统
 }
 
 interface ImageBlock {
   type: 'image'
   children: ImageItem[]
   style?: BlockStyle
+  anchor?: string // 锚点ID，用于隐藏-触发系统
 }
 
 // 路径节点
@@ -1397,6 +1465,7 @@ interface RouteBlock {
   type: 'route'
   content: RouteNode[]
   style?: BlockStyle
+  anchor?: string // 锚点ID，用于隐藏-触发系统
 }
 
 // 附件块（腾讯文档等）
@@ -1412,21 +1481,41 @@ interface AttachmentBlock {
   type: 'attachment'
   children: AttachmentItem[]
   style?: BlockStyle
+  anchor?: string // 锚点ID，用于隐藏-触发系统
+}
+
+// 多媒体项（视频/音频）
+interface MediaItem {
+  title: string
+  url: string
+  autoplay?: boolean  // 自动播放
+  controls?: boolean  // 显示控制条
+  loop?: boolean      // 循环播放
+}
+
+interface MediaBlock {
+  type: 'media'
+  children: MediaItem[]
+  style?: BlockStyle
+  anchor?: string // 锚点ID，用于隐藏-触发系统
 }
 
 // 链接信息
 interface LinkInfo {
   label: string // 显示的文本
-  linkType: 'url' | 'navigation' | 'internal' | 'anchor' // 链接类型：超链接、导航、内部链接或锚点
+  linkType: 'url' | 'navigation' | 'internal' | 'anchor' | 'popup' // 链接类型：超链接、导航、内部链接、锚点或弹窗
   url?: string // 超链接地址
   latitude?: number // 导航纬度
   longitude?: number // 导航经度
   address?: string // 导航地址名称
-  internalScene?: 'chat' // 内部链接场景
+  internalScene?: 'chat' | 'memo' // 内部链接场景：笔记、备忘录
   internalId?: string // 内部链接目标ID
   internalTitle?: string // 内部链接目标标题
   internalPath?: string // 内部链接路径
   anchorId?: string // 锚点ID
+  targetAnchor?: string // 目标锚点ID（用于内容弹窗触发）
+  popupContent?: string // 弹窗内容
+  popupIsMarkdown?: boolean // 弹窗内容是否为Markdown格式
 }
 
 // 创作助手接口
@@ -1440,7 +1529,7 @@ interface ChatSession {
 }
 
 interface PageData {
-  content: (TextBlock | ImageBlock | RouteBlock | AttachmentBlock)[]
+  content: (TextBlock | ImageBlock | RouteBlock | AttachmentBlock | MediaBlock)[]
 }
 
 // 页面数据
@@ -1506,13 +1595,97 @@ const currentImageTarget = ref<{ blockIndex: number; itemIndex: number } | null>
 const cloudFiles = ref<getFilesResItems[]>([])
 const loadingFiles = ref(false)
 
+// 锚点自动生成算法
+const generateNextAnchor = (): string => {
+  // 查找所有现有锚点中 L+数字 格式的最大值
+  const anchorPattern = /^L(\d+)$/
+  let maxNumber = 0
+
+  pageData.content.forEach(block => {
+    if (block.anchor) {
+      const match = block.anchor.match(anchorPattern)
+      if (match) {
+        const num = parseInt(match[1], 10)
+        if (num > maxNumber) {
+          maxNumber = num
+        }
+      }
+    }
+  })
+
+  // 返回下一个锚点ID
+  return `L${maxNumber + 1}`
+}
+
+// 获取所有现有锚点列表（用于联想提示）
+const getAllAnchors = computed(() => {
+  return pageData.content
+    .filter(block => block.anchor)
+    .map(block => ({
+      anchor: block.anchor!,
+      type: block.type,
+      isPopupTarget: isAnchorReferencedAsPopup(block.anchor!)
+    }))
+})
+
+// 判断锚点是否被引用为弹窗目标
+const isAnchorReferencedAsPopup = (anchor: string): boolean => {
+  for (const block of pageData.content) {
+    if (block.type === 'text') {
+      const textBlock = block as TextBlock
+      for (const item of textBlock.children) {
+        if (item.linkInfo?.linkType === 'popup' && item.linkInfo?.targetAnchor === anchor) {
+          return true
+        }
+      }
+    }
+  }
+  return false
+}
+
+// 获取所有被引用为弹窗目标的锚点集合
+const popupTargetAnchors = computed(() => {
+  const anchors = new Set<string>()
+  pageData.content.forEach(block => {
+    if (block.type === 'text') {
+      const textBlock = block as TextBlock
+      textBlock.children.forEach(item => {
+        if (item.linkInfo?.linkType === 'popup' && item.linkInfo?.targetAnchor) {
+          anchors.add(item.linkInfo.targetAnchor)
+        }
+      })
+    }
+  })
+  return anchors
+})
+
+// 链接类型配置
+const linkTypes = [
+  { value: 'url', label: '🔗 外部链接' },
+  { value: 'popup', label: '💬 内容弹窗' },
+  { value: 'navigation', label: '📍 地图导航' },
+  { value: 'internal', label: '📄 关联素材' },
+  { value: 'anchor', label: '⚓ 锚点跳转' }
+]
+
 // 关联素材相关状态
 const internalLinkScenes = [
-  { value: 'chat', label: '笔记' }
+  { value: 'chat', label: '笔记' },
+  { value: 'memo', label: '备忘录' }
 ]
 const chatSessionPickerVisible = ref(false)
 const chatSessions = ref<ChatSession[]>([])
 const loadingChatSessions = ref(false)
+
+// 备忘录选择（内部链接类型为「备忘录」时使用）
+interface MemoItem {
+  id: string
+  name: string
+  updatedAt?: number
+}
+const memoPickerVisible = ref(false)
+const memoListForPicker = ref<MemoItem[]>([])
+const loadingMemosForPicker = ref(false)
 
 // JSON 导入相关
 const jsonImportVisible = ref(false)
@@ -1524,6 +1697,9 @@ const fabExpanded = ref(false)
 
 // 设置面板状态
 const settingsVisible = ref(false)
+const activeConfigTab = ref('global') // 'global' | 'block'
+const configPanelVisible = ref(false)
+const configPopup = ref()
 const settings = reactive({
   padding: { top: 32, bottom: 32, left: 32, right: 32 },
   border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
@@ -1531,7 +1707,14 @@ const settings = reactive({
     backgroundColor: '#ffffff',
     backgroundImage: '',
     backgroundBlur: 0,
-    backgroundOpacity: 1
+    backgroundOpacity: 1,
+    enableBlob: false,
+    blobBlur: 80,
+    enableCyberGrid: false
+  },
+  romanticEffects: {
+    popupAnimation: 'zoom-in', // 'zoom-in' | 'slide-up'
+    enableGlassBlur: true
   },
   typography: {
     fontSize: 'standard' as 'standard' | 'medium' | 'large',
@@ -1598,12 +1781,79 @@ const getSelectedItem = () => {
   return block.children[itemIndex]
 }
 
+// 内部链接场景选择器的当前索引与展示文案
+const internalLinkSceneIndex = computed(() => {
+  const item = getSelectedItem()
+  if (!item?.linkInfo?.internalScene) return 0
+  const idx = internalLinkScenes.findIndex((s) => s.value === item.linkInfo!.internalScene)
+  return idx >= 0 ? idx : 0
+})
+const internalLinkSceneLabel = computed(() => {
+  const item = getSelectedItem()
+  if (!item?.linkInfo?.internalScene) return '请选择类型'
+  const scene = internalLinkScenes.find((s) => s.value === item.linkInfo!.internalScene)
+  return scene?.label ?? '请选择类型'
+})
+
+// 链接类型选择器的当前索引与展示文案
+const linkTypeIndex = computed(() => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item?.linkInfo?.linkType) return 0
+  const idx = linkTypes.findIndex((t) => t.value === item.linkInfo!.linkType)
+  return idx >= 0 ? idx : 0
+})
+
+const linkTypeLabel = computed(() => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item?.linkInfo?.linkType) return '请选择类型'
+  const type = linkTypes.find((t) => t.value === item.linkInfo!.linkType)
+  return type?.label ?? '请选择类型'
+})
+
+// 链接类型变更处理
+const onLinkTypeChange = (e: any) => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item || !item.linkInfo) return
+  const index = e.detail.value
+  const selectedType = linkTypes[index]
+  item.linkInfo.linkType = selectedType.value as any
+
+  // 清理其他类型的数据
+  if (selectedType.value !== 'url') item.linkInfo.url = undefined
+  if (selectedType.value !== 'navigation') {
+    item.linkInfo.latitude = undefined
+    item.linkInfo.longitude = undefined
+    item.linkInfo.address = undefined
+  }
+  if (selectedType.value !== 'internal') {
+    item.linkInfo.internalScene = undefined
+    item.linkInfo.internalId = undefined
+    item.linkInfo.internalTitle = undefined
+    item.linkInfo.internalPath = undefined
+  }
+  if (selectedType.value !== 'anchor') {
+    item.linkInfo.anchorId = undefined
+  }
+  if (selectedType.value !== 'popup') {
+    item.linkInfo.popupContent = undefined
+    item.linkInfo.popupIsMarkdown = undefined
+  }
+}
+
 // 选中行状态
 const selectedBlock = ref<number | null>(null)
 
 // 块级样式设置面板状态
 const blockStylePanelVisible = ref(false)
 const editingBlockIndex = ref<number | null>(null)
+
+// 计算属性：判断是否有任何面板打开
+const isAnyPanelOpen = computed(() => {
+  return configPanelVisible.value || 
+         blockStylePanelVisible.value || 
+         settingsVisible.value ||
+         editingBlockIndex.value !== null
+})
 const editingBlockStyle = reactive<BlockStyle>({
   padding: { top: 0, bottom: 0, left: 0, right: 0 },
   border: {
@@ -1622,7 +1872,7 @@ const openBlockStylePanel = (blockIndex: number) => {
   editingBlockIndex.value = blockIndex
   const block = pageData.content[blockIndex]
   const style = block?.style || {}
-  
+
   // 初始化编辑状态
   editingBlockStyle.padding = {
     top: style.padding?.top ?? 0,
@@ -1639,7 +1889,9 @@ const openBlockStylePanel = (blockIndex: number) => {
   editingBlockStyle.backgroundColor = style.backgroundColor ?? ''
   editingBlockStyle.borderRadius = style.borderRadius ?? 0
   editingBlockStyle.textAlign = style.textAlign ?? 'left'
-  
+  editingBlockStyle.enable3DMode = style.enable3DMode ?? false
+  editingBlockStyle.enablePokerCard = style.enablePokerCard ?? false
+
   blockStylePanelVisible.value = true
   selectedBlock.value = null
   selectedItem.value = null
@@ -1648,15 +1900,15 @@ const openBlockStylePanel = (blockIndex: number) => {
 // 保存块级样式
 const saveBlockStyle = () => {
   if (editingBlockIndex.value === null) return
-  
+
   const block = pageData.content[editingBlockIndex.value]
   if (!block) return
-  
+
   // 合并样式到块对象
   if (!block.style) {
     block.style = {}
   }
-  
+
   block.style.padding = { ...editingBlockStyle.padding }
   block.style.border = {
     top: { ...editingBlockStyle.border?.top },
@@ -1667,11 +1919,241 @@ const saveBlockStyle = () => {
   block.style.backgroundColor = editingBlockStyle.backgroundColor
   block.style.borderRadius = editingBlockStyle.borderRadius
   block.style.textAlign = editingBlockStyle.textAlign
-  
+  block.style.enable3DMode = editingBlockStyle.enable3DMode
+  block.style.enablePokerCard = editingBlockStyle.enablePokerCard
+
   blockStylePanelVisible.value = false
   editingBlockIndex.value = null
-  
+
   uni.showToast({ title: '样式已保存', icon: 'success' })
+}
+
+// 弹窗内容编辑状态
+const popupContentEditor = reactive({
+  visible: false,
+  content: '',
+  images: [] as string[]
+})
+
+// 模拟弹窗预览
+const previewPopup = () => {
+  if (!popupContentEditor.content.trim()) {
+    uni.showToast({
+      title: '请先输入弹窗内容',
+      icon: 'none'
+    })
+    return
+  }
+
+  // 触发震动反馈
+  try {
+    uni.vibrateShort()
+  } catch (e) {
+    console.log('震动功能不可用')
+  }
+
+  // 显示预览弹窗
+  if (settings.romanticEffects.enableGlassBlur) {
+    // 使用自定义弹窗预览
+    uni.showModal({
+      title: '💫 浪漫弹窗预览',
+      content: popupContentEditor.content,
+      showCancel: false,
+      confirmText: '美妙'
+    })
+  } else {
+    uni.showModal({
+      title: '弹窗预览',
+      content: popupContentEditor.content,
+      showCancel: false,
+      confirmText: '关闭'
+    })
+  }
+}
+
+// 上传图片到弹窗
+const uploadImageToPopup = () => {
+  uni.chooseImage({
+    count: 1,
+    success: (res) => {
+      popupContentEditor.images.push(res.tempFilePaths[0])
+      uni.showToast({
+        title: '图片已添加',
+        icon: 'success'
+      })
+    },
+    fail: () => {
+      uni.showToast({
+        title: '取消选择',
+        icon: 'none'
+      })
+    }
+  })
+}
+
+// Canvas浪漫效果合成器
+const generateRomanticPoster = async (mediaUrl: string, effectType: 'hearts' | 'light-streaks' | 'sparkles' = 'hearts') => {
+  try {
+    // 创建Canvas上下文
+    const canvas = uni.createCanvasContext('romanticCanvas')
+
+    // 设置画布尺寸
+    const canvasWidth = 750
+    const canvasHeight = 1334
+
+    // 绘制背景渐变
+    const gradient = canvas.createLinearGradient(0, 0, canvasWidth, canvasHeight)
+    gradient.addColorStop(0, 'rgba(255, 107, 157, 0.1)')
+    gradient.addColorStop(0.5, 'rgba(116, 185, 255, 0.05)')
+    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.1)')
+
+    canvas.setFillStyle(gradient)
+    canvas.fillRect(0, 0, canvasWidth, canvasHeight)
+
+    // 绘制原始媒体内容
+    if (mediaUrl) {
+      canvas.drawImage(mediaUrl, 0, 0, canvasWidth, canvasHeight * 0.8)
+    }
+
+    // 绘制浪漫效果
+    drawRomanticEffects(canvas, effectType, canvasWidth, canvasHeight)
+
+    // 绘制水印
+    drawWatermark(canvas, canvasWidth, canvasHeight)
+
+    // 渲染Canvas
+    canvas.draw(true, () => {
+      // 导出合成图片
+      uni.canvasToTempFilePath({
+        canvasId: 'romanticCanvas',
+        success: (res) => {
+          uni.showToast({
+            title: '浪漫海报生成成功',
+            icon: 'success'
+          })
+        },
+        fail: () => {
+          uni.showToast({
+            title: '生成失败',
+            icon: 'error'
+          })
+        }
+      })
+    })
+  } catch (error) {
+    console.error('Canvas合成失败:', error)
+  }
+}
+
+// 绘制浪漫效果
+const drawRomanticEffects = (canvas: any, effectType: string, width: number, height: number) => {
+  canvas.save()
+
+  switch (effectType) {
+    case 'hearts':
+      // 绘制心形效果
+      for (let i = 0; i < 20; i++) {
+        const x = Math.random() * width
+        const y = Math.random() * height
+        const size = Math.random() * 30 + 10
+        const opacity = Math.random() * 0.6 + 0.2
+
+        canvas.globalAlpha = opacity
+        canvas.setFillStyle('#ff6b9d')
+        drawHeart(canvas, x, y, size)
+      }
+      break
+
+    case 'light-streaks':
+      // 绘制光线效果
+      for (let i = 0; i < 8; i++) {
+        const gradient = canvas.createRadialGradient(
+          Math.random() * width,
+          Math.random() * height,
+          0,
+          Math.random() * width,
+          Math.random() * height,
+          200
+        )
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)')
+        gradient.addColorStop(1, 'rgba(116, 185, 255, 0.1)')
+
+        canvas.setFillStyle(gradient)
+        canvas.fillRect(0, 0, width, height)
+      }
+      break
+
+    case 'sparkles':
+      // 绘制星光效果
+      for (let i = 0; i < 50; i++) {
+        const x = Math.random() * width
+        const y = Math.random() * height
+        const size = Math.random() * 4 + 2
+
+        canvas.setFillStyle('#74b9ff')
+        canvas.globalAlpha = Math.random() * 0.8 + 0.2
+        drawStar(canvas, x, y, size)
+      }
+      break
+  }
+
+  canvas.restore()
+}
+
+// 绘制心形
+const drawHeart = (canvas: any, x: number, y: number, size: number) => {
+  canvas.save()
+  canvas.translate(x, y)
+  canvas.scale(size / 20, size / 20)
+  canvas.beginPath()
+  canvas.moveTo(0, 0)
+  canvas.bezierCurveTo(-10, -8, -10, -16, 0, -12)
+  canvas.bezierCurveTo(10, -16, 10, -8, 0, 0)
+  canvas.fill()
+  canvas.restore()
+}
+
+// 绘制星形
+const drawStar = (canvas: any, x: number, y: number, size: number) => {
+  canvas.save()
+  canvas.translate(x, y)
+  canvas.beginPath()
+  canvas.moveTo(0, -size)
+  canvas.lineTo(size * 0.3, -size * 0.3)
+  canvas.lineTo(size, 0)
+  canvas.lineTo(size * 0.3, size * 0.3)
+  canvas.lineTo(0, size)
+  canvas.lineTo(-size * 0.3, size * 0.3)
+  canvas.lineTo(-size, 0)
+  canvas.lineTo(-size * 0.3, -size * 0.3)
+  canvas.closePath()
+  canvas.fill()
+  canvas.restore()
+}
+
+// 绘制水印
+const drawWatermark = (canvas: any, width: number, height: number) => {
+  canvas.setFillStyle('rgba(102, 126, 234, 0.6)')
+  canvas.setFontSize(24)
+  canvas.setTextAlign('right')
+  canvas.fillText('💫 Windsurf Romantic', width - 40, height - 40)
+}
+
+// 全屏配置面板控制
+const openConfigPanel = () => {
+  activeConfigTab.value = 'global'
+  configPanelVisible.value = true
+}
+
+const closeConfigPanel = () => {
+  // 触发震动反馈
+  try {
+    uni.vibrateShort()
+  } catch (e) {
+    console.log('震动功能不可用')
+  }
+
+  configPanelVisible.value = false
 }
 
 // 重置块级样式
@@ -1720,7 +2202,7 @@ const toggleEditingBlockMarkdown = () => {
   if (editingBlockIndex.value === null) return
   const block = pageData.content[editingBlockIndex.value]
   if (block?.type !== 'text') return
-  ;(block as TextBlock).isMarkdown = !(block as TextBlock).isMarkdown
+    ; (block as TextBlock).isMarkdown = !(block as TextBlock).isMarkdown
 }
 
 // 获取当前编辑块的 settings（业务属性）
@@ -1777,7 +2259,7 @@ const toggleBlockBorder = (blockIndex: number, key: 'borderTop' | 'borderBottom'
 const getBlockBorderStyle = (block: TextBlock | ImageBlock | RouteBlock | AttachmentBlock) => {
   const style = block.style || {}
   const result: Record<string, string> = {}
-  
+
   // 新版块级样式优先
   if (style.padding) {
     result.paddingTop = (style.padding.top || 0) + 'rpx'
@@ -1785,7 +2267,7 @@ const getBlockBorderStyle = (block: TextBlock | ImageBlock | RouteBlock | Attach
     result.paddingLeft = (style.padding.left || 0) + 'rpx'
     result.paddingRight = (style.padding.right || 0) + 'rpx'
   }
-  
+
   // 新版边框样式
   if (style.border) {
     if (style.border.top && style.border.top.width) {
@@ -1806,26 +2288,26 @@ const getBlockBorderStyle = (block: TextBlock | ImageBlock | RouteBlock | Attach
     result.borderBottom = style.borderBottom ? '2rpx solid #333' : 'none'
     result.borderLeft = style.borderLeft ? '2rpx solid #333' : 'none'
     result.borderRight = style.borderRight ? '2rpx solid #333' : 'none'
-    
+
     // 旧版有边框时默认 padding
     if (!style.padding && (style.borderTop || style.borderBottom || style.borderLeft || style.borderRight)) {
       result.padding = '16rpx'
     }
   }
-  
+
   // 背景色
   if (style.backgroundColor) {
     result.backgroundColor = style.backgroundColor
   }
-  
+
   // 圆角
   if (style.borderRadius) {
     result.borderRadius = style.borderRadius + 'rpx'
   }
-  
+
   // 文本对齐
   result.textAlign = style.textAlign || 'left'
-  
+
   return result
 }
 
@@ -1988,7 +2470,7 @@ const uploadBackgroundImage = () => {
     success: (res) => {
       const tempFilePath = res.tempFilePaths[0]
       uni.showLoading({ title: '上传中...', mask: true })
-      
+
       uni.uploadFile({
         url: String(import.meta.env.VITE_APP_BASE_URL || '') + '/upload/image',
         filePath: tempFilePath,
@@ -2022,7 +2504,7 @@ const uploadBackgroundImage = () => {
 // 复制锚点链接到剪贴板（Markdown格式）
 const copyAnchor = (num: number) => {
   const anchor = `L${num}`
-  
+
   // #ifdef H5
   if (navigator.clipboard) {
     navigator.clipboard.writeText(anchor).then(() => {
@@ -2046,7 +2528,7 @@ const copyAnchor = (num: number) => {
     })
   }
   // #endif
-  
+
   // #ifndef H5
   uni.setClipboardData({
     data: anchor,
@@ -2072,6 +2554,7 @@ const copyAnchor = (num: number) => {
 const addTextBlock = () => {
   pageData.content.push({
     type: 'text',
+    anchor: generateNextAnchor(),
     children: [{
       value: '',
       style: { fontSize: 16, color: '#333' }
@@ -2083,6 +2566,7 @@ const addTextBlock = () => {
 const addImageBlock = () => {
   pageData.content.push({
     type: 'image',
+    anchor: generateNextAnchor(),
     children: [{
       value: { id: '', url: '' },
       style: { sizeMode: 'auto', rotate: 0, rotateX: 0, rotateY: 0 }
@@ -2094,6 +2578,7 @@ const addImageBlock = () => {
 const addRouteBlock = () => {
   pageData.content.push({
     type: 'route',
+    anchor: generateNextAnchor(),
     content: [
       { name: '起点', time: '1h', icon: '🚗', desc: '', type: 'normal' },
       { name: '终点', isEnd: true }
@@ -2105,6 +2590,7 @@ const addRouteBlock = () => {
 const addAttachmentBlock = () => {
   pageData.content.push({
     type: 'attachment',
+    anchor: generateNextAnchor(),
     children: [{
       title: '',
       url: '',
@@ -2141,10 +2627,10 @@ const deleteAttachmentItem = (blockIndex: number, itemIndex: number) => {
 // 附件 URL 输入框失焦时自动识别格式
 const onAttachmentUrlBlur = (item: any) => {
   if (!item || !item.url) return
-  
+
   var url = item.url.trim()
   var schemePrefix = '#小程序://腾讯文档/'
-  
+
   // 检查是否为小程序 Scheme 格式
   if (url.indexOf(schemePrefix) === 0) {
     // 提取 Scheme ID
@@ -2192,11 +2678,82 @@ const addRouteBlockAndClose = () => {
   fabExpanded.value = false
 }
 
+// 添加多媒体块
+const addMediaBlock = () => {
+  pageData.content.push({
+    type: 'media',
+    style: { borderTop: 0, borderBottom: 0, borderLeft: 0, borderRight: 0, borderColor: '#eeeeee' },
+    children: [{
+      title: '',
+      url: '',
+      autoplay: false,
+      controls: true,
+      loop: false
+    }]
+  })
+}
+
+const addMediaBlockAndClose = () => {
+  addMediaBlock()
+  fabExpanded.value = false
+}
+
+// 添加多媒体项
+const addMediaItem = (blockIndex: number) => {
+  const block = pageData.content[blockIndex] as MediaBlock
+  if (block && block.type === 'media') {
+    block.children.push({
+      title: '',
+      url: '',
+      autoplay: false,
+      controls: true,
+      loop: false
+    })
+  }
+}
+
+// 删除多媒体项
+const deleteMediaItem = (blockIndex: number, itemIndex: number) => {
+  const block = pageData.content[blockIndex] as MediaBlock
+  if (block && block.type === 'media' && block.children.length > 1) {
+    block.children.splice(itemIndex, 1)
+  } else if (block && block.type === 'media' && block.children.length === 1) {
+    pageData.content.splice(blockIndex, 1)
+  }
+}
+
+// 媒体项设置面板状态
+const mediaSettingsPanelVisible = ref(false)
+const editingMediaBlockIndex = ref<number | null>(null)
+const editingMediaItemIndex = ref<number | null>(null)
+
+// 打开媒体项设置面板
+const openMediaItemSettings = (blockIndex: number, itemIndex: number) => {
+  editingMediaBlockIndex.value = blockIndex
+  editingMediaItemIndex.value = itemIndex
+  mediaSettingsPanelVisible.value = true
+}
+
+// 关闭媒体项设置面板
+const closeMediaItemSettings = () => {
+  mediaSettingsPanelVisible.value = false
+  editingMediaBlockIndex.value = null
+  editingMediaItemIndex.value = null
+}
+
+// 获取当前编辑的媒体项
+const getEditingMediaItem = () => {
+  if (editingMediaBlockIndex.value === null || editingMediaItemIndex.value === null) return null
+  const block = pageData.content[editingMediaBlockIndex.value] as MediaBlock
+  if (!block || block.type !== 'media') return null
+  return block.children[editingMediaItemIndex.value]
+}
+
 // 在指定位置插入路径节点
 const insertRouteNode = (blockIndex: number, nodeIndex: number) => {
   const block = pageData.content[blockIndex] as RouteBlock
   if (!block || block.type !== 'route') return
-  
+
   block.content.splice(nodeIndex, 0, {
     name: '',
     time: '',
@@ -2210,13 +2767,13 @@ const insertRouteNode = (blockIndex: number, nodeIndex: number) => {
 const deleteRouteNode = (blockIndex: number, nodeIndex: number) => {
   const block = pageData.content[blockIndex] as RouteBlock
   if (!block || block.type !== 'route') return
-  
+
   // 确保至少保留2个节点（起点和终点）
   if (block.content.length <= 2) return
-  
+
   // 不能删除终点
   if (block.content[nodeIndex].isEnd) return
-  
+
   block.content.splice(nodeIndex, 1)
 }
 
@@ -2224,10 +2781,10 @@ const deleteRouteNode = (blockIndex: number, nodeIndex: number) => {
 const toggleRouteNodeType = (blockIndex: number, nodeIndex: number) => {
   const block = pageData.content[blockIndex] as RouteBlock
   if (!block || block.type !== 'route') return
-  
+
   const node = block.content[nodeIndex]
   if (node.isEnd) return
-  
+
   node.type = node.type === 'transfer' ? 'normal' : 'transfer'
 }
 
@@ -2235,11 +2792,11 @@ const toggleRouteNodeType = (blockIndex: number, nodeIndex: number) => {
 const addRouteNodeBeforeEnd = (blockIndex: number) => {
   const block = pageData.content[blockIndex] as RouteBlock
   if (!block || block.type !== 'route') return
-  
+
   // 找到终点的位置
   const endIndex = block.content.findIndex(node => node.isEnd)
   if (endIndex === -1) return
-  
+
   block.content.splice(endIndex, 0, {
     name: '',
     time: '',
@@ -2259,24 +2816,24 @@ const showJsonImportModal = (blockIndex: number) => {
 // 确认 JSON 导入
 const confirmJsonImport = () => {
   if (jsonImportTargetBlock.value === null) return
-  
+
   const block = pageData.content[jsonImportTargetBlock.value] as RouteBlock
   if (!block || block.type !== 'route') return
-  
+
   try {
     const inputText = jsonImportText.value.trim()
     if (!inputText) {
       uni.showToast({ title: '请输入 JSON 数据', icon: 'none' })
       return
     }
-    
+
     const importedList = JSON.parse(inputText)
-    
+
     if (!Array.isArray(importedList) || importedList.length === 0) {
       uni.showToast({ title: '请输入有效的数组格式', icon: 'none' })
       return
     }
-    
+
     // 自动补全缺失字段，确保格式兼容
     const processedNodes: RouteNode[] = importedList.map((node, index) => ({
       name: node.name || '',
@@ -2286,7 +2843,7 @@ const confirmJsonImport = () => {
       type: node.type || 'normal',
       isEnd: false // 先全部设为 false
     }))
-    
+
     // 确保最后一个节点是终点
     if (processedNodes.length > 0) {
       const lastNode = processedNodes[processedNodes.length - 1]
@@ -2297,15 +2854,15 @@ const confirmJsonImport = () => {
       lastNode.desc = ''
       lastNode.type = 'normal'
     }
-    
+
     // 更新路径块内容
     block.content = processedNodes
-    
+
     // 关闭弹窗
     jsonImportVisible.value = false
     jsonImportText.value = ''
     jsonImportTargetBlock.value = null
-    
+
     uni.showToast({ title: '导入成功', icon: 'success' })
   } catch (e) {
     console.error('JSON 解析失败:', e)
@@ -2351,6 +2908,18 @@ const deleteImageItem = (blockIndex: number, itemIndex: number) => {
   }
 }
 
+// 切换弹窗模式
+const togglePopupMode = () => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item) return
+
+  if (item.interactionType === 'popup') {
+    item.interactionType = 'normal'
+  } else {
+    item.interactionType = 'popup'
+  }
+}
+
 // 切换文本项的链接状态
 const toggleTextLink = () => {
   const item = getSelectedItem() as TextItem | null
@@ -2359,6 +2928,7 @@ const toggleTextLink = () => {
   if (item.linkInfo) {
     // 移除链接，同时移除链接样式
     item.linkInfo = undefined
+    item.linkIcon = undefined
     item.style.underline = false
     // 如果颜色是链接蓝色，恢复为默认黑色
     if (item.style.color === '#1890ff') {
@@ -2371,6 +2941,7 @@ const toggleTextLink = () => {
       linkType: 'url',
       url: ''
     }
+    item.linkIcon = '🔗'  // 默认填充链接图标
     item.style.underline = true
     item.style.color = '#1890ff'
   }
@@ -2421,9 +2992,9 @@ const setTextLinkType = (type: 'url' | 'navigation' | 'internal' | 'anchor') => 
 const onInternalSceneChange = (e: any) => {
   const item = getSelectedItem() as TextItem | null
   if (!item || !item.linkInfo) return
-  
+
   const scene = internalLinkScenes[e.detail.value]
-  item.linkInfo.internalScene = scene.value as 'chat'
+  item.linkInfo.internalScene = scene.value as 'chat' | 'memo'
   // 清空之前选择的数据
   item.linkInfo.internalId = undefined
   item.linkInfo.internalTitle = undefined
@@ -2434,7 +3005,7 @@ const onInternalSceneChange = (e: any) => {
 const showChatSessionPicker = async () => {
   chatSessionPickerVisible.value = true
   loadingChatSessions.value = true
-  
+
   try {
     const res: any = await getGeminiSessions({ page: 1, limit: 50 })
     chatSessions.value = res.results || []
@@ -2450,12 +3021,54 @@ const showChatSessionPicker = async () => {
 const selectChatSession = (session: ChatSession) => {
   const item = getSelectedItem() as TextItem | null
   if (!item || !item.linkInfo) return
-  
+
   item.linkInfo.internalId = session.id
   item.linkInfo.internalTitle = session.title || '新建草稿'
   item.linkInfo.internalPath = `/subPackages/tools/chat/index?chatId=${session.id}`
-  
+
   chatSessionPickerVisible.value = false
+  uni.showToast({ title: '已关联素材', icon: 'success' })
+}
+
+// 显示备忘录选择器
+const showMemoPicker = async () => {
+  memoPickerVisible.value = true
+  loadingMemosForPicker.value = true
+  try {
+    const res: any = await getMemos({ page: 1, limit: 50, status: 'active' })
+    memoListForPicker.value = (res.results || []).map((m: any) => ({
+      id: m.id,
+      name: m.name || m.title?.value || '未命名',
+      updatedAt: m.updatedAt
+    }))
+  } catch (error) {
+    console.error('获取备忘录列表失败:', error)
+    uni.showToast({ title: '获取备忘录列表失败', icon: 'none' })
+  } finally {
+    loadingMemosForPicker.value = false
+  }
+}
+
+// 格式化备忘录日期（时间戳）
+const formatMemoDate = (ts: number) => {
+  if (!ts) return ''
+  const d = new Date(typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+// 选择备忘录
+const selectMemo = (memo: MemoItem) => {
+  const item = getSelectedItem() as TextItem | null
+  if (!item || !item.linkInfo) return
+
+  item.linkInfo.internalId = memo.id
+  item.linkInfo.internalTitle = memo.name || '未命名'
+  item.linkInfo.internalPath = `/subPackages/services/memo/editor?id=${memo.id}`
+
+  memoPickerVisible.value = false
   uni.showToast({ title: '已关联素材', icon: 'success' })
 }
 
@@ -3507,10 +4120,10 @@ const resetFields = () => {
   memoName.value = ''
   tags.value = []
   tagInput.value = ''
-  
+
   // 清空内容
   pageData.content = []
-  
+
   // 重置设置为默认值
   settings.padding = { top: 32, bottom: 32, left: 32, right: 32 }
   settings.border = { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' }
@@ -3518,7 +4131,10 @@ const resetFields = () => {
     backgroundColor: '#ffffff',
     backgroundImage: '',
     backgroundBlur: 0,
-    backgroundOpacity: 1
+    backgroundOpacity: 1,
+    enableBlob: false,
+    blobBlur: 80,
+    enableCyberGrid: false
   }
   settings.typography = {
     fontSize: 'standard',
@@ -3538,7 +4154,7 @@ const resetFields = () => {
     url: '',
     title: '查看原始文档'
   }
-  
+
   // 关闭所有面板状态
   selectedBlock.value = null
   selectedItem.value = null
@@ -3564,7 +4180,7 @@ const loadData = async () => {
       // 调用 API 获取备忘录详情
       const result = await getMemosMemoId(memoId.value)
       console.log('请求到的数据', result);
-      
+
       uni.hideLoading()
 
       // 处理返回数据 - HTTP拦截器已经返回data字段，所以直接使用result
@@ -3577,7 +4193,7 @@ const loadData = async () => {
         if (memo.content && Array.isArray(memo.content)) {
           pageData.content = memo.content
         }
-        
+
         // 加载设置
         if (memo.settings) {
           if (memo.settings.padding) {
@@ -3714,7 +4330,7 @@ const loadData = async () => {
 onMounted(() => {
   // 【关键】先重置所有数据，防止数据串号
   resetFields()
-  
+
   // 从 URL 参数获取模式和 memoId
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
@@ -3780,6 +4396,7 @@ onShareAppMessage(() => {
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: 60rpx; // 为 FAB 按钮预留空间
 }
 
 .memo-info-section {
@@ -3809,11 +4426,11 @@ onShareAppMessage(() => {
     background: #f8f9fa;
     border-radius: 50%;
     flex-shrink: 0;
-    
+
     .settings-icon {
       font-size: 36rpx;
     }
-    
+
     &:active {
       background: #eee;
     }
@@ -3932,7 +4549,7 @@ onShareAppMessage(() => {
   // top: 8rpx;
   // right: 8rpx;
   // z-index: 10;
-  
+
   .anchor-id-badge {
     display: flex;
     flex-direction: column;
@@ -3943,17 +4560,17 @@ onShareAppMessage(() => {
     padding: 8rpx 12rpx;
     cursor: pointer;
     transition: all 0.2s;
-    
+
     &:hover {
       background: rgba(102, 126, 234, 0.2);
       transform: scale(1.05);
     }
-    
+
     &:active {
       background: rgba(102, 126, 234, 0.3);
       transform: scale(0.95);
     }
-    
+
     .anchor-tag {
       font-size: 24rpx;
       color: #667eea;
@@ -3961,7 +4578,7 @@ onShareAppMessage(() => {
       font-family: monospace;
       margin-bottom: 2rpx;
     }
-    
+
     .copy-hint {
       font-size: 18rpx;
       color: #999;
@@ -4279,8 +4896,8 @@ onShareAppMessage(() => {
 .fab-container {
   position: fixed;
   right: 32rpx;
-  bottom: 200rpx;
-  z-index: 100;
+  bottom: 240rpx;
+  z-index: 500;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -4303,17 +4920,17 @@ onShareAppMessage(() => {
 // FAB 子按钮容器 - 绝对定位在主按钮上方
 .fab-actions {
   position: absolute;
-  bottom: 130rpx;
+  bottom: 140rpx;
   right: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 16rpx;
+  gap: 24rpx;
   opacity: 0;
   transform: translateY(20rpx) scale(0.8);
   pointer-events: none;
   transition: all 0.2s ease-out;
-  
+
   &.expanded {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -4332,29 +4949,29 @@ onShareAppMessage(() => {
   border-radius: 40rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
   white-space: nowrap;
-  
+
   .fab-action-icon {
     font-size: 32rpx;
   }
-  
+
   .fab-action-text {
     font-size: 28rpx;
     color: #333;
     font-weight: 500;
   }
-  
+
   &.route {
     .fab-action-text {
       color: #11998e;
     }
   }
-  
+
   &.attachment {
     .fab-action-text {
       color: #667eea;
     }
   }
-  
+
   &:active {
     transform: scale(0.95);
     background: rgba(240, 240, 240, 0.95);
@@ -4380,17 +4997,17 @@ onShareAppMessage(() => {
   background: #fff;
   border: 2rpx solid rgba(102, 126, 234, 0.2);
   border-radius: 12rpx;
-  
+
   .attachment-icon {
     font-size: 40rpx;
     margin-right: 16rpx;
     flex-shrink: 0;
   }
-  
+
   .attachment-info {
     flex: 1;
     min-width: 0;
-    
+
     .attachment-title-input {
       width: 100%;
       font-size: 28rpx;
@@ -4400,7 +5017,7 @@ onShareAppMessage(() => {
       border: none;
       background: transparent;
     }
-    
+
     .attachment-url-input {
       width: 100%;
       font-size: 24rpx;
@@ -4410,15 +5027,279 @@ onShareAppMessage(() => {
       background: transparent;
     }
   }
-  
+
   .attachment-delete {
     font-size: 36rpx;
     color: #999;
     padding: 8rpx 16rpx;
     margin-left: 8rpx;
-    
+
     &:active {
       color: #ff4757;
+    }
+  }
+}
+
+// 多媒体块样式
+.media-block {
+  margin: 16rpx 0;
+  padding: 16rpx;
+  background: rgba(118, 75, 162, 0.04);
+  border-radius: 12rpx;
+
+  .media-card {
+    background: #fff;
+    padding: 20rpx;
+    border-radius: 8rpx;
+    border: 2rpx solid rgba(118, 75, 162, 0.1);
+    margin: 12rpx 0;
+    position: relative;
+
+    .media-info {
+      margin-bottom: 16rpx;
+
+      .media-title-input {
+        width: 100%;
+        font-size: 28rpx;
+        font-weight: 500;
+        color: #333;
+        padding: 8rpx 0;
+        border: none;
+        background: transparent;
+        margin-bottom: 8rpx;
+      }
+
+      .media-url-input {
+        width: 100%;
+        font-size: 24rpx;
+        color: #999;
+        padding: 8rpx 0;
+        border: none;
+        background: transparent;
+      }
+    }
+
+    .mini-preview {
+      width: 100%;
+      height: 300rpx;
+      margin-top: 16rpx;
+      border-radius: 8rpx;
+      background: #000;
+    }
+
+    .audio-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40rpx;
+      background: rgba(118, 75, 162, 0.05);
+      border-radius: 8rpx;
+      margin-top: 16rpx;
+
+      .audio-icon {
+        font-size: 60rpx;
+        margin-bottom: 12rpx;
+      }
+
+      .audio-text {
+        font-size: 24rpx;
+        color: #999;
+      }
+    }
+
+    .media-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8rpx;
+
+      .media-url-preview {
+        font-size: 22rpx;
+        color: #999;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &.empty {
+          color: #ccc;
+          font-style: italic;
+        }
+      }
+
+      .media-props-tags {
+        display: flex;
+        gap: 8rpx;
+        margin-left: 12rpx;
+
+        .prop-tag {
+          font-size: 18rpx;
+          padding: 4rpx 10rpx;
+          background: rgba(118, 75, 162, 0.1);
+          color: #764ba2;
+          border-radius: 8rpx;
+        }
+      }
+    }
+
+    .media-card-actions {
+      position: absolute;
+      top: 12rpx;
+      right: 12rpx;
+      display: flex;
+      gap: 12rpx;
+
+      .media-settings-btn {
+        font-size: 32rpx;
+        padding: 8rpx;
+        color: #667eea;
+
+        &:active {
+          opacity: 0.7;
+        }
+      }
+
+      .media-delete {
+        font-size: 36rpx;
+        color: #999;
+        padding: 8rpx;
+
+        &:active {
+          color: #ff4757;
+        }
+      }
+    }
+  }
+}
+
+// 媒体设置面板样式
+.media-settings-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.media-settings-panel {
+  width: 100%;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  display: flex;
+  flex-direction: column;
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24rpx 32rpx;
+    border-bottom: 2rpx solid #f0f0f0;
+
+    .panel-title {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .panel-close {
+      font-size: 48rpx;
+      color: #999;
+      padding: 0 16rpx;
+    }
+  }
+
+  .panel-scroll {
+    flex: 1;
+    padding: 24rpx 32rpx;
+    // max-height: 60vh;
+    box-sizing: border-box;
+  }
+
+  .style-section {
+    margin-bottom: 32rpx;
+
+    .section-title {
+      font-size: 26rpx;
+      color: #666;
+      margin-bottom: 16rpx;
+    }
+  }
+
+  .media-url-textarea {
+    width: 100%;
+    min-height: 120rpx;
+    padding: 16rpx;
+    background: #f8f9fa;
+    border-radius: 8rpx;
+    font-size: 26rpx;
+    line-height: 1.6;
+    border: 2rpx solid #e0e0e0;
+
+    &:focus {
+      background: #fff;
+      border-color: #667eea;
+    }
+  }
+
+  .media-prop-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16rpx 0;
+    border-bottom: 1rpx solid #f5f5f5;
+
+    .prop-label {
+      font-size: 28rpx;
+      color: #333;
+    }
+  }
+
+  .media-preview-video {
+    width: 100%;
+    height: 300rpx;
+    border-radius: 8rpx;
+    background: #000;
+  }
+
+  .media-preview-audio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40rpx;
+    background: rgba(118, 75, 162, 0.05);
+    border-radius: 8rpx;
+
+    .audio-icon {
+      font-size: 60rpx;
+      margin-bottom: 12rpx;
+    }
+
+    .audio-name {
+      font-size: 24rpx;
+      color: #666;
+    }
+  }
+
+  .panel-footer {
+    padding: 24rpx 32rpx;
+    border-top: 2rpx solid #f0f0f0;
+
+    .panel-btn.confirm {
+      width: 100%;
+      padding: 24rpx;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-size: 30rpx;
+      font-weight: 500;
+      text-align: center;
+      border-radius: 12rpx;
     }
   }
 }
@@ -4435,23 +5316,23 @@ onShareAppMessage(() => {
   box-shadow: 0 8rpx 30rpx rgba(118, 75, 162, 0.4);
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   flex-shrink: 0;
-  
+
   .fab-main-icon {
     font-size: 56rpx;
     color: #fff;
     font-weight: 300;
     line-height: 1;
   }
-  
+
   &.active {
     box-shadow: 0 8rpx 40rpx rgba(118, 75, 162, 0.6);
     transform: rotate(45deg);
   }
-  
+
   &:active {
     transform: scale(0.9);
   }
-  
+
   &.active:active {
     transform: scale(0.9) rotate(45deg);
   }
@@ -4461,9 +5342,15 @@ onShareAppMessage(() => {
   flex-shrink: 0;
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.15);
-  max-height: 50vh;
+  // height: 80vh;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  top: 20vh;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow-y: auto;
 
   .style-panel-content {
     display: flex;
@@ -4473,7 +5360,7 @@ onShareAppMessage(() => {
 
     .panel-scroll-content {
       flex: 1;
-      max-height: calc(50vh - 100rpx);
+      // max-height: calc(50vh - 100rpx);
       padding: 0 32rpx 24rpx;
       box-sizing: border-box;
     }
@@ -4863,6 +5750,85 @@ onShareAppMessage(() => {
   gap: 20rpx;
 }
 
+// 锚点建议列表样式
+.anchor-suggestions {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(255, 107, 157, 0.08));
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(102, 126, 234, 0.2);
+
+  .suggestions-title {
+    font-size: 24rpx;
+    color: #667eea;
+    margin-bottom: 12rpx;
+    font-weight: 500;
+  }
+
+  .suggestions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+
+    .suggestion-item {
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+      padding: 12rpx 16rpx;
+      background: white;
+      border-radius: 8rpx;
+      border: 2rpx solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.96);
+      }
+
+      &.is-selected {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      &.is-popup-target {
+        opacity: 0.6;
+        border-style: dashed;
+      }
+
+      .anchor-id {
+        font-size: 26rpx;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .anchor-type {
+        font-size: 22rpx;
+        color: #999;
+        padding: 4rpx 8rpx;
+        background: #f5f5f5;
+        border-radius: 4rpx;
+      }
+
+      .popup-badge {
+        font-size: 20rpx;
+        color: white;
+        background: linear-gradient(135deg, #ff6b9d, #667eea);
+        padding: 4rpx 10rpx;
+        border-radius: 6rpx;
+      }
+    }
+  }
+}
+
+.anchor-tip {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #999;
+  padding: 12rpx;
+  background: #f9f9f9;
+  border-radius: 8rpx;
+}
+
 .link-type-selector {
   margin-bottom: 20rpx;
 
@@ -4919,6 +5885,69 @@ onShareAppMessage(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 20rpx;
+}
+
+// 弹窗模式设置样式
+.popup-mode-section {
+  margin-top: 20rpx;
+  padding: 16rpx 20rpx;
+  background: rgba(102, 126, 234, 0.04);
+  border-radius: 12rpx;
+  border: 2rpx solid rgba(102, 126, 234, 0.1);
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .section-title {
+      font-size: 26rpx;
+      color: #666;
+    }
+  }
+
+  .popup-hint {
+    margin-top: 12rpx;
+    font-size: 22rpx;
+    color: #999;
+    line-height: 1.4;
+  }
+}
+
+// 链接图标输入样式
+.link-icon-input {
+  text-align: center;
+  font-size: 32rpx !important;
+}
+
+.icon-hint {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+// 链接类型选择器样式
+.link-type-picker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 20rpx;
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  border: 2rpx solid #e0e0e0;
+  font-size: 26rpx;
+  color: #333;
+  transition: all 0.2s;
+
+  &:active {
+    background: #e8e8e8;
+    border-color: #667eea;
+  }
+
+  .picker-arrow {
+    font-size: 32rpx;
+    color: #999;
+  }
 }
 
 // 链接设置区域样式
@@ -5024,6 +6053,7 @@ onShareAppMessage(() => {
 
 // 内部链接相关样式
 .internal-link-section {
+
   .scene-picker-btn,
   .session-picker-btn {
     display: flex;
@@ -5035,17 +6065,17 @@ onShareAppMessage(() => {
     border-radius: 8rpx;
     font-size: 28rpx;
     color: #333;
-    
+
     .placeholder {
       color: #999;
     }
-    
+
     .picker-arrow {
       color: #999;
       font-size: 28rpx;
     }
   }
-  
+
   .chat-session-picker {
     margin-top: 16rpx;
   }
@@ -5062,7 +6092,7 @@ onShareAppMessage(() => {
   z-index: 1000;
   display: flex;
   align-items: flex-end;
-  
+
   .chat-session-content {
     width: 100%;
     max-height: 70vh;
@@ -5070,27 +6100,27 @@ onShareAppMessage(() => {
     border-radius: 24rpx 24rpx 0 0;
     display: flex;
     flex-direction: column;
-    
+
     .chat-session-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 32rpx;
       border-bottom: 2rpx solid #f0f0f0;
-      
+
       .chat-session-title {
         font-size: 32rpx;
         font-weight: 600;
         color: #333;
       }
-      
+
       .chat-session-close {
         font-size: 40rpx;
         color: #999;
         padding: 8rpx;
       }
     }
-    
+
     .loading-sessions,
     .empty-sessions {
       height: 400rpx;
@@ -5101,18 +6131,18 @@ onShareAppMessage(() => {
       gap: 16rpx;
       color: #999;
       font-size: 28rpx;
-      
+
       .loading-icon,
       .empty-icon {
         font-size: 80rpx;
       }
     }
-    
+
     .chat-session-list {
       flex: 1;
       max-height: 60vh;
       padding: 16rpx;
-      
+
       .chat-session-item {
         display: flex;
         align-items: center;
@@ -5121,11 +6151,11 @@ onShareAppMessage(() => {
         background: #f8f9fa;
         border-radius: 12rpx;
         transition: all 0.2s;
-        
+
         &:active {
           background: #e6f7ff;
         }
-        
+
         .session-icon {
           width: 72rpx;
           height: 72rpx;
@@ -5137,11 +6167,11 @@ onShareAppMessage(() => {
           font-size: 32rpx;
           margin-right: 20rpx;
         }
-        
+
         .session-info {
           flex: 1;
           min-width: 0;
-          
+
           .session-title {
             font-size: 28rpx;
             font-weight: 500;
@@ -5151,14 +6181,14 @@ onShareAppMessage(() => {
             text-overflow: ellipsis;
             white-space: nowrap;
           }
-          
+
           .session-meta {
             font-size: 24rpx;
             color: #999;
             margin-top: 8rpx;
           }
         }
-        
+
         .session-select-icon {
           font-size: 32rpx;
           color: #999;
@@ -5196,11 +6226,11 @@ onShareAppMessage(() => {
   border-radius: 8rpx;
   color: #667eea;
   font-size: 24rpx;
-  
+
   .insert-icon {
     font-size: 28rpx;
   }
-  
+
   &:active {
     background: #f0f5ff;
   }
@@ -5212,12 +6242,12 @@ onShareAppMessage(() => {
   padding: 24rpx;
   margin-bottom: 16rpx;
   border-left: 6rpx solid #e0e0e0;
-  
+
   &.is-transfer {
     border-left-color: #667eea;
     background: #fafbff;
   }
-  
+
   &.is-end {
     border-left-color: #52c41a;
     background: #f6ffed;
@@ -5229,7 +6259,7 @@ onShareAppMessage(() => {
   align-items: center;
   gap: 12rpx;
   margin-bottom: 16rpx;
-  
+
   .node-index {
     width: 40rpx;
     height: 40rpx;
@@ -5242,13 +6272,13 @@ onShareAppMessage(() => {
     font-size: 24rpx;
     font-weight: 600;
   }
-  
+
   .node-type-label {
     font-size: 26rpx;
     color: #666;
     flex: 1;
   }
-  
+
   .node-delete-btn {
     width: 48rpx;
     height: 48rpx;
@@ -5259,7 +6289,7 @@ onShareAppMessage(() => {
     color: #f44336;
     border-radius: 50%;
     font-size: 32rpx;
-    
+
     &:active {
       background: #ffcdd2;
     }
@@ -5268,18 +6298,18 @@ onShareAppMessage(() => {
 
 .node-input-group {
   margin-bottom: 16rpx;
-  
+
   &.half {
     flex: 1;
   }
-  
+
   .input-label {
     display: block;
     font-size: 24rpx;
     color: #999;
     margin-bottom: 8rpx;
   }
-  
+
   .node-input {
     width: 100%;
     padding: 16rpx;
@@ -5287,7 +6317,7 @@ onShareAppMessage(() => {
     border: 2rpx solid #e0e0e0;
     border-radius: 8rpx;
     font-size: 28rpx;
-    
+
     &:focus {
       background: #fff;
       border-color: #667eea;
@@ -5307,7 +6337,7 @@ onShareAppMessage(() => {
   padding: 16rpx 0;
   border-top: 2rpx solid #f0f0f0;
   margin-top: 8rpx;
-  
+
   .switch-label {
     font-size: 26rpx;
     color: #666;
@@ -5323,17 +6353,17 @@ onShareAppMessage(() => {
   background: #fff;
   border-radius: 12rpx;
   margin-top: 8rpx;
-  
+
   .add-icon {
     font-size: 36rpx;
     color: #667eea;
   }
-  
+
   .add-text {
     font-size: 28rpx;
     color: #667eea;
   }
-  
+
   &:active {
     background: #f0f5ff;
   }
@@ -5363,11 +6393,11 @@ onShareAppMessage(() => {
   border-radius: 8rpx;
   color: #667eea;
   font-size: 24rpx;
-  
+
   .toolbar-icon {
     font-size: 28rpx;
   }
-  
+
   &:active {
     background: #f0f5ff;
   }
@@ -5402,13 +6432,13 @@ onShareAppMessage(() => {
   align-items: center;
   padding: 32rpx;
   border-bottom: 2rpx solid #f0f0f0;
-  
+
   .json-import-title {
     font-size: 32rpx;
     font-weight: 600;
     color: #333;
   }
-  
+
   .json-import-close {
     font-size: 40rpx;
     color: #999;
@@ -5430,7 +6460,7 @@ onShareAppMessage(() => {
   font-size: 26rpx;
   font-family: monospace;
   line-height: 1.6;
-  
+
   &:focus {
     background: #fff;
     border-color: #667eea;
@@ -5442,7 +6472,7 @@ onShareAppMessage(() => {
   padding: 12rpx 16rpx;
   background: #fffbe6;
   border-radius: 8rpx;
-  
+
   text {
     font-size: 24rpx;
     color: #d48806;
@@ -5453,7 +6483,7 @@ onShareAppMessage(() => {
   display: flex;
   gap: 24rpx;
   padding: 24rpx 32rpx 32rpx;
-  
+
   .json-btn {
     flex: 1;
     height: 80rpx;
@@ -5462,17 +6492,17 @@ onShareAppMessage(() => {
     justify-content: center;
     border-radius: 40rpx;
     font-size: 28rpx;
-    
+
     &.cancel {
       background: #f0f0f0;
       color: #666;
     }
-    
+
     &.confirm {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
     }
-    
+
     &:active {
       opacity: 0.8;
     }
@@ -5511,13 +6541,13 @@ onShareAppMessage(() => {
   padding: 32rpx;
   border-bottom: 2rpx solid #f0f0f0;
   flex-shrink: 0;
-  
+
   .settings-title {
     font-size: 34rpx;
     font-weight: 600;
     color: #333;
   }
-  
+
   .settings-close {
     font-size: 44rpx;
     color: #999;
@@ -5536,11 +6566,11 @@ onShareAppMessage(() => {
 .settings-section {
   padding: 24rpx 0;
   border-bottom: 2rpx solid #f5f5f5;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   .section-title {
     font-size: 28rpx;
     font-weight: 600;
@@ -5556,7 +6586,7 @@ onShareAppMessage(() => {
     gap: 12rpx;
     margin-bottom: 16rpx;
   }
-  
+
   .tag-editable {
     display: flex;
     align-items: center;
@@ -5566,31 +6596,31 @@ onShareAppMessage(() => {
     color: #fff;
     border-radius: 24rpx;
     font-size: 24rpx;
-    
+
     .tag-text {
       max-width: 200rpx;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    
+
     .tag-remove {
       font-size: 28rpx;
       line-height: 1;
       opacity: 0.8;
-      
+
       &:active {
         opacity: 1;
       }
     }
   }
-  
+
   .tag-add-row {
     display: flex;
     gap: 12rpx;
     align-items: center;
   }
-  
+
   .tag-add-input {
     flex: 1;
     height: 72rpx;
@@ -5599,13 +6629,13 @@ onShareAppMessage(() => {
     border: 2rpx solid #e0e0e0;
     border-radius: 36rpx;
     font-size: 26rpx;
-    
+
     &:focus {
       background: #fff;
       border-color: #667eea;
     }
   }
-  
+
   .tag-add-btn {
     height: 72rpx;
     padding: 0 28rpx;
@@ -5616,7 +6646,7 @@ onShareAppMessage(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:active {
       opacity: 0.8;
     }
@@ -5628,17 +6658,17 @@ onShareAppMessage(() => {
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 0;
-  
+
   .setting-info {
     flex: 1;
-    
+
     .setting-label {
       display: block;
       font-size: 28rpx;
       color: #333;
       margin-bottom: 4rpx;
     }
-    
+
     .setting-desc {
       display: block;
       font-size: 24rpx;
@@ -5659,12 +6689,12 @@ onShareAppMessage(() => {
   // flex-direction: column;
   // align-items: center;
   // gap: 8rpx;
-  
+
   .padding-label {
     font-size: 24rpx;
     color: #666;
   }
-  
+
   .padding-input {
     width: 100%;
     height: 64rpx;
@@ -5673,7 +6703,7 @@ onShareAppMessage(() => {
     border: 2rpx solid #e0e0e0;
     border-radius: 12rpx;
     font-size: 26rpx;
-    
+
     &:focus {
       background: #fff;
       border-color: #667eea;
@@ -5696,17 +6726,17 @@ onShareAppMessage(() => {
   padding: 12rpx 16rpx;
   background: #f8f9fa;
   border-radius: 12rpx;
-  
+
   .border-label {
     font-size: 24rpx;
     color: #666;
   }
-  
+
   .border-controls {
     display: flex;
     flex: 1;
   }
-  
+
   .border-width-input {
     width: 80rpx;
     height: 48rpx;
@@ -5715,12 +6745,12 @@ onShareAppMessage(() => {
     border: 2rpx solid #e0e0e0;
     border-radius: 8rpx;
     font-size: 24rpx;
-    
+
     &:focus {
       border-color: #667eea;
     }
   }
-  
+
   .border-unit {
     font-size: 22rpx;
     color: #999;
@@ -5732,13 +6762,13 @@ onShareAppMessage(() => {
   align-items: center;
   gap: 12rpx;
   padding: 12rpx 0;
-  
+
   .border-color-label {
     font-size: 26rpx;
     color: #333;
     flex-shrink: 0;
   }
-  
+
   .border-color-input {
     flex: 1;
     height: 56rpx;
@@ -5748,13 +6778,13 @@ onShareAppMessage(() => {
     border-radius: 12rpx;
     font-size: 26rpx;
     font-family: monospace;
-    
+
     &:focus {
       background: #fff;
       border-color: #667eea;
     }
   }
-  
+
   .border-color-preview {
     width: 56rpx;
     height: 56rpx;
@@ -5787,12 +6817,12 @@ onShareAppMessage(() => {
   align-items: center;
   justify-content: center;
   position: relative;
-  
+
   &.active {
     border-color: #667eea;
     border-width: 4rpx;
   }
-  
+
   .palette-check {
     color: #667eea;
     font-size: 32rpx;
@@ -5803,7 +6833,7 @@ onShareAppMessage(() => {
 // 设置行
 .setting-row {
   margin-bottom: 20rpx;
-  
+
   .setting-row-label {
     display: block;
     font-size: 26rpx;
@@ -5816,7 +6846,7 @@ onShareAppMessage(() => {
 .bg-image-controls {
   display: flex;
   gap: 12rpx;
-  
+
   .bg-image-input {
     flex: 1;
     height: 64rpx;
@@ -5825,13 +6855,13 @@ onShareAppMessage(() => {
     border: 2rpx solid #e0e0e0;
     border-radius: 12rpx;
     font-size: 24rpx;
-    
+
     &:focus {
       background: #fff;
       border-color: #667eea;
     }
   }
-  
+
   .bg-image-upload {
     height: 64rpx;
     padding: 0 24rpx;
@@ -5842,7 +6872,7 @@ onShareAppMessage(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:active {
       opacity: 0.8;
     }
@@ -5855,18 +6885,18 @@ onShareAppMessage(() => {
   align-items: center;
   gap: 16rpx;
   margin-bottom: 16rpx;
-  
+
   .slider-label {
     font-size: 24rpx;
     color: #666;
     width: 80rpx;
     flex-shrink: 0;
   }
-  
+
   slider {
     flex: 1;
   }
-  
+
   .slider-value {
     font-size: 24rpx;
     color: #333;
@@ -5889,23 +6919,24 @@ onShareAppMessage(() => {
   border: 2rpx solid #e0e0e0;
   border-radius: 12rpx;
   text-align: center;
-  
+
   &.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: #667eea;
-    
-    .tab-label, .tab-size {
+
+    .tab-label,
+    .tab-size {
       color: #fff;
     }
   }
-  
+
   .tab-label {
     display: block;
     font-size: 26rpx;
     color: #333;
     font-weight: 500;
   }
-  
+
   .tab-size {
     display: block;
     font-size: 22rpx;
@@ -5917,7 +6948,7 @@ onShareAppMessage(() => {
 .settings-footer {
   padding: 24rpx 32rpx;
   flex-shrink: 0;
-  
+
   .settings-done-btn {
     height: 88rpx;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -5928,41 +6959,49 @@ onShareAppMessage(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:active {
       opacity: 0.8;
     }
   }
 }
 
-// 块级样式设置面板
+// 块级样式设置面板 - 90vh Fixed 规范
 .block-style-panel-overlay {
   position: fixed;
-  top: 0;
+  // top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 200;
+  background: #fff;
+  z-index: 2000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  overflow-y: auto;
 }
 
 .block-style-panel {
   width: 100%;
-  max-height: 80vh;
-  background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
+  height: 90vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 40rpx 40rpx 0 0;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 -10rpx 40rpx rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease-out;
+  
+  /* 预留小程序顶部安全区域 */
+  padding-top: env(safe-area-inset-top);
 }
 
 @keyframes slideUp {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -5975,18 +7014,18 @@ onShareAppMessage(() => {
   padding: 32rpx;
   border-bottom: 1rpx solid #f0f0f0;
   flex-shrink: 0;
-  
+
   .panel-title {
     font-size: 32rpx;
     font-weight: 600;
     color: #333;
   }
-  
+
   .panel-close {
     font-size: 40rpx;
     color: #999;
     padding: 8rpx 16rpx;
-    
+
     &:active {
       color: #333;
     }
@@ -5996,13 +7035,14 @@ onShareAppMessage(() => {
 .panel-scroll {
   flex: 1;
   padding: 0 32rpx;
-  max-height: 60vh;
+  // max-height: 60vh;
+  box-sizing: border-box;
 }
 
 .style-section {
   padding: 24rpx 0;
   border-bottom: 1rpx solid #f5f5f5;
-  
+
   .section-title {
     font-size: 28rpx;
     font-weight: 500;
@@ -6027,24 +7067,24 @@ onShareAppMessage(() => {
   align-items: center;
   justify-content: center;
   position: relative;
-  
+
   &.active {
     border-color: #667eea;
     border-width: 4rpx;
   }
-  
+
   &.transparent {
     background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%),
-                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%);
+      linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%);
     background-size: 20rpx 20rpx;
     background-position: 0 0, 10rpx 10rpx;
-    
+
     .transparent-label {
       font-size: 20rpx;
       color: #999;
     }
   }
-  
+
   .check-icon {
     font-size: 28rpx;
     color: #667eea;
@@ -6063,18 +7103,18 @@ onShareAppMessage(() => {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  
+
   .padding-label {
     width: 48rpx;
     font-size: 26rpx;
     color: #666;
     flex-shrink: 0;
   }
-  
+
   slider {
     flex: 1;
   }
-  
+
   .padding-value {
     width: 60rpx;
     font-size: 24rpx;
@@ -6098,23 +7138,23 @@ onShareAppMessage(() => {
     margin-bottom: 12rpx;
     display: block;
   }
-  
+
   .border-controls {
     display: flex;
     align-items: center;
     gap: 12rpx;
-    
+
     .border-slider {
       flex: 1;
     }
-    
+
     .border-value {
       width: 80rpx;
       font-size: 24rpx;
       color: #999;
       flex-shrink: 0;
     }
-    
+
     .border-color-input {
       width: 140rpx;
       height: 56rpx;
@@ -6133,11 +7173,11 @@ onShareAppMessage(() => {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  
+
   .radius-slider {
     flex: 1;
   }
-  
+
   .radius-value {
     width: 80rpx;
     font-size: 24rpx;
@@ -6156,7 +7196,7 @@ onShareAppMessage(() => {
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid #f0f0f0;
   flex-shrink: 0;
-  
+
   .panel-btn {
     flex: 1;
     height: 80rpx;
@@ -6166,20 +7206,20 @@ onShareAppMessage(() => {
     justify-content: center;
     font-size: 28rpx;
     font-weight: 500;
-    
+
     &.reset {
       background: #f5f5f5;
       color: #666;
-      
+
       &:active {
         background: #e8e8e8;
       }
     }
-    
+
     &.confirm {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
-      
+
       &:active {
         opacity: 0.8;
       }
@@ -6204,7 +7244,7 @@ onShareAppMessage(() => {
 
 .business-item {
   margin-bottom: 16rpx;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -6232,12 +7272,12 @@ onShareAppMessage(() => {
 
 .business-input-group {
   margin-bottom: 12rpx;
-  
+
   .business-label {
     display: block;
     margin-bottom: 8rpx;
   }
-  
+
   .business-input {
     width: 100%;
     height: 72rpx;
@@ -6247,9 +7287,292 @@ onShareAppMessage(() => {
     font-size: 26rpx;
     color: #333;
     background: #fff;
-    
+
     &:focus {
       border-color: #667eea;
+    }
+  }
+}
+
+// 90vh 底部固定配置面板样式
+.full-screen-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 90vh;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 40rpx 40rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 2000;
+  box-shadow: 0 -10rpx 40rpx rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  
+  /* 预留小程序顶部安全区域 */
+  padding-top: env(safe-area-inset-top);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 40rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 2rpx solid rgba(102, 126, 234, 0.1);
+  flex-shrink: 0; /* 防止标题区被压缩 */
+
+  .panel-title {
+    font-size: 36rpx;
+    font-weight: 600;
+    color: #2d3436;
+  }
+
+  .save-btn {
+    padding: 16rpx 32rpx;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 24rpx;
+    font-size: 28rpx;
+    font-weight: 500;
+    box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+
+    &:active {
+      transform: scale(0.95);
+      box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.4);
+    }
+  }
+}
+
+.config-tabs {
+  display: flex;
+  padding: 0 40rpx;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px);
+  flex-shrink: 0; /* 防止标签区被压缩 */
+
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    padding: 24rpx 16rpx;
+    position: relative;
+    transition: all 0.3s ease;
+
+    text {
+      font-size: 28rpx;
+      color: #74b9ff;
+      font-weight: 500;
+    }
+
+    &.active {
+      text {
+        color: #667eea;
+        font-weight: 600;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60rpx;
+        height: 6rpx;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 3rpx;
+      }
+    }
+  }
+}
+
+.tab-content {
+  flex: 1;
+  padding: 40rpx;
+  overflow-y: auto;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); /* 预留底部安全区域 */
+}
+
+// 卡片化配置区块
+.config-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 32rpx;
+  box-shadow:
+    0 12rpx 40rpx rgba(102, 126, 234, 0.1),
+    0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(20px);
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+
+  .card-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #2d3436;
+    margin-bottom: 24rpx;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .card-content {
+    .config-hint {
+      text {
+        font-size: 24rpx;
+        color: #74b9ff;
+        line-height: 1.5;
+      }
+    }
+
+    .romantic-hint {
+      background: linear-gradient(135deg, #ff6b9d1a, #74b9ff1a);
+      padding: 20rpx;
+      border-radius: 16rpx;
+      margin-top: 24rpx;
+      border: 2rpx solid rgba(255, 107, 157, 0.2);
+
+      text {
+        font-size: 24rpx;
+        color: #e84393;
+        line-height: 1.6;
+      }
+    }
+  }
+}
+
+// 浪漫交互控件样式
+.picker-display {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #74b9ff1a, #667eea1a);
+  color: #667eea;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  border: 2rpx solid rgba(102, 126, 234, 0.2);
+}
+
+// 弹窗内容编辑器
+.popup-content-section {
+  margin-top: 32rpx;
+
+  .section-title {
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #2d3436;
+    margin-bottom: 20rpx;
+  }
+}
+
+.popup-editor-card {
+  background: linear-gradient(135deg, #ff6b9d1a, #667eea1a);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  border: 2rpx solid rgba(255, 107, 157, 0.3);
+
+  .popup-content-input {
+    width: 100%;
+    min-height: 200rpx;
+    padding: 20rpx;
+    background: rgba(255, 255, 255, 0.8);
+    border: 2rpx solid rgba(116, 185, 255, 0.3);
+    border-radius: 16rpx;
+    font-size: 26rpx;
+    color: #2d3436;
+    line-height: 1.6;
+    backdrop-filter: blur(10px);
+  }
+
+  .popup-controls {
+    display: flex;
+    gap: 16rpx;
+    margin-top: 20rpx;
+
+    .control-btn {
+      flex: 1;
+      padding: 20rpx;
+      border-radius: 16rpx;
+      font-size: 26rpx;
+      font-weight: 500;
+      border: none;
+      transition: all 0.3s ease;
+
+      &.primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 6rpx 16rpx rgba(102, 126, 234, 0.3);
+
+        &:active {
+          transform: translateY(2rpx);
+          box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.4);
+        }
+      }
+
+      &.secondary {
+        background: linear-gradient(135deg, #ff6b9d, #e84393);
+        color: white;
+        box-shadow: 0 6rpx 16rpx rgba(255, 107, 157, 0.3);
+
+        &:active {
+          transform: translateY(2rpx);
+          box-shadow: 0 4rpx 12rpx rgba(255, 107, 157, 0.4);
+        }
+      }
+    }
+  }
+}
+
+// 弹窗图片预览样式
+.popup-images {
+  margin-top: 24rpx;
+
+  .images-title {
+    font-size: 26rpx;
+    color: #667eea;
+    font-weight: 500;
+    margin-bottom: 16rpx;
+  }
+
+  .images-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16rpx;
+
+    .image-item {
+      position: relative;
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 12rpx;
+      overflow: hidden;
+
+      .image-preview {
+        width: 100%;
+        height: 100%;
+        border-radius: 12rpx;
+        border: 2rpx solid rgba(102, 126, 234, 0.2);
+      }
+
+      .image-remove {
+        position: absolute;
+        top: -8rpx;
+        right: -8rpx;
+        width: 32rpx;
+        height: 32rpx;
+        background: #ff6b9d;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20rpx;
+        font-weight: 600;
+        box-shadow: 0 4rpx 12rpx rgba(255, 107, 157, 0.4);
+        border: 2rpx solid white;
+      }
     }
   }
 }

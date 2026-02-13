@@ -46,8 +46,11 @@ scp -i $env:USERPROFILE\.ssh\id_ed25519 deploy-h5.sh root@120.24.96.11:/var/www/
 **之后每次部署只需执行：**
 
 ```powershell
-# 在项目根目录执行
-.\deploy-h5.ps1
+# 在项目根目录执行 windows
+.\deploy-h5-pre-win.ps1
+
+# 在项目根目录执行 mac
+./deploy-h5-pre-mac.sh
 ```
 
 脚本会自动：
