@@ -5,6 +5,12 @@
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }">
       <template #right>
         <view class="nav-actions">
+          <view class="nav-action-btn" :class="{ disabled: !canUndo }" @click="undo">
+            <text>↶</text>
+          </view>
+          <view class="nav-action-btn" :class="{ disabled: !canRedo }" @click="redo">
+            <text>↷</text>
+          </view>
           <view class="nav-action-btn" @click="saveAndGoToDetail" v-if="memoId">
             <text>👁️</text>
           </view>
@@ -34,7 +40,17 @@
       <view class="content-section">
 
         <!-- 内容块列表 -->
-        <view v-for="(block, blockIndex) in pageData.content" :key="blockIndex" class="content-block">
+        <view
+          v-for="(block, blockIndex) in pageData.content"
+          :key="blockIndex"
+          class="content-block"
+          :class="{ 'is-locked': block?.style?.locked === true }"
+        >
+          <!-- 锁定徽章（右上角，仅锁定块显示） -->
+          <view v-if="block?.style?.locked === true" class="locked-badge" @click.stop="onLockedBadgeClick(blockIndex)">
+            <text class="locked-icon">🔒</text>
+            <text class="locked-text">已锁定</text>
+          </view>
           <!-- 文本块 -->
           <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
             <!-- 锚点ID显示 -->
@@ -45,7 +61,7 @@
               </view>
             </view> -->
             <!-- 编辑模式：显示块头部 -->
-            <view class="block-header" @click="selectBlock(blockIndex)">
+            <view class="block-header">
               <!-- <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text> -->
               <!-- <text class="block-type-label">📝 文本块</text> -->
               <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
@@ -55,6 +71,15 @@
               <view class="block-actions">
                 <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <picker
+                  mode="selector"
+                  :range="getMovePositions(blockIndex)"
+                  range-key="label"
+                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                  @click.stop
+                >
+                  <view class="action-btn" @click.stop>≡</view>
+                </picker>
                 <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
@@ -87,7 +112,7 @@
               </view>
             </view> -->
             <!-- 编辑模式：显示块头部 -->
-            <view class="block-header" @click="selectBlock(blockIndex)">
+            <view class="block-header">
               <!-- <text class="block-type-label">🖼️ 图片块</text> -->
               <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
                 <text class="anchor-tag">图片容器#L{{ blockIndex + 1 }}</text>
@@ -96,6 +121,15 @@
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <picker
+                  mode="selector"
+                  :range="getMovePositions(blockIndex)"
+                  range-key="label"
+                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                  @click.stop
+                >
+                  <view class="action-btn" @click.stop>≡</view>
+                </picker>
                 <view class="action-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
@@ -124,13 +158,22 @@
 
           <!-- 路径块 -->
           <view v-if="block.type === 'route'" class="route-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header" @click="selectBlock(blockIndex)">
+            <view class="block-header">
               <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
                 <text class="anchor-tag">行程路径#L{{ blockIndex + 1 }}</text>
               </text>
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <picker
+                  mode="selector"
+                  :range="getMovePositions(blockIndex)"
+                  range-key="label"
+                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                  @click.stop
+                >
+                  <view class="action-btn" @click.stop>≡</view>
+                </picker>
                 <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
@@ -206,13 +249,22 @@
 
           <!-- 附件块 -->
           <view v-if="block.type === 'attachment'" class="attachment-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header" @click="selectBlock(blockIndex)">
+            <view class="block-header">
               <text class="anchor-id-badge">
                 <text class="anchor-tag">附件容器#L{{ blockIndex + 1 }}</text>
               </text>
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <picker
+                  mode="selector"
+                  :range="getMovePositions(blockIndex)"
+                  range-key="label"
+                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                  @click.stop
+                >
+                  <view class="action-btn" @click.stop>≡</view>
+                </picker>
                 <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
@@ -239,11 +291,20 @@
 
           <!-- 多媒体块 -->
           <view v-if="block.type === 'media'" class="media-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header" @click="selectBlock(blockIndex)">
+            <view class="block-header">
               <text class="anchor-tag">多媒体容器#L{{ blockIndex + 1 }}</text>
               <view class="block-actions">
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
                 <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                <picker
+                  mode="selector"
+                  :range="getMovePositions(blockIndex)"
+                  range-key="label"
+                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                  @click.stop
+                >
+                  <view class="action-btn" @click.stop>≡</view>
+                </picker>
                 <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
                 <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
               </view>
@@ -287,30 +348,30 @@
     </scroll-view>
 
     <!-- FAB 悬浮按钮（仅编辑模式，控制面板显示时隐藏） -->
-    <view class="fab-container" v-if="!selectedItem && selectedBlock === null && !isAnyPanelOpen">
+    <view class="fab-container" v-if="!selectedItem && !isAnyPanelOpen">
       <!-- 遮罩层 -->
       <view class="fab-overlay" v-if="fabExpanded" @click="fabExpanded = false"></view>
       <!-- 子按钮 -->
       <view class="fab-actions" :class="{ expanded: fabExpanded }">
         <view class="fab-action-btn" @click="addTextBlockAndClose">
-          <text class="fab-action-icon">📝</text>
-          <text class="fab-action-text">+ 文字</text>
+          <!-- <text class="fab-action-icon">📝</text> -->
+          <text class="fab-action-text">文字</text>
         </view>
         <view class="fab-action-btn" @click="addImageBlockAndClose">
-          <text class="fab-action-icon">🖼️</text>
-          <text class="fab-action-text">+ 图片</text>
+          <!-- <text class="fab-action-icon">🖼️</text> -->
+          <text class="fab-action-text">图片</text>
         </view>
         <view class="fab-action-btn route" @click="addRouteBlockAndClose">
-          <text class="fab-action-icon">🗺️</text>
-          <text class="fab-action-text">+ 路径</text>
+          <!-- <text class="fab-action-icon">🗺️</text> -->
+          <text class="fab-action-text">路径</text>
         </view>
         <view class="fab-action-btn attachment" @click="addAttachmentBlockAndClose">
-          <text class="fab-action-icon">📎</text>
-          <text class="fab-action-text">+ 附件</text>
+          <!-- <text class="fab-action-icon">📎</text> -->
+          <text class="fab-action-text">附件</text>
         </view>
         <view class="fab-action-btn media" @click="addMediaBlockAndClose">
-          <text class="fab-action-icon">🎬</text>
-          <text class="fab-action-text">+ 视频/音频</text>
+          <!-- <text class="fab-action-icon">🎬</text> -->
+          <text class="fab-action-text">视频</text>
         </view>
       </view>
       <!-- 主按钮 -->
@@ -446,354 +507,16 @@
       </view>
     </view>
 
-    <!-- 全屏设置面板 -->
-    <view class="full-screen-panel" v-if="configPanelVisible">
-      <view class="panel-header">
-        <text class="panel-title">🎨 内容配置</text>
-        <button class="save-btn" @click="closeConfigPanel">保存并完成</button>
-      </view>
-
-      <!-- 标签切换 -->
-      <view class="config-tabs">
-        <view class="tab-item" :class="{ active: activeConfigTab === 'global' }" @click="activeConfigTab = 'global'">
-          <text>✨ 全局样式</text>
-        </view>
-        <view class="tab-item" :class="{ active: activeConfigTab === 'block' }" @click="activeConfigTab = 'block'">
-          <text>📝 当前块设置</text>
-        </view>
-      </view>
-
-      <!-- 全局样式标签页 -->
-      <scroll-view v-if="activeConfigTab === 'global'" class="tab-content" scroll-y="true">
-        <!-- 标签管理 -->
-        <view class="settings-section">
-          <view class="section-title">标签管理</view>
-          <view class="tags-manager">
-            <view class="tags-list" v-if="tags.length > 0">
-              <view v-for="(tag, index) in tags" :key="index" class="tag-editable">
-                <text class="tag-text">{{ tag }}</text>
-                <text class="tag-remove" @click="removeTag(index)">×</text>
-              </view>
-            </view>
-            <view class="tag-add-row">
-              <input class="tag-add-input" v-model="tagInput" placeholder="输入标签后回车添加" @confirm="addTag"
-                :maxlength="20" />
-              <view class="tag-add-btn" @click="addTag">添加</view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 边距设置 -->
-        <view class="settings-section">
-          <view class="section-title">内容边距 (rpx)</view>
-          <view class="padding-grid">
-            <view class="padding-item">
-              <text class="padding-label">上</text>
-              <input type="number" class="padding-input" :value="settings.padding.top"
-                @input="settings.padding.top = Number($event.detail.value) || 0" />
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">下</text>
-              <input type="number" class="padding-input" :value="settings.padding.bottom"
-                @input="settings.padding.bottom = Number($event.detail.value) || 0" />
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">左</text>
-              <input type="number" class="padding-input" :value="settings.padding.left"
-                @input="settings.padding.left = Number($event.detail.value) || 0" />
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">右</text>
-              <input type="number" class="padding-input" :value="settings.padding.right"
-                @input="settings.padding.right = Number($event.detail.value) || 0" />
-            </view>
-          </view>
-        </view>
-
-        <!-- 边框设置 -->
-        <view class="settings-section">
-          <view class="section-title">内容边框</view>
-          <view class="border-grid">
-            <view class="border-item">
-              <text class="border-label">上边框</text>
-              <view class="border-controls">
-                <input type="number" class="border-width-input" :value="settings.border.top"
-                  @input="settings.border.top = Number($event.detail.value) || 0" placeholder="0" />
-                <text class="border-unit">rpx</text>
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">下边框</text>
-              <view class="border-controls">
-                <input type="number" class="border-width-input" :value="settings.border.bottom"
-                  @input="settings.border.bottom = Number($event.detail.value) || 0" placeholder="0" />
-                <text class="border-unit">rpx</text>
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">左边框</text>
-              <view class="border-controls">
-                <input type="number" class="border-width-input" :value="settings.border.left"
-                  @input="settings.border.left = Number($event.detail.value) || 0" placeholder="0" />
-                <text class="border-unit">rpx</text>
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">右边框</text>
-              <view class="border-controls">
-                <input type="number" class="border-width-input" :value="settings.border.right"
-                  @input="settings.border.right = Number($event.detail.value) || 0" placeholder="0" />
-                <text class="border-unit">rpx</text>
-              </view>
-            </view>
-          </view>
-          <view class="border-color-row">
-            <text class="border-color-label">边框颜色</text>
-            <input class="border-color-input" :value="settings.border.color"
-              @input="settings.border.color = $event.detail.value" placeholder="#eeeeee" />
-            <view class="border-color-preview" :style="{ backgroundColor: settings.border.color }"></view>
-          </view>
-        </view>
-
-        <!-- 背景配置 -->
-        <view class="settings-section">
-          <view class="section-title">背景配置</view>
-
-          <view class="subsection-title">莫兰迪配色</view>
-          <view class="color-palette">
-            <view v-for="color in morandiColors" :key="color.value" class="palette-item"
-              :class="{ active: settings.appearance.backgroundColor === color.value }"
-              :style="{ backgroundColor: color.value }" @click="settings.appearance.backgroundColor = color.value">
-              <text class="palette-check" v-if="settings.appearance.backgroundColor === color.value">✓</text>
-            </view>
-          </view>
-
-          <view class="setting-row">
-            <text class="setting-row-label">背景图片</text>
-            <view class="bg-image-controls">
-              <input class="bg-image-input" :value="settings.appearance.backgroundImage"
-                @input="settings.appearance.backgroundImage = $event.detail.value" placeholder="输入图片URL或上传" />
-              <view class="bg-image-upload" @click="uploadBackgroundImage">上传</view>
-            </view>
-          </view>
-
-          <view class="slider-row" v-if="settings.appearance.backgroundImage">
-            <text class="slider-label">模糊度</text>
-            <slider :value="settings.appearance.backgroundBlur" :min="0" :max="30" :step="1" activeColor="#667eea"
-              @change="settings.appearance.backgroundBlur = $event.detail.value" />
-            <text class="slider-value">{{ settings.appearance.backgroundBlur }}px</text>
-          </view>
-
-          <view class="slider-row" v-if="settings.appearance.backgroundImage">
-            <text class="slider-label">透明度</text>
-            <slider :value="settings.appearance.backgroundOpacity * 100" :min="0" :max="100" :step="5"
-              activeColor="#667eea" @change="settings.appearance.backgroundOpacity = $event.detail.value / 100" />
-            <text class="slider-value">{{ Math.round(settings.appearance.backgroundOpacity * 100) }}%</text>
-          </view>
-
-          <!-- 视觉特效 -->
-          <view class="subsection-title" style="margin-top: 24rpx;">视觉特效</view>
-
-          <view class="setting-item">
-            <text class="setting-item-label">动态光斑</text>
-            <switch :checked="settings.appearance.enableBlob"
-              @change="settings.appearance.enableBlob = $event.detail.value" color="#667eea" />
-          </view>
-
-          <view class="slider-row" v-if="settings.appearance.enableBlob">
-            <text class="slider-label">光斑模糊度</text>
-            <slider :value="settings.appearance.blobBlur" :min="40" :max="120" :step="10" activeColor="#667eea"
-              @change="settings.appearance.blobBlur = $event.detail.value" />
-            <text class="slider-value">{{ settings.appearance.blobBlur }}px</text>
-          </view>
-
-          <view class="setting-item">
-            <text class="setting-item-label">科技感网格</text>
-            <switch :checked="settings.appearance.enableCyberGrid"
-              @change="settings.appearance.enableCyberGrid = $event.detail.value" color="#667eea" />
-          </view>
-        </view>
-
-        <!-- 浪漫交互效果 -->
-        <view class="config-card">
-          <view class="card-title">💫 浪漫交互效果</view>
-          <view class="card-content">
-
-            <view class="setting-item">
-              <text class="setting-item-label">毛玻璃滤镜</text>
-              <switch :checked="settings.romanticEffects.enableGlassBlur"
-                @change="settings.romanticEffects.enableGlassBlur = $event.detail.value" color="#ff6b9d" />
-            </view>
-
-            <view class="setting-item">
-              <text class="setting-item-label">弹窗动画</text>
-              <picker :range="['缩放进入', '滑动进入']" :value="settings.romanticEffects.popupAnimation === 'zoom-in' ? 0 : 1"
-                @change="settings.romanticEffects.popupAnimation = $event.detail.value === 0 ? 'zoom-in' : 'slide-up'">
-                <view class="picker-display">
-                  {{ settings.romanticEffects.popupAnimation === 'zoom-in' ? '缩放进入' : '滑动进入' }}
-                </view>
-              </picker>
-            </view>
-
-            <view class="romantic-hint">
-              <text>🌸 开启后，弹窗将具有梦幻般的毛玻璃质感和柔美动画效果</text>
-            </view>
-
-          </view>
-        </view>
-
-        <!-- 文字排版 -->
-        <view class="settings-section">
-          <view class="section-title">文字排版</view>
-
-          <view class="setting-row">
-            <text class="setting-row-label">字号档位</text>
-            <view class="font-size-tabs">
-              <view v-for="opt in fontSizeOptions" :key="opt.value" class="font-size-tab"
-                :class="{ active: settings.typography.fontSize === opt.value }"
-                @click="settings.typography.fontSize = opt.value">
-                <text class="tab-label">{{ opt.label }}</text>
-                <text class="tab-size">{{ opt.size }}</text>
-              </view>
-            </view>
-          </view>
-
-          <view class="slider-row">
-            <text class="slider-label">行高</text>
-            <slider :value="settings.typography.lineHeight * 10" :min="14" :max="22" :step="1" activeColor="#667eea"
-              @change="settings.typography.lineHeight = $event.detail.value / 10" />
-            <text class="slider-value">{{ settings.typography.lineHeight.toFixed(1) }}x</text>
-          </view>
-        </view>
-
-        <!-- 布局设置 -->
-        <view class="settings-section">
-          <view class="section-title">布局设置</view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">居中窄屏模式</text>
-              <text class="setting-desc">内容最大宽度1200rpx，适合大屏阅读</text>
-            </view>
-            <switch :checked="settings.layout.contentWidth === 'narrow'"
-              @change="settings.layout.contentWidth = settings.layout.contentWidth === 'narrow' ? 'full' : 'narrow'"
-              color="#667eea" />
-          </view>
-        </view>
-
-        <!-- 功能开关 -->
-        <view class="settings-section">
-          <view class="section-title">功能开关</view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">显示水印</text>
-              <text class="setting-desc">在详情页底部显示水印标识</text>
-            </view>
-            <switch :checked="settings.features.showWatermark"
-              @change="settings.features.showWatermark = !settings.features.showWatermark" color="#667eea" />
-          </view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">启用评论</text>
-              <text class="setting-desc">允许访客在详情页留言互动</text>
-            </view>
-            <switch :checked="settings.features.enableComments"
-              @change="settings.features.enableComments = !settings.features.enableComments" color="#667eea" />
-          </view>
-        </view>
-
-        <!-- 显示设置 -->
-        <view class="settings-section">
-          <view class="section-title">显示设置</view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">显示回到顶部</text>
-              <text class="setting-desc">详情页滚动时显示回到顶部按钮</text>
-            </view>
-            <switch :checked="settings.showBackToTop" @change="settings.showBackToTop = !settings.showBackToTop"
-              color="#667eea" />
-          </view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">隐藏操作栏</text>
-              <text class="setting-desc">隐藏详情页右上角的导出/分享/编辑按钮</text>
-            </view>
-            <switch :checked="settings.hideNavActions" @change="settings.hideNavActions = !settings.hideNavActions"
-              color="#667eea" />
-          </view>
-        </view>
-
-        <!-- 腾讯文档关联 -->
-        <view class="settings-section">
-          <view class="section-title">腾讯文档关联</view>
-
-          <view class="setting-item">
-            <view class="setting-info">
-              <text class="setting-label">启用全局文档关联</text>
-              <text class="setting-desc">在详情页底部显示跳转腾讯文档按钮</text>
-            </view>
-            <switch :checked="settings.globalAttachment.enabled"
-              @change="settings.globalAttachment.enabled = !settings.globalAttachment.enabled" color="#667eea" />
-          </view>
-
-          <view v-if="settings.globalAttachment.enabled" class="attachment-config">
-            <view class="setting-row">
-              <text class="setting-row-label">按钮文案</text>
-              <input class="setting-row-input" :value="settings.globalAttachment.title"
-                @input="settings.globalAttachment.title = $event.detail.value" placeholder="查看原始文档" :maxlength="30" />
-            </view>
-            <view class="setting-row">
-              <text class="setting-row-label">文档链接</text>
-              <input class="setting-row-input" :value="settings.globalAttachment.url"
-                @input="settings.globalAttachment.url = $event.detail.value" placeholder="粘贴腾讯文档链接" :maxlength="500" />
-            </view>
-            <view class="attachment-tip">
-              <text>支持腾讯文档/表格/收集表等链接，点击将跳转到腾讯文档小程序</text>
-            </view>
-          </view>
-        </view>
-      </scroll-view>
-
-      <!-- 当前块设置标签页 -->
-      <scroll-view v-if="activeConfigTab === 'block'" class="tab-content" scroll-y="true">
-        <view class="config-card">
-          <view class="card-title">📝 块级配置</view>
-          <view class="card-content">
-            <view class="config-hint">
-              <text>选择内容块后在此配置其样式和交互效果</text>
-            </view>
-
-            <!-- 弹窗内容编辑器 -->
-            <view class="popup-content-section">
-              <view class="section-title">💫 弹窗内容物料</view>
-              <view class="popup-editor-card">
-                <textarea class="popup-content-input" v-model="popupContentEditor.content" placeholder="输入弹窗显示的文本内容..."
-                  :maxlength="1000" />
-                <view class="popup-controls">
-                  <button class="control-btn secondary" @click="uploadImageToPopup">📷 添加图片</button>
-                  <button class="control-btn primary" @click="previewPopup">👁 模拟弹窗</button>
-                </view>
-
-                <!-- 图片预览区 -->
-                <view v-if="popupContentEditor.images.length > 0" class="popup-images">
-                  <view class="images-title">📸 已添加的图片:</view>
-                  <view class="images-grid">
-                    <view v-for="(img, index) in popupContentEditor.images" :key="index" class="image-item">
-                      <image :src="img" class="image-preview" mode="aspectFill" />
-                      <view class="image-remove" @click="popupContentEditor.images.splice(index, 1)">×</view>
-                    </view>
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-      </scroll-view>
-  </view>
+    <!-- 选项控制面板（重构后由组件统一管理草稿+确认/取消） -->
+    <OptionsControlPanel
+      v-model="configPanelVisible"
+      :settings="settings"
+      :tags="tags"
+      :morandi-colors="morandiColors"
+      :font-size-options="fontSizeOptions"
+      @save="onOptionsPanelSave"
+      @upload-bg="uploadBackgroundImage"
+    />
 
   <!-- 底部样式面板 -->
   <view class="bottom-style-panel" v-if="selectedItem">
@@ -1050,294 +773,21 @@
     </view>
   </view>
 
-  <!-- 行样式面板 -->
-  <view class="bottom-style-panel" v-if="selectedBlock !== null">
-    <view class="style-panel-content">
-      <view class="panel-header">
-        <view class="panel-title">行样式</view>
-        <view class="panel-close" @click="selectedBlock = null">×</view>
-      </view>
-      <view class="border-style-bar">
-        <view class="style-label">边框:</view>
-        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderTop }"
-          @click="toggleBlockBorder(selectedBlock, 'borderTop')">上</view>
-        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderBottom }"
-          @click="toggleBlockBorder(selectedBlock, 'borderBottom')">下</view>
-        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderLeft }"
-          @click="toggleBlockBorder(selectedBlock, 'borderLeft')">左</view>
-        <view class="style-btn border-btn" :class="{ active: getBlockStyle(selectedBlock)?.borderRight }"
-          @click="toggleBlockBorder(selectedBlock, 'borderRight')">右</view>
-      </view>
-      <view class="align-style-bar">
-        <view class="style-label">对齐:</view>
-        <view class="align-btns">
-          <view class="style-btn align-btn"
-            :class="{ active: !getBlockStyle(selectedBlock)?.textAlign || getBlockStyle(selectedBlock)?.textAlign === 'left' }"
-            @click="setBlockAlign(selectedBlock, 'left')">左</view>
-          <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'center' }"
-            @click="setBlockAlign(selectedBlock, 'center')">中</view>
-          <view class="style-btn align-btn" :class="{ active: getBlockStyle(selectedBlock)?.textAlign === 'right' }"
-            @click="setBlockAlign(selectedBlock, 'right')">右</view>
-        </view>
-      </view>
-      <!-- Markdown 模式开关（仅文本块） -->
-      <view class="markdown-toggle-bar" v-if="pageData.content[selectedBlock]?.type === 'text'">
-        <view class="style-label">Markdown 模式:</view>
-        <switch :checked="(pageData.content[selectedBlock] as TextBlock)?.isMarkdown || false"
-          @change="toggleBlockMarkdown(selectedBlock)" color="#667eea" />
-      </view>
-    </view>
-  </view>
 
-  <!-- 块级样式设置面板 - 统一业务属性+视觉属性 -->
-  <view class="block-style-panel-overlay" v-if="blockStylePanelVisible" @click="blockStylePanelVisible = false">
-    <view class="block-style-panel" @click.stop>
-      <view class="panel-header">
-        <text class="panel-title">{{ getEditingBlockTypeLabel() }} 设置</text>
-        <view class="panel-close" @click="blockStylePanelVisible = false">×</view>
-      </view>
+  <!-- 容器控制面板（块级样式，重构后由组件统一管理草稿+确认/取消） -->
+  <BlockStyleControlPanel
+    v-model="blockStylePanelVisible"
+    :block="editingBlockIndex !== null ? pageData.content[editingBlockIndex] : null"
+    :morandi-colors="morandiColors"
+    @save="onBlockStylePanelSave"
+  />
 
-      <scroll-view scroll-y class="panel-scroll">
-        <!-- 第一部分：业务属性（根据块类型显示） -->
-        <view class="style-section business-section" v-if="editingBlockIndex !== null">
-          <view class="section-title">📋 业务属性</view>
-
-          <!-- 文本块：Markdown 模式开关 -->
-          <view v-if="getEditingBlockType() === 'text'" class="business-item">
-            <view class="business-row">
-              <text class="business-label">Markdown 模式</text>
-              <switch :checked="getEditingBlockMarkdown()" @change="toggleEditingBlockMarkdown" color="#667eea" />
-            </view>
-            <text class="business-hint">开启后支持 Markdown 语法渲染</text>
-          </view>
-
-          <!-- 路径块：显示时间开关 -->
-          <view v-if="getEditingBlockType() === 'route'" class="business-item">
-            <view class="business-row">
-              <text class="business-label">显示耗时信息</text>
-              <switch :checked="getEditingBlockSettings()?.showTime !== false"
-                @change="toggleEditingBlockSetting('showTime')" color="#667eea" />
-            </view>
-            <text class="business-hint">在路径节点旁显示时间和交通方式</text>
-          </view>
-
-          <!-- 附件块：AppID 和路径配置 -->
-          <view v-if="getEditingBlockType() === 'attachment'" class="business-item">
-            <view class="business-input-group">
-              <text class="business-label">小程序 AppID</text>
-              <input type="text" class="business-input"
-                :value="getEditingBlockSettings()?.appId || 'wxd45c635d754dbf59'"
-                @input="setEditingBlockSetting('appId', $event.detail.value)" placeholder="腾讯文档: wxd45c635d754dbf59" />
-            </view>
-            <text class="business-hint">默认跳转腾讯文档小程序</text>
-          </view>
-
-          <!-- 图片块：无特殊业务属性 -->
-          <view v-if="getEditingBlockType() === 'image'" class="business-item">
-            <text class="business-hint">图片块暂无额外业务属性，可在下方设置视觉样式</text>
-          </view>
-        </view>
-
-        <!-- 第二部分：视觉属性（所有块通用） -->
-        <view class="style-section">
-          <view class="section-title">🎨 视觉属性</view>
-        </view>
-
-        <!-- 背景颜色 -->
-        <view class="style-section">
-          <view class="section-title">背景颜色</view>
-          <view class="color-grid">
-            <view v-for="color in morandiColors" :key="color.value" class="color-option"
-              :class="{ active: editingBlockStyle.backgroundColor === color.value }"
-              :style="{ backgroundColor: color.value }" @click="editingBlockStyle.backgroundColor = color.value">
-              <text v-if="editingBlockStyle.backgroundColor === color.value" class="check-icon">✓</text>
-            </view>
-            <view class="color-option transparent" :class="{ active: !editingBlockStyle.backgroundColor }"
-              @click="editingBlockStyle.backgroundColor = ''">
-              <text class="transparent-label">透明</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 内边距 -->
-        <view class="style-section">
-          <view class="section-title">内边距 (rpx)</view>
-          <view class="padding-grid">
-            <view class="padding-item">
-              <text class="padding-label">上</text>
-              <slider :value="editingBlockStyle.padding?.top || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
-                @change="editingBlockStyle.padding!.top = $event.detail.value" />
-              <text class="padding-value">{{ editingBlockStyle.padding?.top || 0 }}</text>
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">下</text>
-              <slider :value="editingBlockStyle.padding?.bottom || 0" :min="0" :max="100" :step="4"
-                activeColor="#667eea" @change="editingBlockStyle.padding!.bottom = $event.detail.value" />
-              <text class="padding-value">{{ editingBlockStyle.padding?.bottom || 0 }}</text>
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">左</text>
-              <slider :value="editingBlockStyle.padding?.left || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
-                @change="editingBlockStyle.padding!.left = $event.detail.value" />
-              <text class="padding-value">{{ editingBlockStyle.padding?.left || 0 }}</text>
-            </view>
-            <view class="padding-item">
-              <text class="padding-label">右</text>
-              <slider :value="editingBlockStyle.padding?.right || 0" :min="0" :max="100" :step="4" activeColor="#667eea"
-                @change="editingBlockStyle.padding!.right = $event.detail.value" />
-              <text class="padding-value">{{ editingBlockStyle.padding?.right || 0 }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 边框 -->
-        <view class="style-section">
-          <view class="section-title">边框</view>
-          <view class="border-grid">
-            <view class="border-item">
-              <text class="border-label">上边框</text>
-              <view class="border-controls">
-                <slider :value="editingBlockStyle.border?.top?.width || 0" :min="0" :max="10" :step="1"
-                  activeColor="#667eea" @change="editingBlockStyle.border!.top!.width = $event.detail.value"
-                  class="border-slider" />
-                <text class="border-value">{{ editingBlockStyle.border?.top?.width || 0 }}rpx</text>
-                <input type="text" class="border-color-input" :value="editingBlockStyle.border?.top?.color || '#eeeeee'"
-                  @input="editingBlockStyle.border!.top!.color = $event.detail.value" placeholder="#颜色" />
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">下边框</text>
-              <view class="border-controls">
-                <slider :value="editingBlockStyle.border?.bottom?.width || 0" :min="0" :max="10" :step="1"
-                  activeColor="#667eea" @change="editingBlockStyle.border!.bottom!.width = $event.detail.value"
-                  class="border-slider" />
-                <text class="border-value">{{ editingBlockStyle.border?.bottom?.width || 0 }}rpx</text>
-                <input type="text" class="border-color-input"
-                  :value="editingBlockStyle.border?.bottom?.color || '#eeeeee'"
-                  @input="editingBlockStyle.border!.bottom!.color = $event.detail.value" placeholder="#颜色" />
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">左边框</text>
-              <view class="border-controls">
-                <slider :value="editingBlockStyle.border?.left?.width || 0" :min="0" :max="10" :step="1"
-                  activeColor="#667eea" @change="editingBlockStyle.border!.left!.width = $event.detail.value"
-                  class="border-slider" />
-                <text class="border-value">{{ editingBlockStyle.border?.left?.width || 0 }}rpx</text>
-                <input type="text" class="border-color-input"
-                  :value="editingBlockStyle.border?.left?.color || '#eeeeee'"
-                  @input="editingBlockStyle.border!.left!.color = $event.detail.value" placeholder="#颜色" />
-              </view>
-            </view>
-            <view class="border-item">
-              <text class="border-label">右边框</text>
-              <view class="border-controls">
-                <slider :value="editingBlockStyle.border?.right?.width || 0" :min="0" :max="10" :step="1"
-                  activeColor="#667eea" @change="editingBlockStyle.border!.right!.width = $event.detail.value"
-                  class="border-slider" />
-                <text class="border-value">{{ editingBlockStyle.border?.right?.width || 0 }}rpx</text>
-                <input type="text" class="border-color-input"
-                  :value="editingBlockStyle.border?.right?.color || '#eeeeee'"
-                  @input="editingBlockStyle.border!.right!.color = $event.detail.value" placeholder="#颜色" />
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 圆角 -->
-        <view class="style-section">
-          <view class="section-title">圆角</view>
-          <view class="radius-row">
-            <slider :value="editingBlockStyle.borderRadius || 0" :min="0" :max="40" :step="2" activeColor="#667eea"
-              @change="editingBlockStyle.borderRadius = $event.detail.value" class="radius-slider" />
-            <text class="radius-value">{{ editingBlockStyle.borderRadius || 0 }}rpx</text>
-          </view>
-        </view>
-
-        <!-- 3D效果 -->
-        <view class="style-section">
-          <view class="section-title">3D效果</view>
-          <view class="setting-item">
-            <text class="setting-item-label">3D悬浮模式</text>
-            <switch :checked="editingBlockStyle.enable3DMode === true"
-              @change="editingBlockStyle.enable3DMode = $event.detail.value" color="#667eea" />
-          </view>
-          <text class="setting-hint" v-if="editingBlockStyle.enable3DMode">开启后，该内容块在详情页将具有3D悬浮效果</text>
-        </view>
-
-        <!-- 扑克牌翻转效果 -->
-        <view class="style-section">
-          <view class="section-title">🃏 扑克牌效果</view>
-          <view class="setting-item">
-            <text class="setting-item-label">扑克牌翻转</text>
-            <switch :checked="editingBlockStyle.enablePokerCard === true"
-              @change="editingBlockStyle.enablePokerCard = $event.detail.value" color="#764ba2" />
-          </view>
-          <text class="setting-hint" v-if="editingBlockStyle.enablePokerCard">开启后，容器在详情页初次加载时将以扑克牌背面展示，点击后翻开显示内容</text>
-        </view>
-      </scroll-view>
-
-      <view class="panel-footer">
-        <view class="panel-btn reset" @click="resetBlockStyle">重置</view>
-        <view class="panel-btn confirm" @click="saveBlockStyle">确定</view>
-      </view>
-    </view>
-  </view>
-
-  <!-- 媒体项设置面板 -->
-  <view class="media-settings-panel-overlay" v-if="mediaSettingsPanelVisible" @click="closeMediaItemSettings">
-    <view class="media-settings-panel" @click.stop>
-      <view class="panel-header">
-        <text class="panel-title">🎬 媒体设置</text>
-        <view class="panel-close" @click="closeMediaItemSettings">×</view>
-      </view>
-
-      <scroll-view scroll-y class="panel-scroll" v-if="getEditingMediaItem()">
-        <!-- 媒体源URL -->
-        <view class="style-section">
-          <view class="section-title">媒体源地址</view>
-          <textarea class="media-url-textarea" v-model="getEditingMediaItem().url"
-            placeholder="粘贴视频或音频源路径，如 https://example.com/video.mp4" :maxlength="1000" auto-height />
-        </view>
-
-        <!-- 播放属性 -->
-        <view class="style-section">
-          <view class="section-title">播放属性</view>
-          <view class="media-prop-row">
-            <text class="prop-label">显示控制条</text>
-            <switch :checked="getEditingMediaItem().controls !== false"
-              @change="getEditingMediaItem().controls = $event.detail.value" color="#667eea" />
-          </view>
-          <view class="media-prop-row">
-            <text class="prop-label">自动播放</text>
-            <switch :checked="getEditingMediaItem().autoplay === true"
-              @change="getEditingMediaItem().autoplay = $event.detail.value" color="#667eea" />
-          </view>
-          <view class="media-prop-row">
-            <text class="prop-label">循环播放</text>
-            <switch :checked="getEditingMediaItem().loop === true"
-              @change="getEditingMediaItem().loop = $event.detail.value" color="#667eea" />
-          </view>
-        </view>
-
-        <!-- 预览 -->
-        <view class="style-section" v-if="getEditingMediaItem().url">
-          <view class="section-title">预览</view>
-          <video v-if="getEditingMediaItem().url.includes('.mp4')" :src="getEditingMediaItem().url"
-            class="media-preview-video" :controls="getEditingMediaItem().controls !== false" :autoplay="false"></video>
-          <view v-else-if="getEditingMediaItem().url.includes('.mp3') || getEditingMediaItem().url.includes('.m4a')"
-            class="media-preview-audio">
-            <text class="audio-icon">🎵</text>
-            <text class="audio-name">{{ getEditingMediaItem().title || '音频文件' }}</text>
-          </view>
-        </view>
-      </scroll-view>
-
-      <view class="panel-footer">
-        <view class="panel-btn confirm" @click="closeMediaItemSettings">完成</view>
-      </view>
-    </view>
-  </view>
+  <!-- 媒体项设置面板（重构后由组件统一管理草稿+确认/取消） -->
+  <MediaItemSettingsPanel
+    v-model="mediaSettingsPanelVisible"
+    :media-item="getEditingMediaItem()"
+    @save="onMediaItemPanelSave"
+  />
 
   <!-- 底部操作按钮 -->
   <view class="footer-actions">
@@ -1360,6 +810,9 @@ import { onLoad, onReady, onShareAppMessage } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
 import type { getFilesResItems } from '@/services/apifox/NODEJSDEMO/FILES/interface'
+import OptionsControlPanel from './components/OptionsControlPanel.vue'
+import BlockStyleControlPanel from './components/BlockStyleControlPanel.vue'
+import MediaItemSettingsPanel from './components/MediaItemSettingsPanel.vue'
 
 // 类型定义
 interface TextStyle {
@@ -1402,6 +855,7 @@ interface BlockStyle {
   borderRadius?: number
   enable3DMode?: boolean  // 3D悬浮模式
   enablePokerCard?: boolean  // 扑克牌翻转效果
+  locked?: boolean  // 块锁定：锁定后不可被拖动/删除/移动
 }
 
 interface ImageStyle {
@@ -1697,7 +1151,6 @@ const fabExpanded = ref(false)
 
 // 设置面板状态
 const settingsVisible = ref(false)
-const activeConfigTab = ref('global') // 'global' | 'block'
 const configPanelVisible = ref(false)
 const configPopup = ref()
 const settings = reactive({
@@ -1762,7 +1215,6 @@ const selectedItem = ref<{ blockIndex: number; itemIndex: number; type: 'text' |
 // 选中项目
 const selectItem = (blockIndex: number, itemIndex: number, type: 'text' | 'image') => {
   selectedItem.value = { blockIndex, itemIndex, type }
-  selectedBlock.value = null // 关闭行面板
 }
 
 // 判断是否选中
@@ -1840,9 +1292,6 @@ const onLinkTypeChange = (e: any) => {
   }
 }
 
-// 选中行状态
-const selectedBlock = ref<number | null>(null)
-
 // 块级样式设置面板状态
 const blockStylePanelVisible = ref(false)
 const editingBlockIndex = ref<number | null>(null)
@@ -1854,141 +1303,11 @@ const isAnyPanelOpen = computed(() => {
          settingsVisible.value ||
          editingBlockIndex.value !== null
 })
-const editingBlockStyle = reactive<BlockStyle>({
-  padding: { top: 0, bottom: 0, left: 0, right: 0 },
-  border: {
-    top: { width: 0, color: '#eeeeee' },
-    bottom: { width: 0, color: '#eeeeee' },
-    left: { width: 0, color: '#eeeeee' },
-    right: { width: 0, color: '#eeeeee' }
-  },
-  backgroundColor: '',
-  borderRadius: 0,
-  textAlign: 'left'
-})
-
-// 打开块级样式设置面板
+// 打开块级样式设置面板（重构后所有草稿状态由 BlockStyleControlPanel 组件管理）
 const openBlockStylePanel = (blockIndex: number) => {
   editingBlockIndex.value = blockIndex
-  const block = pageData.content[blockIndex]
-  const style = block?.style || {}
-
-  // 初始化编辑状态
-  editingBlockStyle.padding = {
-    top: style.padding?.top ?? 0,
-    bottom: style.padding?.bottom ?? 0,
-    left: style.padding?.left ?? 0,
-    right: style.padding?.right ?? 0
-  }
-  editingBlockStyle.border = {
-    top: { width: style.border?.top?.width ?? 0, color: style.border?.top?.color ?? '#eeeeee' },
-    bottom: { width: style.border?.bottom?.width ?? 0, color: style.border?.bottom?.color ?? '#eeeeee' },
-    left: { width: style.border?.left?.width ?? 0, color: style.border?.left?.color ?? '#eeeeee' },
-    right: { width: style.border?.right?.width ?? 0, color: style.border?.right?.color ?? '#eeeeee' }
-  }
-  editingBlockStyle.backgroundColor = style.backgroundColor ?? ''
-  editingBlockStyle.borderRadius = style.borderRadius ?? 0
-  editingBlockStyle.textAlign = style.textAlign ?? 'left'
-  editingBlockStyle.enable3DMode = style.enable3DMode ?? false
-  editingBlockStyle.enablePokerCard = style.enablePokerCard ?? false
-
   blockStylePanelVisible.value = true
-  selectedBlock.value = null
   selectedItem.value = null
-}
-
-// 保存块级样式
-const saveBlockStyle = () => {
-  if (editingBlockIndex.value === null) return
-
-  const block = pageData.content[editingBlockIndex.value]
-  if (!block) return
-
-  // 合并样式到块对象
-  if (!block.style) {
-    block.style = {}
-  }
-
-  block.style.padding = { ...editingBlockStyle.padding }
-  block.style.border = {
-    top: { ...editingBlockStyle.border?.top },
-    bottom: { ...editingBlockStyle.border?.bottom },
-    left: { ...editingBlockStyle.border?.left },
-    right: { ...editingBlockStyle.border?.right }
-  }
-  block.style.backgroundColor = editingBlockStyle.backgroundColor
-  block.style.borderRadius = editingBlockStyle.borderRadius
-  block.style.textAlign = editingBlockStyle.textAlign
-  block.style.enable3DMode = editingBlockStyle.enable3DMode
-  block.style.enablePokerCard = editingBlockStyle.enablePokerCard
-
-  blockStylePanelVisible.value = false
-  editingBlockIndex.value = null
-
-  uni.showToast({ title: '样式已保存', icon: 'success' })
-}
-
-// 弹窗内容编辑状态
-const popupContentEditor = reactive({
-  visible: false,
-  content: '',
-  images: [] as string[]
-})
-
-// 模拟弹窗预览
-const previewPopup = () => {
-  if (!popupContentEditor.content.trim()) {
-    uni.showToast({
-      title: '请先输入弹窗内容',
-      icon: 'none'
-    })
-    return
-  }
-
-  // 触发震动反馈
-  try {
-    uni.vibrateShort()
-  } catch (e) {
-    console.log('震动功能不可用')
-  }
-
-  // 显示预览弹窗
-  if (settings.romanticEffects.enableGlassBlur) {
-    // 使用自定义弹窗预览
-    uni.showModal({
-      title: '💫 浪漫弹窗预览',
-      content: popupContentEditor.content,
-      showCancel: false,
-      confirmText: '美妙'
-    })
-  } else {
-    uni.showModal({
-      title: '弹窗预览',
-      content: popupContentEditor.content,
-      showCancel: false,
-      confirmText: '关闭'
-    })
-  }
-}
-
-// 上传图片到弹窗
-const uploadImageToPopup = () => {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      popupContentEditor.images.push(res.tempFilePaths[0])
-      uni.showToast({
-        title: '图片已添加',
-        icon: 'success'
-      })
-    },
-    fail: () => {
-      uni.showToast({
-        title: '取消选择',
-        icon: 'none'
-      })
-    }
-  })
 }
 
 // Canvas浪漫效果合成器
@@ -2139,121 +1458,54 @@ const drawWatermark = (canvas: any, width: number, height: number) => {
   canvas.fillText('💫 Windsurf Romantic', width - 40, height - 40)
 }
 
-// 全屏配置面板控制
+// 全屏配置面板控制（重构后由 OptionsControlPanel 组件管理草稿+保存）
 const openConfigPanel = () => {
-  activeConfigTab.value = 'global'
   configPanelVisible.value = true
 }
 
 const closeConfigPanel = () => {
-  // 触发震动反馈
-  try {
-    uni.vibrateShort()
-  } catch (e) {
-    console.log('震动功能不可用')
-  }
-
+  try { uni.vibrateShort() } catch (e) { /* 震动不可用，忽略 */ }
   configPanelVisible.value = false
 }
 
-// 重置块级样式
-const resetBlockStyle = () => {
-  editingBlockStyle.padding = { top: 0, bottom: 0, left: 0, right: 0 }
-  editingBlockStyle.border = {
-    top: { width: 0, color: '#eeeeee' },
-    bottom: { width: 0, color: '#eeeeee' },
-    left: { width: 0, color: '#eeeeee' },
-    right: { width: 0, color: '#eeeeee' }
-  }
-  editingBlockStyle.backgroundColor = ''
-  editingBlockStyle.borderRadius = 0
-  editingBlockStyle.textAlign = 'left'
+// 选项面板保存：把组件返回的 draft 深合并回正式 settings + 替换 tags
+const onOptionsPanelSave = (payload: { settings: any; tags: string[] }) => {
+  const s = payload.settings || {}
+  if (s.padding) Object.assign(settings.padding, s.padding)
+  if (s.border) Object.assign(settings.border, s.border)
+  if (s.appearance) Object.assign(settings.appearance, s.appearance)
+  if (s.romanticEffects) Object.assign(settings.romanticEffects, s.romanticEffects)
+  if (s.typography) Object.assign(settings.typography, s.typography)
+  if (s.layout) Object.assign(settings.layout, s.layout)
+  if (s.features) Object.assign(settings.features, s.features)
+  if (s.globalAttachment) Object.assign(settings.globalAttachment, s.globalAttachment)
+  if ('showBackToTop' in s) settings.showBackToTop = s.showBackToTop
+  if ('hideNavActions' in s) settings.hideNavActions = s.hideNavActions
+  // 替换 tags
+  tags.value.splice(0, tags.value.length, ...(payload.tags || []))
 }
 
-// 获取当前编辑块的类型
-const getEditingBlockType = () => {
-  if (editingBlockIndex.value === null) return null
-  const block = pageData.content[editingBlockIndex.value]
-  return block?.type || null
-}
-
-// 获取当前编辑块的类型标签
-const getEditingBlockTypeLabel = () => {
-  const type = getEditingBlockType()
-  switch (type) {
-    case 'text': return '📝 文本块'
-    case 'image': return '🖼️ 图片块'
-    case 'route': return '🗺️ 路径块'
-    case 'attachment': return '📎 附件块'
-    default: return '块'
-  }
-}
-
-// 获取当前编辑块的 Markdown 状态（仅文本块）
-const getEditingBlockMarkdown = () => {
-  if (editingBlockIndex.value === null) return false
-  const block = pageData.content[editingBlockIndex.value]
-  if (block?.type !== 'text') return false
-  return (block as TextBlock).isMarkdown || false
-}
-
-// 切换当前编辑块的 Markdown 状态
-const toggleEditingBlockMarkdown = () => {
-  if (editingBlockIndex.value === null) return
-  const block = pageData.content[editingBlockIndex.value]
-  if (block?.type !== 'text') return
-    ; (block as TextBlock).isMarkdown = !(block as TextBlock).isMarkdown
-}
-
-// 获取当前编辑块的 settings（业务属性）
-const getEditingBlockSettings = () => {
-  if (editingBlockIndex.value === null) return null
-  const block = pageData.content[editingBlockIndex.value] as any
-  return block?.settings || {}
-}
-
-// 切换当前编辑块的 settings 布尔值
-const toggleEditingBlockSetting = (key: string) => {
+// 容器面板保存：把组件返回的 style + business 写回 block
+const onBlockStylePanelSave = (payload: { style: any; business: Record<string, any> }) => {
   if (editingBlockIndex.value === null) return
   const block = pageData.content[editingBlockIndex.value] as any
-  if (!block.settings) {
-    block.settings = {}
-  }
-  block.settings[key] = !block.settings[key]
-}
-
-// 设置当前编辑块的 settings 值
-const setEditingBlockSetting = (key: string, value: any) => {
-  if (editingBlockIndex.value === null) return
-  const block = pageData.content[editingBlockIndex.value] as any
-  if (!block.settings) {
-    block.settings = {}
-  }
-  block.settings[key] = value
-}
-
-// 选中行
-const selectBlock = (blockIndex: number) => {
-  selectedBlock.value = blockIndex
-  selectedItem.value = null
-}
-
-// 获取行样式
-const getBlockStyle = (blockIndex: number) => {
-  const block = pageData.content[blockIndex]
-  if (!block) return null
-  return block.style || {}
-}
-
-// 切换行边框
-const toggleBlockBorder = (blockIndex: number, key: 'borderTop' | 'borderBottom' | 'borderLeft' | 'borderRight') => {
-  const block = pageData.content[blockIndex]
   if (!block) return
-  if (!block.style) {
-    block.style = {}
+  block.style = payload.style
+  if (block.type === 'text' && 'isMarkdown' in payload.business) {
+    block.isMarkdown = payload.business.isMarkdown
   }
-  block.style[key] = !block.style[key]
+  if (block.type === 'route' && 'showTime' in payload.business) {
+    block.showTime = payload.business.showTime
+  }
+  if (block.type === 'attachment' && 'appId' in payload.business) {
+    block.appId = payload.business.appId
+  }
 }
+
+// （以上 editingBlockStyle / saveBlockStyle / resetBlockStyle / popupContentEditor /
+//  previewPopup / uploadImageToPopup / getEditingBlock* / toggleEditingBlock* /
+//  setEditingBlockSetting 已随面板重构一同移除，现存逻辑全部走
+//  BlockStyleControlPanel 组件内部的 useDraftPanel）
 
 // 获取行样式（边框、对齐等，用于渲染）- 支持新版块级样式
 const getBlockBorderStyle = (block: TextBlock | ImageBlock | RouteBlock | AttachmentBlock) => {
@@ -2340,23 +1592,6 @@ const toggleTextStyle = (blockIndex: number, itemIndex: number, key: keyof TextS
   if (key === 'bold' || key === 'italic' || key === 'underline' || key === 'lineThrough') {
     item.style[key] = !item.style[key]
   }
-}
-
-// 设置行对齐方式
-const setBlockAlign = (blockIndex: number, align: 'left' | 'center' | 'right') => {
-  const block = pageData.content[blockIndex]
-  if (!block) return
-  if (!block.style) {
-    block.style = {}
-  }
-  block.style.textAlign = align
-}
-
-// 切换文本块的 Markdown 模式
-const toggleBlockMarkdown = (blockIndex: number) => {
-  const block = pageData.content[blockIndex] as TextBlock
-  if (!block || block.type !== 'text') return
-  block.isMarkdown = !block.isMarkdown
 }
 
 const fontSizeIndex = (size?: number) => {
@@ -2749,6 +1984,21 @@ const getEditingMediaItem = () => {
   return block.children[editingMediaItemIndex.value]
 }
 
+// 媒体项面板保存：把组件返回的 draft 写回到对应 block.children[itemIndex]
+const onMediaItemPanelSave = (payload: { title?: string; url: string; autoplay?: boolean; controls?: boolean; loop?: boolean }) => {
+  if (editingMediaBlockIndex.value === null || editingMediaItemIndex.value === null) return
+  const block = pageData.content[editingMediaBlockIndex.value] as MediaBlock
+  if (!block || block.type !== 'media') return
+  const item = block.children[editingMediaItemIndex.value]
+  if (!item) return
+  // 逐字段覆盖（保留 title 等其他字段）
+  if (payload.title !== undefined) item.title = payload.title
+  item.url = payload.url
+  item.autoplay = payload.autoplay
+  item.controls = payload.controls
+  item.loop = payload.loop
+}
+
 // 在指定位置插入路径节点
 const insertRouteNode = (blockIndex: number, nodeIndex: number) => {
   const block = pageData.content[blockIndex] as RouteBlock
@@ -3110,8 +2360,33 @@ const onSelectLocationForText = () => {
   // #endif
 }
 
+// 判断块是否被锁定（容器面板里的 locked 开关）
+const isBlockLocked = (blockIndex: number) => {
+  const b = pageData.content[blockIndex] as any
+  return b?.style?.locked === true
+}
+
+// 点击锁定徽章：提示用户并询问是否打开容器面板解锁
+const onLockedBadgeClick = (blockIndex: number) => {
+  uni.showModal({
+    title: '该块已锁定',
+    content: '锁定状态下无法删除/移动。是否打开容器设置以解锁？',
+    confirmText: '去解锁',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        openBlockStylePanel(blockIndex)
+      }
+    }
+  })
+}
+
 // 删除块
 const deleteBlock = (blockIndex: number) => {
+  if (isBlockLocked(blockIndex)) {
+    uni.showToast({ title: '该块已锁定，无法删除', icon: 'none' })
+    return
+  }
   uni.showModal({
     title: '确认删除',
     content: '确定要删除这个内容块吗？',
@@ -3127,10 +2402,53 @@ const deleteBlock = (blockIndex: number) => {
   })
 }
 
+// 构建"移动到..."的可选位置列表（picker range）
+// 返回 { label, target }[]：target 是 splice 插入位置（0..content.length）
+const getMovePositions = (blockIndex: number) => {
+  const out: { label: string; target: number }[] = []
+  const total = pageData.content.length
+  for (let i = 0; i <= total; i++) {
+    // 跳过原地（i === blockIndex 表示"在自己当前位置之前"，i === blockIndex+1 表示"在自己之后"）
+    if (i === blockIndex || i === blockIndex + 1) continue
+    if (i === total) {
+      out.push({ label: `移到末尾（第 ${total} 行后）`, target: i })
+    } else {
+      out.push({ label: `移到第 ${i + 1} 行之前`, target: i })
+    }
+  }
+  return out
+}
+
+// 把块从 fromIndex 移动到 toIndex（splice 语义的目标位置）
+const moveBlockTo = (fromIndex: number, toIndex: number) => {
+  if (isBlockLocked(fromIndex)) {
+    uni.showToast({ title: '该块已锁定，无法移动', icon: 'none' })
+    return
+  }
+  if (fromIndex === toIndex || fromIndex === toIndex - 1) return
+  const [item] = pageData.content.splice(fromIndex, 1)
+  const adjusted = toIndex > fromIndex ? toIndex - 1 : toIndex
+  pageData.content.splice(adjusted, 0, item)
+  uni.showToast({ title: '已移动', icon: 'success' })
+}
+
+// picker 选中回调：从 getMovePositions 得到的 index 找出 target，然后调 moveBlockTo
+const onMoveBlockPick = (blockIndex: number, pickerIndex: number) => {
+  const positions = getMovePositions(blockIndex)
+  const picked = positions[pickerIndex]
+  if (!picked) return
+  moveBlockTo(blockIndex, picked.target)
+}
+
 // 移动块
 const moveBlock = (blockIndex: number, direction: number) => {
   const newIndex = blockIndex + direction
   if (newIndex < 0 || newIndex >= pageData.content.length) return
+  // 任一端锁定都阻止交换，避免锁定块被动位移
+  if (isBlockLocked(blockIndex) || isBlockLocked(newIndex)) {
+    uni.showToast({ title: '存在锁定块，无法移动', icon: 'none' })
+    return
+  }
   const temp = pageData.content[blockIndex]
   pageData.content[blockIndex] = pageData.content[newIndex]
   pageData.content[newIndex] = temp
@@ -4021,7 +3339,6 @@ const saveData = async () => {
   // }
 
   // 关闭面板
-  selectedBlock.value = null
   selectedItem.value = null
 
   try {
@@ -4093,6 +3410,8 @@ const saveData = async () => {
         ...memoData,
         id: memoId.value
       }))
+      // 服务端保存成功后清除本地草稿，避免下次进入页面再次弹恢复提示
+      clearLocalDraft()
     }
 
     uni.hideLoading()
@@ -4156,7 +3475,6 @@ const resetFields = () => {
   }
 
   // 关闭所有面板状态
-  selectedBlock.value = null
   selectedItem.value = null
   blockStylePanelVisible.value = false
   editingBlockIndex.value = null
@@ -4326,8 +3644,202 @@ const loadData = async () => {
   }
 }
 
+// ===== 本地草稿（防丢稿） + Undo/Redo =====
+// 行为：
+//  - 编辑时每 1s 防抖写一份本地草稿；下次进入页面发现草稿则提示恢复
+//  - 编辑时每 800ms 防抖把当前状态推入 undoStack；点 undo/redo 时跳过新快照写入
+const LOCAL_DRAFT_PREFIX = 'memo_draft_'
+const getDraftKey = () => `${LOCAL_DRAFT_PREFIX}${memoId.value || '__new__'}`
+
+let draftWriteTimer: ReturnType<typeof setTimeout> | null = null
+let draftAutoSaveStarted = false
+
+// undo/redo 状态
+const UNDO_LIMIT = 50
+const undoStack = ref<string[]>([])  // 用 JSON 字符串存以省内存
+const redoStack = ref<string[]>([])
+let undoPushTimer: ReturnType<typeof setTimeout> | null = null
+// 应用快照中：watch 期间跳过 draft 写入和 undo 推送
+let isRestoring = false
+
+const canUndo = computed(() => undoStack.value.length > 1) // 至少要有 1 个 baseline 才能退一步
+const canRedo = computed(() => redoStack.value.length > 0)
+
+interface EditorSnapshot {
+  memoName: string
+  tags: string[]
+  content: any[]
+  settings: any
+}
+
+const captureSnapshot = (): EditorSnapshot => ({
+  memoName: memoName.value,
+  tags: JSON.parse(JSON.stringify(tags.value)),
+  content: JSON.parse(JSON.stringify(pageData.content)),
+  settings: JSON.parse(JSON.stringify(settings))
+})
+
+const applySnapshot = (snap: EditorSnapshot) => {
+  isRestoring = true
+  memoName.value = snap.memoName
+  tags.value.splice(0, tags.value.length, ...snap.tags)
+  pageData.content.splice(0, pageData.content.length, ...snap.content)
+  // settings 深合并（与 applyDraftToState 同语义）
+  const s = snap.settings || {}
+  if (s.padding) Object.assign(settings.padding, s.padding)
+  if (s.border) Object.assign(settings.border, s.border)
+  if (s.appearance) Object.assign(settings.appearance, s.appearance)
+  if (s.romanticEffects) Object.assign(settings.romanticEffects, s.romanticEffects)
+  if (s.typography) Object.assign(settings.typography, s.typography)
+  if (s.layout) Object.assign(settings.layout, s.layout)
+  if (s.features) Object.assign(settings.features, s.features)
+  if (s.globalAttachment) Object.assign(settings.globalAttachment, s.globalAttachment)
+  if ('showBackToTop' in s) settings.showBackToTop = s.showBackToTop
+  if ('hideNavActions' in s) settings.hideNavActions = s.hideNavActions
+  // 等下一个微任务释放，让 watch 看到一次变化（用于触发 draft autosave 写入新内容），
+  // 但 push undo 会被 isRestoring 拦截
+  setTimeout(() => { isRestoring = false }, 0)
+}
+
+const pushUndoSnapshot = () => {
+  if (isRestoring) return
+  const snapJson = JSON.stringify(captureSnapshot())
+  const top = undoStack.value[undoStack.value.length - 1]
+  if (top === snapJson) return  // 无变化跳过
+  undoStack.value.push(snapJson)
+  if (undoStack.value.length > UNDO_LIMIT) undoStack.value.shift()
+  // 任何新编辑都会清空 redo（与浏览器历史一致）
+  if (redoStack.value.length) redoStack.value = []
+}
+
+const undo = () => {
+  if (!canUndo.value) {
+    uni.showToast({ title: '没有可撤销的操作', icon: 'none' })
+    return
+  }
+  // 把当前状态推入 redo，然后回到 undoStack 的前一项
+  const current = JSON.stringify(captureSnapshot())
+  redoStack.value.push(current)
+  undoStack.value.pop() // 弹出当前
+  const prev = undoStack.value[undoStack.value.length - 1]
+  if (prev) applySnapshot(JSON.parse(prev))
+  uni.showToast({ title: '已撤销', icon: 'none' })
+}
+
+const redo = () => {
+  if (!canRedo.value) {
+    uni.showToast({ title: '没有可重做的操作', icon: 'none' })
+    return
+  }
+  const next = redoStack.value.pop()!
+  // 把恢复的状态也压回 undoStack（保持栈顶始终是当前）
+  undoStack.value.push(next)
+  applySnapshot(JSON.parse(next))
+  uni.showToast({ title: '已重做', icon: 'none' })
+}
+
+const saveLocalDraft = () => {
+  try {
+    const draft = {
+      memoId: memoId.value,
+      memoName: memoName.value,
+      tags: JSON.parse(JSON.stringify(tags.value)),
+      content: JSON.parse(JSON.stringify(pageData.content)),
+      settings: JSON.parse(JSON.stringify(settings)),
+      savedAt: Date.now()
+    }
+    uni.setStorageSync(getDraftKey(), JSON.stringify(draft))
+  } catch (e) {
+    console.warn('[draft] 保存本地草稿失败', e)
+  }
+}
+
+const loadLocalDraft = (): any | null => {
+  try {
+    const raw = uni.getStorageSync(getDraftKey())
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+const clearLocalDraft = () => {
+  try {
+    uni.removeStorageSync(getDraftKey())
+  } catch {
+    /* ignore */
+  }
+}
+
+const applyDraftToState = (draft: any) => {
+  if (!draft) return
+  if (typeof draft.memoName === 'string') memoName.value = draft.memoName
+  if (Array.isArray(draft.tags)) {
+    tags.value.splice(0, tags.value.length, ...draft.tags)
+  }
+  if (Array.isArray(draft.content)) {
+    pageData.content.splice(0, pageData.content.length, ...draft.content)
+  }
+  if (draft.settings && typeof draft.settings === 'object') {
+    // 深合并已知字段，避免覆盖未来新增字段
+    const s = draft.settings
+    if (s.padding) Object.assign(settings.padding, s.padding)
+    if (s.border) Object.assign(settings.border, s.border)
+    if (s.appearance) Object.assign(settings.appearance, s.appearance)
+    if (s.romanticEffects) Object.assign(settings.romanticEffects, s.romanticEffects)
+    if (s.typography) Object.assign(settings.typography, s.typography)
+    if (s.layout) Object.assign(settings.layout, s.layout)
+    if (s.features) Object.assign(settings.features, s.features)
+    if (s.globalAttachment) Object.assign(settings.globalAttachment, s.globalAttachment)
+    if ('showBackToTop' in s) settings.showBackToTop = s.showBackToTop
+    if ('hideNavActions' in s) settings.hideNavActions = s.hideNavActions
+  }
+}
+
+const startDraftAutoSave = () => {
+  if (draftAutoSaveStarted) return
+  draftAutoSaveStarted = true
+  watch(
+    () => [memoName.value, tags.value, pageData.content, settings] as const,
+    () => {
+      // 撤销/重做应用快照时，跳过 undo 推送，但仍写本地草稿
+      if (draftWriteTimer) clearTimeout(draftWriteTimer)
+      draftWriteTimer = setTimeout(() => { saveLocalDraft() }, 1000)
+
+      if (!isRestoring) {
+        if (undoPushTimer) clearTimeout(undoPushTimer)
+        undoPushTimer = setTimeout(() => { pushUndoSnapshot() }, 800)
+      }
+    },
+    { deep: true }
+  )
+}
+
+// 启动时检查是否有比服务端更新的本地草稿，弹窗询问恢复
+const checkAndPromptDraftRestore = () => {
+  const draft = loadLocalDraft()
+  if (!draft || !draft.savedAt) return
+  // 简单策略：只要存在本地草稿就提示（避免对比时间戳依赖服务器 updatedAt）
+  const minutes = Math.max(1, Math.round((Date.now() - draft.savedAt) / 60000))
+  uni.showModal({
+    title: '检测到未保存的草稿',
+    content: `约 ${minutes} 分钟前有未保存的本地修改，是否恢复？`,
+    confirmText: '恢复',
+    cancelText: '丢弃',
+    success: ({ confirm }) => {
+      if (confirm) {
+        applyDraftToState(draft)
+        uni.showToast({ title: '已恢复草稿', icon: 'success' })
+      } else {
+        clearLocalDraft()
+      }
+    }
+  })
+}
+
 // 页面加载时初始化数据
-onMounted(() => {
+onMounted(async () => {
   // 【关键】先重置所有数据，防止数据串号
   resetFields()
 
@@ -4344,7 +3856,13 @@ onMounted(() => {
     console.log('[editor] 新建备忘录模式')
   }
 
-  loadData()
+  await loadData()
+  // 数据加载完毕后再做草稿检查 + 启动 autosave，避免把空 state 写成草稿
+  checkAndPromptDraftRestore()
+  // 推入 baseline 快照（用户后续每次编辑都会基于它累加）
+  undoStack.value = [JSON.stringify(captureSnapshot())]
+  redoStack.value = []
+  startDraftAutoSave()
 })
 
 
@@ -4383,6 +3901,13 @@ onShareAppMessage(() => {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   font-size: 28rpx;
+  color: #fff;
+  transition: opacity 0.2s ease;
+
+  &.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
 }
 
 .nav-mode-switch {
@@ -4496,10 +4021,42 @@ onShareAppMessage(() => {
 }
 
 .content-block {
+  position: relative;
   margin-top: 8rpx;
   background: #fff;
   border-radius: 0;
   overflow: hidden;
+
+  /* 锁定块视觉标记 */
+  &.is-locked {
+    outline: 2rpx dashed rgba(230, 162, 60, 0.55);
+    outline-offset: -2rpx;
+    background: linear-gradient(
+      to right,
+      rgba(230, 162, 60, 0.04),
+      transparent 20%,
+      transparent 80%,
+      rgba(230, 162, 60, 0.04)
+    );
+  }
+  .locked-badge {
+    position: absolute;
+    top: 12rpx;
+    right: 12rpx;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 4rpx;
+    padding: 4rpx 12rpx;
+    background: rgba(230, 162, 60, 0.92);
+    color: #fff;
+    border-radius: 999rpx;
+    font-size: 20rpx;
+    line-height: 1;
+    box-shadow: 0 2rpx 8rpx rgba(230, 162, 60, 0.35);
+  }
+  .locked-icon { font-size: 22rpx; }
+  .locked-text { font-size: 20rpx; font-weight: 500; }
 }
 
 .block-header {

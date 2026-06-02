@@ -44,19 +44,9 @@
 
       <!-- 压缩参数控制区域 -->
       <view class="compress-controls">
-        <!-- 高级压缩开关 -->
-        <view class="control-row switch-row">
-          <text class="control-label">高级压缩</text>
-          <switch 
-            :checked="advancedMode" 
-            @change="onAdvancedModeChange"
-            color="#667eea"
-          />
-        </view>
-
-        <!-- 压缩质量单选组 -->
+        <!-- 压缩质量预设场景组 -->
         <view class="quality-presets">
-          <text class="section-title">压缩质量</text>
+          <text class="section-title">压缩预设方案</text>
           <view class="preset-buttons">
             <view 
               v-for="preset in qualityPresets" 
@@ -70,24 +60,36 @@
           </view>
         </view>
 
-        <!-- 高级参数滑块 -->
-        <view v-if="advancedMode" class="advanced-controls">
+        <!-- 预设方案详细释义说明 -->
+        <view class="preset-description">
+          <text class="desc-icon">💡</text>
+          <text class="desc-text">{{ selectedPresetDesc }}</text>
+        </view>
+
+        <!-- 手动微调滑块区域 -->
+        <view class="advanced-controls">
+          <text class="section-title spec-title">参数微调 (拖动滑块定制)</text>
+          
           <!-- 视频码率 -->
           <view class="slider-group">
             <view class="slider-header">
               <text class="slider-label">视频码率 (Bitrate)</text>
-              <text class="slider-value">{{ compressParams.bitrate }} kbps</text>
+              <text class="slider-value" :class="{ 'warning-color': hasBloatRisk }">{{ compressParams.bitrate }} kbps</text>
             </view>
             <slider 
               :value="compressParams.bitrate"
-              :min="500"
+              :min="200"
               :max="10000"
-              :step="100"
+              :step="50"
               @change="onBitrateChange"
               @changing="onBitrateChanging"
               activeColor="#667eea"
               backgroundColor="#E5E7EB"
             />
+            <view class="original-bitrate-hint" v-if="originalBitrate > 0">
+              <text class="hint-text">原视频码率: ~{{ originalBitrate }} kbps</text>
+              <text class="warning-badge" v-if="hasBloatRisk">⚠️ 码率偏高，体积可能膨胀</text>
+            </view>
           </view>
 
           <!-- 视频帧率 -->
@@ -98,7 +100,7 @@
             </view>
             <slider 
               :value="compressParams.fps"
-              :min="15"
+              :min="10"
               :max="60"
               :step="1"
               @change="onFpsChange"
@@ -116,7 +118,7 @@
             </view>
             <slider 
               :value="compressParams.resolution"
-              :min="25"
+              :min="10"
               :max="100"
               :step="5"
               @change="onResolutionChange"
@@ -178,12 +180,14 @@
 
       <!-- 温馨提示 -->
       <view class="tips-section">
-        <text class="tips-title">温馨提示</text>
+        <text class="tips-title">使用说明</text>
         <view class="tips-content">
-          <text class="tip-item">• 视频压缩功能仅在微信小程序端可用</text>
-          <text class="tip-item">• H5端暂不支持本地视频压缩，请前往小程序操作</text>
+          <text class="tip-item">• 支持格式：MP4、MOV、AVI、M4V、3GP、MKV</text>
+          <text class="tip-item">• 文件限制：最大 500MB，时长不超过 10 分钟</text>
+          <text class="tip-item">• 选择方式：从相册选择或从聊天记录选择</text>
           <text class="tip-item">• 压缩后的视频将自动保存到系统相册</text>
-          <text class="tip-item">• 预估大小仅供参考，实际大小可能有所差异</text>
+          <text class="tip-item">• 如遇问题，请尝试重启小程序或使用聊天记录模式</text>
+          <text class="tip-item">• H5 环境暂不支持本地视频压缩功能</text>
         </view>
       </view>
     </view>
@@ -212,23 +216,60 @@
 import NavBar from '@/components/nav-bar.vue'
 import { ref, reactive, computed, watch } from 'vue'
 
+// 微信小程序 API 类型声明
+declare const wx: any
+
 // 全局常量 - 小程序原始ID和二维码路径
 const MINI_PROGRAM_ORIGINAL_ID = 'gh_xxxxxxxx' // 替换为实际的小程序原始ID
 const MINI_PROGRAM_PATH = '/subPackages/tools/video-compress/index'
 const miniProgramQrCode = ref('/static/image/mp-qrcode.png') // 小程序二维码图片路径
 
-// 压缩质量预设
+// 压缩场景预设方案
 const qualityPresets = [
-  { label: '低', value: 'low', bitrate: 1000, fps: 24, resolution: 50 },
-  { label: '中', value: 'medium', bitrate: 2500, fps: 30, resolution: 75 },
-  { label: '高', value: 'high', bitrate: 5000, fps: 30, resolution: 100 }
+  { 
+    label: '极限超级压缩', 
+    value: 'extreme', 
+    desc: '最省空间：15%分辨率 + 10fps + 300kbps 码率，适合监控、PPT教学等极限省流发送场景',
+    bitrate: 300, 
+    fps: 10, 
+    resolution: 15 
+  },
+  { 
+    label: '日常微信高清', 
+    value: 'wechat', 
+    desc: '社交首选：70%分辨率 + 24fps + 1500kbps 码率，肉眼无明显糊感且完美对齐微信分享限流（低于25MB）',
+    bitrate: 1500, 
+    fps: 24, 
+    resolution: 70 
+  },
+  { 
+    label: '轻度体积微调', 
+    value: 'light', 
+    desc: '温和微调：85%分辨率 + 30fps + 3500kbps 码率，针对微型超限视频轻量修剪，完美保留细节',
+    bitrate: 3500, 
+    fps: 30, 
+    resolution: 85 
+  },
+  { 
+    label: '原画几乎无损', 
+    value: 'original', 
+    desc: '原画品质：100%分辨率 + 30fps + 6000kbps 码率，去除冗余高码，维持原生像素级画质',
+    bitrate: 6000, 
+    fps: 30, 
+    resolution: 100 
+  }
 ]
 
 // 响应式数据
-const advancedMode = ref(false)
-const currentPreset = ref('medium')
+const currentPreset = ref('wechat')
 const isCompressing = ref(false)
 const h5GuidePopup = ref<any>(null)
+
+// 选中预设的详细解释
+const selectedPresetDesc = computed(() => {
+  const preset = qualityPresets.find(p => p.value === currentPreset.value)
+  return preset ? preset.desc : '手动微调模式：您可以自由拖动下方滑块定制参数，并实时在下方查看预估大小'
+})
 
 // 视频信息
 const videoInfo = reactive({
@@ -243,9 +284,9 @@ const videoInfo = reactive({
 
 // 压缩参数
 const compressParams = reactive({
-  bitrate: 2500,
-  fps: 30,
-  resolution: 75
+  bitrate: 1500,
+  fps: 24,
+  resolution: 70
 })
 
 // 计算预估大小: 预估MB = (码率kbps * 时长s) / 8 / 1024
@@ -254,6 +295,19 @@ const calcEstimateSize = (bitrateKbps: number, durationS: number): number => {
   const sizeMB = (bitrateKbps * durationS) / 8 / 1024
   return sizeMB * 1024 * 1024 // 转换为字节
 }
+
+// 原视频估算码率 (kbps)
+const originalBitrate = computed(() => {
+  if (!videoInfo.size || !videoInfo.duration) return 0
+  // size(bytes) * 8 / duration(seconds) / 1024 => kbps
+  return Math.round((videoInfo.size * 8) / videoInfo.duration / 1024)
+})
+
+// 是否存在体积膨胀风险（设置码率 > 原片码率）
+const hasBloatRisk = computed(() => {
+  if (!originalBitrate.value) return false
+  return compressParams.bitrate > originalBitrate.value
+})
 
 // 预估压缩后大小
 const estimatedSize = computed(() => {
@@ -285,11 +339,6 @@ const selectPreset = (preset: string) => {
     compressParams.fps = presetConfig.fps
     compressParams.resolution = presetConfig.resolution
   }
-}
-
-// 高级模式切换
-const onAdvancedModeChange = (e: any) => {
-  advancedMode.value = e.detail.value
 }
 
 // 滑块事件处理
@@ -343,7 +392,7 @@ const handleSelectVideo = () => {
 // 从相册选择视频 - 只从相册选择，不需要相机权限
 const chooseVideoFromAlbum = () => {
   // #ifdef MP-WEIXIN
-  // 微信小程序需要先检查隐私授权
+  // 微信小程序需要先检查隐私授权（与图片压缩保持一致）
   if (wx.getPrivacySetting) {
     wx.getPrivacySetting({
       success: (res: any) => {
@@ -358,50 +407,100 @@ const chooseVideoFromAlbum = () => {
     doChooseVideo()
   }
   // #endif
-  
+
   // #ifndef MP-WEIXIN
   doChooseVideo()
   // #endif
 }
 
+// 处理选择成功后的视频信息
+const applyVideoInfo = (path: string, opts: { thumb?: string; size?: number; duration?: number; width?: number; height?: number } = {}) => {
+  videoInfo.path = path
+  videoInfo.thumbPath = opts.thumb || ''
+  videoInfo.size = opts.size || 0
+  videoInfo.duration = opts.duration || 0
+  videoInfo.width = opts.width || 0
+  videoInfo.height = opts.height || 0
+  videoInfo.name = path.split('/').pop() || '视频文件'
+
+  if (!videoInfo.duration || !videoInfo.width || !videoInfo.height || !videoInfo.size) {
+    uni.getVideoInfo({
+      src: path,
+      success: (info: any) => {
+        console.log('补充视频信息:', info)
+        videoInfo.duration = videoInfo.duration || info.duration || 0
+        videoInfo.width = videoInfo.width || info.width || 0
+        videoInfo.height = videoInfo.height || info.height || 0
+        videoInfo.size = videoInfo.size || info.size || 0
+      },
+      fail: (err: any) => console.warn('获取视频信息失败:', err)
+    })
+  }
+}
+
 // 实际执行选择视频
 const doChooseVideo = () => {
+  // #ifdef MP-WEIXIN
+  // 微信小程序：优先使用现代 wx.chooseMedia（uni.chooseVideo 在新版基础库已废弃）
+  if (typeof wx !== 'undefined' && typeof wx.chooseMedia === 'function') {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['video'],
+      sourceType: ['album'],
+      maxDuration: 60,
+      camera: 'back',
+      success: (res: any) => {
+        console.log('wx.chooseMedia 成功:', res)
+        const media = res.tempFiles && res.tempFiles[0]
+        if (!media || !media.tempFilePath) {
+          uni.showToast({ title: '未获取到视频文件', icon: 'none' })
+          return
+        }
+        applyVideoInfo(media.tempFilePath, {
+          thumb: media.thumbTempFilePath,
+          size: media.size,
+          duration: media.duration,
+          width: media.width,
+          height: media.height
+        })
+      },
+      fail: (err: any) => {
+        console.error('wx.chooseMedia 失败:', JSON.stringify(err))
+        if (err.errMsg && err.errMsg.includes('cancel')) return
+        uni.showToast({
+          title: err.errMsg || '选择视频失败',
+          icon: 'none',
+          duration: 4000
+        })
+      }
+    })
+    return
+  }
+  // #endif
+
   uni.chooseVideo({
     sourceType: ['album'],
     compressed: false,
-    maxDuration: 600,
+    maxDuration: 60,
     success: (res: any) => {
-      console.log('选择视频成功:', res)
-      videoInfo.path = res.tempFilePath
-      videoInfo.thumbPath = res.thumbTempFilePath || ''
-      videoInfo.size = res.size || 0
-      videoInfo.duration = res.duration || 0
-      videoInfo.width = res.width || 0
-      videoInfo.height = res.height || 0
-      videoInfo.name = res.tempFilePath.split('/').pop() || '视频文件'
-      
-      // 如果没有获取到视频信息，尝试通过getVideoInfo获取
-      if (!videoInfo.duration || !videoInfo.width || !videoInfo.height) {
-        uni.getVideoInfo({
-          src: res.tempFilePath,
-          success: (info: any) => {
-            console.log('获取视频信息:', info)
-            videoInfo.duration = info.duration || videoInfo.duration
-            videoInfo.width = info.width || videoInfo.width
-            videoInfo.height = info.height || videoInfo.height
-            if (!videoInfo.size && info.size) {
-              videoInfo.size = info.size
-            }
-          }
-        })
-      }
+      console.log('uni.chooseVideo 成功:', res)
+      applyVideoInfo(res.tempFilePath, {
+        thumb: res.thumbTempFilePath,
+        size: res.size,
+        duration: res.duration,
+        width: res.width,
+        height: res.height
+      })
     },
     fail: (err: any) => {
-      console.error('选择视频失败:', err)
-      if (err.errMsg && err.errMsg.includes('cancel')) {
-        return
-      }
-      uni.showToast({ title: '选择视频失败', icon: 'none' })
+      console.error('uni.chooseVideo 失败:', JSON.stringify(err))
+      if (err.errMsg && err.errMsg.includes('cancel')) return
+      // 暴露真实错误信息，便于排查
+      uni.showToast({
+        title: err.errMsg || '选择视频失败',
+        icon: 'none',
+        duration: 4000
+      })
     }
   })
 }
@@ -413,26 +512,55 @@ const chooseVideoFromChat = () => {
     count: 1,
     type: 'video',
     success: (res: any) => {
+      console.log('从聊天记录选择成功:', res)
       const file = res.tempFiles[0]
-      videoInfo.path = file.path
-      videoInfo.size = file.size || 0
-      videoInfo.name = file.name || '视频文件'
-      
-      // 获取视频信息
-      uni.getVideoInfo({
-        src: file.path,
-        success: (info: any) => {
-          videoInfo.duration = info.duration || 0
-          videoInfo.width = info.width || 0
-          videoInfo.height = info.height || 0
-        }
-      })
+      if (file) {
+        videoInfo.path = file.path
+        videoInfo.size = file.size || 0
+        videoInfo.name = file.name || '视频文件'
+        
+        // 获取视频信息
+        uni.getVideoInfo({
+          src: file.path,
+          success: (info: any) => {
+            console.log('获取聊天视频信息:', info)
+            videoInfo.duration = info.duration || 0
+            videoInfo.width = info.width || 0
+            videoInfo.height = info.height || 0
+            if (!videoInfo.size && info.size) {
+              videoInfo.size = info.size
+            }
+          },
+          fail: (err: any) => {
+            console.warn('获取聊天视频信息失败:', err)
+          }
+        })
+        
+        uni.showToast({ 
+          title: '视频选择成功', 
+          icon: 'success',
+          duration: 2000
+        })
+      }
     },
     fail: (err: any) => {
       console.error('选择文件失败:', err)
-      if (err.errMsg && !err.errMsg.includes('cancel')) {
-        uni.showToast({ title: '选择文件失败', icon: 'none' })
+      if (err.errMsg && err.errMsg.includes('cancel')) {
+        return
       }
+      
+      let errorMsg = '选择文件失败'
+      if (err.errMsg && err.errMsg.includes('permission')) {
+        errorMsg = '需要授权访问聊天记录'
+      } else if (err.errMsg && err.errMsg.includes('not support')) {
+        errorMsg = '当前微信版本不支持此功能'
+      }
+      
+      uni.showToast({ 
+        title: errorMsg, 
+        icon: 'none',
+        duration: 3000
+      })
     }
   })
   // #endif
@@ -460,27 +588,45 @@ const handleCompress = () => {
 const compressVideoInMiniProgram = () => {
   // #ifdef MP-WEIXIN
   isCompressing.value = true
-  
-  // 计算目标分辨率
+
+  // 统一采用底层硬件精准参数组合（bitrate, fps, resolution）进行压缩。
+  // 这直接绕过了微信官方只能传 quality (low/medium/high) 的单一局限，赋能多场景下的完美画质与体积双重调权。
+  const baseOptions: any = { src: videoInfo.path }
   const scale = compressParams.resolution / 100
-  const targetWidth = Math.round((videoInfo.width || 1920) * scale)
-  
+  Object.assign(baseOptions, {
+    bitrate: compressParams.bitrate,              // kbps，支持最低 200
+    fps: compressParams.fps,                      // 帧率，支持最低 10
+    resolution: Math.max(0.1, Math.min(1, scale)) // 缩放比例，(0.1, 1.0]
+  })
+  console.log('[压缩] 统一硬件精准压制参数:', baseOptions)
+
   uni.compressVideo({
-    src: videoInfo.path,
-    quality: currentPreset.value || 'medium',
-    bitrate: compressParams.bitrate,
-    fps: compressParams.fps,
-    resolution: scale,
+    ...baseOptions,
     success: (res: any) => {
       console.log('压缩成功:', res)
-      uni.showToast({ title: '压缩成功', icon: 'success' })
-      
-      // 保存到相册
-      saveVideoToAlbum(res.tempFilePath)
+      // 读出压缩后实际大小用于校验是否真正生效
+      uni.getFileInfo({
+        filePath: res.tempFilePath,
+        success: (info: any) => {
+          const before = videoInfo.size
+          const after = info.size || 0
+          const ratio = before > 0 ? Math.round(((before - after) / before) * 100) : 0
+          console.log(`[压缩结果] 原: ${(before / 1024).toFixed(1)}KB → 压缩后: ${(after / 1024).toFixed(1)}KB，节省 ${ratio}%`)
+          uni.showToast({
+            title: ratio > 0 ? `压缩成功，节省 ${ratio}%` : '压缩完成（变化不大）',
+            icon: 'success',
+            duration: 2500
+          })
+          saveVideoToAlbum(res.tempFilePath)
+        },
+        fail: () => {
+          uni.showToast({ title: '压缩成功', icon: 'success' })
+          saveVideoToAlbum(res.tempFilePath)
+        }
+      })
     },
     fail: (err: any) => {
       console.error('压缩失败:', err)
-      // 检测是否是ffmpeg配置问题（仅开发者工具会出现）
       if (err.errMsg && err.errMsg.includes('ffmpeg')) {
         uni.showModal({
           title: '开发环境提示',
@@ -575,6 +721,85 @@ const formatDuration = (seconds: number): string => {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// 验证视频文件
+const validateVideoFile = (filePath: string, fileSize: number, duration: number): { valid: boolean; message?: string } => {
+  // 检查文件路径
+  if (!filePath) {
+    return { valid: false, message: '视频文件路径无效' }
+  }
+  
+  // 检查文件格式（通过扩展名）
+  const supportedFormats = ['.mp4', '.mov', '.avi', '.m4v', '.3gp', '.mkv']
+  const fileExtension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'))
+  if (!supportedFormats.includes(fileExtension)) {
+    return { 
+      valid: false, 
+      message: `不支持的视频格式 ${fileExtension}，请选择 MP4、MOV 等常见格式` 
+    }
+  }
+  
+  // 检查文件大小（限制为 500MB）
+  const maxSize = 500 * 1024 * 1024 // 500MB
+  if (fileSize > maxSize) {
+    return { 
+      valid: false, 
+      message: `视频文件过大 (${formatFileSize(fileSize)})，请选择小于 500MB 的视频` 
+    }
+  }
+  
+  // 检查视频时长（限制为 10 分钟）
+  const maxDuration = 600 // 10 minutes
+  if (duration > maxDuration) {
+    return { 
+      valid: false, 
+      message: `视频时长过长 (${formatDuration(duration)})，请选择 10 分钟以内的视频` 
+    }
+  }
+  
+  // 检查最小文件大小（避免空文件或损坏文件）
+  const minSize = 1024 // 1KB
+  if (fileSize < minSize) {
+    return { 
+      valid: false, 
+      message: '视频文件可能已损坏，请重新选择' 
+    }
+  }
+  
+  return { valid: true }
+}
+
+// 处理视频选择成功后的验证和设置
+const handleVideoSelected = (tempFilePath: string, size: number, duration: number, width: number, height: number, thumbPath?: string) => {
+  // 验证视频文件
+  const validation = validateVideoFile(tempFilePath, size, duration)
+  if (!validation.valid) {
+    uni.showModal({
+      title: '视频验证失败',
+      content: validation.message || '视频文件不符合要求',
+      showCancel: false,
+      confirmText: '重新选择'
+    })
+    return false
+  }
+  
+  // 设置视频信息
+  videoInfo.path = tempFilePath
+  videoInfo.thumbPath = thumbPath || ''
+  videoInfo.size = size
+  videoInfo.duration = duration
+  videoInfo.width = width
+  videoInfo.height = height
+  videoInfo.name = tempFilePath.split('/').pop() || '视频文件'
+  
+  uni.showToast({ 
+    title: '视频选择成功', 
+    icon: 'success',
+    duration: 2000
+  })
+  
+  return true
 }
 </script>
 
@@ -733,7 +958,7 @@ $radius-md: 24rpx;
         justify-content: center;
         background: #f0f1f3;
         border-radius: 12rpx;
-        font-size: 28rpx;
+        font-size: 24rpx; /* 微调字号避免长场景折行 */
         color: $text-primary;
         transition: all 0.2s;
         
@@ -744,10 +969,39 @@ $radius-md: 24rpx;
       }
     }
   }
-  
+
+  .preset-description {
+    display: flex;
+    align-items: flex-start;
+    background: #f8f9fb;
+    border-radius: 16rpx;
+    padding: 20rpx 24rpx;
+    margin-bottom: 32rpx;
+    border-left: 6rpx solid $primary-color;
+    
+    .desc-icon {
+      font-size: 28rpx;
+      margin-right: 12rpx;
+      line-height: 1.4;
+    }
+    
+    .desc-text {
+      font-size: 24rpx;
+      color: $text-secondary;
+      line-height: 1.5;
+    }
+  }
+
   .advanced-controls {
     padding-top: 24rpx;
     border-top: 1rpx solid $border-color;
+    
+    .spec-title {
+      font-size: 28rpx;
+      color: $text-primary;
+      font-weight: 600;
+      margin-bottom: 32rpx;
+    }
     
     .slider-group {
       margin-bottom: 32rpx;
@@ -771,6 +1025,31 @@ $radius-md: 24rpx;
           font-size: 26rpx;
           color: $primary-color;
           font-weight: 600;
+          transition: color 0.3s;
+          
+          &.warning-color {
+            color: #ef4444;
+          }
+        }
+        
+        .original-bitrate-hint {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 10rpx;
+          padding: 0 10rpx;
+          
+          .hint-text {
+            font-size: 22rpx;
+            color: $text-hint;
+          }
+          
+          .warning-badge {
+            font-size: 22rpx;
+            color: #ef4444;
+            font-weight: 500;
+            animation: pulse-hint 2s infinite;
+          }
         }
       }
     }

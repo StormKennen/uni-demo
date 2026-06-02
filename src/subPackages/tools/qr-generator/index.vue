@@ -589,7 +589,7 @@ export default {
       width: 100%;
       height: 88rpx;
       background: $primary-gradient;
-      color: white;
+      color: white!important;
       border: none;
       border-radius: 44rpx;
       font-size: 32rpx;

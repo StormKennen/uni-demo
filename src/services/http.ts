@@ -178,6 +178,13 @@ export class Request {
     if (this.isShowingLoginDialog) {
       return Promise.resolve(false)
     }
+
+    // 如果当前页面已经是登录页，不再弹窗（防止密码错误时重复提示）
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+    if (currentPage?.route?.includes('login')) {
+      return Promise.resolve(false)
+    }
     
     this.isShowingLoginDialog = true
     

@@ -21,15 +21,15 @@
 
     <view class="nav-actions" v-if="!settings.hideNavActions">
       <!-- 导出图片按钮 -->
-      <view class="action-btn" @click="exportImage" v-if="memoData">
+      <view class="action-btn ghost" @click="exportImage" v-if="memoData">
         <text class="icon">导出</text>
       </view>
       <!-- 分享按钮 -->
-      <view class="action-btn" @click="shareMemo" v-if="memoData">
+      <view class="action-btn ghost" @click="shareMemo" v-if="memoData">
         <text class="icon">分享</text>
       </view>
       <!-- 编辑按钮（仅登录用户） -->
-      <view class="action-btn" @click="goToEdit" v-if="isLoggedIn && memoData">
+      <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData">
         <text class="icon">编辑</text>
       </view>
     </view>
@@ -46,7 +46,10 @@
     </view>
 
     <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
-    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }" :style="memoBodyStyle">
+    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="[
+      'theme-' + currentSmartTheme,
+      { 'is-ready': isRendered, 'has-custom-bg': hasCustomBackground, 'is-narrow': settings.layout.contentWidth === 'narrow' }
+    ]" :style="memoBodyStyle">
       <!-- 标题 -->
       <!-- <view class="memo-header">
         <text class="memo-title">{{ memoData.name || '未命名备忘录' }}</text>
@@ -72,7 +75,10 @@
           :key="blockIndex"
           :id="block.anchor || ('L' + (blockIndex + 1))"
           class="content-block"
-          :class="{ 'is-popup-source': isBlockPopupTarget(block) }"
+          :class="{ 
+            'is-popup-source': isBlockPopupTarget(block),
+            'has-block-style': hasCustomBlockStyle(block.style)
+          }"
           v-show="!isBlockPopupTarget(block)"
         >
           <!-- 扑克牌翻转容器 -->
@@ -592,6 +598,42 @@ const settings = reactive({
     title: '查看原始文档'
   }
 })
+
+// 智能主题识别
+const currentSmartTheme = computed(() => {
+  if (!memoData.value) return 'standard'
+  
+  // 1. 如果包含任何扑克牌样式 block，或者是黑底背景，走“卡牌互动(cyber-poker)”主题
+  const hasPoker = parsedContent.value.some((b: any) => b.style?.enablePokerCard)
+  const isDarkBg = settings.appearance.backgroundColor === '#1a1a1a' || settings.appearance.backgroundColor === '#000000'
+  if (hasPoker || isDarkBg) {
+    return 'cyber-poker'
+  }
+  
+  // 2. 如果是自定义背景图片，或者是莫兰迪配色里的唯美颜色，或者是启用了 enableBlob 动态光斑，走“唯美毛玻璃(romantic-glass)”主题
+  const hasBgImg = !!settings.appearance.backgroundImage
+  const isMorandi = ['#E4DCD3', '#D6E4E5', '#F9F5EB', '#E8E4D9', '#D5C4A1', '#C9D6DF', '#E6D5C3'].includes(settings.appearance.backgroundColor)
+  if (hasBgImg || isMorandi || settings.appearance.enableBlob) {
+    return 'romantic-glass'
+  }
+  
+  // 3. 否则，走标准的“优雅简约(elegant-minimal)”主题
+  return 'elegant-minimal'
+})
+
+// 判断块是否有自定义的背景色或边框，避免样式叠加冲突
+const hasCustomBlockStyle = (style: any) => {
+  if (!style) return false
+  return !!(
+    style.backgroundColor || 
+    (style.border && (
+      (style.border.top && style.border.top.width) || 
+      (style.border.bottom && style.border.bottom.width) || 
+      (style.border.left && style.border.left.width) || 
+      (style.border.right && style.border.right.width)
+    ))
+  )
+}
 
 // 滚动状态 - 用于回到顶部按钮
 const scrollTop = ref(0)
@@ -2382,25 +2424,44 @@ onShareTimeline(() => {
 }
 
 .nav-actions {
-  padding-left: 32rpx;
+  padding: 20rpx 32rpx;
   display: flex;
+  align-items: center;
   gap: 16rpx;
-  background-color: #ffeaa7;
+  margin-top: 12rpx;
 }
 
 .action-btn {
-  width: 64rpx;
-  height: 64rpx;
+  flex: 1;
+  padding: 18rpx 0;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  padding-right: 16rpx;
-  .icon {
-    font-size: 32rpx;
-    color: #1890ff;
+  box-shadow: 0 10rpx 30rpx rgba(102, 126, 234, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.85);
+
+  &:active {
+    transform: translateY(1rpx) scale(0.98);
   }
+
+  .icon {
+    font-size: 26rpx;
+    font-weight: 600;
+  }
+}
+
+.action-btn.ghost {
+  color: #667eea;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 12rpx 28rpx rgba(102, 126, 234, 0.25);
 }
 
 .loading-container,
@@ -3694,6 +3755,97 @@ onShareTimeline(() => {
   50% {
     opacity: 0.6;
     transform: scale(0.95);
+  }
+}
+
+// ==================== 智能主题融合样式 ====================
+
+/* 共享的内容块基础过渡效果 */
+.content-block {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-sizing: border-box;
+}
+
+/* 1. 唯美毛玻璃 (romantic-glass) 主题 */
+.theme-romantic-glass {
+  .content-block:not(.has-block-style):not(.is-popup-source) {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1rpx solid rgba(255, 255, 255, 0.55);
+    border-radius: 20rpx;
+    box-shadow: 0 10rpx 35rpx rgba(102, 126, 234, 0.04);
+    margin-bottom: 24rpx;
+    padding: 24rpx;
+    
+    &:active {
+      transform: translateY(2rpx) scale(0.99);
+    }
+  }
+}
+
+/* 2. 趣味卡牌/黑金 (cyber-poker) 主题 */
+.theme-cyber-poker {
+  color: #ffffff;
+  
+  .content-block:not(.has-block-style):not(.is-popup-source) {
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1rpx solid rgba(212, 175, 55, 0.25);
+    border-radius: 24rpx;
+    box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.35);
+    margin-bottom: 28rpx;
+    padding: 26rpx;
+    
+    &.is-popup-source {
+      box-shadow: 0 0 35rpx rgba(212, 175, 55, 0.2);
+    }
+    
+    &:active {
+      transform: translateY(1rpx) scale(0.995);
+    }
+  }
+  
+  // 调整文字颜色使其符合高对比度黑金风格
+  .text-preview, .markdown-body p, .markdown-body li {
+    color: #e2e8f0 !important;
+  }
+  
+  .link-text {
+    color: #f9f295 !important;
+    border-bottom: 1rpx dashed #d4af37 !important;
+  }
+  
+  // 路径/时间轴块在黑金下的微调
+  .route-name {
+    color: #f9f295 !important;
+  }
+  .route-desc {
+    color: #cbd5e1 !important;
+  }
+  .route-dot {
+    background: #d4af37 !important;
+    box-shadow: 0 0 12rpx rgba(212, 175, 55, 0.6) !important;
+  }
+  .route-line {
+    background-color: rgba(212, 175, 55, 0.3) !important;
+  }
+}
+
+/* 3. 优雅简约 (elegant-minimal) 主题 */
+.theme-elegant-minimal {
+  .content-block:not(.has-block-style):not(.is-popup-source) {
+    background: #ffffff;
+    border-radius: 16rpx;
+    border: 1rpx solid #f1f3f5;
+    box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.02);
+    margin-bottom: 20rpx;
+    padding: 24rpx;
+    
+    &:active {
+      transform: translateY(1rpx);
+    }
   }
 }
 </style>

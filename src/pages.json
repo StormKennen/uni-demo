@@ -47,7 +47,28 @@
       "root": "subPackages/tools",
       "name": "tools",
       "pages": [
-
+        {
+          "path": "memo/list",
+          "style": {
+            "navigationBarTitleText": "我的备忘录",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "memo/editor",
+          "style": {
+            "navigationBarTitleText": "编辑备忘录",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "memo/detail",
+          "style": {
+            "navigationBarTitleText": "备忘录详情",
+            "navigationStyle": "custom"
+          }
+        },
         {
           "path": "family-tree/index",
           "style": {
@@ -135,6 +156,13 @@
           }
         },
         {
+          "path": "watermark/index",
+          "style": {
+            "navigationBarTitleText": "视频去水印",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-stitch/index",
           "style": {
             "navigationBarTitleText": "长图拼接",
@@ -154,31 +182,24 @@
             "navigationBarTitleText": "我的草稿",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "schema-demo/list",
+          "style": {
+            "navigationBarTitleText": "Schema 编辑器",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },
     {
-      "root": "subPackages/services",
-      "name": "services",
+      "root": "editor-core",
+      "name": "editor",
       "pages": [
         {
-          "path": "memo/list",
+          "path": "demo/SchemaEditorDemo",
           "style": {
-            "navigationBarTitleText": "我的备忘录",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "memo/editor",
-          "style": {
-            "navigationBarTitleText": "编辑备忘录",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "memo/detail",
-          "style": {
-            "navigationBarTitleText": "备忘录详情",
+            "navigationBarTitleText": "Schema Editor Demo",
             "navigationStyle": "custom"
           }
         }
@@ -206,7 +227,6 @@
   "tabBar": {
     "color": "#121A26",
     "selectedColor": "#121A26",
-    // #ifdef MP-WEIXIN
     "list": [
       {
         "pagePath": "pages/index/index",
@@ -221,6 +241,5 @@
         "text": "我的"
       }
     ]
-    // #endif
   }
 }

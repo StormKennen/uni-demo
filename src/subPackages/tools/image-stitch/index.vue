@@ -378,6 +378,9 @@ import { getOssFormData } from '../oss-upload/utils'
 import { getToken } from '@/utils/storage'
 import { checkLoginBeforeNavigator } from '@/utils/wxLogin'
 
+// 微信小程序 API 类型声明
+declare const wx: any
+
 // 图片信息接口
 interface ImageInfo {
   id: string
@@ -1018,46 +1021,88 @@ const replaceImage = (index: number) => {
 }
 
 // 选择图片用于替换
-const chooseForReplace = () => {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['original'],
-    sourceType: ['album'],
-    success: async (res) => {
-      const path = res.tempFilePaths[0]
-      try {
-        isProcessing.value = true
-        progressText.value = '正在处理图片...'
-        
-        // 获取图片尺寸
-        const info = await getImageInfo(path)
-        
-        // 上传到OSS
-        progressText.value = '正在上传图片...'
-        const imageId = generateId()
-        const ossUrl = await uploadImageToOss(path, imageId)
-        
-        // 替换图片
-        if (replaceIndex.value >= 0 && replaceIndex.value < images.value.length) {
-          images.value[replaceIndex.value] = {
-            id: imageId,
-            path: ossUrl,
-            width: info.width,
-            height: info.height
+const chooseForReplace = async () => {
+  try {
+    // #ifdef MP-WEIXIN
+    // 微信小程序需要先检查隐私授权
+    if (wx.getPrivacySetting) {
+      await new Promise((resolve, reject) => {
+        wx.getPrivacySetting({
+          success: (res: any) => {
+            console.log('隐私设置状态:', res)
+            resolve(res)
+          },
+          fail: () => {
+            resolve(null)
           }
-          uni.showToast({ title: '图片已替换', icon: 'success' })
+        })
+      })
+    }
+    // #endif
+    
+    const res: any = await uni.chooseImage({
+      count: 1,
+      sizeType: ['original'],
+      sourceType: ['album']
+    })
+    
+    const path = Array.isArray(res.tempFilePaths) ? res.tempFilePaths[0] : null
+    if (!path) {
+      uni.showToast({ title: '未选择到有效图片', icon: 'none' })
+      replaceIndex.value = -1
+      return
+    }
+    
+    try {
+      isProcessing.value = true
+      progressText.value = '正在处理图片...'
+      
+      // 获取图片尺寸
+      const info = await getImageInfo(path)
+      
+      // 上传到OSS
+      progressText.value = '正在上传图片...'
+      const imageId = generateId()
+      const ossUrl = await uploadImageToOss(path, imageId)
+      
+      // 替换图片
+      if (replaceIndex.value >= 0 && replaceIndex.value < images.value.length) {
+        images.value[replaceIndex.value] = {
+          id: imageId,
+          path: ossUrl,
+          width: info.width,
+          height: info.height
         }
-      } catch (err: any) {
-        uni.showToast({ title: err.message || '图片处理失败', icon: 'none' })
-      } finally {
-        isProcessing.value = false
-        replaceIndex.value = -1
+        uni.showToast({ title: '图片已替换', icon: 'success' })
       }
-    },
-    fail: () => {
+    } catch (err: any) {
+      console.error('图片处理失败:', err)
+      uni.showToast({ title: err.message || '图片处理失败', icon: 'none' })
+    } finally {
+      isProcessing.value = false
       replaceIndex.value = -1
     }
-  })
+  } catch (err: any) {
+    console.error('选择图片失败:', err)
+    if (err.errMsg && err.errMsg.includes('cancel')) {
+      replaceIndex.value = -1
+      return
+    }
+    
+    let errorMsg = '选择图片失败'
+    if (err.errMsg && err.errMsg.includes('permission')) {
+      errorMsg = '需要授权访问相册'
+    } else if (err.errMsg && err.errMsg.includes('not support')) {
+      errorMsg = '当前环境不支持此功能'
+    }
+    
+    uni.showToast({ 
+      title: errorMsg, 
+      icon: 'none',
+      duration: 3000
+    })
+    replaceIndex.value = -1
+  }
 }
 
 // 从聊天记录选择用于替换
@@ -1067,8 +1112,15 @@ const chooseFromChatForReplace = () => {
     count: 1,
     type: 'image',
     success: async (res: any) => {
-      const path = res.tempFiles[0].path
+      console.log('从聊天记录选择替换图片成功:', res)
       try {
+        const path = res.tempFiles?.[0]?.path
+        if (!path) {
+          uni.showToast({ title: '未选择到有效图片', icon: 'none' })
+          replaceIndex.value = -1
+          return
+        }
+        
         isProcessing.value = true
         progressText.value = '正在处理图片...'
         
@@ -1091,13 +1143,32 @@ const chooseFromChatForReplace = () => {
           uni.showToast({ title: '图片已替换', icon: 'success' })
         }
       } catch (err: any) {
+        console.error('处理聊天记录图片失败:', err)
         uni.showToast({ title: err.message || '图片处理失败', icon: 'none' })
       } finally {
         isProcessing.value = false
         replaceIndex.value = -1
       }
     },
-    fail: () => {
+    fail: (err: any) => {
+      console.error('选择聊天记录文件失败:', err)
+      if (err.errMsg && err.errMsg.includes('cancel')) {
+        replaceIndex.value = -1
+        return
+      }
+      
+      let errorMsg = '选择失败'
+      if (err.errMsg && err.errMsg.includes('permission')) {
+        errorMsg = '需要授权访问聊天记录'
+      } else if (err.errMsg && err.errMsg.includes('not support')) {
+        errorMsg = '当前微信版本不支持此功能'
+      }
+      
+      uni.showToast({ 
+        title: errorMsg, 
+        icon: 'none',
+        duration: 3000
+      })
       replaceIndex.value = -1
     }
   })
@@ -1125,38 +1196,67 @@ const showAddSheet = () => {
 }
 
 // 从相册选择图片
-const chooseFromAlbum = () => {
-  // #ifdef MP-WEIXIN
-  if (wx.getPrivacySetting) {
-    wx.getPrivacySetting({
-      success: () => doChooseFromAlbum(),
-      fail: () => doChooseFromAlbum()
-    })
-  } else {
-    doChooseFromAlbum()
+const chooseFromAlbum = async () => {
+  try {
+    // #ifdef MP-WEIXIN
+    // 微信小程序需要先检查隐私授权
+    if (wx.getPrivacySetting) {
+      await new Promise((resolve, reject) => {
+        wx.getPrivacySetting({
+          success: (res: any) => {
+            console.log('隐私设置状态:', res)
+            resolve(res)
+          },
+          fail: () => {
+            resolve(null)
+          }
+        })
+      })
+    }
+    // #endif
+    
+    await doChooseFromAlbum()
+  } catch (e) {
+    console.error('选择图片失败:', e)
+    uni.showToast({ title: '选择图片失败', icon: 'none' })
   }
-  // #endif
-  
-  // #ifndef MP-WEIXIN
-  doChooseFromAlbum()
-  // #endif
 }
 
-const doChooseFromAlbum = () => {
+const doChooseFromAlbum = async () => {
   const remainCount = 20 - images.value.length
   
-  uni.chooseImage({
-    count: Math.min(remainCount, 9),
-    sizeType: ['original'],
-    sourceType: ['album'],
-    success: async (res) => {
-      await processSelectedImages(res.tempFilePaths)
-    },
-    fail: (err: any) => {
-      if (err.errMsg && err.errMsg.includes('cancel')) return
-      uni.showToast({ title: '选择图片失败', icon: 'none' })
+  try {
+    const res: any = await uni.chooseImage({
+      count: Math.min(remainCount, 9),
+      sizeType: ['original'],
+      sourceType: ['album']
+    })
+    
+    // 获取图片路径
+    const filePaths = Array.isArray(res.tempFilePaths) ? res.tempFilePaths : []
+    
+    if (filePaths.length > 0) {
+      await processSelectedImages(filePaths)
     }
-  })
+  } catch (err: any) {
+    console.error('选择图片失败:', err)
+    if (err.errMsg && err.errMsg.includes('cancel')) {
+      return
+    }
+    
+    let errorMsg = '选择图片失败'
+    if (err.errMsg && err.errMsg.includes('permission')) {
+      errorMsg = '需要授权访问相册'
+    } else if (err.errMsg && err.errMsg.includes('not support')) {
+      errorMsg = '当前环境不支持此功能'
+    }
+    
+    uni.showToast({ 
+      title: errorMsg, 
+      icon: 'none',
+      duration: 3000
+    })
+  }
 }
 
 // 从聊天记录选择 (仅微信小程序)
@@ -1168,15 +1268,61 @@ const chooseFromChat = () => {
     count: Math.min(remainCount, 9),
     type: 'image',
     success: async (res: any) => {
-      const paths = res.tempFiles.map((f: any) => f.path)
-      await processSelectedImages(paths)
+      console.log('从聊天记录选择成功:', res)
+      try {
+        const paths = res.tempFiles?.map((f: any) => f.path).filter(Boolean) || []
+        if (paths.length > 0) {
+          await processSelectedImages(paths)
+        } else {
+          uni.showToast({ title: '未选择到有效图片', icon: 'none' })
+        }
+      } catch (error) {
+        console.error('处理聊天记录图片失败:', error)
+        uni.showToast({ title: '处理图片失败', icon: 'none' })
+      }
     },
     fail: (err: any) => {
-      if (err.errMsg && err.errMsg.includes('cancel')) return
-      uni.showToast({ title: '选择失败', icon: 'none' })
+      console.error('选择聊天记录文件失败:', err)
+      if (err.errMsg && err.errMsg.includes('cancel')) {
+        return
+      }
+      
+      let errorMsg = '选择失败'
+      if (err.errMsg && err.errMsg.includes('permission')) {
+        errorMsg = '需要授权访问聊天记录'
+      } else if (err.errMsg && err.errMsg.includes('not support')) {
+        errorMsg = '当前微信版本不支持此功能'
+      }
+      
+      uni.showToast({ 
+        title: errorMsg, 
+        icon: 'none',
+        duration: 3000
+      })
     }
   })
   // #endif
+}
+
+
+// 验证图片文件
+const validateImageFile = (path: string): { valid: boolean; message?: string } => {
+  if (!path) {
+    return { valid: false, message: '图片路径无效' }
+  }
+  
+  // 检查文件扩展名
+  const supportedFormats = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+  const fileExtension = path.toLowerCase().substring(path.lastIndexOf('.'))
+  
+  if (fileExtension && !supportedFormats.includes(fileExtension)) {
+    return { 
+      valid: false, 
+      message: `不支持的图片格式 ${fileExtension}，请选择 JPG、PNG 等常见格式` 
+    }
+  }
+  
+  return { valid: true }
 }
 
 // 处理选中的图片，获取尺寸信息并上传到OSS
@@ -1190,24 +1336,47 @@ const processSelectedImages = async (paths: string[]) => {
     
     for (let i = 0; i < paths.length; i++) {
       const path = paths[i]
-      const imageId = generateId()
       
+      // 验证图片文件
+      const validation = validateImageFile(path)
+      if (!validation.valid) {
+        console.warn(`跳过无效图片: ${path}, 原因: ${validation.message}`)
+        uni.showToast({ 
+          title: validation.message || '图片格式不支持', 
+          icon: 'none',
+          duration: 2000
+        })
+        continue
+      }
+      
+      const imageId = generateId()
       progressText.value = `处理图片 ${i + 1}/${paths.length}...`
       
-      // 获取图片尺寸
-      const info = await getImageInfo(path)
-      
-      // 上传到OSS
-      progressText.value = `上传图片 ${i + 1}/${paths.length}...`
-      const ossUrl = await uploadImageToOss(path, imageId)
-      
-      // 添加到图片列表
-      images.value.push({
-        id: imageId,
-        path: ossUrl, // 使用OSS URL
-        width: info.width,
-        height: info.height
-      })
+      try {
+        // 获取图片尺寸
+        const info = await getImageInfo(path)
+        
+        // 上传到OSS
+        progressText.value = `上传图片 ${i + 1}/${paths.length}...`
+        const ossUrl = await uploadImageToOss(path, imageId)
+        
+        // 添加到图片列表
+        images.value.push({
+          id: imageId,
+          path: ossUrl, // 使用OSS URL
+          width: info.width,
+          height: info.height
+        })
+      } catch (err: any) {
+        console.error(`处理图片 ${i + 1} 失败:`, err)
+        uni.showToast({ 
+          title: `图片 ${i + 1} 处理失败: ${err.message || '未知错误'}`, 
+          icon: 'none',
+          duration: 2000
+        })
+        // 继续处理下一张图片
+        continue
+      }
     }
     
     uni.showToast({ title: '图片处理完成', icon: 'success' })

@@ -88,7 +88,7 @@
         },
         "usingComponents" : true,
         "optimization": {
-            "subPackages": true
+            "subPackages": false
         },
         "lazyCodeLoading": "requiredComponents"
     },

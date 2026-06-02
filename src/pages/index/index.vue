@@ -9,57 +9,46 @@
       <template #title>
         <view class="home-navbar-content">
           <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
-          <view class="navbar-brand">
-            <text class="navbar-title">工具箱</text>
-            <text class="navbar-slogan">高效 · 实用 · 专业</text>
-          </view>
+          <text class="navbar-title-single">工具箱</text>
         </view>
       </template>
     </NavBarBase>
     
     <!-- Nav 区域（不吸顶，随页面滚动） -->
-    <view class="nav-section">
-      <!-- 搜索栏 -->
+    <!-- <view class="nav-section">
       <view class="search-bar" @click="goToSearch">
         <uni-icons type="search" size="18" color="#999" />
         <text class="search-placeholder">搜索工具...</text>
       </view>
       
-      <!-- 数据统计 -->
-      <view class="stats-row">
-        <view class="stat-item">
+      <view class="stats-row-lite">
+        <view class="stat-highlight">
           <text class="stat-num">{{ enabledToolsCount }}</text>
-          <text class="stat-label">可用工具</text>
+          <text class="stat-label">个工具可用</text>
         </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-num">免费</text>
-          <text class="stat-label">全部功能</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-num">本地</text>
-          <text class="stat-label">隐私安全</text>
-        </view>
+        <text class="stat-desc">全部免费 · 本地处理 · 隐私安全</text>
       </view>
-    </view>
+    </view> -->
 
     <!-- 常用工具 -->
     <view class="section">
       <view class="section-header">
-        <text class="section-title">常用工具</text>
-        <text class="section-subtitle">POPULAR</text>
+        <text class="section-title">常用</text>
+        <view class="section-actions">
+          <text class="section-subtitle">COMMON</text>
+          <!-- <view class="manage-placeholder" aria-hidden="true">管理</view> -->
+        </view>
       </view>
       
       <view class="tools-grid popular">
         <view 
-          v-for="tool in popularTools" 
+          v-for="tool in commonTools" 
           :key="tool.id"
           :class="['tool-card', 'large', { disabled: tool.disabled }]"
           @click="handleActionClick(tool)"
         >
           <view class="tool-icon-wrapper" :style="{ background: tool.gradient }">
-            <uni-icons :type="tool.icon" size="32" color="#fff" />
+            <uni-icons :type="tool.icon as any" size="32" color="#fff" />
           </view>
           <view class="tool-info">
             <text class="tool-name">{{ tool.name }}</text>
@@ -73,52 +62,49 @@
       </view>
     </view>
 
-    <!-- 图片工具 -->
-    <view class="section">
+    <!-- 分类模块 -->
+    <view
+      v-for="category in categories"
+      :key="category.title"
+      class="section"
+    >
       <view class="section-header">
-        <text class="section-title">图片/视频工具</text>
-        <text class="section-subtitle">IMAGE</text>
+        <text class="section-title">{{ category.title }}</text>
+        <text class="section-subtitle">{{ category.subtitle }}</text>
       </view>
       
-      <view class="tools-grid">
+      <view v-if="category.layout === 'grid'" class="tools-grid">
         <view 
-          v-for="tool in imageTools" 
+          v-for="tool in category.tools" 
           :key="tool.id"
           :class="['tool-card', { disabled: tool.disabled }]"
           @click="handleActionClick(tool)"
         >
           <view class="tool-icon-wrapper small" :style="{ background: tool.gradient }">
-            <uni-icons :type="tool.icon" size="24" color="#fff" />
+            <uni-icons :type="tool.icon as any" size="24" color="#fff" />
           </view>
           <text class="tool-name">{{ tool.name }}</text>
           <text class="tool-desc">{{ tool.desc }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 更多工具 -->
-    <view class="section">
-      <view class="section-header">
-        <text class="section-title">更多工具</text>
-        <text class="section-subtitle">MORE</text>
-      </view>
-      
-      <view class="tools-list">
+      <view v-else class="tools-list">
         <view 
-          v-for="tool in moreTools" 
+          v-for="tool in category.tools" 
           :key="tool.id"
           :class="['tool-list-item', { disabled: tool.disabled }]"
           @click="handleActionClick(tool)"
         >
           <view class="tool-icon-wrapper mini" :style="{ background: tool.gradient }">
-            <uni-icons :type="tool.icon" size="20" color="#fff" />
+            <uni-icons :type="tool.icon as any" size="20" color="#fff" />
           </view>
           <view class="tool-content">
             <text class="tool-name">{{ tool.name }}</text>
             <text class="tool-desc">{{ tool.desc }}</text>
           </view>
           <view class="tool-status">
-            <text v-if="tool.disabled" class="status-dev">开发中</text>
+            <text v-if="tool.requiresAuth" class="login-badge">需登录</text>
+            <text v-else-if="tool.disabled" class="status-dev">开发中</text>
             <uni-icons v-else type="right" size="16" color="#ccc" />
           </view>
         </view>
@@ -129,13 +115,8 @@
 
     <!-- 底部信息 -->
     <view class="footer">
-      <view class="footer-info">
-        <view class="security-row">
-          <uni-icons type="locked" size="14" color="#10b981" />
-          <text class="security-text">数据本地处理，保护您的隐私安全</text>
-        </view>
-        <text class="icp-text">粤ICP备2025489016号-2</text>
-      </view>
+      <text class="footer-note">数据本地处理 · 保护您的隐私安全</text>
+      <text class="icp-text">粤ICP备2025489016号-2</text>
     </view>
     
     <!-- H5 底部导航 -->
@@ -175,43 +156,73 @@ interface Tool {
 // 声明uni全局对象
 declare const uni: any
 
-// 常用工具 - 二维码相关
-const popularTools = ref<Tool[]>([
+// 常用工具集合（默认 6 个高频入口）
+const commonTools = ref<(Tool & { usageCount?: number; priority?: number })[]>([
   {
-    id: 10,
-    name: '万年历',
-    desc: '黄历查询、择吉日、时辰吉凶',
-    icon: 'calendar',
-    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
-    link: '/subPackages/tools/calendar/index',
+    id: 15,
+    name: '视频去水印',
+    desc: '粘贴解析/保存/复制直链',
+    icon: 'link',
+    gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',
+    link: '/subPackages/tools/watermark/index',
     disabled: false,
+    usageCount: 0,
+    priority: 1,
   },
   {
-    id: 13,
-    name: '笔记收藏',
-    desc: '个人笔记',
-    icon: 'chat',
-    gradient: 'linear-gradient(135deg, #42b913 0%, #42b983 100%)',
-    link: '/subPackages/tools/chat/index',
+    id: 11,
+    name: '视频压缩',
+    desc: '高效压缩省空间',
+    icon: 'videocam',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    link: '/subPackages/tools/video-compress/index',
     disabled: false,
+    usageCount: 0,
+    priority: 2,
+  },
+  {
+    id: 4,
+    name: '图片压缩',
+    desc: '高效压缩不失真',
+    icon: 'image',
+    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    link: '/subPackages/tools/image-compress/index',
+    disabled: false,
+    usageCount: 0,
+    priority: 3,
   },
   {
     id: 1,
     name: '二维码生成',
-    desc: '支持多种样式，自定义颜色和Logo',
+    desc: '自定义颜色和 Logo',
     icon: 'scan',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     link: '/subPackages/tools/qr-generator/index',
     disabled: false,
+    usageCount: 0,
+    priority: 4,
   },
   {
     id: 2,
     name: '二维码解析',
-    desc: '扫码识别或图片上传解析',
+    desc: '扫码识别或图片上传',
     icon: 'camera',
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     link: '/subPackages/tools/qr-parser/index',
     disabled: false,
+    usageCount: 0,
+    priority: 5,
+  },
+  {
+    id: 10,
+    name: '万年历',
+    desc: '黄历查询、择吉日',
+    icon: 'calendar',
+    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
+    link: '/subPackages/tools/calendar/index',
+    disabled: false,
+    usageCount: 0,
+    priority: 6,
   },
 ])
 
@@ -252,64 +263,121 @@ const imageTools = ref<Tool[]>([
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     link: '/subPackages/tools/video-compress/index',
     disabled: false
+  },
+  {
+    id: 15,
+    name: '视频去水印',
+    desc: '粘贴解析/保存/复制直链',
+    icon: 'link',
+    gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',
+    link: '/subPackages/tools/watermark/index',
+    disabled: false
   }
 ])
 
-// 更多工具
-const moreTools = ref<Tool[]>([
+const qrTools = ref<Tool[]>([
+  {
+    id: 1,
+    name: '二维码生成',
+    desc: '自定义颜色和 Logo',
+    icon: 'scan',
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    link: '/subPackages/tools/qr-generator/index',
+    disabled: false,
+  },
+  {
+    id: 2,
+    name: '二维码解析',
+    desc: '扫码识别或图片上传',
+    icon: 'camera',
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    link: '/subPackages/tools/qr-parser/index',
+    disabled: false,
+  },
+])
+
+const efficiencyTools = ref<(Tool & { requiresAuth?: boolean })[]>([
+  {
+    id: 10,
+    name: '万年历',
+    desc: '黄历查询、择吉日',
+    icon: 'calendar',
+    gradient: 'linear-gradient(135deg, #C83C3C 0%, #D4B375 100%)',
+    link: '/subPackages/tools/calendar/index',
+    disabled: false,
+  },
+  {
+    id: 13,
+    name: '笔记收藏',
+    desc: '个人笔记随手记',
+    icon: 'chat',
+    gradient: 'linear-gradient(135deg, #42b913 0%, #42b983 100%)',
+    link: '/subPackages/tools/chat/index',
+    disabled: false,
+  },
   {
     id: 5,
-    name: '我的备忘录',
+    name: '备忘录',
     desc: '备忘录管理，支持分类',
     icon: 'compose',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    link: '/subPackages/services/memo/list',
+    link: '/subPackages/tools/memo/list',
     disabled: false,
-    badge: '新'
+    requiresAuth: true,
   },
-  // {
-  //   id: 6,
-  //   name: '食谱大全',
-  //   desc: '中文食谱，食材筛选',
-  //   icon: 'flag',
-  //   gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)',
-  //   link: '/subPackages/services/recipe/index',
-  //   disabled: false
-  // },
-  // {
-  //   id: 7,
-  //   name: '族谱查看',
-  //   desc: '快照模式，仅供浏览',
-  //   icon: 'person',
-  //   gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-  //   link: '/subPackages/tools/family-tree/demo',
-  //   disabled: false
-  // },
   {
     id: 8,
-    name: '族谱编辑',
+    name: '族谱',
     desc: '实时数据，支持编辑',
     icon: 'personadd',
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     link: '/subPackages/tools/family-tree/index',
-    disabled: false
+    disabled: false,
+    requiresAuth: true,
+  },
+])
+
+const categories = computed(() => [
+  {
+    title: '媒体',
+    subtitle: 'MEDIA',
+    layout: 'grid' as const,
+    tools: imageTools.value,
   },
   {
-    id: 9,
-    name: '更多工具',
-    desc: '敬请期待更多实用功能',
-    icon: 'more',
-    gradient: 'linear-gradient(135deg, #d299c2 0%, #fef9d7 100%)',
-    link: '',
-    disabled: true
-  }
+    title: '二维码',
+    subtitle: 'QR',
+    layout: 'grid' as const,
+    tools: qrTools.value,
+  },
+  {
+    title: '记录',
+    subtitle: 'RECORD',
+    layout: 'list' as const,
+    tools: efficiencyTools.value,
+  },
 ])
 
 // 计算可用工具数量
 const enabledToolsCount = computed(() => {
-  const all = [...popularTools.value, ...imageTools.value, ...moreTools.value]
-  return all.filter(t => !t.disabled).length
+  const uniqueMap = new Map<number, Tool>()
+  const addList = (list: Tool[]) => {
+    list.forEach((tool) => {
+      if (!tool.disabled) {
+        uniqueMap.set(tool.id, tool)
+      }
+    })
+  }
+
+  addList(commonTools.value)
+  categories.value.forEach((category) => addList(category.tools))
+
+  return uniqueMap.size
 })
+
+const recordUsage = (_tool: Tool) => {
+  // TODO: connect to local storage or backend analytics
+}
 
 // 生命周期
 onMounted(async () => {
@@ -333,6 +401,8 @@ const handleActionClick = async (tool: Tool) => {
     return
   }
   
+  recordUsage(tool)
+
   // 处理外部链接
   if (tool.isWebLink) {
     uni.navigateTo({
@@ -343,7 +413,7 @@ const handleActionClick = async (tool: Tool) => {
   
   // 需要登录的服务列表
   const needLoginServices: string[] = [
-    '/subPackages/services/memo/list',
+    '/subPackages/tools/memo/list',
   ]
   
   if (needLoginServices.includes(tool.link)) {
@@ -354,7 +424,7 @@ const handleActionClick = async (tool: Tool) => {
         content: '该功能需要登录后才能使用',
         confirmText: '去登录',
         cancelText: '取消',
-        success: (res) => {
+        success: (res: UniApp.ShowModalRes) => {
           if (res.confirm) {
             uni.navigateTo({ 
               url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.link)}` 
@@ -423,27 +493,14 @@ $radius-lg: 32rpx;
     width: 56rpx;
     height: 56rpx;
     border-radius: 12rpx;
-    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+    /* box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15); */
   }
   
-  .navbar-brand {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    
-    .navbar-title {
-      font-size: 32rpx;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 1rpx;
-      line-height: 1.2;
-    }
-    
-    .navbar-slogan {
-      font-size: 18rpx;
-      color: rgba(255, 255, 255, 0.8);
-      line-height: 1.2;
-    }
+  .navbar-title-single {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1rpx;
   }
 }
 
@@ -486,36 +543,35 @@ $radius-lg: 32rpx;
 }
 
 // 数据统计
-.stats-row {
+.stats-row-lite {
+  margin-top: 28rpx;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: $radius-lg;
+  padding: 20rpx 28rpx;
   display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin-top: 32rpx;
-  padding: 24rpx 0;
-  
-  .stat-item {
+  flex-direction: column;
+  gap: 8rpx;
+
+  .stat-highlight {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    
+    align-items: baseline;
+    gap: 12rpx;
+
     .stat-num {
-      font-size: 36rpx;
+      font-size: 40rpx;
       font-weight: 700;
       color: #fff;
     }
-    
+
     .stat-label {
-      font-size: 22rpx;
-      color: rgba(255, 255, 255, 0.8);
-      margin-top: 8rpx;
+      font-size: 24rpx;
+      color: rgba(255, 255, 255, 0.9);
     }
   }
-  
-  .stat-divider {
-    width: 1px;
-    height: 48rpx;
-    background: rgba(255, 255, 255, 0.3);
+
+  .stat-desc {
+    font-size: 24rpx;
+    color: rgba(255, 255, 255, 0.8);
   }
 }
 
@@ -525,8 +581,8 @@ $radius-lg: 32rpx;
   
   .section-header {
     display: flex;
-    align-items: baseline;
-    gap: 12rpx;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 24rpx;
     
     .section-title {
@@ -749,27 +805,25 @@ $radius-lg: 32rpx;
 // 底部信息
 .footer {
   padding: 48rpx 32rpx 32rpx;
-  
-  .footer-info {
-    text-align: center;
-    
-    .security-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8rpx;
-      margin-bottom: 16rpx;
-      
-      .security-text {
-        font-size: 24rpx;
-        color: #10b981;
-      }
-    }
-    
-    .icp-text {
-      font-size: 22rpx;
-      color: $text-hint;
-    }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+
+  .footer-note {
+    font-size: 24rpx;
+    color: #10b981;
+  }
+
+  .icp-text {
+    font-size: 22rpx;
+    color: $text-hint;
   }
 }
+
+.login-badge {
+  color: #999;
+  font-size: 22rpx;
+}
+
 </style>
