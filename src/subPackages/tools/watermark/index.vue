@@ -20,9 +20,13 @@
       </view>
     </view>
 
+    <view class="share-entry" v-if="!isH5 && !parsedVideoUrl">
+      <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享给好友</text>
+    </view>
+
     <view class="card result-card" v-if="parsedVideoUrl">
       <view class="tips-row">
-        <text class="error-tips clickable" @click="handleReparse">解析有问题，重试</text>
+        <text class="error-tips clickable" @click="handleReparse">解析有问题，点击重试</text>
       </view>
       <video
         class="preview"
@@ -37,6 +41,7 @@
       </view>
       <text class="tips secondary clickable new-link" @click="handleReset">继续解析</text>
     </view>
+
     </view>
   </view>
 </template>
@@ -44,6 +49,7 @@
 <script setup lang="ts">
 import { postVideoProcess } from '@/services/apifox/NODEJSDEMO/VIDEO/apifox'
 import { ref } from 'vue'
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import NavBar from '@/components/nav-bar.vue'
 
 const videoLink = ref('')
@@ -51,13 +57,36 @@ const parsedVideoUrl = ref('')
 const parsedCover = ref('')
 const isParsing = ref(false)
 const isDownloading = ref(false)
+const isWeixinMiniProgram = ref(false)
+const isH5 = ref(false)
+
+// #ifdef MP-WEIXIN
+isWeixinMiniProgram.value = true
+uni.showShareMenu({ withShareTicket: true })
+// #endif
+
+// #ifdef H5
+isH5.value = true
+// #endif
+
+const SHARE_PATH = '/subPackages/tools/watermark/index'
+const SHARE_TITLE = '视频去水印 · 银河工具箱'
+
+const extractVideoUrl = (text: string) => {
+  if (!text) return ''
+  const regex = /(https?:\/\/[^\s]+)/i
+  const match = text.match(regex)
+  if (!match) return ''
+  return match[0].replace(/[)，。！!；;\uFF09]+$/, '')
+}
 
 const handlePasteAndParse = () => {
   uni.getClipboardData({
     success: (res) => {
       if (res.data) {
-        videoLink.value = res.data
-        parseVideo(res.data)
+        const cleaned = res.data.trim()
+        videoLink.value = cleaned
+        parseVideo(cleaned)
       } else if (videoLink.value) {
         parseVideo(videoLink.value)
       } else {
@@ -91,13 +120,20 @@ const handleReset = () => {
   videoLink.value = ''
 }
 
-const parseVideo = async (url: string) => {
-  if (!url) return
+const parseVideo = async (raw: string) => {
+  if (!raw) return
+  const cleaned = raw.trim()
+  videoLink.value = cleaned
+  const link = extractVideoUrl(cleaned)
+  if (!link) {
+    uni.showToast({ title: '未在文本中找到链接', icon: 'none' })
+    return
+  }
   isParsing.value = true
   uni.showLoading({ title: '智能解析中...' })
 
   try {
-    const res: any = await postVideoProcess({ videoUrl: url })
+    const res: any = await postVideoProcess({ videoUrl: link })
     const data = res?.data || res
     if (data?.videoUrl) {
       parsedVideoUrl.value = data.videoUrl
@@ -153,7 +189,7 @@ const handleSaveVideo = () => {
         if (res.statusCode === 200) {
           uni.saveVideoToPhotosAlbum({
             filePath: res.tempFilePath,
-            success: () => uni.showToast({ title: '已保存到相册', icon: 'success' }),
+            success: () => uni.showToast({ title: '已保存到相册', icon: 'success', duration: 1500 }),
             fail: (err) => {
               console.error(err)
               uni.showToast({ title: '保存失败，请检查相册权限', icon: 'none' })
@@ -190,6 +226,38 @@ const handleSaveVideo = () => {
 
   downloadWithUrl(directUrl)
 }
+
+const handleShare = () => {
+  if (!isH5.value) {
+    uni.showToast({ title: '请点击右上角分享', icon: 'none' })
+    return
+  }
+  const shareUrl = `${window.location.origin}${SHARE_PATH}`
+  if (navigator?.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareUrl)
+      .then(() => {
+        uni.showToast({ title: '链接已复制', icon: 'success' })
+      })
+      .catch(() => {
+        uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false })
+      })
+  } else {
+    uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false })
+  }
+}
+
+// #ifdef MP-WEIXIN
+onShareAppMessage(() => ({
+  title: SHARE_TITLE,
+  path: SHARE_PATH,
+  imageUrl: parsedCover.value || ''
+}))
+
+onShareTimeline(() => ({
+  title: SHARE_TITLE,
+  query: ''
+}))
+// #endif
 </script>
 
 <style scoped lang="scss">
@@ -272,6 +340,39 @@ const handleSaveVideo = () => {
   font-size: 26rpx;
   color: #6b6b6b;
   text-decoration: underline;
+}
+
+.share-entry {
+  padding: 24rpx;
+  text-align: center;
+}
+
+.share-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+  color: #333;
+}
+
+.share-btn {
+  width: 100%;
+  height: 96rpx;
+  border-radius: 999rpx;
+  border: 2rpx dashed #12d28c;
+  background: #fff;
+  color: #07c160;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.share-tip {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #9da0a8;
 }
 
 .preview {

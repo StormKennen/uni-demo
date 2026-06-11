@@ -107,6 +107,34 @@
           }
         },
         {
+          "path": "image-watermark/index",
+          "style": {
+            "navigationBarTitleText": "图片加水印",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "markdown/index",
+          "style": {
+            "navigationBarTitleText": "Markdown 转 HTML",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "image-format/index",
+          "style": {
+            "navigationBarTitleText": "图片格式转换",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "image-cipher/index",
+          "style": {
+            "navigationBarTitleText": "图片加密",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "qr-generator/index",
           "style": {
             "navigationBarTitleText": "二维码生成器",
@@ -188,6 +216,12 @@
           "style": {
             "navigationBarTitleText": "Schema 编辑器",
             "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "pool-aim/index",
+          "style": {
+            "navigationBarTitleText": "两球台球瞄准器"
           }
         }
       ]
