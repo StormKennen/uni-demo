@@ -223,6 +223,21 @@
           "style": {
             "navigationBarTitleText": "两球台球瞄准器"
           }
+        },
+        {
+          "path": "compendium/list",
+          "style": {
+            "navigationBarTitleText": "魔灵 wiki-图鉴",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 120
+          }
+        },
+        {
+          "path": "compendium/detail",
+          "style": {
+            "navigationBarTitleText": "魔灵 wiki-详情",
+            "enablePullDownRefresh": true
+          }
         }
       ]
     },

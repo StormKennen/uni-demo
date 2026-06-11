@@ -16,7 +16,7 @@
         <uni-icons type="search" size="18" color="#999" />
         <text class="search-placeholder">搜索工具...</text>
       </view>
-      
+
       <view class="stats-row-lite">
         <view class="stat-highlight">
           <text class="stat-num">{{ enabledToolsCount }}</text>
@@ -153,6 +153,19 @@
     disabled: false,
     badge: 'NEW',
   }
+
+  const compendiumTools = ref<Tool[]>([
+    {
+      id: 21,
+      name: '魔灵召唤',
+      desc: '魔灵图鉴/筛选/详情',
+      icon: 'star',
+      gradient: 'linear-gradient(135deg, #ff7a59 0%, #f2c94c 100%)',
+      link: '/subPackages/tools/compendium/list',
+      disabled: false,
+      badge: 'NEW',
+    },
+  ])
 
   // 常用工具集合
   const commonTools = ref<(Tool & { usageCount?: number; priority?: number })[]>([
@@ -426,6 +439,12 @@
   const entertainmentTools = ref<Tool[]>([poolAimTool])
 
   const categories = computed(() => [
+    {
+      title: '图鉴',
+      subtitle: 'WIKI',
+      layout: 'grid' as const,
+      tools: compendiumTools.value,
+    },
     {
       title: '媒体',
       subtitle: 'MEDIA',
