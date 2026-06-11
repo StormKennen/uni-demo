@@ -1,26 +1,4 @@
 /**
- * @description Compendiums/获取图鉴列表--接口请求Query参数
- * @url GET /compendiums
- */
-export interface getCompendiumsQuery {
-  keyword?: string
-
-  status?: string
-
-  page?: number
-
-  pageSize?: number
-
-  sortBy?: string
-}
-
-/**
- * @description Compendiums/获取图鉴列表--接口返回值
- * @url GET /compendiums
- */
-export type getCompendiumsRes = object
-
-/**
  * @description Compendiums/获取图鉴详情--接口请求Query参数
  * @url GET /compendiums/detail
  */
@@ -247,3 +225,57 @@ export interface getCompendiumsCompareQuery {
  * @url GET /compendiums/compare
  */
 export type getCompendiumsCompareRes = object
+
+/**
+ * @description Compendiums/获取图鉴列表--接口请求Query参数
+ * @url GET /compendiums
+ */
+export interface getCompendiumsQuery {
+  keyword?: string
+
+  status?: string
+
+  page?: number
+
+  pageSize?: number
+
+  sortBy?: string
+}
+
+/**
+ * @description Compendiums/获取图鉴列表--接口返回值
+ * @url GET /compendiums
+ */
+export interface getCompendiumsRes {
+  items?: getCompendiumsResItems[]
+  pagination?: getCompendiumsResPagination
+}
+
+/** getCompendiumsResItems */
+export interface getCompendiumsResItems {
+  code?: string
+  description?: string
+  icon?: string
+  id?: string
+  name?: string
+  status?: 'enabled' | 'disabled'
+}
+
+/** getCompendiumsResPagination */
+export interface getCompendiumsResPagination {
+  /** 是否有下一页 */
+  hasNext?: boolean
+  hasNextPage?: boolean
+  /** 是否有上一页 */
+  hasPrev?: boolean
+  hasPrevPage?: boolean
+  /** 每页数量 */
+  limit?: number
+  /** 当前页码 */
+  page?: number
+  /** 总记录数 */
+  total?: number
+  /** 总页数 */
+  totalPages?: number
+  totalResults?: number
+}

@@ -24,19 +24,6 @@ const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
- * @description Compendiums/获取图鉴列表
- * @url GET /compendiums
- * @host https://app.apifox.com/link/project/7048425/apis/api-470751677
- */
-export const getCompendiums = async (
-  params: Expand<getCompendiumsQuery>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getCompendiumsRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums', params, _config)
-}
-
-/**
  * @description Compendiums/获取图鉴详情
  * @url GET /compendiums/detail
  * @host https://app.apifox.com/link/project/7048425/apis/api-470751678
@@ -125,4 +112,17 @@ export const getCompendiumsCompare = async (
 ): Promise<Expand<getCompendiumsCompareRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get('/compendiums/compare', params, _config)
+}
+
+/**
+ * @description Compendiums/获取图鉴列表
+ * @url GET /compendiums
+ * @host https://app.apifox.com/link/project/7048425/apis/api-470751677
+ */
+export const getCompendiums = async (
+  params: Expand<getCompendiumsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/compendiums', params, _config)
 }
