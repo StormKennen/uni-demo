@@ -94,20 +94,21 @@
   }
 
   const COMPENDIUM_CODE = 'swc'
+  const ALL_VALUE = 'all'
   const PAGE_SIZE = 40
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
 
   const elementOptions: FilterOption[] = [
+    { label: '全部属性', value: ALL_VALUE },
     { label: '火', value: 'fire', icon: '🔥' },
     { label: '水', value: 'water', icon: '🌊' },
     { label: '风', value: 'wind', icon: '🌪️' },
     { label: '光', value: 'light', icon: '🛡️' },
     { label: '暗', value: 'dark', icon: '🟣' },
-    { label: '我的收藏', value: 'favorite' },
   ]
 
   const starOptions: FilterOption[] = [
-    { label: '全部星级', value: 'all' },
+    { label: '全部星级', value: ALL_VALUE },
     { label: '1★', value: '1' },
     { label: '2★', value: '2' },
     { label: '3★', value: '3' },
@@ -116,7 +117,7 @@
   ]
 
   const typeOptions: FilterOption[] = [
-    { label: '全部类型', value: 'all' },
+    { label: '全部类型', value: ALL_VALUE },
     { label: '攻击型', value: 'attack' },
     { label: '防御型', value: 'defense' },
     { label: '体力型', value: 'hp' },
@@ -124,7 +125,7 @@
   ]
 
   const sortOptions: FilterOption[] = [
-    { label: '默认排序', value: 'default' },
+    { label: '默认排序', value: ALL_VALUE },
     { label: '图鉴倒序', value: 'reverse' },
     { label: '体力↓', value: 'hp_desc' },
     { label: '攻击力↓', value: 'attack_desc' },
@@ -139,10 +140,10 @@
   ]
 
   const activePanel = ref<PanelKey | ''>('')
-  const selectedElement = ref('fire')
-  const selectedStar = ref('all')
-  const selectedType = ref('all')
-  const selectedSort = ref('default')
+  const selectedElement = ref(ALL_VALUE)
+  const selectedStar = ref(ALL_VALUE)
+  const selectedType = ref(ALL_VALUE)
+  const selectedSort = ref(ALL_VALUE)
   const characters = ref<CharacterCard[]>([])
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
@@ -179,12 +180,12 @@
 
   const selectedElementLabel = computed(() => {
     const label = getOptionLabel(elementOptions, selectedElement.value)
-    return selectedElement.value === 'favorite' ? label : `${label}属性`
+    return selectedElement.value === ALL_VALUE ? label : `${label}属性`
   })
 
   const selectedElementIcon = computed(() => getOptionIcon(elementOptions, selectedElement.value))
 
-  const emptyText = computed(() => (selectedElement.value === 'favorite' ? '暂无收藏魔灵' : '暂无符合条件的魔灵'))
+  const emptyText = computed(() => '暂无符合条件的魔灵')
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -282,15 +283,15 @@
       pageSize: PAGE_SIZE,
     }
 
-    if (selectedElement.value !== 'favorite') {
+    if (selectedElement.value !== ALL_VALUE) {
       query.element = selectedElement.value
     }
 
-    if (selectedType.value !== 'all') {
+    if (selectedType.value !== ALL_VALUE) {
       query.speciesType = selectedType.value
     }
 
-    if (selectedStar.value !== 'all') {
+    if (selectedStar.value !== ALL_VALUE) {
       query.attribute = 'level'
       query.minValue = Number(selectedStar.value)
       query.maxValue = Number(selectedStar.value)
@@ -305,7 +306,7 @@
 
   const getSortParams = (value: string): [string, string] => {
     const map: Record<string, [string, string]> = {
-      default: ['sortOrder', 'asc'],
+      [ALL_VALUE]: ['', ''],
       reverse: ['sortOrder', 'desc'],
       hp_desc: ['hp', 'desc'],
       attack_desc: ['attack', 'desc'],
@@ -318,7 +319,7 @@
       second_awaken: ['secondAwakenPriority', 'desc'],
       popularity: ['viewCount', 'desc'],
     }
-    return map[value] || map.default
+    return map[value] || map[ALL_VALUE]
   }
 
   const fetchCharacters = async (reset = false) => {
@@ -339,7 +340,6 @@
       const items = extractItems(res)
         .map(normalizeCharacter)
         .filter((item): item is CharacterCard => Boolean(item))
-        .filter(item => selectedElement.value !== 'favorite' || item.isFavorite)
 
       characters.value = reset ? items : [...characters.value, ...items]
 
@@ -377,10 +377,10 @@
   }
 
   const resetFilters = () => {
-    selectedElement.value = 'fire'
-    selectedStar.value = 'all'
-    selectedType.value = 'all'
-    selectedSort.value = 'default'
+    selectedElement.value = ALL_VALUE
+    selectedStar.value = ALL_VALUE
+    selectedType.value = ALL_VALUE
+    selectedSort.value = ALL_VALUE
     refreshCharacters()
   }
 
