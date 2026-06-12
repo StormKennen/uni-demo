@@ -113,14 +113,17 @@
         <text class="section-title">路线模式</text>
         <!-- <text class="section-tip">反弹路线使用镜像法计算</text> -->
       </view>
-      <view class="option-grid route-grid">
-        <view
-          v-for="option in ROUTE_OPTIONS"
-          :key="option.value"
-          class="option-button"
-          :class="{ active: state.routeMode === option.value }"
-          @click="setRouteMode(option.value)">
-          {{ option.label }}
+      <view class="route-category" v-for="category in ROUTE_CATEGORIES" :key="category.key">
+        <text class="route-category-title">{{ category.label }}</text>
+        <view class="option-grid" :class="category.options.length > 1 ? 'route-grid' : 'route-grid-single'">
+          <view
+            v-for="option in category.options"
+            :key="option.value"
+            class="option-button"
+            :class="{ active: state.routeMode === option.value }"
+            @click="setRouteMode(option.value)">
+            {{ option.label }}
+          </view>
         </view>
       </view>
     </view>
@@ -208,7 +211,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   type BallType = 'cue' | 'target'
   type CoordinateAxis = 'x' | 'y'
   type Cushion = 'top' | 'bottom' | 'left' | 'right'
-  type RouteMode = 'direct' | `bank_${Cushion}` | 'double'
+  type RouteMode = 'direct' | `bank_${Cushion}` | `double_${Cushion}`
   type PocketSelectionMode = 'auto' | 'manual'
 
   const TABLE_WIDTH = 2540
@@ -259,15 +262,29 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   const SIGHT_CENTER_TOLERANCE = SIGHT_FRACTIONS[0].value / 2
 
   const CUSHIONS: Cushion[] = ['top', 'bottom', 'left', 'right']
+  const CUSHION_ORDER: Cushion[] = ['left', 'right', 'top', 'bottom']
+  const CUSHION_LABELS: Record<Cushion, string> = {
+    left: '上库',
+    right: '下库',
+    top: '左库',
+    bottom: '右库',
+  }
 
-  const ROUTE_OPTIONS: Array<{ value: RouteMode; label: string }> = [
-    { value: 'direct', label: '直接进洞' },
-    { value: 'bank_left', label: '上库' },
-    { value: 'bank_right', label: '下库' },
-    { value: 'bank_top', label: '左库' },
-    { value: 'bank_bottom', label: '右库' },
-    { value: 'double', label: '反两库' },
+  const ROUTE_CATEGORIES: Array<{ key: string; label: string; options: Array<{ value: RouteMode; label: string }> }> = [
+    { key: 'direct', label: '直接进洞', options: [{ value: 'direct', label: '直接进洞' }] },
+    {
+      key: 'bank1',
+      label: '反一库',
+      options: CUSHION_ORDER.map(cushion => ({ value: `bank_${cushion}` as RouteMode, label: CUSHION_LABELS[cushion] })),
+    },
+    {
+      key: 'bank2',
+      label: '反两库',
+      options: CUSHION_ORDER.map(cushion => ({ value: `double_${cushion}` as RouteMode, label: CUSHION_LABELS[cushion] })),
+    },
   ]
+
+  const ROUTE_OPTIONS = ROUTE_CATEGORIES.flatMap(category => category.options)
 
   const tableMarkLines = [
     {
@@ -517,24 +534,22 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     }
   }
 
-  function getBestDoubleBankRoute(cueBall: Point, targetBall: Point, pocket: Pocket): RouteResult {
+  function getDoubleBankRouteForFirst(cueBall: Point, targetBall: Point, pocket: Pocket, first: Cushion): RouteResult {
     let bestRoute: RouteResult | null = null
     let bestDistance = Number.POSITIVE_INFINITY
-    CUSHIONS.forEach(first => {
-      CUSHIONS.forEach(second => {
-        if (first === second) {
-          return
-        }
-        const route = getDoubleBankRoute(cueBall, targetBall, pocket, first, second)
-        if (!route.valid) {
-          return
-        }
-        const distance = getTargetRouteDistance(route)
-        if (distance < bestDistance) {
-          bestDistance = distance
-          bestRoute = route
-        }
-      })
+    CUSHIONS.forEach(second => {
+      if (first === second) {
+        return
+      }
+      const route = getDoubleBankRoute(cueBall, targetBall, pocket, first, second)
+      if (!route.valid) {
+        return
+      }
+      const distance = getTargetRouteDistance(route)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        bestRoute = route
+      }
     })
     return bestRoute || createInvalidRoute('当前两库反弹路线无效')
   }
@@ -645,8 +660,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     if (state.routeMode === 'direct') {
       return getDirectRoute(cueBall, targetBall, pocket)
     }
-    if (state.routeMode === 'double') {
-      return getBestDoubleBankRoute(cueBall, targetBall, pocket)
+    if (state.routeMode.startsWith('double_')) {
+      const first = state.routeMode.replace('double_', '') as Cushion
+      return getDoubleBankRouteForFirst(cueBall, targetBall, pocket, first)
     }
     const cushion = state.routeMode.replace('bank_', '') as Cushion
     return getBankRoute(cueBall, targetBall, pocket, cushion)
@@ -1531,6 +1547,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   .table-card {
     padding: 10rpx;
+    background: #ffffff;
   }
 
   .selector-brief {
@@ -1689,7 +1706,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     aspect-ratio: 6 / 11;
     overflow: hidden;
     border-radius: 16rpx;
-    background: #e9eeeb;
+    background: #ffffff;
   }
 
   .pool-canvas {
@@ -1944,7 +1961,27 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   .route-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .route-grid-single {
+    grid-template-columns: 1fr;
+  }
+
+  .route-category {
+    margin-top: 18rpx;
+  }
+
+  .route-category:first-child {
+    margin-top: 0;
+  }
+
+  .route-category-title {
+    display: block;
+    margin-bottom: 10rpx;
+    color: #84918c;
+    font-size: 21rpx;
+    font-weight: 600;
   }
 
   .option-button {
