@@ -70,7 +70,7 @@ isH5.value = true
 // #endif
 
 const SHARE_PATH = '/subPackages/tools/watermark/index'
-const SHARE_TITLE = '视频去水印 · 银河工具箱'
+const SHARE_TITLE = '视频去水印 · 凉白开工具箱'
 
 const extractVideoUrl = (text: string) => {
   if (!text) return ''

@@ -88,7 +88,7 @@ const markdownContent = ref(`# Markdown 转 HTML 工具
 - 支持实时预览
 - 可复制或下载 HTML
 
-> 欢迎体验银河工具箱！`)
+> 欢迎体验凉白开工具箱！`)
 const activeTab = ref<'preview' | 'html'>('preview')
 const darkPreview = ref(false)
 

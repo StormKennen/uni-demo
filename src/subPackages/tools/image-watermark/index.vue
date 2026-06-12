@@ -69,7 +69,7 @@
             v-model.trim="textWatermark.content"
             class="text-input"
             :maxlength="50"
-            placeholder="输入水印文字，比如：版权所属·银河工具箱"
+            placeholder="输入水印文字，比如：版权所属·凉白开工具箱"
           />
         </view>
 
@@ -320,7 +320,7 @@ const watermarkImageInfo = reactive({
 })
 
 const builtinStickers = [
-  { name: '银河 Logo', src: '/static/logo.png' }
+  { name: '凉白开 Logo', src: '/static/logo.png' }
 ]
 
 const colorPresets = ['#ffffff', '#000000', '#ff6b6b', '#07c160', '#1d4ed8', '#ffb703']

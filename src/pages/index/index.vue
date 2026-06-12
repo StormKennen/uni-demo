@@ -146,7 +146,7 @@
   const poolAimTool: Tool = {
     id: 20,
     name: '台球瞄准器',
-    desc: '两球定位/直线/一库反弹',
+    desc: '台球路线计算/直线/反库',
     icon: 'flag',
     gradient: 'linear-gradient(135deg, #147a54 0%, #28b779 100%)',
     link: '/subPackages/tools/pool-aim/index',
