@@ -113,17 +113,24 @@
         <text class="section-title">路线模式</text>
         <!-- <text class="section-tip">反弹路线使用镜像法计算</text> -->
       </view>
-      <view class="route-category" v-for="category in ROUTE_CATEGORIES" :key="category.key">
-        <text class="route-category-title">{{ category.label }}</text>
-        <view class="option-grid" :class="category.options.length > 1 ? 'route-grid' : 'route-grid-single'">
-          <view
-            v-for="option in category.options"
-            :key="option.value"
-            class="option-button"
-            :class="{ active: state.routeMode === option.value }"
-            @click="setRouteMode(option.value)">
-            {{ option.label }}
-          </view>
+      <view class="route-tabs">
+        <view
+          v-for="tab in ROUTE_TABS"
+          :key="tab.key"
+          class="route-tab"
+          :class="{ active: activeRouteTab === tab.key }"
+          @click="setRouteTab(tab.key)">
+          {{ tab.label }}
+        </view>
+      </view>
+      <view class="option-grid route-grid cushion-grid" :class="{ disabled: isCushionDisabled }">
+        <view
+          v-for="option in CUSHION_OPTIONS"
+          :key="option.value"
+          class="option-button"
+          :class="{ active: !isCushionDisabled && activeCushion === option.value, disabled: isCushionDisabled }"
+          @click="setRouteCushion(option.value)">
+          {{ option.label }}
         </view>
       </view>
     </view>
@@ -212,6 +219,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   type CoordinateAxis = 'x' | 'y'
   type Cushion = 'top' | 'bottom' | 'left' | 'right'
   type RouteMode = 'direct' | `bank_${Cushion}` | `double_${Cushion}`
+  type RouteCategory = 'direct' | 'bank1' | 'bank2'
   type PocketSelectionMode = 'auto' | 'manual'
 
   const TABLE_WIDTH = 2540
@@ -270,21 +278,19 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     bottom: '右库',
   }
 
-  const ROUTE_CATEGORIES: Array<{ key: string; label: string; options: Array<{ value: RouteMode; label: string }> }> = [
-    { key: 'direct', label: '直接进洞', options: [{ value: 'direct', label: '直接进洞' }] },
-    {
-      key: 'bank1',
-      label: '反一库',
-      options: CUSHION_ORDER.map(cushion => ({ value: `bank_${cushion}` as RouteMode, label: CUSHION_LABELS[cushion] })),
-    },
-    {
-      key: 'bank2',
-      label: '反两库',
-      options: CUSHION_ORDER.map(cushion => ({ value: `double_${cushion}` as RouteMode, label: CUSHION_LABELS[cushion] })),
-    },
+  const ROUTE_TABS: Array<{ key: RouteCategory; label: string }> = [
+    { key: 'direct', label: '直接进洞' },
+    { key: 'bank1', label: '反一库' },
+    { key: 'bank2', label: '反两库' },
   ]
 
-  const ROUTE_OPTIONS = ROUTE_CATEGORIES.flatMap(category => category.options)
+  const CUSHION_OPTIONS = CUSHION_ORDER.map(cushion => ({ value: cushion, label: CUSHION_LABELS[cushion] }))
+
+  const ROUTE_OPTIONS: Array<{ value: RouteMode; label: string }> = [
+    { value: 'direct', label: '直接进洞' },
+    ...CUSHION_ORDER.map(cushion => ({ value: `bank_${cushion}` as RouteMode, label: `反一库·${CUSHION_LABELS[cushion]}` })),
+    ...CUSHION_ORDER.map(cushion => ({ value: `double_${cushion}` as RouteMode, label: `反两库·${CUSHION_LABELS[cushion]}` })),
+  ]
 
   const tableMarkLines = [
     {
@@ -1412,6 +1418,42 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     refreshRoute()
   }
 
+  const lastCushion = ref<Cushion>('left')
+
+  const activeRouteTab = computed<RouteCategory>(() => {
+    if (state.routeMode === 'direct') {
+      return 'direct'
+    }
+    return state.routeMode.startsWith('double_') ? 'bank2' : 'bank1'
+  })
+
+  const activeCushion = computed<Cushion>(() => {
+    if (state.routeMode === 'direct') {
+      return lastCushion.value
+    }
+    return state.routeMode.replace(/^(bank_|double_)/, '') as Cushion
+  })
+
+  const isCushionDisabled = computed(() => activeRouteTab.value === 'direct')
+
+  function setRouteTab(tab: RouteCategory): void {
+    if (tab === 'direct') {
+      setRouteMode('direct')
+      return
+    }
+    const prefix = tab === 'bank2' ? 'double' : 'bank'
+    setRouteMode(`${prefix}_${lastCushion.value}` as RouteMode)
+  }
+
+  function setRouteCushion(cushion: Cushion): void {
+    if (activeRouteTab.value === 'direct') {
+      return
+    }
+    lastCushion.value = cushion
+    const prefix = activeRouteTab.value === 'bank2' ? 'double' : 'bank'
+    setRouteMode(`${prefix}_${cushion}` as RouteMode)
+  }
+
   function setPocket(pocketId: string): void {
     state.selectedPocketId = pocketId
     state.pocketSelectionMode = 'manual'
@@ -1964,24 +2006,40 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .route-grid-single {
-    grid-template-columns: 1fr;
+  .route-tabs {
+    display: flex;
+    gap: 10rpx;
+    margin-bottom: 18rpx;
+    padding: 6rpx;
+    border-radius: 16rpx;
+    background: #f1f5f3;
   }
 
-  .route-category {
-    margin-top: 18rpx;
+  .route-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 64rpx;
+    border-radius: 12rpx;
+    color: #607069;
+    font-size: 24rpx;
+    transition: all 0.2s ease;
   }
 
-  .route-category:first-child {
-    margin-top: 0;
-  }
-
-  .route-category-title {
-    display: block;
-    margin-bottom: 10rpx;
-    color: #84918c;
-    font-size: 21rpx;
+  .route-tab.active {
+    background: #ffffff;
+    color: #147a54;
     font-weight: 600;
+    box-shadow: 0 4rpx 12rpx rgba(31, 66, 52, 0.08);
+  }
+
+  .cushion-grid.disabled {
+    opacity: 0.45;
+  }
+
+  .option-button.disabled {
+    color: #aab4af;
   }
 
   .option-button {
