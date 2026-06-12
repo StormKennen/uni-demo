@@ -199,7 +199,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   type BallType = 'cue' | 'target'
   type CoordinateAxis = 'x' | 'y'
   type Cushion = 'top' | 'bottom' | 'left' | 'right'
-  type RouteMode = 'direct' | `bank_${Cushion}`
+  type RouteMode = 'direct' | `bank_${Cushion}` | 'double'
   type PocketSelectionMode = 'auto' | 'manual'
 
   const TABLE_WIDTH = 2540
@@ -249,12 +249,15 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   ]
   const SIGHT_CENTER_TOLERANCE = SIGHT_FRACTIONS[0].value / 2
 
+  const CUSHIONS: Cushion[] = ['top', 'bottom', 'left', 'right']
+
   const ROUTE_OPTIONS: Array<{ value: RouteMode; label: string }> = [
     { value: 'direct', label: '直接进洞' },
     { value: 'bank_left', label: '上库' },
     { value: 'bank_right', label: '下库' },
     { value: 'bank_top', label: '左库' },
     { value: 'bank_bottom', label: '右库' },
+    { value: 'double', label: '反两库' },
   ]
 
   const tableMarkLines = [
@@ -443,7 +446,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   function getBankRoute(cueBall: Point, targetBall: Point, pocket: Pocket, cushion: Cushion): RouteResult {
-    const mirrorPocket = getMirrorPocket(pocket, cushion)
+    const mirrorPocket = getMirrorPoint(pocket, cushion)
     const bankPoint = getLineCushionIntersection(targetBall, mirrorPocket, cushion)
     if (!bankPoint || !isBankPointValid(bankPoint, cushion)) {
       return createInvalidRoute('当前反弹路线无效')
@@ -470,6 +473,63 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     }
   }
 
+  function getDoubleBankRoute(cueBall: Point, targetBall: Point, pocket: Pocket, first: Cushion, second: Cushion): RouteResult {
+    const mirrorBySecond = getMirrorPoint(pocket, second)
+    const mirrorByBoth = getMirrorPoint(mirrorBySecond, first)
+
+    const firstBankPoint = getLineCushionIntersection(targetBall, mirrorByBoth, first)
+    if (!firstBankPoint || !isBankPointValid(firstBankPoint, first)) {
+      return createInvalidRoute('当前两库反弹路线无效')
+    }
+    const secondBankPoint = getLineCushionIntersection(firstBankPoint, mirrorBySecond, second)
+    if (!secondBankPoint || !isBankPointValid(secondBankPoint, second)) {
+      return createInvalidRoute('当前两库反弹路线无效')
+    }
+
+    const ghostBall = getGhostBall(targetBall, firstBankPoint)
+    if (!ghostBall) {
+      return createInvalidRoute('当前两库反弹路线无效')
+    }
+    if (!isCuePathClear(cueBall, ghostBall, targetBall)) {
+      return createInvalidRoute('母球位于目标球线路背面，无法直接到达击打位置')
+    }
+
+    return {
+      valid: true,
+      message: !isBallCenterInsideTable(ghostBall) ? '虚拟球位置靠近边界，请检查实际可击打性' : '',
+      ghostBall,
+      bankPoint: firstBankPoint,
+      segments: [
+        { from: targetBall, to: firstBankPoint, type: 'solid', label: '入库路线' },
+        { from: firstBankPoint, to: secondBankPoint, type: 'solid', label: '一库反弹' },
+        { from: secondBankPoint, to: pocket, type: 'solid', label: '二库反弹' },
+        { from: cueBall, to: ghostBall, type: 'dashed', label: '白球瞄准线' },
+      ],
+    }
+  }
+
+  function getBestDoubleBankRoute(cueBall: Point, targetBall: Point, pocket: Pocket): RouteResult {
+    let bestRoute: RouteResult | null = null
+    let bestDistance = Number.POSITIVE_INFINITY
+    CUSHIONS.forEach(first => {
+      CUSHIONS.forEach(second => {
+        if (first === second) {
+          return
+        }
+        const route = getDoubleBankRoute(cueBall, targetBall, pocket, first, second)
+        if (!route.valid) {
+          return
+        }
+        const distance = getTargetRouteDistance(route)
+        if (distance < bestDistance) {
+          bestDistance = distance
+          bestRoute = route
+        }
+      })
+    })
+    return bestRoute || createInvalidRoute('当前两库反弹路线无效')
+  }
+
   function getCushionBoundary(cushion: Cushion): number {
     const boundaries: Record<Cushion, number> = {
       top: BALL_RADIUS,
@@ -480,13 +540,13 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     return boundaries[cushion]
   }
 
-  function getMirrorPocket(pocket: Pocket, cushion: Cushion): Point {
+  function getMirrorPoint(point: Point, cushion: Cushion): Point {
     const boundary = getCushionBoundary(cushion)
     const mirrorMethods: Record<Cushion, () => Point> = {
-      top: () => ({ x: pocket.x, y: boundary * 2 - pocket.y }),
-      bottom: () => ({ x: pocket.x, y: boundary * 2 - pocket.y }),
-      left: () => ({ x: boundary * 2 - pocket.x, y: pocket.y }),
-      right: () => ({ x: boundary * 2 - pocket.x, y: pocket.y }),
+      top: () => ({ x: point.x, y: boundary * 2 - point.y }),
+      bottom: () => ({ x: point.x, y: boundary * 2 - point.y }),
+      left: () => ({ x: boundary * 2 - point.x, y: point.y }),
+      right: () => ({ x: boundary * 2 - point.x, y: point.y }),
     }
     return mirrorMethods[cushion]()
   }
@@ -575,6 +635,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   function getRouteForPocket(cueBall: Point, targetBall: Point, pocket: Pocket): RouteResult {
     if (state.routeMode === 'direct') {
       return getDirectRoute(cueBall, targetBall, pocket)
+    }
+    if (state.routeMode === 'double') {
+      return getBestDoubleBankRoute(cueBall, targetBall, pocket)
     }
     const cushion = state.routeMode.replace('bank_', '') as Cushion
     return getBankRoute(cueBall, targetBall, pocket, cushion)
@@ -1130,8 +1193,11 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
         // #endif
       }
 
-      const horizontalPadding = Math.max(20, Math.min(30, canvasWidth * 0.08))
-      const tableWidth = Math.max(0, canvasWidth - horizontalPadding * 2)
+      const horizontalPadding = Math.max(18, Math.min(24, canvasWidth * 0.06))
+      const verticalPadding = 12
+      const widthLimitedWidth = canvasWidth - horizontalPadding * 2
+      const heightLimitedWidth = (canvasHeight - verticalPadding * 2) / TABLE_LENGTH_TO_WIDTH_RATIO
+      const tableWidth = Math.max(0, Math.min(widthLimitedWidth, heightLimitedWidth))
       const tableHeight = tableWidth * TABLE_LENGTH_TO_WIDTH_RATIO
       tableRect = {
         x: (canvasWidth - tableWidth) / 2,
@@ -1547,7 +1613,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     position: relative;
     width: 100%;
     margin: 0 auto;
-    aspect-ratio: 127 / 254;
+    aspect-ratio: 6 / 11;
     overflow: hidden;
     border-radius: 16rpx;
     background: #e9eeeb;
