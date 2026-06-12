@@ -61,16 +61,16 @@
             <text v-if="character.stars" class="stars">{{ character.stars }}★</text>
           </view>
           <view class="meta-row">
-            <text v-if="character.code" class="meta-chip">No.{{ character.code }}</text>
+            <!-- <text v-if="character.code" class="meta-chip">No.{{ character.code }}</text> -->
             <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
             <text v-if="character.family" class="meta-chip">{{ character.family }}</text>
           </view>
-          <view class="stat-row">
+          <!-- <view class="stat-row">
             <view v-for="stat in character.stats" :key="stat.key" class="mini-stat">
               <text class="mini-stat-label">{{ stat.label }}</text>
               <text class="mini-stat-value">{{ stat.value }}</text>
             </view>
-          </view>
+          </view> -->
         </view>
       </view>
     </view>
@@ -448,7 +448,1515 @@
 
     try {
       favoriteIds.value = readFavoriteIds()
-      const res = await getCompendiumsCharacters(buildQuery())
+      // const res = await getCompendiumsCharacters(buildQuery())
+      const res = {
+    "code": 200,
+    "message": "获取人物列表成功",
+    "data": {
+        "items": [
+            {
+                "id": "6a2bce5462488ebe89fc1c67",
+                "name": "51lv3r",
+                "code": "30014",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0146_0_4.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 0,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "light",
+                        "value": "光",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "hacker",
+                        "value": "Hacker",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 11850,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 626,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 725,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 100,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 40,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5562488ebe89fc1c89",
+                "name": "570rm",
+                "code": "30013",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0146_0_3.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 1,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "wind",
+                        "value": "风",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "attack",
+                        "value": "Attack",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "hacker",
+                        "value": "Hacker",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 10050,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 845,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 626,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 100,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 30,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5562488ebe89fc1cab",
+                "name": "7r1x",
+                "code": "30012",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0146_0_2.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 2,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "fire",
+                        "value": "火",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "hacker",
+                        "value": "Hacker",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 11700,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 648,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 714,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 100,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 40,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5662488ebe89fc1ccd",
+                "name": "Aaliyah",
+                "code": "25611",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0078_0_1.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 3,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "water",
+                        "value": "水",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "totemist",
+                        "value": "Totemist",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 11205,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 615,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 780,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 99,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 40,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5762488ebe89fc1cef",
+                "name": "Abellio",
+                "code": "22211",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0046_0_3.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 4,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "water",
+                        "value": "水",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "defense",
+                        "value": "Defense",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "druid",
+                        "value": "Druid",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 10545,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 692,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 747,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 102,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5862488ebe89fc1d11",
+                "name": "Abigail",
+                "code": "22911",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0049_0_3.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 5,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "water",
+                        "value": "水",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "attack",
+                        "value": "Attack",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "cannon_girl",
+                        "value": "Cannon Girl",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 5,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 9225,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 736,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 626,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 103,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5962488ebe89fc1d33",
+                "name": "Acasis",
+                "code": "11913",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0009_2_3.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 6,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "wind",
+                        "value": "风",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "sylphid",
+                        "value": "Sylphid",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 5,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 11370,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 571,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 648,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 104,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5962488ebe89fc1d55",
+                "name": "Actaeon",
+                "code": "32315",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0177_0_5.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 7,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "dark",
+                        "value": "暗",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "defense",
+                        "value": "Defense",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "beetle_guardian",
+                        "value": "Beetle Guardian",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 10710,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 549,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 878,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 102,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 30,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5a62488ebe89fc1d77",
+                "name": "Adrian",
+                "code": "20912",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0041_1_0.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 8,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "fire",
+                        "value": "火",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "elven_ranger",
+                        "value": "Elven Ranger",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 4,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 9060,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 659,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 549,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 101,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            },
+            {
+                "id": "6a2bce5b62488ebe89fc1d97",
+                "name": "Adriana",
+                "code": "26811",
+                "avatar": "https://swarfarm.com/static/herders/images/monsters/unit_icon_0099_0_1.png",
+                "level": "",
+                "description": "",
+                "sortOrder": 9,
+                "status": "enabled",
+                "aliases": [],
+                "skins": [],
+                "categories": [
+                    {
+                        "key": "element",
+                        "name": "属性",
+                        "valueKey": "water",
+                        "value": "水",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "archetype",
+                        "name": "定位",
+                        "valueKey": "support",
+                        "value": "Support",
+                        "color": "",
+                        "icon": ""
+                    },
+                    {
+                        "key": "family",
+                        "name": "种族",
+                        "valueKey": "pudding_princess",
+                        "value": "Pudding Princess",
+                        "color": "",
+                        "icon": ""
+                    }
+                ],
+                "attributes": [
+                    {
+                        "key": "stars",
+                        "name": "星级",
+                        "value": 6,
+                        "displayValue": "",
+                        "unit": "星",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 0,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "hp",
+                        "name": "HP",
+                        "value": 10710,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 1,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "attack",
+                        "name": "攻击力",
+                        "value": 736,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 2,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "defense",
+                        "name": "防御力",
+                        "value": 692,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 3,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "speed",
+                        "name": "速度",
+                        "value": 111,
+                        "displayValue": "",
+                        "unit": "",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 4,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critRate",
+                        "name": "暴击率",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 5,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "critDmg",
+                        "name": "暴击伤害",
+                        "value": 50,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 6,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "resistance",
+                        "name": "效果抵抗",
+                        "value": 15,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 7,
+                        "rank": null,
+                        "total": null
+                    },
+                    {
+                        "key": "accuracy",
+                        "name": "效果命中",
+                        "value": 0,
+                        "displayValue": "",
+                        "unit": "%",
+                        "valueType": "number",
+                        "rankable": true,
+                        "sortOrder": 8,
+                        "rank": null,
+                        "total": null
+                    }
+                ],
+                "skills": []
+            }
+        ],
+        "pagination": {
+            "page": 1,
+            "limit": 10,
+            "total": 10,
+            "totalPages": 1,
+            "hasNext": false,
+            "hasPrev": false
+        }
+    },
+    "requestId": "c6fc3964-51ae-45f1-9807-94986781a81d",
+    "timestamp": 1781255811250
+}.data
       const items = extractItems(res)
         .map(normalizeCharacter)
         .filter((item): item is CharacterCard => Boolean(item))
@@ -619,7 +2127,7 @@
   .character-grid {
     padding: 18rpx 18rpx 30rpx;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 18rpx;
   }
 
