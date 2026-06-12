@@ -260,14 +260,10 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   const LEFT_BANK_REFERENCE = ['1', '2', '3', '4', '5']
   const RIGHT_BANK_REFERENCE = ['1.5', '2', '2.5', '3', '3.5']
-  const SIGHT_FRACTIONS = [
-    { value: 1 / 6, label: '六分之一' },
-    { value: 1 / 5, label: '五分之一' },
-    { value: 1 / 4, label: '四分之一' },
-    { value: 1 / 3, label: '三分之一' },
-    { value: 1 / 2, label: '二分之一' },
-  ]
-  const SIGHT_CENTER_TOLERANCE = SIGHT_FRACTIONS[0].value / 2
+  // 以整球宽度（左侧边缘 → 右侧边缘）等分为六份，瞄准点自左侧起按六分之一为单位描述。
+  const SIGHT_INSIDE_LABELS = ['左侧边缘', '六分之一', '三分之一', '中央', '三分之二', '六分之五', '右侧边缘']
+  // 瞄准球体外时，自边缘起按六分之一为单位描述的距离。
+  const SIGHT_OUTSIDE_LABELS = ['', '六分之一', '三分之一', '二分之一', '三分之二', '六分之五', '一']
 
   const CUSHIONS: Cushion[] = ['top', 'bottom', 'left', 'right']
   const CUSHION_ORDER: Cushion[] = ['left', 'right', 'top', 'bottom']
@@ -729,41 +725,31 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   function getSightAimDescription(offset: number): SightDescription {
-    const absoluteOffset = Math.abs(offset)
-    if (absoluteOffset < SIGHT_CENTER_TOLERANCE) {
-      return {
-        scene: '瞄准 · 球心对齐',
-        detail: '瞄准目标球球心，白球虚线与黑球实线重合。',
+    // offset ∈ [-1, 1]：以球心为 0、左右边缘为 ±0.5。换算为「自左侧边缘起、整球宽度的六分之几」。
+    const units = Math.round((offset + 0.5) * 6)
+
+    if (units <= 0) {
+      if (units === 0) {
+        return { scene: '瞄准 · 左侧边缘', detail: '瞄准目标球左侧边缘。' }
       }
+      const n = Math.min(-units, SIGHT_OUTSIDE_LABELS.length - 1)
+      return { scene: '瞄准 · 左侧球外', detail: `瞄准目标球左侧边缘外${SIGHT_OUTSIDE_LABELS[n]}球距离。` }
     }
 
-    const side = offset > 0 ? '右' : '左'
-    if (absoluteOffset <= 0.5) {
-      const fraction = getNearestSightFraction(absoluteOffset)
-      if (fraction.value === 0.5) {
-        return {
-          scene: offset > 0 ? '瞄准 · 右半球内' : '瞄准 · 左半球内',
-          detail: `瞄准目标球${side}边缘，即目标球球心${side}侧二分之一球位置。`,
-        }
+    if (units >= 6) {
+      if (units === 6) {
+        return { scene: '瞄准 · 右侧边缘', detail: '瞄准目标球右侧边缘。' }
       }
-      return {
-        scene: offset > 0 ? '瞄准 · 右半球内' : '瞄准 · 左半球内',
-        detail: `瞄准目标球球心${side}侧${fraction.label}球位置。`,
-      }
+      const n = Math.min(units - 6, SIGHT_OUTSIDE_LABELS.length - 1)
+      return { scene: '瞄准 · 右侧球外', detail: `瞄准目标球右侧边缘外${SIGHT_OUTSIDE_LABELS[n]}球距离。` }
     }
 
-    const outsideDistance = absoluteOffset - 0.5
-    const fraction = getNearestSightFraction(outsideDistance)
-    return {
-      scene: offset > 0 ? '瞄准 · 右半球外' : '瞄准 · 左半球外',
-      detail: `瞄准目标球${side}边缘外${fraction.label}球距离。`,
+    const label = SIGHT_INSIDE_LABELS[units]
+    if (units === 3) {
+      return { scene: '瞄准 · 中央', detail: '瞄准目标球中央（球心对齐）。' }
     }
-  }
-
-  function getNearestSightFraction(value: number): (typeof SIGHT_FRACTIONS)[number] {
-    return SIGHT_FRACTIONS.reduce((nearest, fraction) =>
-      Math.abs(fraction.value - value) < Math.abs(nearest.value - value) ? fraction : nearest,
-    )
+    const sideHalf = units < 3 ? '左半球' : '右半球'
+    return { scene: `瞄准 · ${sideHalf}`, detail: `瞄准目标球（自左侧起）${label}位置。` }
   }
 
   function calculateRoute(): void {
