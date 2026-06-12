@@ -33,9 +33,14 @@
       <view class="section-heading table-heading">
         <text class="section-title">台球桌</text>
         <view class="title-switch">
-          <text class="title-switch-item" :class="{ active: state.activeBall === 'cue' }" @click="setActiveBall('cue')">白球</text>
-          <text class="title-switch-divider">/</text>
-          <text class="title-switch-item" :class="{ active: state.activeBall === 'target' }" @click="setActiveBall('target')">黑球</text>
+          <view class="title-switch-item" :class="{ active: state.activeBall === 'cue' }" @click="setActiveBall('cue')">
+            <view class="title-switch-dot cue-dot" />
+            <text>白球</text>
+          </view>
+          <view class="title-switch-item" :class="{ active: state.activeBall === 'target' }" @click="setActiveBall('target')">
+            <view class="title-switch-dot target-dot" />
+            <text>黑球</text>
+          </view>
         </view>
         <text class="section-tip">点击球桌放球，洞口选袋口</text>
       </view>
@@ -1425,27 +1430,37 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10rpx;
+    gap: 6rpx;
+    padding: 4rpx;
+    border-radius: 999rpx;
+    background: #eef2f0;
     justify-self: center;
   }
 
-  .title-switch-item,
-  .title-switch-divider {
-    font-size: 28rpx;
-    line-height: 1.2;
-  }
-
   .title-switch-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
+    padding: 7rpx 20rpx;
+    border-radius: 999rpx;
     color: #8a9691;
+    font-size: 26rpx;
+    line-height: 1.2;
+    transition: all 0.2s ease;
   }
 
   .title-switch-item.active {
+    background: #ffffff;
     color: #147a54;
     font-weight: 650;
+    box-shadow: 0 2rpx 6rpx rgba(20, 122, 84, 0.14);
   }
 
-  .title-switch-divider {
-    color: #b5c0bb;
+  .title-switch-dot {
+    width: 26rpx;
+    height: 26rpx;
+    box-sizing: border-box;
+    border-radius: 50%;
   }
 
   .section-heading {
@@ -1512,9 +1527,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   .ball-dot {
-    width: 30rpx;
-    height: 30rpx;
-    margin-right: 12rpx;
+    width: 26rpx;
+    height: 26rpx;
+    margin-right: 8rpx;
     border-radius: 50%;
   }
 
@@ -1618,7 +1633,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   .sight-canvas-shell {
     position: relative;
     width: 100%;
-    height: 300rpx;
+    height: 200rpx;
     overflow: hidden;
     border-radius: 18rpx;
     background: #153f34;
@@ -1691,12 +1706,13 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   .ball-control-list {
     display: grid;
-    gap: 16rpx;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14rpx;
     margin-top: 16rpx;
   }
 
   .ball-control-card {
-    padding: 18rpx;
+    padding: 16rpx 14rpx;
     border: 2rpx solid #e5ebe8;
     border-radius: 18rpx;
     background: #f8faf9;
@@ -1721,14 +1737,15 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   .ball-control-heading {
-    margin-bottom: 15rpx;
+    margin-bottom: 14rpx;
+    gap: 8rpx;
     color: #53635c;
-    font-size: 21rpx;
+    font-size: 20rpx;
   }
 
   .ball-control-name {
     color: #22332c;
-    font-size: 26rpx;
+    font-size: 24rpx;
     font-weight: 600;
   }
 
@@ -1742,23 +1759,23 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   .axis-name {
     color: #62716b;
-    font-size: 22rpx;
+    font-size: 21rpx;
   }
 
   .axis-actions {
-    gap: 10rpx;
+    gap: 6rpx;
   }
 
   .coordinate-button {
-    width: 64rpx;
-    height: 58rpx;
+    width: 52rpx;
+    height: 52rpx;
     margin: 0;
     padding: 0;
     border-radius: 12rpx;
     background: #e7f5ed;
     color: #167b55;
-    font-size: 34rpx;
-    line-height: 58rpx;
+    font-size: 30rpx;
+    line-height: 52rpx;
   }
 
   .coordinate-button::after {
@@ -1766,9 +1783,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   .axis-value {
-    min-width: 92rpx;
+    min-width: 66rpx;
     color: #24362e;
-    font-size: 25rpx;
+    font-size: 23rpx;
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
