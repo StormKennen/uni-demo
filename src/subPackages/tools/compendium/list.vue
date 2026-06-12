@@ -49,9 +49,29 @@
           <view v-else class="avatar-placeholder">
             <text>{{ character.name.slice(0, 1) || '?' }}</text>
           </view>
+          <view v-if="character.elementName" class="element-badge" :class="'element-' + character.elementKey">
+            <text>{{ character.elementIcon }}</text>
+            <text>{{ character.elementName }}</text>
+          </view>
           <view v-if="character.isFavorite" class="favorite-badge">★</view>
         </view>
-        <text class="character-name">{{ character.name || '未知魔灵' }}</text>
+        <view class="character-info">
+          <view class="name-row">
+            <text class="character-name">{{ character.name || '未知魔灵' }}</text>
+            <text v-if="character.stars" class="stars">{{ character.stars }}★</text>
+          </view>
+          <view class="meta-row">
+            <text v-if="character.code" class="meta-chip">No.{{ character.code }}</text>
+            <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
+            <text v-if="character.family" class="meta-chip">{{ character.family }}</text>
+          </view>
+          <view class="stat-row">
+            <view v-for="stat in character.stats" :key="stat.key" class="mini-stat">
+              <text class="mini-stat-label">{{ stat.label }}</text>
+              <text class="mini-stat-value">{{ stat.value }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -78,12 +98,38 @@
   interface CharacterCard {
     id: string
     name: string
+    code: string
     avatar: string
-    element: string
+    elementKey: string
     elementName: string
+    elementIcon: string
     level: string
-    role: string
+    stars: string
+    archetype: string
+    family: string
+    stats: CharacterStat[]
     isFavorite: boolean
+  }
+
+  interface CharacterStat {
+    key: string
+    label: string
+    value: string
+  }
+
+  interface CharacterCategory {
+    key: string
+    name: string
+    valueKey: string
+    value: string
+  }
+
+  interface CharacterAttribute {
+    key: string
+    name: string
+    value: string
+    displayValue: string
+    unit: string
   }
 
   interface PaginationLike {
@@ -94,20 +140,21 @@
   }
 
   const COMPENDIUM_CODE = 'swc'
+  const ALL_VALUE = 'all'
   const PAGE_SIZE = 40
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
 
   const elementOptions: FilterOption[] = [
+    { label: '全部属性', value: ALL_VALUE },
     { label: '火', value: 'fire', icon: '🔥' },
     { label: '水', value: 'water', icon: '🌊' },
     { label: '风', value: 'wind', icon: '🌪️' },
     { label: '光', value: 'light', icon: '🛡️' },
     { label: '暗', value: 'dark', icon: '🟣' },
-    { label: '我的收藏', value: 'favorite' },
   ]
 
   const starOptions: FilterOption[] = [
-    { label: '全部星级', value: 'all' },
+    { label: '全部星级', value: ALL_VALUE },
     { label: '1★', value: '1' },
     { label: '2★', value: '2' },
     { label: '3★', value: '3' },
@@ -116,7 +163,7 @@
   ]
 
   const typeOptions: FilterOption[] = [
-    { label: '全部类型', value: 'all' },
+    { label: '全部类型', value: ALL_VALUE },
     { label: '攻击型', value: 'attack' },
     { label: '防御型', value: 'defense' },
     { label: '体力型', value: 'hp' },
@@ -124,7 +171,7 @@
   ]
 
   const sortOptions: FilterOption[] = [
-    { label: '默认排序', value: 'default' },
+    { label: '默认排序', value: ALL_VALUE },
     { label: '图鉴倒序', value: 'reverse' },
     { label: '体力↓', value: 'hp_desc' },
     { label: '攻击力↓', value: 'attack_desc' },
@@ -139,10 +186,10 @@
   ]
 
   const activePanel = ref<PanelKey | ''>('')
-  const selectedElement = ref('fire')
-  const selectedStar = ref('all')
-  const selectedType = ref('all')
-  const selectedSort = ref('default')
+  const selectedElement = ref(ALL_VALUE)
+  const selectedStar = ref(ALL_VALUE)
+  const selectedType = ref(ALL_VALUE)
+  const selectedSort = ref(ALL_VALUE)
   const characters = ref<CharacterCard[]>([])
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
@@ -179,23 +226,30 @@
 
   const selectedElementLabel = computed(() => {
     const label = getOptionLabel(elementOptions, selectedElement.value)
-    return selectedElement.value === 'favorite' ? label : `${label}属性`
+    return selectedElement.value === ALL_VALUE ? label : `${label}属性`
   })
 
   const selectedElementIcon = computed(() => getOptionIcon(elementOptions, selectedElement.value))
 
-  const emptyText = computed(() => (selectedElement.value === 'favorite' ? '暂无收藏魔灵' : '暂无符合条件的魔灵'))
+  const emptyText = computed(() => '暂无符合条件的魔灵')
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
 
   const readRecordValue = (record: Record<string, unknown>, key: string): RecordValue => record[key] as RecordValue
 
+  const stringifyValue = (value: RecordValue): string => {
+    if (typeof value === 'string') return value.trim()
+    if (typeof value === 'number') return String(value)
+    if (typeof value === 'boolean') return value ? '是' : '否'
+    return ''
+  }
+
   const readString = (record: Record<string, unknown>, keys: string[]): string => {
     for (const key of keys) {
       const value = readRecordValue(record, key)
-      if (typeof value === 'string' && value.trim()) return value
-      if (typeof value === 'number') return String(value)
+      const text = stringifyValue(value)
+      if (text) return text
     }
     return ''
   }
@@ -223,6 +277,60 @@
     return Array.isArray(value) ? value.filter(item => typeof item === 'string') : []
   }
 
+  const normalizeCategory = (source: unknown): CharacterCategory | null => {
+    if (!isRecord(source)) return null
+    return {
+      key: readString(source, ['key']),
+      name: readString(source, ['name']),
+      valueKey: readString(source, ['valueKey']),
+      value: readString(source, ['value']),
+    }
+  }
+
+  const normalizeAttribute = (source: unknown): CharacterAttribute | null => {
+    if (!isRecord(source)) return null
+    return {
+      key: readString(source, ['key']),
+      name: readString(source, ['name']),
+      value: readString(source, ['value']),
+      displayValue: readString(source, ['displayValue']),
+      unit: readString(source, ['unit']),
+    }
+  }
+
+  const getCategoryValue = (categories: CharacterCategory[], key: string): string =>
+    categories.find(category => category.key === key)?.value || ''
+
+  const getCategoryValueKey = (categories: CharacterCategory[], key: string): string =>
+    categories.find(category => category.key === key)?.valueKey || ''
+
+  const getAttribute = (attributes: CharacterAttribute[], key: string): CharacterAttribute | undefined =>
+    attributes.find(attribute => attribute.key === key || attribute.name === key)
+
+  const formatAttribute = (attributes: CharacterAttribute[], key: string): string => {
+    const attribute = getAttribute(attributes, key)
+    if (!attribute) return ''
+    const value = attribute.displayValue || attribute.value
+    return value ? `${value}${attribute.unit || ''}` : ''
+  }
+
+  const getElementIcon = (elementKey: string, elementName: string): string => {
+    const key = elementKey || elementName
+    const map: Record<string, string> = {
+      fire: '🔥',
+      火: '🔥',
+      water: '🌊',
+      水: '🌊',
+      wind: '🌪️',
+      风: '🌪️',
+      light: '🛡️',
+      光: '🛡️',
+      dark: '🟣',
+      暗: '🟣',
+    }
+    return map[key] || '✦'
+  }
+
   const normalizeCharacter = (source: unknown): CharacterCard | null => {
     if (!isRecord(source)) return null
 
@@ -230,29 +338,34 @@
     if (!id) return null
 
     const categories = readArray(source, ['categories'])
-      .filter(isRecord)
-      .map(item => ({
-        key: readString(item, ['key', 'valueKey']),
-        name: readString(item, ['name']),
-        value: readString(item, ['value']),
-      }))
-
-    const elementCategory = categories.find(
-      category => ['element', 'attribute'].includes(category.key) || ['火', '水', '风', '光', '暗'].includes(category.name),
-    )
-    const typeCategory = categories.find(category => ['type', 'role', 'speciesType'].includes(category.key) || category.name.includes('型'))
-
-    const name = readString(source, ['name', 'title'])
+      .map(normalizeCategory)
+      .filter((item): item is CharacterCategory => Boolean(item))
+    const attributes = readArray(source, ['attributes'])
+      .map(normalizeAttribute)
+      .filter((item): item is CharacterAttribute => Boolean(item))
+    const elementKey = readString(source, ['element']) || getCategoryValueKey(categories, 'element')
+    const elementName = getCategoryValue(categories, 'element') || readString(source, ['elementName'])
+    const stars = formatAttribute(attributes, 'stars') || readString(source, ['level', 'star', 'rarity'])
     const avatar = readString(source, ['avatar', 'icon', 'image', 'cover', 'portrait'])
 
     return {
       id,
-      name,
+      name: readString(source, ['name', 'title']),
+      code: readString(source, ['code']),
       avatar: normalizeUrl(avatar),
-      element: readString(source, ['element']) || elementCategory?.value || elementCategory?.name || '',
-      elementName: elementCategory?.name || readString(source, ['elementName']),
-      level: readString(source, ['level', 'star', 'rarity']),
-      role: readString(source, ['speciesType', 'type']) || typeCategory?.value || typeCategory?.name || '',
+      elementKey,
+      elementName,
+      elementIcon: getElementIcon(elementKey, elementName),
+      level: readString(source, ['level']),
+      stars: stars.replace(/星$/, ''),
+      archetype: getCategoryValue(categories, 'archetype') || readString(source, ['speciesType', 'type']),
+      family: getCategoryValue(categories, 'family'),
+      stats: [
+        { key: 'hp', label: 'HP', value: formatAttribute(attributes, 'hp') },
+        { key: 'attack', label: '攻', value: formatAttribute(attributes, 'attack') },
+        { key: 'defense', label: '防', value: formatAttribute(attributes, 'defense') },
+        { key: 'speed', label: '速', value: formatAttribute(attributes, 'speed') },
+      ].filter(stat => Boolean(stat.value)),
       isFavorite: favoriteIds.value.includes(id),
     }
   }
@@ -282,16 +395,16 @@
       pageSize: PAGE_SIZE,
     }
 
-    if (selectedElement.value !== 'favorite') {
+    if (selectedElement.value !== ALL_VALUE) {
       query.element = selectedElement.value
     }
 
-    if (selectedType.value !== 'all') {
+    if (selectedType.value !== ALL_VALUE) {
       query.speciesType = selectedType.value
     }
 
-    if (selectedStar.value !== 'all') {
-      query.attribute = 'level'
+    if (selectedStar.value !== ALL_VALUE) {
+      query.attribute = 'stars'
       query.minValue = Number(selectedStar.value)
       query.maxValue = Number(selectedStar.value)
     }
@@ -305,7 +418,7 @@
 
   const getSortParams = (value: string): [string, string] => {
     const map: Record<string, [string, string]> = {
-      default: ['sortOrder', 'asc'],
+      [ALL_VALUE]: ['', ''],
       reverse: ['sortOrder', 'desc'],
       hp_desc: ['hp', 'desc'],
       attack_desc: ['attack', 'desc'],
@@ -318,7 +431,7 @@
       second_awaken: ['secondAwakenPriority', 'desc'],
       popularity: ['viewCount', 'desc'],
     }
-    return map[value] || map.default
+    return map[value] || map[ALL_VALUE]
   }
 
   const fetchCharacters = async (reset = false) => {
@@ -339,7 +452,6 @@
       const items = extractItems(res)
         .map(normalizeCharacter)
         .filter((item): item is CharacterCard => Boolean(item))
-        .filter(item => selectedElement.value !== 'favorite' || item.isFavorite)
 
       characters.value = reset ? items : [...characters.value, ...items]
 
@@ -377,10 +489,10 @@
   }
 
   const resetFilters = () => {
-    selectedElement.value = 'fire'
-    selectedStar.value = 'all'
-    selectedType.value = 'all'
-    selectedSort.value = 'default'
+    selectedElement.value = ALL_VALUE
+    selectedStar.value = ALL_VALUE
+    selectedType.value = ALL_VALUE
+    selectedSort.value = ALL_VALUE
     refreshCharacters()
   }
 
@@ -505,25 +617,26 @@
   }
 
   .character-grid {
-    padding: 16rpx 8rpx 30rpx;
+    padding: 18rpx 18rpx 30rpx;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 12rpx;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18rpx;
   }
 
   .character-card {
     min-width: 0;
     background: #fff;
-    border: 2rpx solid #ea6a5f;
-    border-radius: 10rpx;
+    border: 2rpx solid #eef0f5;
+    border-radius: 18rpx;
     overflow: hidden;
+    box-shadow: 0 6rpx 18rpx rgba(31, 43, 66, 0.08);
   }
 
   .avatar-wrap {
     position: relative;
     width: 100%;
-    height: 132rpx;
-    background: linear-gradient(135deg, #f9dd96, #f7efe2);
+    height: 260rpx;
+    background: radial-gradient(circle at 50% 40%, #fff2c6 0%, #f5d283 48%, #d99a4c 100%);
     overflow: hidden;
   }
 
@@ -542,6 +655,44 @@
     font-weight: 700;
   }
 
+  .element-badge {
+    position: absolute;
+    left: 10rpx;
+    top: 10rpx;
+    min-width: 74rpx;
+    height: 40rpx;
+    padding: 0 12rpx;
+    border-radius: 999rpx;
+    background: rgba(255, 255, 255, 0.9);
+    color: #344054;
+    font-size: 22rpx;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4rpx;
+  }
+
+  .element-fire {
+    color: #e9493f;
+  }
+
+  .element-water {
+    color: #287ee6;
+  }
+
+  .element-wind {
+    color: #22a06b;
+  }
+
+  .element-light {
+    color: #d49915;
+  }
+
+  .element-dark {
+    color: #6f42c1;
+  }
+
   .favorite-badge {
     position: absolute;
     right: 4rpx;
@@ -557,14 +708,90 @@
     justify-content: center;
   }
 
+  .character-info {
+    padding: 12rpx 14rpx 16rpx;
+  }
+
+  .name-row {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+
   .character-name {
     display: block;
-    height: 40rpx;
-    line-height: 40rpx;
-    padding: 0 4rpx;
-    text-align: center;
-    font-size: 24rpx;
+    min-width: 0;
+    flex: 1;
+    height: 44rpx;
+    line-height: 44rpx;
+    font-size: 30rpx;
+    font-weight: 800;
     color: #161b25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stars {
+    flex: none;
+    padding: 3rpx 10rpx;
+    border-radius: 999rpx;
+    background: #fff4d6;
+    color: #d28a00;
+    font-size: 22rpx;
+    font-weight: 900;
+  }
+
+  .meta-row {
+    min-height: 44rpx;
+    margin-top: 8rpx;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8rpx;
+  }
+
+  .meta-chip {
+    max-width: 150rpx;
+    height: 36rpx;
+    line-height: 36rpx;
+    padding: 0 10rpx;
+    border-radius: 8rpx;
+    background: #f2f4f7;
+    color: #667085;
+    font-size: 22rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stat-row {
+    margin-top: 12rpx;
+    padding-top: 12rpx;
+    border-top: 1rpx solid #edf0f5;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8rpx 12rpx;
+  }
+
+  .mini-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8rpx;
+    min-width: 0;
+  }
+
+  .mini-stat-label {
+    color: #98a2b3;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .mini-stat-value {
+    min-width: 0;
+    color: #182230;
+    font-size: 24rpx;
+    font-weight: 800;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
