@@ -294,7 +294,7 @@ const canvasWidth = ref(0)
 const canvasHeight = ref(0)
 
 const textWatermark = reactive({
-  content: '银河工具箱 Galaxy Tools',
+  content: '凉白开工具箱 Water Tools',
   fontSize: 48,
   fontWeight: 600,
   color: '#ffffff',
@@ -390,7 +390,7 @@ const selectBaseImage = () => {
 }
 
 const resetAll = () => {
-  textWatermark.content = '银河工具箱 Galaxy Tools'
+  textWatermark.content = '凉白开工具箱 Galaxy Tools'
   textWatermark.fontSize = 48
   textWatermark.fontWeight = 600
   textWatermark.color = '#ffffff'

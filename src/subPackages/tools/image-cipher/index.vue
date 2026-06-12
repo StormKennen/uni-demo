@@ -158,7 +158,7 @@ const platformType = computed<'weapp' | 'h5' | 'app'>(() => {
   return 'app'
 })
 
-const SHARE_TITLE = '图片加密 · 银河工具箱'
+const SHARE_TITLE = '图片加密 · 凉白开工具箱'
 const SHARE_PATH = '/subPackages/tools/image-cipher/index'
 
 const formatFileSize = (size: number) => {

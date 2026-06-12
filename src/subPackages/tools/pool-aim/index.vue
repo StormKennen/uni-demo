@@ -1,7 +1,7 @@
 <template>
   <view class="pool-page">
     <!-- <view class="hero">
-      <text class="hero-title">两球台球瞄准器</text>
+      <text class="hero-title">台球瞄准器</text>
       <text class="hero-subtitle">点球桌放置白球和黑球</text>
     </view> -->
 
@@ -136,7 +136,7 @@
     </view>
 
     <view class="share-entry" v-if="!isH5">
-      <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「两球台球瞄准器」工具</text>
+      <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「台球瞄准器」工具</text>
       <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
     </view>
     <view class="share-entry" v-else>
@@ -1458,7 +1458,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   uni.showShareMenu({ withShareTicket: true })
   // #endif
 
-  const SHARE_TITLE = '两球台球瞄准器 · 银河工具箱'
+  const SHARE_TITLE = '台球瞄准器 · 凉白开工具箱'
   const SHARE_PATH = '/subPackages/tools/pool-aim/index'
 
   function handleShare(): void {
