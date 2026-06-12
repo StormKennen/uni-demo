@@ -125,6 +125,14 @@
       </view>
     </view>
 
+    <view class="share-entry" v-if="!isH5">
+      <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「两球台球瞄准器」工具</text>
+      <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
+    </view>
+    <view class="share-entry" v-else>
+      <button class="share-btn" @click="handleShare">复制分享链接</button>
+    </view>
+
     <!-- <view class="panel status-panel">
       <view class="section-heading">
         <text class="section-title">路线状态</text>
@@ -157,7 +165,8 @@
 import { getCompendiumsCharacters, getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox';
 import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCompendiumsCharacterQuery, getCompendiumsCharacterRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface';
 
-  import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive } from 'vue'
+  import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+  import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
   declare const uni: any
 
@@ -1393,6 +1402,49 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     refreshRoute()
   }
 
+  const isH5 = ref(false)
+  const isWeixinMiniProgram = ref(false)
+
+  // #ifdef H5
+  isH5.value = true
+  // #endif
+
+  // #ifdef MP-WEIXIN
+  isWeixinMiniProgram.value = true
+  uni.showShareMenu({ withShareTicket: true })
+  // #endif
+
+  const SHARE_TITLE = '两球台球瞄准器 · 银河工具箱'
+  const SHARE_PATH = '/subPackages/tools/pool-aim/index'
+
+  function handleShare(): void {
+    if (!isH5.value) {
+      uni.showToast({ title: '请点击右上角分享', icon: 'none' })
+      return
+    }
+    const shareUrl = `${window.location.origin}${SHARE_PATH}`
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(shareUrl)
+        .then(() => uni.showToast({ title: '链接已复制', icon: 'success' }))
+        .catch(() => uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false }))
+    } else {
+      uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false })
+    }
+  }
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => ({
+    title: SHARE_TITLE,
+    path: SHARE_PATH,
+  }))
+
+  onShareTimeline(() => ({
+    title: SHARE_TITLE,
+    query: '',
+  }))
+  // #endif
+
   onMounted(() => {
     initializeCanvas()
     if (typeof uni.onWindowResize === 'function') {
@@ -1422,6 +1474,27 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   .hero {
     padding: 16rpx 8rpx 20rpx;
+  }
+
+  .share-entry {
+    padding: 12rpx 0 0;
+    text-align: center;
+  }
+
+  .share-tip {
+    font-size: 24rpx;
+    color: #6c7d76;
+  }
+
+  .share-btn {
+    width: 100%;
+    margin-top: 12rpx;
+    border: 1rpx dashed #239e6a;
+    border-radius: 20rpx;
+    height: 88rpx;
+    background: rgba(35, 158, 106, 0.08);
+    color: #147a54;
+    font-size: 28rpx;
   }
 
   .hero-title,
