@@ -7,7 +7,7 @@
 
     <view class="panel sight-panel">
       <view class="section-heading">
-        <text class="section-title">击球侧视图</text>
+        <text class="section-title">击球点</text>
         <!-- <text class="section-tip">从白球看向黑球，球心保持同高</text> -->
       </view>
       <view class="sight-canvas-shell">
@@ -31,36 +31,36 @@
 
     <view class="table-card">
       <view class="section-heading table-heading">
-        <text class="section-title">俯视定位图</text>
+        <text class="section-title">台球桌</text>
         <view class="title-switch">
           <text class="title-switch-item" :class="{ active: state.activeBall === 'cue' }" @click="setActiveBall('cue')">白球</text>
           <text class="title-switch-divider">/</text>
           <text class="title-switch-item" :class="{ active: state.activeBall === 'target' }" @click="setActiveBall('target')">黑球</text>
         </view>
-        <text class="section-tip">点击球桌放球</text>
+        <text class="section-tip">点击球桌放球，洞口选袋口</text>
       </view>
       <view class="canvas-shell">
         <canvas id="poolAimCanvas" canvas-id="poolAimCanvas" type="2d" class="pool-canvas" @tap="handleCanvasTap" />
       </view>
-      <view class="table-hint">
+      <!-- <view class="table-hint">
         <text>{{ placementHint }}</text>
       </view>
       <view class="coordinate-readout">
         <text>白球：{{ formatBallCoordinate(state.cueBall) }}</text>
         <text>黑球：{{ formatBallCoordinate(state.targetBall) }}</text>
-      </view>
-      <view class="bank-scale-note">两侧数字为新中式翻袋参考刻度，不参与球坐标和路线计算</view>
-      <view class="pocket-hint">
+      </view> -->
+      <!-- <view class="bank-scale-note">两侧数字为新中式翻袋参考刻度，不参与球坐标和路线计算</view> -->
+      <!-- <view class="pocket-hint">
         <text>目标袋口：{{ selectedPocket.name }}</text>
         <text class="pocket-mode">{{ state.pocketSelectionMode === 'auto' ? '自动推荐' : '手动选择' }}</text>
         <text class="pocket-action">点袋口切换</text>
-      </view>
+      </view> -->
     </view>
 
     <view class="panel coordinate-panel">
       <view class="section-heading">
-        <text class="section-title">坐标微调</text>
-        <text class="section-tip">每次 0.05，约 12.7mm</text>
+        <text class="section-title">位置调整</text>
+        <!-- <text class="section-tip">每次 0.05，约 12.7mm</text> -->
       </view>
       <view class="selector-brief">
         <text class="selector-label">当前放置</text>
@@ -80,7 +80,7 @@
             <text>{{ formatBallCoordinate(state[ball.stateKey]) }}</text>
           </view>
           <view class="axis-control">
-            <text class="axis-name">X 横向</text>
+            <text class="axis-name">横向</text>
             <view class="axis-actions">
               <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'x', -1)">−</button>
               <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'x') }}</text>
@@ -88,7 +88,7 @@
             </view>
           </view>
           <view class="axis-control">
-            <text class="axis-name">Y 纵向</text>
+            <text class="axis-name">纵向</text>
             <view class="axis-actions">
               <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'y', -1)">−</button>
               <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'y') }}</text>
@@ -97,16 +97,16 @@
           </view>
         </view>
       </view>
-      <view class="grid-note">
+      <!-- <view class="grid-note">
         <text>点击吸附：0.1（25.4mm）</text>
         <text>按钮微调：0.05（12.7mm）</text>
-      </view>
+      </view> -->
     </view>
 
     <view class="panel">
       <view class="section-heading">
         <text class="section-title">路线模式</text>
-        <text class="section-tip">反弹路线使用镜像法计算</text>
+        <!-- <text class="section-tip">反弹路线使用镜像法计算</text> -->
       </view>
       <view class="option-grid route-grid">
         <view
@@ -120,7 +120,7 @@
       </view>
     </view>
 
-    <view class="panel status-panel">
+    <!-- <view class="panel status-panel">
       <view class="section-heading">
         <text class="section-title">路线状态</text>
         <text class="status-chip" :class="state.routeValid ? 'valid' : 'invalid'">
@@ -144,11 +144,14 @@
       <view class="route-message" :class="{ warning: !state.routeValid }">
         {{ state.routeMessage || '路线已计算，可参考球桌上的辅助线。' }}
       </view>
-    </view>
+    </view> -->
   </view>
 </template>
 
 <script setup lang="ts">
+import { getCompendiumsCharacters, getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox';
+import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCompendiumsCharacterQuery, getCompendiumsCharacterRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface';
+
   import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive } from 'vue'
 
   declare const uni: any
