@@ -28,7 +28,8 @@
           <view v-else class="main-avatar avatar-placeholder">
             <text>{{ detail.name.slice(0, 1) || '?' }}</text>
           </view>
-          <text class="update-text">{{ detail.statusText }}</text>
+          <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
+          <text v-if="detail.statusText" class="update-text">{{ detail.statusText }}</text>
         </view>
 
         <view class="profile-column">
@@ -39,9 +40,10 @@
                 <text v-if="detail.alias" class="alias">· {{ detail.alias }}</text>
               </view>
               <view class="tag-line">
-                <text v-if="detail.elementName" class="tag accent">{{ detail.elementName }}</text>
-                <text v-if="detail.role" class="tag">{{ detail.role }}</text>
-                <text v-if="detail.level" class="tag">{{ detail.level }}</text>
+                <text v-if="detail.elementName" class="tag accent">{{ detail.elementIcon }} {{ detail.elementName }}</text>
+                <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}★</text>
+                <text v-if="detail.archetype" class="tag">{{ detail.archetype }}</text>
+                <text v-if="detail.family" class="tag">{{ detail.family }}</text>
               </view>
               <text v-if="detail.description" class="species">{{ detail.description }}</text>
             </view>
@@ -57,7 +59,7 @@
               v-for="option in elementBadges"
               :key="option.value"
               class="element-badge"
-              :class="{ active: option.label === detail.elementName || option.value === detail.element }">
+              :class="{ active: option.label === detail.elementName || option.value === detail.elementKey }">
               <text>{{ option.icon }}</text>
             </view>
           </view>
@@ -70,7 +72,7 @@
             <text class="stat-icon">{{ stat.icon }}</text>
             <text>{{ stat.label }}</text>
             <text class="stat-value">{{ stat.value || '--' }}</text>
-            <text class="stat-rank">{{ stat.rank || '-' }}</text>
+            <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
           </view>
           <view class="stat-bar">
             <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
@@ -81,7 +83,10 @@
       <view class="minor-stat-grid">
         <view v-for="stat in secondaryStats" :key="stat.key" class="minor-stat">
           <text>{{ stat.label }}</text>
-          <text>{{ stat.value || '--' }}</text>
+          <view class="minor-stat-value">
+            <text>{{ stat.value || '--' }}</text>
+            <text v-if="stat.rankLabel" class="minor-rank">{{ stat.rankLabel }}</text>
+          </view>
         </view>
       </view>
 
@@ -103,17 +108,17 @@
         </view>
 
         <view v-if="detail.skills.length === 0" class="empty-card">暂无技能信息</view>
-        <view v-for="skill in detail.skills" :key="skill.id || skill.name" class="skill-card">
+        <view v-for="skill in detail.skills" :key="skill.id || skill.name" class="skill-card" :class="{ leader: skill.type === 'leader' }">
           <view class="skill-head">
             <image v-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
-            <view v-else class="skill-icon empty-icon">✦</view>
+            <view v-else class="skill-icon empty-icon">{{ skill.type === 'leader' ? 'L' : skill.orderText }}</view>
             <view class="skill-title-wrap">
               <view class="skill-title">
                 <text>{{ skill.name || '未命名技能' }}</text>
                 <text v-if="skill.cost" class="skill-badge">{{ skill.cost }}</text>
                 <text v-if="skill.cooldown" class="skill-badge">{{ skill.cooldown }}</text>
               </view>
-              <text v-if="skill.type" class="skill-type">{{ skill.type }}</text>
+              <text v-if="skill.typeText" class="skill-type">{{ skill.typeText }}</text>
             </view>
           </view>
           <text v-if="skill.description" class="skill-desc">{{ skill.description }}</text>
@@ -185,6 +190,8 @@
     id: string
     name: string
     type: string
+    typeText: string
+    orderText: string
     attachment: string
     cost: string
     cooldown: string
@@ -195,7 +202,10 @@
   interface NormalizedCategory {
     key: string
     name: string
+    valueKey: string
     value: string
+    color: string
+    icon: string
   }
 
   interface NormalizedSkin {
@@ -207,13 +217,17 @@
   interface CharacterDetail {
     id: string
     name: string
+    code: string
     alias: string
     aliases: string[]
     avatar: string
-    element: string
+    elementKey: string
     elementName: string
+    elementIcon: string
     level: string
-    role: string
+    stars: string
+    archetype: string
+    family: string
     description: string
     statusText: string
     attributes: getCompendiumsCharacterResAttributes[]
@@ -227,9 +241,16 @@
     label: string
     icon: string
     value: string
-    rank: string
+    rankLabel: string
     percent: string
     color: string
+  }
+
+  interface SecondaryStatItem {
+    key: string
+    label: string
+    value: string
+    rankLabel: string
   }
 
   const COMPENDIUM_CODE = 'swc'
@@ -268,13 +289,17 @@
   const detail = ref<CharacterDetail>({
     id: '',
     name: '',
+    code: '',
     alias: '',
     aliases: [],
     avatar: '',
-    element: '',
+    elementKey: '',
     elementName: '',
+    elementIcon: '',
     level: '',
-    role: '',
+    stars: '',
+    archetype: '',
+    family: '',
     description: '',
     statusText: '',
     attributes: [],
@@ -296,10 +321,21 @@
     return url
   }
 
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+  const extractDetailData = (res: getCompendiumsCharacterRes): getCompendiumsCharacterRes => {
+    if (isRecord(res) && isRecord(res.data)) return res.data as getCompendiumsCharacterRes
+    return res
+  }
+
   const normalizeCategory = (category: getCompendiumsCharacterResCategories): NormalizedCategory => ({
-    key: category.key || category.valueKey || '',
+    key: category.key || '',
     name: category.name || '',
+    valueKey: category.valueKey || '',
     value: category.value || '',
+    color: category.color || '',
+    icon: category.icon || '',
   })
 
   const normalizeCoefficient = (coefficient: getCompendiumsCharacterResSkillsCoefficients): NormalizedCoefficient => ({
@@ -314,10 +350,21 @@
       .join(' '),
   })
 
-  const normalizeSkill = (skill: getCompendiumsCharacterResSkills): NormalizedSkill => ({
+  const formatSkillType = (type = ''): string => {
+    const map: Record<string, string> = {
+      active: '主动技能',
+      passive: '被动技能',
+      leader: '队长技能',
+    }
+    return map[type] || type
+  }
+
+  const normalizeSkill = (skill: getCompendiumsCharacterResSkills, index: number): NormalizedSkill => ({
     id: skill.id || skill.name || '',
     name: skill.name || '',
     type: skill.type || '',
+    typeText: formatSkillType(skill.type),
+    orderText: String(index + 1),
     attachment: normalizeUrl(skill.attachment),
     cost: skill.cost || '',
     cooldown: skill.cooldown || '',
@@ -331,42 +378,64 @@
     image: normalizeUrl(skin.image || skin.attachment),
   })
 
-  const inferElement = (categories: NormalizedCategory[], fallback = ''): [string, string] => {
-    const category = categories.find(
-      item =>
-        ['element', 'attribute'].includes(item.key) ||
-        ['火', '水', '风', '光', '暗'].includes(item.name) ||
-        ['fire', 'water', 'wind', 'light', 'dark'].includes(item.value),
-    )
-    return [category?.value || fallback, category?.name || fallback]
+  const getCategory = (categories: NormalizedCategory[], key: string): NormalizedCategory | undefined =>
+    categories.find(item => item.key === key)
+
+  const getCategoryValue = (categories: NormalizedCategory[], key: string): string => getCategory(categories, key)?.value || ''
+
+  const getElementIcon = (elementKey: string, elementName: string): string => {
+    const key = elementKey || elementName
+    const map: Record<string, string> = {
+      fire: '🔥',
+      火: '🔥',
+      water: '🌊',
+      水: '🌊',
+      wind: '🌪️',
+      风: '🌪️',
+      light: '🛡️',
+      光: '🛡️',
+      dark: '🟣',
+      暗: '🟣',
+    }
+    return map[key] || '✦'
   }
 
-  const inferRole = (categories: NormalizedCategory[]): string => {
-    const category = categories.find(
-      item => ['type', 'role', 'speciesType'].includes(item.key) || item.name.includes('型') || item.value.includes('型'),
-    )
-    return category?.value || category?.name || ''
-  }
+  const getAttributeByKey = (
+    attributes: getCompendiumsCharacterResAttributes[],
+    keys: string[],
+  ): getCompendiumsCharacterResAttributes | undefined =>
+    attributes.find(attribute => {
+      const key = `${attribute.key || ''} ${attribute.name || ''}`.toLowerCase()
+      return keys.some(item => key.includes(item.toLowerCase()))
+    })
 
-  const normalizeDetail = (res: getCompendiumsCharacterRes): CharacterDetail => {
+  const normalizeDetail = (rawRes: getCompendiumsCharacterRes): CharacterDetail => {
+    const res = extractDetailData(rawRes)
     const categories = (res.categories || []).map(normalizeCategory)
-    const [element, elementName] = inferElement(categories)
-    const role = inferRole(categories)
+    const attributes = res.attributes || []
+    const elementCategory = getCategory(categories, 'element')
+    const elementKey = elementCategory?.valueKey || ''
+    const elementName = elementCategory?.value || ''
+    const stars = formatAttributeValue(getAttributeByKey(attributes, ['stars', '星级'])).replace(/星$/, '')
     const aliases = res.aliases || []
 
     return {
       id: res.id || characterId.value,
       name: res.name || seedName.value,
+      code: res.code || '',
       alias: aliases[0] || '',
       aliases,
       avatar: normalizeUrl(res.avatar || seedAvatar.value),
-      element,
+      elementKey,
       elementName,
+      elementIcon: getElementIcon(elementKey, elementName),
       level: res.level || '',
-      role,
+      stars,
+      archetype: getCategoryValue(categories, 'archetype'),
+      family: getCategoryValue(categories, 'family'),
       description: res.description || '',
       statusText: res.status === 'enabled' ? '已收录' : '',
-      attributes: res.attributes || [],
+      attributes,
       categories,
       skills: (res.skills || []).map(normalizeSkill),
       skins: (res.skins || []).map(normalizeSkin),
@@ -385,31 +454,23 @@
   const isFavorite = computed(() => favoriteIds.value.includes(detail.value.id || characterId.value))
 
   const findAttribute = (keys: string[]): getCompendiumsCharacterResAttributes | undefined =>
-    detail.value.attributes.find(attribute => {
-      const key = `${attribute.key || ''} ${attribute.name || ''}`.toLowerCase()
-      return keys.some(item => key.includes(item))
-    })
+    getAttributeByKey(detail.value.attributes, keys)
 
   const formatAttributeValue = (attribute?: getCompendiumsCharacterResAttributes): string =>
-    attribute?.displayValue || attribute?.value || ''
+    attribute ? `${attribute.displayValue || stringifyValue(attribute.value)}${attribute.unit || ''}` : ''
 
-  const formatRank = (attribute?: getCompendiumsCharacterResAttributes): string => {
+  const formatRankLabel = (attribute?: getCompendiumsCharacterResAttributes): string => {
     if (!attribute) return ''
-    if (typeof attribute.rank === 'string') return attribute.rank
     const rank = Number(attribute.rank)
     const total = Number(attribute.total)
     if (!rank || !total) return ''
-    const ratio = rank / total
-    if (ratio <= 0.1) return 'S'
-    if (ratio <= 0.25) return 'A'
-    if (ratio <= 0.5) return 'B'
-    return 'C'
+    return `#${rank}/${total}`
   }
 
-  const calculatePercent = (attribute: getCompendiumsCharacterResAttributes | undefined, fallback: number): string => {
-    const value = Number(attribute?.value)
+  const calculateRankPercent = (attribute: getCompendiumsCharacterResAttributes | undefined, fallback: number): string => {
+    const rank = Number(attribute?.rank)
     const total = Number(attribute?.total)
-    if (value > 0 && total > 0) return `${Math.min(100, Math.max(8, (value / total) * 100)).toFixed(0)}%`
+    if (rank > 0 && total > 0) return `${Math.min(100, Math.max(8, ((total - rank + 1) / total) * 100)).toFixed(0)}%`
     return `${fallback}%`
   }
 
@@ -424,8 +485,8 @@
         label: '体力',
         icon: '❤',
         value: formatAttributeValue(hp),
-        rank: formatRank(hp),
-        percent: calculatePercent(hp, 42),
+        rankLabel: formatRankLabel(hp),
+        percent: calculateRankPercent(hp, 42),
         color: '#f45b62',
       },
       {
@@ -433,8 +494,8 @@
         label: '攻击',
         icon: '✖',
         value: formatAttributeValue(attack),
-        rank: formatRank(attack),
-        percent: calculatePercent(attack, 34),
+        rankLabel: formatRankLabel(attack),
+        percent: calculateRankPercent(attack, 34),
         color: '#6877f0',
       },
       {
@@ -442,8 +503,8 @@
         label: '防御',
         icon: '⬟',
         value: formatAttributeValue(defense),
-        rank: formatRank(defense),
-        percent: calculatePercent(defense, 68),
+        rankLabel: formatRankLabel(defense),
+        percent: calculateRankPercent(defense, 68),
         color: '#52c489',
       },
       {
@@ -451,23 +512,23 @@
         label: '速度',
         icon: '●',
         value: formatAttributeValue(speed),
-        rank: formatRank(speed),
-        percent: calculatePercent(speed, 74),
+        rankLabel: formatRankLabel(speed),
+        percent: calculateRankPercent(speed, 74),
         color: '#f5a623',
       },
     ]
   })
 
-  const secondaryStats = computed(() => {
+  const secondaryStats = computed<SecondaryStatItem[]>(() => {
     const critRate = findAttribute(['critRate', '暴击率'])
-    const critDamage = findAttribute(['critDamage', '暴击伤害'])
+    const critDamage = findAttribute(['critDmg', 'critDamage', '暴击伤害'])
     const resistance = findAttribute(['resistance', '效果抵抗'])
     const accuracy = findAttribute(['accuracy', '效果命中'])
     return [
-      { key: 'critRate', label: '暴击率', value: formatAttributeValue(critRate) },
-      { key: 'resistance', label: '效果抵抗', value: formatAttributeValue(resistance) },
-      { key: 'critDamage', label: '暴击伤害', value: formatAttributeValue(critDamage) },
-      { key: 'accuracy', label: '效果命中', value: formatAttributeValue(accuracy) },
+      { key: 'critRate', label: '暴击率', value: formatAttributeValue(critRate), rankLabel: formatRankLabel(critRate) },
+      { key: 'resistance', label: '效果抵抗', value: formatAttributeValue(resistance), rankLabel: formatRankLabel(resistance) },
+      { key: 'critDamage', label: '暴击伤害', value: formatAttributeValue(critDamage), rankLabel: formatRankLabel(critDamage) },
+      { key: 'accuracy', label: '效果命中', value: formatAttributeValue(accuracy), rankLabel: formatRankLabel(accuracy) },
     ]
   })
 
@@ -631,6 +692,15 @@
     font-size: 24rpx;
   }
 
+  .code-text {
+    padding: 4rpx 14rpx;
+    border-radius: 999rpx;
+    background: #fff;
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 800;
+  }
+
   .profile-column {
     min-width: 0;
   }
@@ -683,6 +753,11 @@
   .tag.accent {
     color: #f16552;
     background: #ffe6e2;
+  }
+
+  .tag.star-tag {
+    color: #d28a00;
+    background: #fff4d6;
   }
 
   .species {
@@ -769,10 +844,10 @@
   }
 
   .stat-rank {
-    min-width: 34rpx;
+    min-width: 84rpx;
     text-align: right;
     color: #6d75ef;
-    font-size: 40rpx;
+    font-size: 24rpx;
     font-weight: 900;
   }
 
@@ -802,12 +877,25 @@
   .minor-stat {
     display: flex;
     justify-content: space-between;
+    gap: 16rpx;
     color: #87909f;
     font-size: 28rpx;
     font-weight: 700;
   }
 
-  .minor-stat text:last-child {
+  .minor-stat-value {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+    color: #162033;
+  }
+
+  .minor-rank {
+    color: #8a93a3;
+    font-size: 22rpx;
+  }
+
+  .minor-stat-value text:first-child {
     color: #162033;
   }
 
@@ -876,6 +964,11 @@
     box-shadow: 0 2rpx 12rpx rgba(34, 48, 76, 0.05);
   }
 
+  .skill-card.leader {
+    border: 2rpx solid #ffe2a8;
+    background: linear-gradient(180deg, #fffaf0 0%, #fff 42%);
+  }
+
   .skill-head {
     display: flex;
     gap: 18rpx;
@@ -934,6 +1027,7 @@
     color: #1f2632;
     font-size: 28rpx;
     line-height: 1.65;
+    white-space: pre-line;
   }
 
   .coefficient-list {
