@@ -135,7 +135,7 @@ const clearContent = () => {
 }
 
 const insertSample = () => {
-  markdownContent.value = `# 银河工具箱 Markdown 示例
+  markdownContent.value = `# 凉白开工具箱 Markdown 示例
 
 > 为运营/产品/开发提供的一站式小工具集合
 

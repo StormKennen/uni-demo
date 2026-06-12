@@ -1,6 +1,6 @@
 <template>
   <view class="detail-page">
-    <view class="top-tabs">
+    <!-- <view class="top-tabs">
       <view
         v-for="tab in topTabs"
         :key="tab.key"
@@ -10,7 +10,7 @@
         <text>{{ tab.label }}</text>
         <text v-if="tab.dot" class="tab-dot" />
       </view>
-    </view>
+    </view> -->
 
     <view v-if="loading" class="state-block">
       <text>加载详情中...</text>
@@ -90,7 +90,7 @@
         </view>
       </view>
 
-      <view class="section-tabs">
+      <!-- <view class="section-tabs">
         <view
           v-for="tab in sectionTabs"
           :key="tab.key"
@@ -99,12 +99,12 @@
           @click="activeSectionTab = tab.key">
           {{ tab.label }}
         </view>
-      </view>
+      </view> -->
 
       <view v-if="activeSectionTab === 'skills'" class="skill-section">
         <view class="language-toggle">
-          <text class="selected">中文</text>
-          <text>原格式</text>
+          <text class="selected">英文</text>
+          <text>中文</text>
         </view>
 
         <view v-if="detail.skills.length === 0" class="empty-card">暂无技能信息</view>
@@ -256,19 +256,19 @@
   const COMPENDIUM_CODE = 'swc'
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
 
-  const topTabs = [
-    { key: 'main' as const, label: '主要数据' },
-    { key: 'runes' as const, label: '符文/我的' },
-    { key: 'team' as const, label: '阵容攻略/RTA', dot: true },
-  ]
+  // const topTabs = [
+  //   { key: 'main' as const, label: '主要数据' },
+  //   { key: 'runes' as const, label: '符文/我的' },
+  //   { key: 'team' as const, label: '阵容攻略/RTA', dot: true },
+  // ]
 
-  const sectionTabs = [
-    { key: 'skills' as const, label: '技能' },
-    { key: 'review' as const, label: '评论倾向' },
-    { key: 'change' as const, label: '技改' },
-    { key: 'tags' as const, label: '标签' },
-    { key: 'more' as const, label: '更多' },
-  ]
+  // const sectionTabs = [
+  //   { key: 'skills' as const, label: '技能' },
+  //   { key: 'review' as const, label: '评论倾向' },
+  //   { key: 'change' as const, label: '技改' },
+  //   { key: 'tags' as const, label: '标签' },
+  //   { key: 'more' as const, label: '更多' },
+  // ]
 
   const elementBadges = [
     { label: '火', value: 'fire', icon: '🔥' },
