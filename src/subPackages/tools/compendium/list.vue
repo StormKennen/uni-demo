@@ -1,31 +1,74 @@
 <template>
   <view class="compendium-page">
-    <view class="filter-bar">
-      <view
-        v-for="tab in filterTabs"
-        :key="tab.key"
-        class="filter-tab"
-        :class="{ active: activePanel === tab.key }"
-        @click="togglePanel(tab.key)">
-        <text>{{ tab.label }}</text>
-        <text v-if="tab.icon" class="tab-icon">{{ tab.icon }}</text>
+    <view class="filter-shell">
+      <view class="filter-header">
+        <text class="filter-title">快速筛选</text>
+        <text v-if="hasActiveFilters" class="filter-reset" @click="resetFilters">重置</text>
       </view>
-      <view class="filter-button" @click="resetFilters">
-        <uni-icons type="filter" size="26" color="#121A26" />
-      </view>
-    </view>
 
-    <view v-if="activePanel" class="filter-panel">
-      <view class="option-grid">
-        <view
-          v-for="option in panelOptions"
-          :key="option.value"
-          class="filter-option"
-          :class="{ selected: option.value === currentPanelValue }"
-          @click="selectPanelOption(option.value)">
-          <text>{{ option.label }}</text>
-          <text v-if="option.icon" class="option-icon">{{ option.icon }}</text>
-        </view>
+      <view class="filter-section">
+        <text class="filter-label">属性</text>
+        <scroll-view class="filter-scroll" scroll-x enable-flex>
+          <view class="filter-chip-row">
+            <view
+              v-for="option in elementOptions"
+              :key="option.value"
+              class="quick-chip element-chip"
+              :class="[{ selected: option.value === selectedElement }, option.value !== ALL_VALUE ? 'element-filter-' + option.value : '']"
+              @click="selectFilter('element', option.value)">
+              <text v-if="option.value !== ALL_VALUE" class="element-dot"></text>
+              <text>{{ option.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="filter-section">
+        <text class="filter-label">类型</text>
+        <scroll-view class="filter-scroll" scroll-x enable-flex>
+          <view class="filter-chip-row">
+            <view
+              v-for="option in typeOptions"
+              :key="option.value"
+              class="quick-chip"
+              :class="{ selected: option.value === selectedType }"
+              @click="selectFilter('type', option.value)">
+              <text>{{ option.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="filter-section">
+        <text class="filter-label">星级</text>
+        <scroll-view class="filter-scroll" scroll-x enable-flex>
+          <view class="filter-chip-row">
+            <view
+              v-for="option in starOptions"
+              :key="option.value"
+              class="quick-chip"
+              :class="{ selected: option.value === selectedStar }"
+              @click="selectFilter('star', option.value)">
+              <text>{{ option.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="filter-section">
+        <text class="filter-label">排序</text>
+        <scroll-view class="filter-scroll" scroll-x enable-flex>
+          <view class="filter-chip-row">
+            <view
+              v-for="option in sortOptions"
+              :key="option.value"
+              class="quick-chip"
+              :class="{ selected: option.value === selectedSort }"
+              @click="selectFilter('sort', option.value)">
+              <text>{{ option.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
       </view>
     </view>
 
@@ -85,13 +128,12 @@
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
-  type PanelKey = 'element' | 'star' | 'type' | 'sort'
+  type FilterKey = 'element' | 'star' | 'type' | 'sort'
   type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
 
   interface FilterOption {
     label: string
     value: string
-    icon?: string
   }
 
   interface CharacterCard {
@@ -143,16 +185,16 @@
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
 
   const elementOptions: FilterOption[] = [
-    { label: '全部属性', value: ALL_VALUE },
-    { label: '火', value: 'fire', icon: '🔥' },
-    { label: '水', value: 'water', icon: '🌊' },
-    { label: '风', value: 'wind', icon: '🌪️' },
-    { label: '光', value: 'light', icon: '🛡️' },
-    { label: '暗', value: 'dark', icon: '🟣' },
+    { label: '全部', value: ALL_VALUE },
+    { label: '火', value: 'fire' },
+    { label: '水', value: 'water' },
+    { label: '风', value: 'wind' },
+    { label: '光', value: 'light' },
+    { label: '暗', value: 'dark' },
   ]
 
   const starOptions: FilterOption[] = [
-    { label: '全部星级', value: ALL_VALUE },
+    { label: '全部', value: ALL_VALUE },
     { label: '1★', value: '1' },
     { label: '2★', value: '2' },
     { label: '3★', value: '3' },
@@ -161,15 +203,15 @@
   ]
 
   const typeOptions: FilterOption[] = [
-    { label: '全部类型', value: ALL_VALUE },
-    { label: '攻击型', value: 'attack' },
-    { label: '防御型', value: 'defense' },
-    { label: '体力型', value: 'hp' },
-    { label: '辅助型', value: 'support' },
+    { label: '全部', value: ALL_VALUE },
+    { label: '攻击', value: 'attack' },
+    { label: '防御', value: 'defense' },
+    { label: '体力', value: 'hp' },
+    { label: '辅助', value: 'support' },
   ]
 
   const sortOptions: FilterOption[] = [
-    { label: '默认排序', value: ALL_VALUE },
+    { label: '默认', value: ALL_VALUE },
     { label: '图鉴倒序', value: 'reverse' },
     { label: '体力↓', value: 'hp_desc' },
     { label: '攻击力↓', value: 'attack_desc' },
@@ -183,7 +225,6 @@
     { label: '浏览热度', value: 'popularity' },
   ]
 
-  const activePanel = ref<PanelKey | ''>('')
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
@@ -195,40 +236,13 @@
   const loading = ref(false)
   const errorMessage = ref('')
 
-  const filterTabs = computed(() => [
-    {
-      key: 'element' as const,
-      label: selectedElementLabel.value,
-      icon: selectedElementIcon.value,
-    },
-    { key: 'star' as const, label: getOptionLabel(starOptions, selectedStar.value) },
-    { key: 'type' as const, label: getOptionLabel(typeOptions, selectedType.value) },
-    { key: 'sort' as const, label: getOptionLabel(sortOptions, selectedSort.value) },
-  ])
-
-  const panelOptions = computed(() => {
-    if (activePanel.value === 'element') return elementOptions
-    if (activePanel.value === 'star') return starOptions
-    if (activePanel.value === 'type') return typeOptions
-    if (activePanel.value === 'sort') return sortOptions
-    return []
-  })
-
-  const currentPanelValue = computed(() => {
-    if (activePanel.value === 'element') return selectedElement.value
-    if (activePanel.value === 'star') return selectedStar.value
-    if (activePanel.value === 'type') return selectedType.value
-    if (activePanel.value === 'sort') return selectedSort.value
-    return ''
-  })
-
-  const selectedElementLabel = computed(() => {
-    const label = getOptionLabel(elementOptions, selectedElement.value)
-    return selectedElement.value === ALL_VALUE ? label : `${label}属性`
-  })
-
-  const selectedElementIcon = computed(() => getOptionIcon(elementOptions, selectedElement.value))
-
+  const hasActiveFilters = computed(
+    () =>
+      selectedElement.value !== ALL_VALUE ||
+      selectedStar.value !== ALL_VALUE ||
+      selectedType.value !== ALL_VALUE ||
+      selectedSort.value !== ALL_VALUE,
+  )
   const emptyText = computed(() => '暂无符合条件的魔灵')
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -265,10 +279,6 @@
     if (isRecord(pagination)) return pagination as PaginationLike
     return {}
   }
-
-  const getOptionLabel = (options: FilterOption[], value: string) => options.find(option => option.value === value)?.label || ''
-
-  const getOptionIcon = (options: FilterOption[], value: string) => options.find(option => option.value === value)?.icon || ''
 
   const readFavoriteIds = (): string[] => {
     const value = uni.getStorageSync(FAVORITE_KEY)
@@ -463,19 +473,14 @@
   }
 
   const refreshCharacters = () => {
-    activePanel.value = ''
     fetchCharacters(true)
   }
 
-  const togglePanel = (panel: PanelKey) => {
-    activePanel.value = activePanel.value === panel ? '' : panel
-  }
-
-  const selectPanelOption = (value: string) => {
-    if (activePanel.value === 'element') selectedElement.value = value
-    if (activePanel.value === 'star') selectedStar.value = value
-    if (activePanel.value === 'type') selectedType.value = value
-    if (activePanel.value === 'sort') selectedSort.value = value
+  const selectFilter = (key: FilterKey, value: string) => {
+    if (key === 'element') selectedElement.value = value
+    if (key === 'star') selectedStar.value = value
+    if (key === 'type') selectedType.value = value
+    if (key === 'sort') selectedSort.value = value
     refreshCharacters()
   }
 
@@ -517,94 +522,157 @@
     color: #121a26;
   }
 
-  .filter-bar {
+  .filter-shell {
     position: sticky;
     top: 0;
     z-index: 10;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) 74rpx;
-    align-items: center;
     background: #fff;
     border-bottom: 1rpx solid #eef0f5;
+    box-shadow: 0 8rpx 22rpx rgba(30, 42, 64, 0.06);
   }
 
-  .filter-tab {
-    position: relative;
-    min-width: 0;
-    height: 88rpx;
+  .filter-header {
+    height: 64rpx;
+    padding: 0 24rpx;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8rpx;
-    padding: 0 10rpx;
-    font-size: 28rpx;
-    white-space: nowrap;
-    border-right: 1rpx solid #eef0f5;
+    justify-content: space-between;
   }
 
-  .filter-tab.active {
-    color: #e8bd27;
+  .filter-title {
+    color: #121a26;
+    font-size: 26rpx;
+    font-weight: 800;
   }
 
-  .filter-tab.active::after {
-    content: '';
-    position: absolute;
-    left: 18rpx;
-    right: 18rpx;
-    bottom: 0;
-    height: 4rpx;
-    background: #f2c72c;
-    border-radius: 6rpx;
-  }
-
-  .tab-icon {
-    font-size: 28rpx;
-  }
-
-  .filter-button {
-    height: 88rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fff;
-  }
-
-  .filter-panel {
-    position: sticky;
-    top: 88rpx;
-    z-index: 9;
-    padding: 18rpx 28rpx 22rpx;
-    background: #fff;
-    box-shadow: 0 10rpx 18rpx rgba(30, 42, 64, 0.08);
-  }
-
-  .option-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14rpx 18rpx;
-  }
-
-  .filter-option {
-    height: 74rpx;
-    border-radius: 12rpx;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8rpx;
-    font-size: 28rpx;
+  .filter-reset {
+    height: 44rpx;
+    line-height: 44rpx;
+    padding: 0 18rpx;
+    border-radius: 999rpx;
+    background: #f6f8fb;
+    color: #667085;
+    font-size: 24rpx;
     font-weight: 700;
-    box-shadow: 0 2rpx 12rpx rgba(28, 37, 54, 0.18);
   }
 
-  .filter-option.selected {
+  .filter-section {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding: 0 0 14rpx 24rpx;
+  }
+
+  .filter-label {
+    flex: none;
+    width: 56rpx;
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 800;
+  }
+
+  .filter-scroll {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .filter-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding-right: 24rpx;
+  }
+
+  .quick-chip {
+    flex: none;
+    height: 52rpx;
+    padding: 0 20rpx;
+    border: 1rpx solid #e7ebf2;
+    border-radius: 999rpx;
+    background: #f8fafc;
+    color: #465164;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10rpx;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .quick-chip.selected {
+    border-color: #121a26;
+    background: #121a26;
     color: #fff;
-    background: #72b8f5;
-    box-shadow: 0 2rpx 14rpx rgba(70, 149, 222, 0.28);
   }
 
-  .option-icon {
-    font-size: 28rpx;
+  .element-chip {
+    padding-left: 14rpx;
+  }
+
+  .element-dot {
+    width: 18rpx;
+    height: 18rpx;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .element-filter-fire {
+    color: #d94b3f;
+  }
+
+  .element-filter-water {
+    color: #2f80ed;
+  }
+
+  .element-filter-wind {
+    color: #249a68;
+  }
+
+  .element-filter-light {
+    color: #b78a16;
+  }
+
+  .element-filter-dark {
+    color: #2a2342;
+  }
+
+  .element-chip.selected {
+    color: #fff;
+  }
+
+  .element-chip.selected .element-dot {
+    background: #fff;
+  }
+
+  .element-filter-fire.selected {
+    border-color: #d94b3f;
+    background: #d94b3f;
+  }
+
+  .element-filter-water.selected {
+    border-color: #2f80ed;
+    background: #2f80ed;
+  }
+
+  .element-filter-wind.selected {
+    border-color: #249a68;
+    background: #249a68;
+  }
+
+  .element-filter-light.selected {
+    border-color: #ffe9a3;
+    background: #ffe9a3;
+    color: #121a26;
+  }
+
+  .element-filter-light.selected .element-dot {
+    background: #121a26;
+  }
+
+  .element-filter-dark.selected {
+    border-color: #2a2342;
+    background: #2a2342;
   }
 
   .character-grid {
