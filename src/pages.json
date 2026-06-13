@@ -238,6 +238,20 @@
             "navigationBarTitleText": "魔灵 wiki-详情",
             "enablePullDownRefresh": true
           }
+        },
+        {
+          "path": "magnet-link/index",
+          "style": {
+            "navigationBarTitleText": "磁力链接",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "video-gif/index",
+          "style": {
+            "navigationBarTitleText": "视频转GIF",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },
