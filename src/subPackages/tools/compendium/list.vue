@@ -1,10 +1,10 @@
 <template>
   <view class="compendium-page">
     <view class="filter-shell">
-      <view class="filter-header">
-        <text class="filter-title">快速筛选</text>
+      <!-- <view class="filter-header">
+        <text class="filter-title">{{ isFamilyMode ? '物种图鉴' : '快速筛选' }}</text>
         <text v-if="hasActiveFilters" class="filter-reset" @click="resetFilters">重置</text>
-      </view>
+      </view> -->
 
       <view class="filter-section">
         <text class="filter-label">属性</text>
@@ -22,6 +22,10 @@
           </view>
         </scroll-view>
       </view>
+
+      <!-- <view v-if="isFamilyMode" class="family-mode-tip">
+        <text>筛选和排序基于代表魔灵，每个物种展示一张卡片</text>
+      </view> -->
 
       <view class="filter-section">
         <text class="filter-label">类型</text>
@@ -65,7 +69,7 @@
               class="quick-chip"
               :class="{ selected: option.value === selectedSort }"
               @click="selectFilter('sort', option.value)">
-              <text>{{ option.label }}</text>
+              <text>{{ getSortOptionLabel(option) }}</text>
             </view>
           </view>
         </scroll-view>
@@ -73,7 +77,7 @@
     </view>
 
     <view v-if="loading && characters.length === 0" class="state-block">
-      <text>加载魔灵中...</text>
+      <text>{{ isFamilyMode ? '加载物种中...' : '加载魔灵中...' }}</text>
     </view>
 
     <view v-else-if="errorMessage" class="state-block">
@@ -85,12 +89,12 @@
       <text>{{ emptyText }}</text>
     </view>
 
-    <view v-else class="character-grid">
+    <view v-else class="character-grid" :class="{ 'family-grid': isFamilyMode }">
       <view
         v-for="character in characters"
         :key="character.id"
         class="character-card"
-        :class="'card-element-' + character.elementKey"
+        :class="['card-element-' + character.elementKey, { 'family-card': isFamilyMode }]"
         @click="goToDetail(character)">
         <view class="avatar-wrap">
           <image v-if="character.avatar" class="avatar" :src="character.avatar" mode="aspectFill" lazy-load />
@@ -98,14 +102,25 @@
             <text>{{ character.name.slice(0, 1) || '?' }}</text>
           </view>
           <text v-if="character.stars" class="stars">{{ character.stars }}★</text>
-          <view v-if="character.isFavorite" class="favorite-badge">★</view>
+          <!-- <text v-if="isFamilyMode" class="family-badge">物种</text> -->
+          <!-- <view v-if="!isFamilyMode && character.isFavorite" class="favorite-badge">★</view> -->
         </view>
         <view class="character-info">
-          <text class="character-name">{{ character.name || '未知魔灵' }}</text>
-          <view class="meta-row">
+          <text class="character-name">
+            {{ isFamilyMode ? character.family || character.name || '未知物种' : character.name || '未知魔灵' }}
+          </text>
+          <view v-if="isFamilyMode" class="representative-row">
+            <text class="representative-label">代表魔灵</text>
+            <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
+          </view>
+          <view v-else class="meta-row">
             <!-- <text v-if="character.code" class="meta-chip">No.{{ character.code }}</text> -->
             <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
             <text v-if="character.family" class="meta-chip">{{ character.family }}</text>
+          </view>
+          <view v-if="isFamilyMode" class="meta-row family-meta-row">
+            <text v-if="character.elementName" class="meta-chip">{{ character.elementName }}</text>
+            <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
           </view>
           <!-- <view class="stat-row">
             <view v-for="stat in character.stats" :key="stat.key" class="mini-stat">
@@ -129,7 +144,13 @@
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
   type FilterKey = 'element' | 'star' | 'type' | 'sort'
+  type SortOrder = 'asc' | 'desc'
   type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
+  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery & {
+    'categories[awaken]'?: string
+    'categories[element]'?: string
+    'categories[archetype]'?: string
+  }
 
   interface FilterOption {
     label: string
@@ -183,6 +204,8 @@
   const ALL_VALUE = 'all'
   const PAGE_SIZE = 40
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
+  const DEFAULT_SORT_FIELD = 'stars'
+  const DEFAULT_SORT_ORDER: SortOrder = 'desc'
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -195,11 +218,11 @@
 
   const starOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
-    { label: '1★', value: '1' },
-    { label: '2★', value: '2' },
-    { label: '3★', value: '3' },
-    { label: '4★', value: '4' },
     { label: '5★', value: '5' },
+    { label: '4★', value: '4' },
+    { label: '3★', value: '3' },
+    { label: '2★', value: '2' },
+    { label: '1★', value: '1' },
   ]
 
   const typeOptions: FilterOption[] = [
@@ -211,30 +234,33 @@
   ]
 
   const sortOptions: FilterOption[] = [
-    { label: '默认', value: ALL_VALUE },
-    { label: '图鉴倒序', value: 'reverse' },
-    { label: '体力↓', value: 'hp_desc' },
-    { label: '攻击力↓', value: 'attack_desc' },
-    { label: '防御力↓', value: 'defense_desc' },
-    { label: '速度↓', value: 'speed_desc' },
-    { label: '体力↑', value: 'hp_asc' },
-    { label: '攻击力↑', value: 'attack_asc' },
-    { label: '防御力↑', value: 'defense_asc' },
-    { label: '速度↑', value: 'speed_asc' },
-    { label: '二觉优先', value: 'second_awaken' },
-    { label: '浏览热度', value: 'popularity' },
+    // { label: '全部', value: ALL_VALUE },
+    { label: '星级', value: 'stars' },
+    { label: '体力', value: 'hp' },
+    { label: '攻击力', value: 'attack' },
+    { label: '防御力', value: 'defense' },
+    { label: '速度', value: 'speed' },
+    { label: '暴击率', value: 'critRate' },
+    { label: '暴击伤害', value: 'critDamage' },
+    { label: '效果命中', value: 'accuracy' },
+    { label: '效果抵抗', value: 'resistance' },
+    // { label: '二觉优先', value: 'second_awaken' },
+    // { label: '浏览热度', value: 'popularity' },
   ]
 
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
-  const selectedSort = ref(ALL_VALUE)
+  const selectedSort = ref(DEFAULT_SORT_FIELD)
+  const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
   const characters = ref<CharacterCard[]>([])
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
   const hasNext = ref(true)
   const loading = ref(false)
   const errorMessage = ref('')
+  let requestSequence = 0
+  const isFamilyMode = computed(() => false) // computed(() => selectedElement.value === ALL_VALUE)
 
   const hasActiveFilters = computed(
     () =>
@@ -243,7 +269,7 @@
       selectedType.value !== ALL_VALUE ||
       selectedSort.value !== ALL_VALUE,
   )
-  const emptyText = computed(() => '暂无符合条件的魔灵')
+  const emptyText = computed(() => (isFamilyMode.value ? '暂无物种数据' : '暂无符合条件的魔灵'))
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -336,31 +362,39 @@
   const normalizeCharacter = (source: unknown): CharacterCard | null => {
     if (!isRecord(source)) return null
 
-    const id = readString(source, ['id', 'characterId', 'code'])
+    const nestedCharacter = ['representative', 'representativeCharacter', 'character', 'item'].map(key => source[key]).find(isRecord)
+    const characterSource = nestedCharacter || source
+    const groupSource = isRecord(source.group) ? source.group : null
+
+    const id = readString(characterSource, ['id', 'characterId', 'code'])
     if (!id) return null
 
-    const categories = readArray(source, ['categories'])
+    const categories = readArray(characterSource, ['categories'])
       .map(normalizeCategory)
       .filter((item): item is CharacterCategory => Boolean(item))
-    const attributes = readArray(source, ['attributes'])
+    const attributes = readArray(characterSource, ['attributes'])
       .map(normalizeAttribute)
       .filter((item): item is CharacterAttribute => Boolean(item))
-    const elementKey = normalizeElementKey(getCategoryValueKey(categories, 'element') || readString(source, ['element']))
-    const elementName = getCategoryValue(categories, 'element') || readString(source, ['elementName'])
-    const stars = formatAttribute(attributes, 'stars') || readString(source, ['level', 'star', 'rarity'])
-    const avatar = readString(source, ['avatar', 'icon', 'image', 'cover', 'portrait'])
+    const elementKey = normalizeElementKey(getCategoryValueKey(categories, 'element') || readString(characterSource, ['element']))
+    const elementName = getCategoryValue(categories, 'element') || readString(characterSource, ['elementName'])
+    const stars = formatAttribute(attributes, 'stars') || readString(characterSource, ['level', 'star', 'rarity'])
+    const avatar = readString(characterSource, ['avatar', 'icon', 'image', 'cover', 'portrait'])
+    const groupFamily =
+      stringifyValue(source.group as RecordValue) ||
+      readString(source, ['groupValue', 'groupName', 'familyName']) ||
+      (groupSource ? readString(groupSource, ['value', 'name', 'label', 'key']) : '')
 
     return {
       id,
-      name: readString(source, ['name', 'title']),
-      code: readString(source, ['code']),
+      name: readString(characterSource, ['name', 'title']),
+      code: readString(characterSource, ['code']),
       avatar: normalizeUrl(avatar),
       elementKey,
       elementName,
-      level: readString(source, ['level']),
+      level: readString(characterSource, ['level']),
       stars: stars.replace(/星$/, ''),
-      archetype: getCategoryValue(categories, 'archetype') || readString(source, ['speciesType', 'type']),
-      family: getCategoryValue(categories, 'family'),
+      archetype: getCategoryValue(categories, 'archetype') || readString(characterSource, ['speciesType', 'type']),
+      family: getCategoryValue(categories, 'family') || groupFamily,
       stats: [
         { key: 'hp', label: 'HP', value: formatAttribute(attributes, 'hp') },
         { key: 'attack', label: '攻', value: formatAttribute(attributes, 'attack') },
@@ -389,19 +423,29 @@
     return []
   }
 
-  const buildQuery = (): getCompendiumsCharactersQuery => {
-    const query: getCompendiumsCharactersQuery = {
+  const getSortOptionLabel = (option: FilterOption): string => {
+    if (option.value === ALL_VALUE || selectedSort.value !== option.value) return option.label
+    return `${option.label}${selectedSortOrder.value === 'desc' ? '↓' : '↑'}`
+  }
+
+  const buildQuery = (): CompendiumCharactersQueryParams => {
+    const query: CompendiumCharactersQueryParams = {
       compendiumId: COMPENDIUM_CODE,
       page: page.value,
       pageSize: PAGE_SIZE,
+      'categories[awaken]': 'awakened',
     }
 
+    // if (isFamilyMode.value) {
+    //   query.groupBy = 'family'
+    // }
+
     if (selectedElement.value !== ALL_VALUE) {
-      query.element = selectedElement.value
+      query['categories[element]'] = selectedElement.value
     }
 
     if (selectedType.value !== ALL_VALUE) {
-      query.speciesType = selectedType.value
+      query['categories[archetype]'] = selectedType.value
     }
 
     if (selectedStar.value !== ALL_VALUE) {
@@ -410,46 +454,56 @@
       query.maxValue = Number(selectedStar.value)
     }
 
-    const [sortBy, sortOrder] = getSortParams(selectedSort.value)
-    if (sortBy) query.sortBy = sortBy
-    if (sortOrder) query.sortOrder = sortOrder
+    if (isFamilyMode.value && selectedSort.value === ALL_VALUE) {
+      query.sortBy = 'group'
+      query.sortOrder = 'asc'
+    } else {
+      const [sortBy, sortOrder] = getSortParams(selectedSort.value, selectedSortOrder.value)
+      query.sortBy = sortBy
+      query.sortOrder = sortOrder
+    }
 
     return query
   }
 
-  const getSortParams = (value: string): [string, string] => {
-    const map: Record<string, [string, string]> = {
-      [ALL_VALUE]: ['', ''],
-      reverse: ['sortOrder', 'desc'],
-      hp_desc: ['hp', 'desc'],
-      attack_desc: ['attack', 'desc'],
-      defense_desc: ['defense', 'desc'],
-      speed_desc: ['speed', 'desc'],
-      hp_asc: ['hp', 'asc'],
-      attack_asc: ['attack', 'asc'],
-      defense_asc: ['defense', 'asc'],
-      speed_asc: ['speed', 'asc'],
-      second_awaken: ['secondAwakenPriority', 'desc'],
-      popularity: ['viewCount', 'desc'],
+  const getSortParams = (value: string, order: SortOrder): [string, SortOrder] => {
+    const map: Record<string, string> = {
+      [ALL_VALUE]: DEFAULT_SORT_FIELD,
+      stars: 'stars',
+      hp: 'hp',
+      attack: 'attack',
+      defense: 'defense',
+      speed: 'speed',
+      critRate: 'critRate',
+      critDamage: 'critDmg',
+      accuracy: 'accuracy',
+      resistance: 'resistance',
+      second_awaken: 'secondAwakenPriority',
+      popularity: 'viewCount',
     }
-    return map[value] || map[ALL_VALUE]
+    const sortBy = map[value] || DEFAULT_SORT_FIELD
+    return [sortBy, value === ALL_VALUE ? DEFAULT_SORT_ORDER : order]
   }
 
   const fetchCharacters = async (reset = false) => {
-    if (loading.value) return
+    if (loading.value && !reset) return
     if (!reset && !hasNext.value) return
 
+    const requestId = reset ? ++requestSequence : requestSequence
     loading.value = true
     errorMessage.value = ''
 
     if (reset) {
       page.value = 1
       hasNext.value = true
+      characters.value = []
     }
 
     try {
       favoriteIds.value = readFavoriteIds()
       const res = await getCompendiumsCharacters(buildQuery())
+      if (requestId !== requestSequence) return
+
       const items = extractItems(res)
         .map(normalizeCharacter)
         .filter((item): item is CharacterCard => Boolean(item))
@@ -465,10 +519,13 @@
       )
       page.value += 1
     } catch (error) {
+      if (requestId !== requestSequence) return
       errorMessage.value = typeof error === 'string' ? error : '图鉴加载失败，请稍后重试'
     } finally {
-      loading.value = false
-      uni.stopPullDownRefresh()
+      if (requestId === requestSequence) {
+        loading.value = false
+        uni.stopPullDownRefresh()
+      }
     }
   }
 
@@ -477,10 +534,22 @@
   }
 
   const selectFilter = (key: FilterKey, value: string) => {
-    if (key === 'element') selectedElement.value = value
+    if (key === 'element') {
+      selectedElement.value = value
+    }
     if (key === 'star') selectedStar.value = value
     if (key === 'type') selectedType.value = value
-    if (key === 'sort') selectedSort.value = value
+    if (key === 'sort') {
+      if (value === ALL_VALUE) {
+        selectedSort.value = ALL_VALUE
+        selectedSortOrder.value = DEFAULT_SORT_ORDER
+      } else if (selectedSort.value === value) {
+        selectedSortOrder.value = selectedSortOrder.value === 'desc' ? 'asc' : 'desc'
+      } else {
+        selectedSort.value = value
+        selectedSortOrder.value = 'desc'
+      }
+    }
     refreshCharacters()
   }
 
@@ -489,6 +558,7 @@
     selectedStar.value = ALL_VALUE
     selectedType.value = ALL_VALUE
     selectedSort.value = ALL_VALUE
+    selectedSortOrder.value = DEFAULT_SORT_ORDER
     refreshCharacters()
   }
 
@@ -561,6 +631,12 @@
     align-items: center;
     gap: 12rpx;
     padding: 0 0 14rpx 24rpx;
+  }
+
+  .family-mode-tip {
+    padding: 0 24rpx 16rpx 92rpx;
+    color: #8b94a4;
+    font-size: 22rpx;
   }
 
   .filter-label {
@@ -682,6 +758,12 @@
     gap: 18rpx;
   }
 
+  .family-grid {
+    padding-right: 30rpx;
+    padding-bottom: 42rpx;
+    gap: 28rpx 22rpx;
+  }
+
   .character-card {
     min-width: 0;
     background: #f7f8fb;
@@ -692,24 +774,73 @@
     box-shadow: 0 6rpx 18rpx rgba(31, 43, 66, 0.08);
   }
 
+  .family-card {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    overflow: visible;
+    margin-right: 10rpx;
+    margin-bottom: 10rpx;
+    box-shadow: 0 8rpx 22rpx rgba(31, 43, 66, 0.14);
+  }
+
+  .family-card::before,
+  .family-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 2rpx solid rgba(255, 255, 255, 0.52);
+    border-radius: 18rpx;
+    background: var(--family-stack-color, rgba(148, 163, 184, 0.46));
+    pointer-events: none;
+  }
+
+  .family-card::before {
+    transform: translate(6rpx, 6rpx);
+    opacity: 0.72;
+    box-shadow: 0 5rpx 12rpx rgba(31, 43, 66, 0.1);
+  }
+
+  .family-card::after {
+    transform: translate(12rpx, 12rpx);
+    opacity: 0.38;
+    box-shadow: 0 6rpx 14rpx rgba(31, 43, 66, 0.08);
+  }
+
+  .family-card .avatar-wrap {
+    border-radius: 16rpx 16rpx 0 0;
+  }
+
+  .family-card .character-info {
+    position: relative;
+    border-radius: 0 0 16rpx 16rpx;
+    background: inherit;
+  }
+
   .card-element-fire {
+    --family-stack-color: rgba(219, 68, 55, 0.68);
     background: rgba(219, 68, 55, 0.78);
   }
 
   .card-element-water {
+    --family-stack-color: rgba(47, 128, 237, 0.68);
     background: rgba(47, 128, 237, 0.78);
   }
 
   .card-element-wind {
+    --family-stack-color: rgba(36, 154, 104, 0.68);
     background: rgba(36, 154, 104, 0.78);
   }
 
   .card-element-light {
+    --family-stack-color: rgba(239, 205, 91, 0.7);
     background: rgba(255, 238, 171, 0.92);
     color: #121a26;
   }
 
   .card-element-dark {
+    --family-stack-color: rgba(42, 35, 66, 0.72);
     background: rgba(42, 35, 66, 0.86);
   }
 
@@ -751,6 +882,20 @@
     justify-content: center;
   }
 
+  .family-badge {
+    position: absolute;
+    right: 8rpx;
+    top: 8rpx;
+    padding: 4rpx 10rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.42);
+    border-radius: 999rpx;
+    background: rgba(18, 26, 38, 0.54);
+    color: #fff;
+    font-size: 20rpx;
+    font-weight: 800;
+    letter-spacing: 2rpx;
+  }
+
   .character-info {
     padding: 12rpx 14rpx 16rpx;
   }
@@ -768,6 +913,34 @@
     white-space: nowrap;
   }
 
+  .representative-row {
+    min-width: 0;
+    height: 38rpx;
+    margin-top: 4rpx;
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+
+  .representative-label {
+    flex: none;
+    padding: 2rpx 8rpx;
+    border-radius: 6rpx;
+    background: rgba(255, 255, 255, 0.16);
+    color: currentColor;
+    font-size: 18rpx;
+    font-weight: 700;
+  }
+
+  .representative-name {
+    min-width: 0;
+    color: currentColor;
+    font-size: 22rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .stars {
     position: absolute;
     left: 8rpx;
@@ -775,7 +948,7 @@
     min-width: 46rpx;
     padding: 4rpx 10rpx;
     border-radius: 999rpx;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.7);
     color: currentColor;
     font-size: 22rpx;
     font-weight: 900;
@@ -792,6 +965,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8rpx;
+  }
+
+  .family-meta-row {
+    margin-top: 4rpx;
   }
 
   .meta-chip {
@@ -843,6 +1020,10 @@
   }
 
   .card-element-light .meta-chip {
+    background: rgba(18, 26, 38, 0.08);
+  }
+
+  .card-element-light .representative-label {
     background: rgba(18, 26, 38, 0.08);
   }
 
