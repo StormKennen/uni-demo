@@ -22,6 +22,17 @@
     </view>
 
     <view v-else class="content">
+      <view v-if="sameElementForms.length > 1" class="awaken-toggle">
+        <view
+          v-for="tab in awakenTabs"
+          :key="tab.label"
+          class="awaken-tab"
+          :class="{ active: tab.label === activeAwakenLabel }"
+          @click="onAwakenTabClick(tab.label)">
+          <text>{{ tab.label }}</text>
+        </view>
+      </view>
+
       <view class="hero-card">
         <view class="avatar-column">
           <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
@@ -29,7 +40,6 @@
             <text>{{ detail.name.slice(0, 1) || '?' }}</text>
           </view>
           <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
-          <text v-if="detail.statusText" class="update-text">{{ detail.statusText }}</text>
         </view>
 
         <view class="profile-column">
@@ -47,47 +57,16 @@
               </view>
               <text v-if="detail.description" class="species">{{ detail.description }}</text>
             </view>
-            <view class="actions">
-              <text class="action-icon" :class="{ active: isFavorite }" @click="toggleFavorite">☆</text>
-              <text class="action-icon" @click="copyName">💬</text>
-              <text class="action-icon" @click="shareCharacter">↗</text>
-            </view>
           </view>
 
           <view class="element-row">
             <view
               v-for="option in elementBadges"
               :key="option.value"
-              class="element-badge"
-              :class="{ active: option.label === detail.elementName || option.value === detail.elementKey }">
-              <text>{{ option.icon }}</text>
+              class="element-dot"
+              :class="{ active: option.label === detail.elementName || option.value === detail.elementKey }"
+              :style="{ background: option.color }">
             </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="sameElementForms.length > 1" class="awaken-switch-card">
-        <view class="awaken-switch-head">
-          <view>
-            <text class="awaken-title">觉醒形态</text>
-            <text class="awaken-subtitle">同属性形态切换</text>
-          </view>
-          <text class="awaken-count">{{ sameElementForms.length }} 个形态</text>
-        </view>
-        <view class="awaken-form-row">
-          <view
-            v-for="form in sameElementForms"
-            :key="form.id"
-            class="awaken-form"
-            :class="{ current: form.isCurrent }"
-            @click="switchAwakenForm(form)">
-            <image v-if="form.avatar" class="awaken-avatar" :src="form.avatar" mode="aspectFill" lazy-load />
-            <view v-else class="awaken-avatar awaken-placeholder">{{ form.name.slice(0, 1) || '?' }}</view>
-            <view class="awaken-info">
-              <text class="awaken-label">{{ form.formLabel }}</text>
-              <text class="awaken-name">{{ form.name || '未知魔灵' }}</text>
-            </view>
-            <text v-if="form.isCurrent" class="current-mark">当前</text>
           </view>
         </view>
       </view>
@@ -297,7 +276,6 @@
   }
 
   const COMPENDIUM_CODE = 'swc'
-  const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
 
   // const topTabs = [
   //   { key: 'main' as const, label: '主要数据' },
@@ -314,11 +292,11 @@
   // ]
 
   const elementBadges = [
-    { label: '火', value: 'fire', icon: '🔥' },
-    { label: '水', value: 'water', icon: '🌊' },
-    { label: '风', value: 'wind', icon: '🌪️' },
-    { label: '光', value: 'light', icon: '🛡️' },
-    { label: '暗', value: 'dark', icon: '⚫' },
+    { label: '火', value: 'fire', color: '#f45b62' },
+    { label: '水', value: 'water', color: '#4b9df4' },
+    { label: '风', value: 'wind', color: '#f5c542' },
+    { label: '光', value: 'light', color: '#f5f0c1' },
+    { label: '暗', value: 'dark', color: '#8b5cf6' },
   ]
 
   const activeSectionTab = ref<SectionTabKey>('skills')
@@ -327,7 +305,7 @@
   const characterId = ref('')
   const seedName = ref('')
   const seedAvatar = ref('')
-  const favoriteIds = ref<string[]>([])
+
   const detail = ref<CharacterDetail>({
     id: '',
     name: '',
@@ -580,7 +558,7 @@
       archetype: getCategoryValue(categories, 'archetype'),
       family: getCategoryValue(categories, 'family'),
       description: res.description || '',
-      statusText: res.status === 'enabled' ? '已收录' : '',
+      statusText: '',
       attributes,
       categories,
       skills: (res.skills || []).map(normalizeSkill),
@@ -588,17 +566,6 @@
       familyMembers,
     }
   }
-
-  const readFavoriteIds = (): string[] => {
-    const value = uni.getStorageSync(FAVORITE_KEY)
-    return Array.isArray(value) ? value.filter(item => typeof item === 'string') : []
-  }
-
-  const saveFavoriteIds = (ids: string[]) => {
-    uni.setStorageSync(FAVORITE_KEY, ids)
-  }
-
-  const isFavorite = computed(() => favoriteIds.value.includes(detail.value.id || characterId.value))
 
   const createCurrentFamilyMember = (): NormalizedFamilyMember => ({
     id: detail.value.id || characterId.value,
@@ -625,11 +592,36 @@
     if (!forms.some(member => member.id === currentId)) {
       forms.unshift(createCurrentFamilyMember())
     }
-    return forms.map((member, index) => ({
+    const labeled = forms.map((member, index) => ({
       ...member,
       formLabel: member.formLabel || (index === 0 ? '未觉醒' : '觉醒'),
     }))
+    const awakened = labeled.filter(m => m.formLabel === '觉醒')
+    const unawakened = labeled.filter(m => m.formLabel !== '觉醒')
+    return [...awakened, ...unawakened]
   })
+
+  const awakenTabs = computed(() => {
+    const labels = new Set(sameElementForms.value.map(m => m.formLabel))
+    const tabs: { label: string }[] = []
+    if (labels.has('觉醒')) tabs.push({ label: '觉醒' })
+    if (labels.has('未觉醒')) tabs.push({ label: '未觉醒' })
+    for (const label of labels) {
+      if (label !== '觉醒' && label !== '未觉醒') tabs.push({ label })
+    }
+    return tabs
+  })
+
+  const activeAwakenLabel = computed(() => {
+    const current = sameElementForms.value.find(m => m.isCurrent)
+    return current?.formLabel || '觉醒'
+  })
+
+  const onAwakenTabClick = (label: string) => {
+    if (label === activeAwakenLabel.value) return
+    const target = sameElementForms.value.find(m => m.formLabel === label)
+    if (target) switchAwakenForm(target)
+  }
 
   const findAttribute = (keys: string[]): getCompendiumsCharacterResAttributes | undefined =>
     getAttributeByKey(detail.value.attributes, keys)
@@ -726,7 +718,6 @@
       }
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
-      favoriteIds.value = readFavoriteIds()
       uni.setNavigationBarTitle({ title: `魔灵 wiki-${detail.value.name || '详情'}` })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
@@ -734,32 +725,6 @@
       loading.value = false
       uni.stopPullDownRefresh()
     }
-  }
-
-  const toggleFavorite = () => {
-    const id = detail.value.id || characterId.value
-    if (!id) return
-    const set = new Set(favoriteIds.value)
-    if (set.has(id)) {
-      set.delete(id)
-      uni.showToast({ title: '已取消收藏', icon: 'none' })
-    } else {
-      set.add(id)
-      uni.showToast({ title: '已收藏', icon: 'success' })
-    }
-    favoriteIds.value = [...set]
-    saveFavoriteIds(favoriteIds.value)
-  }
-
-  const copyName = () => {
-    const name = detail.value.name
-    if (!name) return
-    uni.setClipboardData({ data: name, showToast: false })
-    uni.showToast({ title: '名称已复制', icon: 'success' })
-  }
-
-  const shareCharacter = () => {
-    uni.showToast({ title: '请使用右上角分享', icon: 'none' })
   }
 
   const switchAwakenForm = (form: NormalizedFamilyMember) => {
@@ -880,11 +845,6 @@
     color: #c75d4d;
   }
 
-  .update-text {
-    color: #a8afbb;
-    font-size: 24rpx;
-  }
-
   .code-text {
     padding: 4rpx 14rpx;
     border-radius: 999rpx;
@@ -963,154 +923,53 @@
     white-space: nowrap;
   }
 
-  .actions {
-    display: flex;
-    gap: 16rpx;
-    align-items: flex-start;
-  }
-
-  .action-icon {
-    font-size: 44rpx;
-    line-height: 48rpx;
-    color: #5f99df;
-  }
-
-  .action-icon.active {
-    color: #f1bd22;
-  }
-
   .element-row {
     margin-top: 24rpx;
-    display: grid;
-    grid-template-columns: repeat(5, 72rpx);
-    gap: 18rpx;
+    display: flex;
+    gap: 20rpx;
+    align-items: center;
   }
 
-  .element-badge {
-    height: 62rpx;
-    border: 2rpx solid #dce3ee;
-    border-radius: 16rpx;
-    background: #fff;
+  .element-dot {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    border: 4rpx solid transparent;
+    opacity: 0.4;
+  }
+
+  .element-dot.active {
+    opacity: 1;
+    border-color: #fff;
+    box-shadow:
+      0 0 0 4rpx currentColor,
+      0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  }
+
+  .awaken-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    height: 80rpx;
+    margin: 12rpx 22rpx;
+    padding: 6rpx;
+    border-radius: 999rpx;
+    background: #e8eef5;
+  }
+
+  .awaken-tab {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32rpx;
-  }
-
-  .element-badge.active {
-    border-color: #4b9df4;
-    box-shadow: 0 4rpx 12rpx rgba(49, 134, 230, 0.18);
-  }
-
-  .awaken-switch-card {
-    margin: 0 22rpx 18rpx;
-    padding: 20rpx;
-    border-radius: 18rpx;
-    background: #fff;
-    box-shadow: 0 2rpx 10rpx rgba(40, 52, 76, 0.04);
-  }
-
-  .awaken-switch-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16rpx;
-  }
-
-  .awaken-title {
-    display: block;
-    color: #141b2d;
-    font-size: 30rpx;
-    font-weight: 900;
-  }
-
-  .awaken-subtitle {
-    display: block;
-    margin-top: 4rpx;
-    color: #8a94a6;
-    font-size: 22rpx;
-  }
-
-  .awaken-count {
-    flex: none;
-    padding: 4rpx 12rpx;
     border-radius: 999rpx;
-    background: #f4f7fb;
-    color: #667085;
-    font-size: 22rpx;
+    color: #808997;
+    font-size: 28rpx;
     font-weight: 700;
   }
 
-  .awaken-form-row {
-    margin-top: 18rpx;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14rpx;
-  }
-
-  .awaken-form {
-    position: relative;
-    min-width: 0;
-    padding: 14rpx;
-    border: 2rpx solid #eef1f6;
-    border-radius: 16rpx;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-  }
-
-  .awaken-form.current {
-    border-color: #4b9df4;
-    background: #edf6ff;
-  }
-
-  .awaken-avatar {
-    flex: none;
-    width: 72rpx;
-    height: 72rpx;
-    border-radius: 14rpx;
-    background: #fff;
-  }
-
-  .awaken-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #667085;
-    font-size: 28rpx;
-    font-weight: 800;
-  }
-
-  .awaken-info {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4rpx;
-  }
-
-  .awaken-label {
-    color: #4b9df4;
-    font-size: 22rpx;
-    font-weight: 800;
-  }
-
-  .awaken-name {
-    color: #182134;
-    font-size: 26rpx;
-    font-weight: 800;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .current-mark {
-    position: absolute;
-    right: 10rpx;
-    top: 8rpx;
-    color: #4b9df4;
-    font-size: 20rpx;
-    font-weight: 800;
+  .awaken-tab.active {
+    color: #fff;
+    background: #4b9df4;
+    box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.3);
   }
 
   .stat-grid {
