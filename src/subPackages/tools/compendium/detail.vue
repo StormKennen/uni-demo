@@ -66,6 +66,32 @@
         </view>
       </view>
 
+      <view v-if="sameElementForms.length > 1" class="awaken-switch-card">
+        <view class="awaken-switch-head">
+          <view>
+            <text class="awaken-title">觉醒形态</text>
+            <text class="awaken-subtitle">同属性形态切换</text>
+          </view>
+          <text class="awaken-count">{{ sameElementForms.length }} 个形态</text>
+        </view>
+        <view class="awaken-form-row">
+          <view
+            v-for="form in sameElementForms"
+            :key="form.id"
+            class="awaken-form"
+            :class="{ current: form.isCurrent }"
+            @click="switchAwakenForm(form)">
+            <image v-if="form.avatar" class="awaken-avatar" :src="form.avatar" mode="aspectFill" lazy-load />
+            <view v-else class="awaken-avatar awaken-placeholder">{{ form.name.slice(0, 1) || '?' }}</view>
+            <view class="awaken-info">
+              <text class="awaken-label">{{ form.formLabel }}</text>
+              <text class="awaken-name">{{ form.name || '未知魔灵' }}</text>
+            </view>
+            <text v-if="form.isCurrent" class="current-mark">当前</text>
+          </view>
+        </view>
+      </view>
+
       <view class="stat-grid">
         <view v-for="stat in primaryStats" :key="stat.key" class="stat-card">
           <view class="stat-title">
@@ -177,7 +203,6 @@
     getCompendiumsCharacterResSkins,
   } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
-  type TopTabKey = 'main' | 'runes' | 'team'
   type SectionTabKey = 'skills' | 'review' | 'change' | 'tags' | 'more'
 
   interface NormalizedCoefficient {
@@ -214,6 +239,23 @@
     image: string
   }
 
+  interface NormalizedFamilyMember {
+    id: string
+    name: string
+    code: string
+    avatar: string
+    elementKey: string
+    elementName: string
+    formLabel: string
+    sortOrder: number
+    isCurrent: boolean
+  }
+
+  interface NormalizedElement {
+    key: string
+    name: string
+  }
+
   interface CharacterDetail {
     id: string
     name: string
@@ -234,6 +276,7 @@
     categories: NormalizedCategory[]
     skills: NormalizedSkill[]
     skins: NormalizedSkin[]
+    familyMembers: NormalizedFamilyMember[]
   }
 
   interface StatItem {
@@ -278,7 +321,6 @@
     { label: '暗', value: 'dark', icon: '⚫' },
   ]
 
-  const activeTopTab = ref<TopTabKey>('main')
   const activeSectionTab = ref<SectionTabKey>('skills')
   const loading = ref(false)
   const errorMessage = ref('')
@@ -306,6 +348,7 @@
     categories: [],
     skills: [],
     skins: [],
+    familyMembers: [],
   })
 
   const stringifyValue = (value: unknown): string => {
@@ -313,6 +356,34 @@
     if (typeof value === 'number') return String(value)
     if (typeof value === 'boolean') return value ? '是' : '否'
     return ''
+  }
+
+  const readRecordString = (record: Record<string, unknown>, keys: string[]): string => {
+    for (const key of keys) {
+      const value = stringifyValue(record[key]).trim()
+      if (value) return value
+    }
+    return ''
+  }
+
+  const readRecordNumber = (record: Record<string, unknown>, keys: string[]): number => {
+    for (const key of keys) {
+      const value = record[key]
+      if (typeof value === 'number') return value
+      if (typeof value === 'string' && value.trim()) {
+        const numberValue = Number(value)
+        if (!Number.isNaN(numberValue)) return numberValue
+      }
+    }
+    return 0
+  }
+
+  const readRecordArray = (record: Record<string, unknown>, keys: string[]): unknown[] => {
+    for (const key of keys) {
+      const value = record[key]
+      if (Array.isArray(value)) return value
+    }
+    return []
   }
 
   const normalizeUrl = (url?: string): string => {
@@ -337,6 +408,18 @@
     color: category.color || '',
     icon: category.icon || '',
   })
+
+  const normalizeCategoryRecord = (source: unknown): NormalizedCategory | null => {
+    if (!isRecord(source)) return null
+    return {
+      key: readRecordString(source, ['key']),
+      name: readRecordString(source, ['name']),
+      valueKey: readRecordString(source, ['valueKey']),
+      value: readRecordString(source, ['value']),
+      color: readRecordString(source, ['color']),
+      icon: readRecordString(source, ['icon']),
+    }
+  }
 
   const normalizeCoefficient = (coefficient: getCompendiumsCharacterResSkillsCoefficients): NormalizedCoefficient => ({
     id: coefficient.id || coefficient.key || coefficient.name || '',
@@ -383,6 +466,67 @@
 
   const getCategoryValue = (categories: NormalizedCategory[], key: string): string => getCategory(categories, key)?.value || ''
 
+  const normalizeElementKey = (value: string): string => {
+    const normalizedValue = value.trim()
+    const map: Record<string, string> = {
+      火: 'fire',
+      水: 'water',
+      风: 'wind',
+      光: 'light',
+      暗: 'dark',
+    }
+    return map[normalizedValue] || normalizedValue.toLowerCase()
+  }
+
+  const readElement = (record: Record<string, unknown>, categories: NormalizedCategory[]): NormalizedElement => {
+    const category = getCategory(categories, 'element')
+    const element = record.element
+    if (isRecord(element)) {
+      const key = readRecordString(element, ['key', 'valueKey', 'value'])
+      const name = readRecordString(element, ['name', 'value'])
+      return {
+        key: normalizeElementKey(key || category?.valueKey || category?.value || ''),
+        name: name || category?.value || '',
+      }
+    }
+    const elementText = stringifyValue(element).trim()
+    return {
+      key: normalizeElementKey(category?.valueKey || elementText || category?.value || ''),
+      name: category?.value || elementText,
+    }
+  }
+
+  const formatAwakenLabel = (record: Record<string, unknown>, categories: NormalizedCategory[]): string => {
+    const awakenCategory = categories.find(item => ['awakening', 'awaken', 'form', 'stage'].includes(item.key))
+    const rawValue =
+      readRecordString(record, ['awakening', 'awaken', 'awakened', 'isAwakened', 'form', 'stage', 'state']) || awakenCategory?.value || ''
+    const lowerValue = rawValue.toLowerCase()
+    if (['否', 'false', '0'].includes(lowerValue) || lowerValue.includes('未') || lowerValue.includes('unawaken')) return '未觉醒'
+    if (['是', 'true', '1'].includes(lowerValue) || lowerValue.includes('觉醒') || lowerValue.includes('awaken')) return '觉醒'
+    return rawValue
+  }
+
+  const normalizeFamilyMember = (source: unknown): NormalizedFamilyMember | null => {
+    if (!isRecord(source)) return null
+    const categories = readRecordArray(source, ['categories'])
+      .map(normalizeCategoryRecord)
+      .filter((item): item is NormalizedCategory => Boolean(item))
+    const element = readElement(source, categories)
+    const id = readRecordString(source, ['id', 'characterId'])
+    if (!id) return null
+    return {
+      id,
+      name: readRecordString(source, ['name', 'title']),
+      code: readRecordString(source, ['code']),
+      avatar: normalizeUrl(readRecordString(source, ['avatar', 'icon', 'image', 'cover', 'portrait'])),
+      elementKey: element.key,
+      elementName: element.name,
+      formLabel: formatAwakenLabel(source, categories),
+      sortOrder: readRecordNumber(source, ['sortOrder']),
+      isCurrent: id === (detail.value.id || characterId.value),
+    }
+  }
+
   const getElementIcon = (elementKey: string, elementName: string): string => {
     const key = elementKey || elementName
     const map: Record<string, string> = {
@@ -411,11 +555,13 @@
 
   const normalizeDetail = (rawRes: getCompendiumsCharacterRes): CharacterDetail => {
     const res = extractDetailData(rawRes)
+    const record = isRecord(res) ? res : {}
     const categories = (res.categories || []).map(normalizeCategory)
     const attributes = res.attributes || []
-    const elementCategory = getCategory(categories, 'element')
-    const elementKey = elementCategory?.valueKey || ''
-    const elementName = elementCategory?.value || ''
+    const element = readElement(record, categories)
+    const familyMembers = readRecordArray(record, ['familyMembers'])
+      .map(normalizeFamilyMember)
+      .filter((item): item is NormalizedFamilyMember => Boolean(item))
     const stars = formatAttributeValue(getAttributeByKey(attributes, ['stars', '星级'])).replace(/星$/, '')
     const aliases = res.aliases || []
 
@@ -426,9 +572,9 @@
       alias: aliases[0] || '',
       aliases,
       avatar: normalizeUrl(res.avatar || seedAvatar.value),
-      elementKey,
-      elementName,
-      elementIcon: getElementIcon(elementKey, elementName),
+      elementKey: element.key,
+      elementName: element.name,
+      elementIcon: getElementIcon(element.key, element.name),
       level: res.level || '',
       stars,
       archetype: getCategoryValue(categories, 'archetype'),
@@ -439,6 +585,7 @@
       categories,
       skills: (res.skills || []).map(normalizeSkill),
       skins: (res.skins || []).map(normalizeSkin),
+      familyMembers,
     }
   }
 
@@ -452,6 +599,37 @@
   }
 
   const isFavorite = computed(() => favoriteIds.value.includes(detail.value.id || characterId.value))
+
+  const createCurrentFamilyMember = (): NormalizedFamilyMember => ({
+    id: detail.value.id || characterId.value,
+    name: detail.value.name || seedName.value,
+    code: detail.value.code,
+    avatar: detail.value.avatar || seedAvatar.value,
+    elementKey: detail.value.elementKey,
+    elementName: detail.value.elementName,
+    formLabel: '',
+    sortOrder: 0,
+    isCurrent: true,
+  })
+
+  const sameElementForms = computed<NormalizedFamilyMember[]>(() => {
+    const currentId = detail.value.id || characterId.value
+    const currentElementKey = detail.value.elementKey
+    if (!currentId || !currentElementKey) return []
+    const forms = detail.value.familyMembers
+      .filter(member => member.elementKey === currentElementKey)
+      .map(member => ({
+        ...member,
+        isCurrent: member.id === currentId,
+      }))
+    if (!forms.some(member => member.id === currentId)) {
+      forms.unshift(createCurrentFamilyMember())
+    }
+    return forms.map((member, index) => ({
+      ...member,
+      formLabel: member.formLabel || (index === 0 ? '未觉醒' : '觉醒'),
+    }))
+  })
 
   const findAttribute = (keys: string[]): getCompendiumsCharacterResAttributes | undefined =>
     getAttributeByKey(detail.value.attributes, keys)
@@ -582,6 +760,21 @@
 
   const shareCharacter = () => {
     uni.showToast({ title: '请使用右上角分享', icon: 'none' })
+  }
+
+  const switchAwakenForm = (form: NormalizedFamilyMember) => {
+    if (form.isCurrent || !form.id) return
+    characterId.value = form.id
+    seedName.value = form.name
+    seedAvatar.value = form.avatar
+    detail.value = {
+      ...detail.value,
+      id: form.id,
+      name: form.name,
+      avatar: form.avatar,
+    }
+    uni.pageScrollTo({ scrollTop: 0, duration: 120 })
+    loadDetail()
   }
 
   onLoad((options: Record<string, string | undefined>) => {
@@ -807,6 +1000,117 @@
   .element-badge.active {
     border-color: #4b9df4;
     box-shadow: 0 4rpx 12rpx rgba(49, 134, 230, 0.18);
+  }
+
+  .awaken-switch-card {
+    margin: 0 22rpx 18rpx;
+    padding: 20rpx;
+    border-radius: 18rpx;
+    background: #fff;
+    box-shadow: 0 2rpx 10rpx rgba(40, 52, 76, 0.04);
+  }
+
+  .awaken-switch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+  }
+
+  .awaken-title {
+    display: block;
+    color: #141b2d;
+    font-size: 30rpx;
+    font-weight: 900;
+  }
+
+  .awaken-subtitle {
+    display: block;
+    margin-top: 4rpx;
+    color: #8a94a6;
+    font-size: 22rpx;
+  }
+
+  .awaken-count {
+    flex: none;
+    padding: 4rpx 12rpx;
+    border-radius: 999rpx;
+    background: #f4f7fb;
+    color: #667085;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .awaken-form-row {
+    margin-top: 18rpx;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14rpx;
+  }
+
+  .awaken-form {
+    position: relative;
+    min-width: 0;
+    padding: 14rpx;
+    border: 2rpx solid #eef1f6;
+    border-radius: 16rpx;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .awaken-form.current {
+    border-color: #4b9df4;
+    background: #edf6ff;
+  }
+
+  .awaken-avatar {
+    flex: none;
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: 14rpx;
+    background: #fff;
+  }
+
+  .awaken-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #667085;
+    font-size: 28rpx;
+    font-weight: 800;
+  }
+
+  .awaken-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4rpx;
+  }
+
+  .awaken-label {
+    color: #4b9df4;
+    font-size: 22rpx;
+    font-weight: 800;
+  }
+
+  .awaken-name {
+    color: #182134;
+    font-size: 26rpx;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .current-mark {
+    position: absolute;
+    right: 10rpx;
+    top: 8rpx;
+    color: #4b9df4;
+    font-size: 20rpx;
+    font-weight: 800;
   }
 
   .stat-grid {
