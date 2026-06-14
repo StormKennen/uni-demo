@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/
@@ -145,6 +145,18 @@
       rawInput.value = decodeURIComponent(options.input)
     }
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => ({
+    title: '磁力链接 · 凉白开工具箱',
+    path: '/subPackages/tools/magnet-link/index',
+  }))
+
+  onShareTimeline(() => ({
+    title: '磁力链接 · 凉白开工具箱',
+    query: '',
+  }))
+  // #endif
 </script>
 
 <style scoped lang="scss">

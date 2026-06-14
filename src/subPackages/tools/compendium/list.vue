@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+  import { onLoad, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
@@ -513,9 +513,9 @@
       const pagination = isRecord(res) ? readPagination(res) : {}
       hasNext.value = Boolean(
         pagination.hasNext ||
-          pagination.hasNextPage ||
-          (pagination.totalPages && pagination.page && pagination.page < pagination.totalPages) ||
-          items.length >= PAGE_SIZE,
+        pagination.hasNextPage ||
+        (pagination.totalPages && pagination.page && pagination.page < pagination.totalPages) ||
+        items.length >= PAGE_SIZE,
       )
       page.value += 1
     } catch (error) {
@@ -583,6 +583,18 @@
   onReachBottom(() => {
     fetchCharacters()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => ({
+    title: '魔灵图鉴 · 凉白开工具箱',
+    path: '/subPackages/tools/compendium/list',
+  }))
+
+  onShareTimeline(() => ({
+    title: '魔灵图鉴 · 凉白开工具箱',
+    query: '',
+  }))
+  // #endif
 </script>
 
 <style scoped lang="scss">

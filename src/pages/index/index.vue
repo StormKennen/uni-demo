@@ -296,6 +296,15 @@
       link: '/subPackages/tools/markdown/index',
       disabled: false,
     },
+    {
+      id: 22,
+      name: '磁力链接',
+      desc: '自动补全/过滤/批量替换',
+      icon: 'link',
+      gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+      link: '/subPackages/tools/magnet-link/index',
+      disabled: false,
+    },
   ])
 
   // 图片工具
@@ -370,6 +379,15 @@
       icon: 'link',
       gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',
       link: '/subPackages/tools/watermark/index',
+      disabled: false,
+    },
+    {
+      id: 23,
+      name: '视频转GIF',
+      desc: '纯前端视频转动图',
+      icon: 'videocam',
+      gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+      link: '/subPackages/tools/video-gif/index',
       disabled: false,
     },
   ])
