@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
+  import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 
   const videoSrc = ref('')
   const videoDuration = ref(0)
@@ -395,6 +396,18 @@
   const shareGif = () => {
     uni.showToast({ title: '请长按图片分享', icon: 'none' })
   }
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => ({
+    title: '视频转GIF · 凉白开工具箱',
+    path: '/subPackages/tools/video-gif/index',
+  }))
+
+  onShareTimeline(() => ({
+    title: '视频转GIF · 凉白开工具箱',
+    query: '',
+  }))
+  // #endif
 </script>
 
 <style scoped lang="scss">

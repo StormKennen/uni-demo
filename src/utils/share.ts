@@ -13,7 +13,7 @@ export interface ShareConfig {
 const DEFAULT_SHARE_CONFIG: ShareConfig = {
   title: 'kai - 专业服务平台',
   path: '/pages/index/index',
-  imageUrl: '/static/logo.png'
+  imageUrl: '/static/logo.png',
 }
 
 /**
@@ -24,7 +24,7 @@ const DEFAULT_SHARE_CONFIG: ShareConfig = {
 export function getShareConfig(customConfig: Partial<ShareConfig> = {}): ShareConfig {
   return {
     ...DEFAULT_SHARE_CONFIG,
-    ...customConfig
+    ...customConfig,
   }
 }
 
@@ -53,7 +53,7 @@ export function createShareTimeline(customConfig: Partial<ShareConfig> = {}) {
     return {
       title: config.title,
       path: config.path,
-      imageUrl: config.imageUrl
+      imageUrl: config.imageUrl,
     }
   }
 }
@@ -66,43 +66,57 @@ export const PAGE_SHARE_CONFIGS = {
   index: {
     title: 'kai - 专业服务平台',
     path: '/pages/index/index',
-    imageUrl: '/static/logo.png'
+    imageUrl: '/static/logo.png',
   },
-  
+
   // 商城
   // mall: {
   //   title: 'kai商城 - 优质商品推荐',
   //   path: '/pages/mall/mall',
   //   imageUrl: '/static/logo.png'
   // },
-  
+
   // 个人中心
   mine: {
     title: 'kai - 我的个人中心',
     path: '/pages/mine/mine',
-    imageUrl: '/static/logo.png'
+    imageUrl: '/static/logo.png',
   },
-  
+
   // 族谱工具
   familyTree: {
     title: '族谱工具 - 记录家族传承',
     path: '/subPackages/tools/family-tree/index',
-    imageUrl: '/static/logo.png'
+    imageUrl: '/static/logo.png',
   },
-  
+
   // 二维码生成器
   qrGenerator: {
     title: '二维码生成器 - 快速生成二维码',
     path: '/subPackages/tools/qr-generator/index',
-    imageUrl: '/static/logo.png'
+    imageUrl: '/static/logo.png',
   },
-  
+
   // 图片压缩
   imageCompress: {
     title: '图片压缩工具 - 高效压缩图片',
     path: '/subPackages/tools/image-compress/index',
-    imageUrl: '/static/logo.png'
-  }
+    imageUrl: '/static/logo.png',
+  },
+
+  // 磁力链接
+  magnetLink: {
+    title: '磁力链接 · 凉白开工具箱',
+    path: '/subPackages/tools/magnet-link/index',
+    imageUrl: '/static/logo.png',
+  },
+
+  // 视频转GIF
+  videoGif: {
+    title: '视频转GIF · 凉白开工具箱',
+    path: '/subPackages/tools/video-gif/index',
+    imageUrl: '/static/logo.png',
+  },
 }
 
 /**
@@ -124,20 +138,20 @@ export function getPageShareConfig(pageType: keyof typeof PAGE_SHARE_CONFIGS, cu
  */
 export function useShare(pageType: keyof typeof PAGE_SHARE_CONFIGS = 'index', customConfig: Partial<ShareConfig> = {}) {
   const shareConfig = getPageShareConfig(pageType, customConfig)
-  
+
   const onShareAppMessage = () => {
     console.log('分享给朋友:', shareConfig)
     return shareConfig
   }
-  
+
   const onShareTimeline = () => {
     console.log('分享到朋友圈:', shareConfig)
     return shareConfig
   }
-  
+
   return {
     onShareAppMessage,
     onShareTimeline,
-    shareConfig
+    shareConfig,
   }
 }
