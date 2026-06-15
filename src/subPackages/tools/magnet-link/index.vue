@@ -1,10 +1,6 @@
 <template>
   <view class="magnet-page">
-    <nav-bar
-      always-title
-      title="磁力链接"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }" />
+    <PageLayout title="磁力链接" nav-gradient="linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" />
 
     <view class="content">
       <view class="section">
@@ -52,7 +48,7 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
-  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { onLoad } from '@dcloudio/uni-app'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/
@@ -145,18 +141,6 @@
       rawInput.value = decodeURIComponent(options.input)
     }
   })
-
-  // #ifdef MP-WEIXIN
-  onShareAppMessage(() => ({
-    title: '磁力链接 · 凉白开工具箱',
-    path: '/subPackages/tools/magnet-link/index',
-  }))
-
-  onShareTimeline(() => ({
-    title: '磁力链接 · 凉白开工具箱',
-    query: '',
-  }))
-  // #endif
 </script>
 
 <style scoped lang="scss">
