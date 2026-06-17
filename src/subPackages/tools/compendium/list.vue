@@ -101,9 +101,10 @@
           <view v-else class="avatar-placeholder">
             <text>{{ character.name.slice(0, 1) || '?' }}</text>
           </view>
-          <text v-if="character.stars" class="stars">{{ character.stars }}★</text>
-          <!-- <text v-if="isFamilyMode" class="family-badge">物种</text> -->
-          <!-- <view v-if="!isFamilyMode && character.isFavorite" class="favorite-badge">★</view> -->
+          <view v-if="character.stars" class="stars">
+            <text v-for="i in Number(character.stars)" :key="i" class="star-icon">★</text>
+          </view>
+          <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
         </view>
         <view class="character-info">
           <text class="character-name">
@@ -142,6 +143,7 @@
   import { onLoad, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { getUserInfo } from '@/utils/storage'
 
   type FilterKey = 'element' | 'star' | 'type' | 'sort'
   type SortOrder = 'asc' | 'desc'
@@ -562,6 +564,8 @@
     refreshCharacters()
   }
 
+  const isAdmin = computed(() => getUserInfo()?.role === 'admin')
+
   const goToDetail = (character: CharacterCard) => {
     const params = [
       `characterId=${encodeURIComponent(character.id)}`,
@@ -569,6 +573,11 @@
       `avatar=${encodeURIComponent(character.avatar)}`,
     ].join('&')
     uni.navigateTo({ url: `/subPackages/tools/compendium/detail?${params}` })
+  }
+
+  const goToEdit = (character: CharacterCard) => {
+    const params = [`characterId=${encodeURIComponent(character.id)}`, `name=${encodeURIComponent(character.name)}`].join('&')
+    uni.navigateTo({ url: `/subPackages/tools/compendium/edit?${params}` })
   }
 
   onLoad(() => {
@@ -955,20 +964,32 @@
 
   .stars {
     position: absolute;
-    left: 8rpx;
-    top: 8rpx;
-    min-width: 46rpx;
-    padding: 4rpx 10rpx;
-    border-radius: 999rpx;
-    background: rgba(255, 255, 255, 0.7);
-    color: currentColor;
-    font-size: 22rpx;
-    font-weight: 900;
-    text-align: center;
+    left: 6rpx;
+    top: 6rpx;
+    display: flex;
+    gap: 0;
   }
 
-  .card-element-light .stars {
-    background: rgba(18, 26, 38, 0.08);
+  .star-icon {
+    font-size: 24rpx;
+    color: #fbbf24;
+    text-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.3);
+  }
+
+  .edit-badge {
+    position: absolute;
+    right: 6rpx;
+    top: 6rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    color: #667eea;
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
   }
 
   .meta-row {
