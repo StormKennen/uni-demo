@@ -49,6 +49,7 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import PageLayout from '@/components/PageLayout.vue'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/
