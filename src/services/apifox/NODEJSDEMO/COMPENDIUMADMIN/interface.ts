@@ -57,3 +57,29 @@ export interface patchAdminCompendiumsCharactersRes {
   success?: boolean
   message?: string
 }
+
+/**
+ * @description CompendiumAdmin/更新图鉴--接口请求Body参数
+ * @url PATCH /admin/compendiums
+ */
+export interface patchAdminCompendiumsBody {
+  code?: string
+  compendiumId: string
+  description?: string
+  icon?: string
+  name?: string
+  status?: 'enabled' | 'disabled'
+}
+
+/**
+ * @description CompendiumAdmin/更新图鉴--接口返回值
+ * @url PATCH /admin/compendiums
+ */
+export interface patchAdminCompendiumsRes {
+  code?: string
+  description?: string
+  icon?: string
+  id?: string
+  name?: string
+  status?: 'enabled' | 'disabled'
+}
