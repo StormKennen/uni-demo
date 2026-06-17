@@ -6,7 +6,10 @@
       <view class="section">
         <view class="section-title">输入磁力链接</view>
         <textarea v-model="rawInput" class="input-area" placeholder="粘贴磁力链接，每行一个（支持不完整链接自动补全）" :maxlength="5000" />
-        <view class="input-counter">{{ rawInput.length }}/5000</view>
+        <view class="input-footer">
+          <text class="paste-btn" @click="readClipboard">粘贴</text>
+          <text class="input-counter">{{ rawInput.length }}/5000</text>
+        </view>
       </view>
 
       <view class="section">
@@ -48,7 +51,7 @@
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShow } from '@dcloudio/uni-app'
   import PageLayout from '@/components/PageLayout.vue'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
@@ -137,10 +140,54 @@
     stats.removed = 0
   }
 
+  const readClipboard = () => {
+    uni.getClipboardData({
+      success: res => {
+        if (res.data?.trim()) {
+          rawInput.value = rawInput.value ? rawInput.value + '\n' + res.data.trim() : res.data.trim()
+          uni.showToast({ title: '已粘贴', icon: 'success' })
+        } else {
+          uni.showToast({ title: '剪贴板为空', icon: 'none' })
+        }
+      },
+      fail: () => {
+        uni.showToast({ title: '读取剪贴板失败', icon: 'none' })
+      },
+    })
+  }
+
+  let hasAutoRead = false
+
   onLoad((options: Record<string, string | undefined>) => {
     if (options?.input) {
       rawInput.value = decodeURIComponent(options.input)
+      hasAutoRead = true
     }
+  })
+
+  onShow(() => {
+    if (hasAutoRead || rawInput.value) return
+    uni.getClipboardData({
+      success: res => {
+        const text = res.data?.trim()
+        if (!text) return
+        const hasMagnetHint = /magnet:|[a-fA-F0-9]{40}|[a-zA-Z2-7]{32}/i.test(text)
+        if (hasMagnetHint) {
+          uni.showModal({
+            title: '检测到剪贴板内容',
+            content: '发现疑似磁力链接，是否粘贴？',
+            confirmText: '粘贴',
+            cancelText: '取消',
+            success: modal => {
+              if (modal.confirm) {
+                rawInput.value = text
+              }
+            },
+          })
+        }
+      },
+    })
+    hasAutoRead = true
   })
 </script>
 
@@ -181,11 +228,25 @@
     box-sizing: border-box;
   }
 
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8rpx;
+  }
+
+  .paste-btn {
+    padding: 6rpx 20rpx;
+    border-radius: 8rpx;
+    background: #eef2ff;
+    color: #6366f1;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
   .input-counter {
-    text-align: right;
     font-size: 22rpx;
     color: #9ba3b1;
-    margin-top: 8rpx;
   }
 
   .replace-row {
