@@ -241,6 +241,12 @@
           }
         },
         {
+          "path": "compendium/edit",
+          "style": {
+            "navigationBarTitleText": "编辑角色"
+          }
+        },
+        {
           "path": "magnet-link/index",
           "style": {
             "navigationBarTitleText": "磁力链接",
