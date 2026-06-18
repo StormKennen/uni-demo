@@ -1,94 +1,102 @@
 <template>
   <view class="compendium-page">
     <view class="filter-shell">
-      <!-- <view class="filter-header">
-        <text class="filter-title">{{ isFamilyMode ? '物种图鉴' : '快速筛选' }}</text>
-        <text v-if="hasActiveFilters" class="filter-reset" @click="resetFilters">重置</text>
-      </view> -->
-
-      <view class="filter-section">
-        <text class="filter-label">属性</text>
-        <scroll-view class="filter-scroll" scroll-x enable-flex>
-          <view class="filter-chip-row">
-            <view
-              v-for="option in elementOptions"
-              :key="option.value"
-              class="quick-chip element-chip"
-              :class="[{ selected: option.value === selectedElement }, option.value !== ALL_VALUE ? 'element-filter-' + option.value : '']"
-              @click="selectFilter('element', option.value)">
-              <text v-if="option.value !== ALL_VALUE" class="element-dot"></text>
-              <text>{{ option.label }}</text>
-            </view>
+      <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
+        <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
+        <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
+          <view class="filter-tags-row">
+            <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
           </view>
         </scroll-view>
+        <text v-else class="filter-hint">点击展开筛选</text>
+        <text class="filter-expand-arrow">▼</text>
       </view>
 
-      <!-- <view v-if="isFamilyMode" class="family-mode-tip">
-        <text>筛选和排序基于代表魔灵，每个物种展示一张卡片</text>
-      </view> -->
-
-      <view class="filter-section">
-        <text class="filter-label">形态</text>
-        <scroll-view class="filter-scroll" scroll-x enable-flex>
-          <view class="filter-chip-row">
-            <view
-              v-for="option in awakenOptions"
-              :key="option.value"
-              class="quick-chip"
-              :class="{ selected: option.value === selectedAwaken }"
-              @click="selectFilter('awaken', option.value)">
-              <text>{{ option.label }}</text>
+      <view v-else class="filter-expanded">
+        <view class="filter-section">
+          <text class="filter-label">属性</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row">
+              <view
+                v-for="option in elementOptions"
+                :key="option.value"
+                class="quick-chip element-chip"
+                :class="[{ selected: option.value === selectedElement }, option.value !== ALL_VALUE ? 'element-filter-' + option.value : '']"
+                @click="selectFilter('element', option.value)">
+                <text v-if="option.value !== ALL_VALUE" class="element-dot"></text>
+                <text>{{ option.label }}</text>
+              </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
+          </scroll-view>
+        </view>
 
-      <view class="filter-section">
-        <text class="filter-label">类型</text>
-        <scroll-view class="filter-scroll" scroll-x enable-flex>
-          <view class="filter-chip-row">
-            <view
-              v-for="option in typeOptions"
-              :key="option.value"
-              class="quick-chip"
-              :class="{ selected: option.value === selectedType }"
-              @click="selectFilter('type', option.value)">
-              <text>{{ option.label }}</text>
+        <view class="filter-section">
+          <text class="filter-label">形态</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row">
+              <view
+                v-for="option in awakenOptions"
+                :key="option.value"
+                class="quick-chip"
+                :class="{ selected: option.value === selectedAwaken }"
+                @click="selectFilter('awaken', option.value)">
+                <text>{{ option.label }}</text>
+              </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
+          </scroll-view>
+        </view>
 
-      <view class="filter-section">
-        <text class="filter-label">星级</text>
-        <scroll-view class="filter-scroll" scroll-x enable-flex>
-          <view class="filter-chip-row">
-            <view
-              v-for="option in starOptions"
-              :key="option.value"
-              class="quick-chip"
-              :class="{ selected: option.value === selectedStar }"
-              @click="selectFilter('star', option.value)">
-              <text>{{ option.label }}</text>
+        <view class="filter-section">
+          <text class="filter-label">类型</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row">
+              <view
+                v-for="option in typeOptions"
+                :key="option.value"
+                class="quick-chip"
+                :class="{ selected: option.value === selectedType }"
+                @click="selectFilter('type', option.value)">
+                <text>{{ option.label }}</text>
+              </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
+          </scroll-view>
+        </view>
 
-      <view class="filter-section">
-        <text class="filter-label">排序</text>
-        <scroll-view class="filter-scroll" scroll-x enable-flex>
-          <view class="filter-chip-row">
-            <view
-              v-for="option in sortOptions"
-              :key="option.value"
-              class="quick-chip"
-              :class="{ selected: option.value === selectedSort }"
-              @click="selectFilter('sort', option.value)">
-              <text>{{ getSortOptionLabel(option) }}</text>
+        <view class="filter-section">
+          <text class="filter-label">星级</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row">
+              <view
+                v-for="option in starOptions"
+                :key="option.value"
+                class="quick-chip"
+                :class="{ selected: option.value === selectedStar }"
+                @click="selectFilter('star', option.value)">
+                <text>{{ option.label }}</text>
+              </view>
             </view>
-          </view>
-        </scroll-view>
+          </scroll-view>
+        </view>
+
+        <view class="filter-section">
+          <text class="filter-label">排序</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row">
+              <view
+                v-for="option in sortOptions"
+                :key="option.value"
+                class="quick-chip"
+                :class="{ selected: option.value === selectedSort }"
+                @click="selectFilter('sort', option.value)">
+                <text>{{ getSortOptionLabel(option) }}</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="filter-collapse-bar" @click="filterExpanded = false">
+          <text class="filter-collapse-text">收起筛选 ▲</text>
+        </view>
       </view>
     </view>
 
@@ -271,6 +279,7 @@
     // { label: '浏览热度', value: 'popularity' },
   ]
 
+  const filterExpanded = ref(true)
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
@@ -293,6 +302,30 @@
       selectedType.value !== ALL_VALUE ||
       selectedSort.value !== ALL_VALUE,
   )
+
+  const activeFilterTags = computed<string[]>(() => {
+    const tags: string[] = []
+    const awakenLabel = awakenOptions.find(o => o.value === selectedAwaken.value)?.label
+    if (awakenLabel) tags.push(awakenLabel)
+    if (selectedElement.value !== ALL_VALUE) {
+      const label = elementOptions.find(o => o.value === selectedElement.value)?.label
+      if (label) tags.push(label)
+    }
+    if (selectedType.value !== ALL_VALUE) {
+      const label = typeOptions.find(o => o.value === selectedType.value)?.label
+      if (label) tags.push(label)
+    }
+    if (selectedStar.value !== ALL_VALUE) {
+      const label = starOptions.find(o => o.value === selectedStar.value)?.label
+      if (label) tags.push(label)
+    }
+    if (selectedSort.value !== DEFAULT_SORT_FIELD) {
+      const label = sortOptions.find(o => o.value === selectedSort.value)?.label
+      if (label) tags.push(`排序:${label}`)
+    }
+    return tags
+  })
+
   const emptyText = computed(() => (isFamilyMode.value ? '暂无物种数据' : '暂无符合条件的魔灵'))
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -643,6 +676,78 @@
     background: #fff;
     border-bottom: 1rpx solid #eef0f5;
     box-shadow: 0 8rpx 22rpx rgba(30, 42, 64, 0.06);
+  }
+
+  .filter-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    padding: 16rpx 24rpx;
+    min-height: 72rpx;
+  }
+
+  .filter-icon {
+    flex: none;
+    font-size: 36rpx;
+    color: #b0b8c4;
+  }
+
+  .filter-icon.active {
+    color: #4b9df4;
+  }
+
+  .filter-tags-scroll {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .filter-tags-row {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+  }
+
+  .filter-tag {
+    flex: none;
+    height: 44rpx;
+    line-height: 44rpx;
+    padding: 0 16rpx;
+    border-radius: 999rpx;
+    background: #eef3fb;
+    color: #4b9df4;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .filter-hint {
+    flex: 1;
+    color: #b0b8c4;
+    font-size: 24rpx;
+  }
+
+  .filter-expand-arrow {
+    flex: none;
+    color: #b0b8c4;
+    font-size: 22rpx;
+  }
+
+  .filter-expanded {
+    padding-top: 8rpx;
+  }
+
+  .filter-collapse-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 64rpx;
+    border-top: 1rpx solid #eef0f5;
+  }
+
+  .filter-collapse-text {
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
   }
 
   .filter-header {
