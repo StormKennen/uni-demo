@@ -131,7 +131,7 @@
         {
           "path": "image-cipher/index",
           "style": {
-            "navigationBarTitleText": "图片加密",
+            "navigationBarTitleText": "图片混淆",
             "navigationStyle": "custom"
           }
         },

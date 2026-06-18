@@ -2,7 +2,7 @@
   <view class="cipher-page">
     <NavBar
       always-title
-      title="图片加密"
+      title="图片混淆"
       custom-class="light"
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' }"
     />
@@ -11,7 +11,7 @@
       <view class="card upload-card">
         <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
           <uni-icons type="image" size="56" color="#b0bec5" />
-          <text class="upload-title">点击上传需要加密的图片</text>
+          <text class="upload-title">点击上传需要混淆的图片</text>
           <text class="upload-desc">支持 JPG / PNG / WebP，最大 20MB</text>
           <text class="upload-hint">所有处理均在本地完成，不会上传服务器</text>
         </view>
@@ -32,7 +32,7 @@
             </view>
           </view>
           <view class="preview-footer">
-            <text class="result-meta">兼容模式：依据密钥即可在任意渠道解密</text>
+            <text class="result-meta">兼容模式：依据密钥即可在任意渠道还原</text>
             <view class="preview-actions">
               <button class="ghost-btn" @click="saveResult">保存/下载</button>
               <button class="ghost-btn" @click="copyDataUrl" :disabled="!currentImage.src.startsWith('data:')">复制 DataURL</button>
@@ -42,7 +42,7 @@
       </view>
 
       <view class="share-entry" v-if="!isH5">
-        <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「图片加密」工具</text>
+        <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「图片混淆」工具</text>
         <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
       </view>
       <view class="share-entry" v-else>
@@ -50,7 +50,7 @@
       </view>
 
       <view class="card control-card" v-if="baseImage.src">
-        <text class="mode-hint">兼容模式：可在微信相册、社交平台等渠道保存后再解密</text>
+        <text class="mode-hint">兼容模式：可在微信相册、社交平台等渠道保存后再还原</text>
 
         <view class="control-group">
           <text class="control-label">密钥（任意字符）</text>
@@ -77,14 +77,14 @@
             loading-text="处理中..."
             :disabled="isProcessing"
             @click="() => handleCipher('encrypt')"
-          >加密一次</button>
+          >混淆一次</button>
           <button
             class="ghost-btn"
             :loading="isProcessing"
             loading-text="处理中..."
             :disabled="isProcessing"
             @click="() => handleCipher('decrypt')"
-          >解密一次</button>
+          >还原一次</button>
         </view>
         <button
           class="ghost-btn full"
@@ -158,7 +158,7 @@ const platformType = computed<'weapp' | 'h5' | 'app'>(() => {
   return 'app'
 })
 
-const SHARE_TITLE = '图片加密 · 凉白开工具箱'
+const SHARE_TITLE = '图片混淆 · 凉白开工具箱'
 const SHARE_PATH = '/subPackages/tools/image-cipher/index'
 
 const formatFileSize = (size: number) => {
@@ -235,7 +235,7 @@ const restoreOriginal = async () => {
       currentImage.size = baseImage.size
       uni.showToast({ title: '已还原到原图', icon: 'success' })
     } else {
-      uni.showToast({ title: `已尝试 ${rounds} 次解密`, icon: 'none' })
+      uni.showToast({ title: `已尝试 ${rounds} 次还原`, icon: 'none' })
     }
   } catch (err) {
     console.error(err)
@@ -293,7 +293,7 @@ const handleCipher = async (mode: 'encrypt' | 'decrypt') => {
   isProcessing.value = true
   try {
     await runSimpleCipher(mode)
-    uni.showToast({ title: mode === 'encrypt' ? '加密成功' : '解密完成', icon: 'success' })
+    uni.showToast({ title: mode === 'encrypt' ? '混淆成功' : '还原完成', icon: 'success' })
   } catch (err) {
     console.error(err)
     uni.showToast({ title: '处理失败，请重试', icon: 'none' })
