@@ -67,47 +67,48 @@
         </view>
       </view>
 
-      <view class="stat-grid">
-        <view v-for="stat in primaryStats" :key="stat.key" class="stat-card">
-          <view class="stat-title">
-            <text class="stat-icon">{{ stat.icon }}</text>
-            <text>{{ stat.label }}</text>
-            <text class="stat-value">{{ stat.value || '--' }}</text>
-            <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
-          </view>
-          <view class="stat-bar">
-            <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
-          </view>
-        </view>
-      </view>
-
-      <view class="minor-stat-grid">
-        <view v-for="stat in secondaryStats" :key="stat.key" class="minor-stat">
-          <text>{{ stat.label }}</text>
-          <view class="minor-stat-value">
-            <text>{{ stat.value || '--' }}</text>
-            <text v-if="stat.rankLabel" class="minor-rank">{{ stat.rankLabel }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- <view class="section-tabs">
+      <view class="detail-tabs">
         <view
-          v-for="tab in sectionTabs"
-          :key="tab.key"
-          class="section-tab"
-          :class="{ active: activeSectionTab === tab.key }"
-          @click="activeSectionTab = tab.key">
-          {{ tab.label }}
+          class="detail-tab"
+          :class="{ active: activeDetailTab === 'stats' }"
+          @click="activeDetailTab = 'stats'">
+          <text>属性</text>
         </view>
-      </view> -->
+        <view
+          class="detail-tab"
+          :class="{ active: activeDetailTab === 'skills' }"
+          @click="activeDetailTab = 'skills'">
+          <text>技能</text>
+        </view>
+      </view>
 
-      <view v-if="activeSectionTab === 'skills'" class="skill-section">
-        <view class="language-toggle">
-          <text class="selected">英文</text>
-          <text>中文</text>
+      <view v-if="activeDetailTab === 'stats'" class="stats-panel">
+        <view class="stat-grid">
+          <view v-for="stat in primaryStats" :key="stat.key" class="stat-card">
+            <view class="stat-title">
+              <text class="stat-icon">{{ stat.icon }}</text>
+              <text>{{ stat.label }}</text>
+              <text class="stat-value">{{ stat.value || '--' }}</text>
+              <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+            </view>
+            <view class="stat-bar">
+              <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
+            </view>
+          </view>
         </view>
 
+        <view class="minor-stat-grid">
+          <view v-for="stat in secondaryStats" :key="stat.key" class="minor-stat">
+            <text>{{ stat.label }}</text>
+            <view class="minor-stat-value">
+              <text>{{ stat.value || '--' }}</text>
+              <text v-if="stat.rankLabel" class="minor-rank">{{ stat.rankLabel }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view v-else-if="activeDetailTab === 'skills'" class="skill-section">
         <view v-if="detail.skills.length === 0" class="empty-card">暂无技能信息</view>
         <view v-for="skill in detail.skills" :key="skill.id || skill.name" class="skill-card" :class="{ leader: skill.type === 'leader' }">
           <view class="skill-head">
@@ -131,35 +132,6 @@
           </view>
         </view>
       </view>
-
-      <view v-else-if="activeSectionTab === 'tags'" class="tag-section">
-        <view v-if="detail.categories.length === 0" class="empty-card">暂无标签</view>
-        <view v-else class="category-list">
-          <view v-for="category in detail.categories" :key="category.key + category.value" class="category-chip">
-            <text>{{ category.name }}</text>
-            <text>{{ category.value }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view v-else-if="activeSectionTab === 'more'" class="more-section">
-        <view class="info-card">
-          <text class="info-title">别名</text>
-          <text class="info-text">{{ detail.aliases.join('、') || '暂无' }}</text>
-        </view>
-        <view class="info-card">
-          <text class="info-title">皮肤</text>
-          <view v-if="detail.skins.length" class="skin-list">
-            <view v-for="skin in detail.skins" :key="skin.id || skin.name" class="skin-card">
-              <image v-if="skin.image" class="skin-image" :src="skin.image" mode="aspectFill" lazy-load />
-              <text>{{ skin.name || '皮肤' }}</text>
-            </view>
-          </view>
-          <text v-else class="info-text">暂无</text>
-        </view>
-      </view>
-
-      <view v-else class="empty-card">该模块内容建设中</view>
     </view>
   </view>
 </template>
@@ -296,6 +268,7 @@
   ]
 
   const activeSectionTab = ref<SectionTabKey>('skills')
+  const activeDetailTab = ref<'stats' | 'skills'>('stats')
   const loading = ref(false)
   const switching = ref(false)
   const errorMessage = ref('')
@@ -857,9 +830,9 @@
 
   .hero-card {
     display: grid;
-    grid-template-columns: 210rpx minmax(0, 1fr);
-    gap: 18rpx;
-    padding: 18rpx 22rpx 20rpx;
+    grid-template-columns: 180rpx minmax(0, 1fr);
+    gap: 16rpx;
+    padding: 16rpx 22rpx 18rpx;
     background: #f4f6fb;
   }
 
@@ -867,12 +840,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14rpx;
+    gap: 10rpx;
   }
 
   .main-avatar {
-    width: 170rpx;
-    height: 170rpx;
+    width: 150rpx;
+    height: 150rpx;
     border: 3rpx solid #e85d55;
     border-radius: 18rpx;
     background: linear-gradient(135deg, #ffe8b0, #fff4dd);
@@ -1006,8 +979,39 @@
     box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.3);
   }
 
+  .detail-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    margin: 12rpx 22rpx 0;
+    border-radius: 14rpx;
+    background: #e8eef5;
+    padding: 6rpx;
+    gap: 6rpx;
+  }
+
+  .detail-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 68rpx;
+    border-radius: 10rpx;
+    color: #808997;
+    font-size: 28rpx;
+    font-weight: 700;
+  }
+
+  .detail-tab.active {
+    color: #fff;
+    background: #4b9df4;
+    box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.25);
+  }
+
+  .stats-panel {
+    padding-bottom: 16rpx;
+  }
+
   .stat-grid {
-    padding: 8rpx 22rpx;
+    padding: 12rpx 22rpx 8rpx;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16rpx;
@@ -1122,7 +1126,7 @@
   .skill-section,
   .tag-section,
   .more-section {
-    padding: 18rpx 20rpx;
+    padding: 16rpx 22rpx;
   }
 
   .language-toggle {
