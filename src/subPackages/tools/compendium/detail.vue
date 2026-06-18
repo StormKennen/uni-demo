@@ -13,7 +13,7 @@
     </view> -->
 
     <view v-if="loading" class="state-block">
-      <text>加载详情中...</text>
+      <text>{{ switching ? '切换中...' : '加载详情中...' }}</text>
     </view>
 
     <view v-else-if="errorMessage" class="state-block">
@@ -22,17 +22,6 @@
     </view>
 
     <view v-else class="content">
-      <view v-if="sameElementForms.length > 1" class="awaken-toggle">
-        <view
-          v-for="tab in awakenTabs"
-          :key="tab.label"
-          class="awaken-tab"
-          :class="{ active: tab.label === activeAwakenLabel }"
-          @click="onAwakenTabClick(tab.label)">
-          <text>{{ tab.label }}</text>
-        </view>
-      </view>
-
       <view class="hero-card">
         <view class="avatar-column">
           <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
@@ -40,6 +29,9 @@
             <text>{{ detail.name.slice(0, 1) || '?' }}</text>
           </view>
           <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
+          <view v-if="canSwitchAwaken" class="awaken-btn" @click="onAwakenToggle">
+            <text>{{ activeAwakenLabel === '觉醒' ? '切换未觉醒' : '切换觉醒' }}</text>
+          </view>
         </view>
 
         <view class="profile-column">
@@ -302,6 +294,7 @@
 
   const activeSectionTab = ref<SectionTabKey>('skills')
   const loading = ref(false)
+  const switching = ref(false)
   const errorMessage = ref('')
   const characterId = ref('')
   const seedName = ref('')
@@ -618,9 +611,11 @@
     return current?.formLabel || '觉醒'
   })
 
-  const onAwakenTabClick = (label: string) => {
-    if (label === activeAwakenLabel.value) return
-    const target = sameElementForms.value.find(m => m.formLabel === label)
+  const canSwitchAwaken = computed(() => sameElementForms.value.length > 1)
+
+  const onAwakenToggle = () => {
+    const targetLabel = activeAwakenLabel.value === '觉醒' ? '未觉醒' : '觉醒'
+    const target = sameElementForms.value.find(m => m.formLabel === targetLabel)
     if (target) switchAwakenForm(target)
   }
 
@@ -744,17 +739,13 @@
 
   const switchAwakenForm = (form: NormalizedFamilyMember) => {
     if (form.isCurrent || !form.id) return
-    characterId.value = form.id
-    seedName.value = form.name
-    seedAvatar.value = form.avatar
-    detail.value = {
-      ...detail.value,
-      id: form.id,
-      name: form.name,
-      avatar: form.avatar,
-    }
-    uni.pageScrollTo({ scrollTop: 0, duration: 120 })
-    loadDetail()
+    switching.value = true
+    const params = [
+      `characterId=${encodeURIComponent(form.id)}`,
+      `name=${encodeURIComponent(form.name)}`,
+      `avatar=${encodeURIComponent(form.avatar)}`,
+    ].join('&')
+    uni.redirectTo({ url: `/subPackages/tools/compendium/detail?${params}` })
   }
 
   onLoad((options: Record<string, string | undefined>) => {
@@ -967,29 +958,16 @@
       0 4rpx 12rpx rgba(0, 0, 0, 0.15);
   }
 
-  .awaken-toggle {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    height: 80rpx;
-    margin: 12rpx 22rpx;
-    padding: 6rpx;
+  .awaken-btn {
+    margin-top: 10rpx;
+    padding: 8rpx 16rpx;
     border-radius: 999rpx;
-    background: #e8eef5;
-  }
-
-  .awaken-tab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999rpx;
-    color: #808997;
-    font-size: 28rpx;
-    font-weight: 700;
-  }
-
-  .awaken-tab.active {
+    background: linear-gradient(135deg, #4b9df4, #6c7cf4);
     color: #fff;
-    background: #4b9df4;
+    font-size: 22rpx;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
     box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.3);
   }
 
