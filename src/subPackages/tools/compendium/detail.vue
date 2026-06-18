@@ -64,8 +64,9 @@
               v-for="option in elementBadges"
               :key="option.value"
               class="element-dot"
-              :class="{ active: option.label === detail.elementName || option.value === detail.elementKey }"
-              :style="{ background: option.color }">
+              :class="{ active: option.value === detail.elementKey, clickable: hasElementForm(option.value) }"
+              :style="{ background: option.color }"
+              @click="onElementClick(option.value)">
             </view>
           </view>
         </view>
@@ -623,6 +624,20 @@
     if (target) switchAwakenForm(target)
   }
 
+  const hasElementForm = (elementKey: string): boolean => {
+    if (elementKey === detail.value.elementKey) return true
+    return detail.value.familyMembers.some(m => m.elementKey === elementKey)
+  }
+
+  const onElementClick = (elementKey: string) => {
+    if (elementKey === detail.value.elementKey) return
+    const currentAwakenLabel = activeAwakenLabel.value
+    const candidates = detail.value.familyMembers.filter(m => m.elementKey === elementKey)
+    if (!candidates.length) return
+    const target = candidates.find(m => m.formLabel === currentAwakenLabel) || candidates[0]
+    if (target) switchAwakenForm(target)
+  }
+
   const findAttribute = (keys: string[]): getCompendiumsCharacterResAttributes | undefined =>
     getAttributeByKey(detail.value.attributes, keys)
 
@@ -718,7 +733,7 @@
       }
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
-      uni.setNavigationBarTitle({ title: `魔灵 wiki-${detail.value.name || '详情'}` })
+      uni.setNavigationBarTitle({ title: '魔灵召唤' })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
@@ -748,7 +763,7 @@
     seedAvatar.value = decodeURIComponent(options.avatar || '')
     detail.value.name = seedName.value
     detail.value.avatar = normalizeUrl(seedAvatar.value)
-    uni.setNavigationBarTitle({ title: `魔灵 wiki-${seedName.value || '详情'}` })
+    uni.setNavigationBarTitle({ title: '魔灵召唤' })
     loadDetail()
   })
 
@@ -757,7 +772,8 @@
   })
 
   onShareAppMessage(() => ({
-    title: `魔灵 wiki-${detail.value.name || '图鉴'}`,
+    title: `魔灵召唤 · ${detail.value.name || '图鉴'}`,
+    imageUrl: detail.value.avatar || '',
     path: `/subPackages/tools/compendium/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}`,
   }))
 </script>
@@ -936,6 +952,11 @@
     border-radius: 50%;
     border: 4rpx solid transparent;
     opacity: 0.4;
+  }
+
+  .element-dot.clickable {
+    opacity: 0.65;
+    cursor: pointer;
   }
 
   .element-dot.active {
