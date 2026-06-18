@@ -28,6 +28,22 @@
       </view> -->
 
       <view class="filter-section">
+        <text class="filter-label">形态</text>
+        <scroll-view class="filter-scroll" scroll-x enable-flex>
+          <view class="filter-chip-row">
+            <view
+              v-for="option in awakenOptions"
+              :key="option.value"
+              class="quick-chip"
+              :class="{ selected: option.value === selectedAwaken }"
+              @click="selectFilter('awaken', option.value)">
+              <text>{{ option.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="filter-section">
         <text class="filter-label">类型</text>
         <scroll-view class="filter-scroll" scroll-x enable-flex>
           <view class="filter-chip-row">
@@ -145,7 +161,7 @@
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getUserInfo } from '@/utils/storage'
 
-  type FilterKey = 'element' | 'star' | 'type' | 'sort'
+  type FilterKey = 'element' | 'star' | 'type' | 'sort' | 'awaken'
   type SortOrder = 'asc' | 'desc'
   type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
   type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery & {
@@ -235,6 +251,11 @@
     { label: '辅助', value: 'support' },
   ]
 
+  const awakenOptions: FilterOption[] = [
+    { label: '觉醒', value: 'awakened' },
+    { label: '未觉醒', value: 'unawakened' },
+  ]
+
   const sortOptions: FilterOption[] = [
     // { label: '全部', value: ALL_VALUE },
     { label: '星级', value: 'stars' },
@@ -253,6 +274,7 @@
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
+  const selectedAwaken = ref('awakened')
   const selectedSort = ref(DEFAULT_SORT_FIELD)
   const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
   const characters = ref<CharacterCard[]>([])
@@ -435,7 +457,7 @@
       compendiumId: COMPENDIUM_CODE,
       page: page.value,
       pageSize: PAGE_SIZE,
-      'categories[awaken]': 'awakened',
+      'categories[awaken]': selectedAwaken.value,
     }
 
     // if (isFamilyMode.value) {
@@ -541,6 +563,7 @@
     }
     if (key === 'star') selectedStar.value = value
     if (key === 'type') selectedType.value = value
+    if (key === 'awaken') selectedAwaken.value = value
     if (key === 'sort') {
       if (value === ALL_VALUE) {
         selectedSort.value = ALL_VALUE
@@ -581,7 +604,7 @@
   }
 
   onLoad(() => {
-    uni.setNavigationBarTitle({ title: '魔灵 wiki-图鉴' })
+    uni.setNavigationBarTitle({ title: '魔灵召唤' })
     fetchCharacters(true)
   })
 
@@ -595,12 +618,12 @@
 
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => ({
-    title: '魔灵图鉴 · 凉白开工具箱',
+    title: '魔灵召唤 · 凉白开工具箱',
     path: '/subPackages/tools/compendium/list',
   }))
 
   onShareTimeline(() => ({
-    title: '魔灵图鉴 · 凉白开工具箱',
+    title: '魔灵召唤 · 凉白开工具箱',
     query: '',
   }))
   // #endif
