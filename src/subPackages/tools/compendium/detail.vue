@@ -12,16 +12,19 @@
       </view>
     </view> -->
 
-    <view v-if="loading" class="state-block">
-      <text>{{ switching ? '切换中...' : '加载详情中...' }}</text>
+    <view v-if="loading && !switching" class="state-block">
+      <text>加载详情中...</text>
     </view>
 
-    <view v-else-if="errorMessage" class="state-block">
+    <view v-else-if="!switching && errorMessage" class="state-block">
       <text>{{ errorMessage }}</text>
       <button class="retry-btn" @click="loadDetail">重试</button>
     </view>
 
-    <view v-else class="content">
+    <view v-else class="content" :class="{ 'content-switching': switching }">
+      <view v-if="switching" class="switching-overlay">
+        <text>切换中...</text>
+      </view>
       <view class="hero-card">
         <view class="avatar-column">
           <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
@@ -737,15 +740,25 @@
     }
   }
 
-  const switchAwakenForm = (form: NormalizedFamilyMember) => {
+  const switchAwakenForm = async (form: NormalizedFamilyMember) => {
     if (form.isCurrent || !form.id) return
     switching.value = true
-    const params = [
-      `characterId=${encodeURIComponent(form.id)}`,
-      `name=${encodeURIComponent(form.name)}`,
-      `avatar=${encodeURIComponent(form.avatar)}`,
-    ].join('&')
-    uni.redirectTo({ url: `/subPackages/tools/compendium/detail?${params}` })
+    characterId.value = form.id
+    seedName.value = form.name
+    seedAvatar.value = form.avatar
+    uni.pageScrollTo({ scrollTop: 0, duration: 120 })
+    try {
+      const query: getCompendiumsCharacterQuery = {
+        compendiumId: COMPENDIUM_CODE,
+        characterId: form.id,
+      }
+      const res = await getCompendiumsCharacter(query)
+      detail.value = normalizeDetail(res)
+    } catch (error) {
+      errorMessage.value = typeof error === 'string' ? error : '切换失败，请稍后重试'
+    } finally {
+      switching.value = false
+    }
   }
 
   onLoad((options: Record<string, string | undefined>) => {
@@ -817,7 +830,29 @@
   }
 
   .content {
+    position: relative;
     padding-bottom: 48rpx;
+  }
+
+  .content-switching {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .switching-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(244, 246, 251, 0.7);
+    color: #4b9df4;
+    font-size: 32rpx;
+    font-weight: 700;
   }
 
   .hero-card {
