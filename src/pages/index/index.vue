@@ -248,7 +248,7 @@
     // },
     {
       id: 19,
-      name: '图片加密',
+      name: '图片混淆',
       desc: '多次混淆/还原',
       icon: 'locked',
       gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
@@ -347,7 +347,7 @@
     },
     {
       id: 19,
-      name: '图片加密',
+      name: '图片混淆',
       desc: '多次混淆/还原',
       icon: 'locked',
       gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
