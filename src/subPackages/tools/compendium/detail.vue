@@ -83,13 +83,19 @@
       </view>
 
       <view v-if="activeDetailTab === 'stats'" class="stats-panel">
-        <view class="stat-grid">
-          <view v-for="stat in primaryStats" :key="stat.key" class="stat-card">
-            <view class="stat-title">
-              <text class="stat-icon">{{ stat.icon }}</text>
-              <text>{{ stat.label }}</text>
-              <text class="stat-value">{{ stat.value || '--' }}</text>
-              <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+        <view class="stat-list">
+          <view v-for="stat in primaryStats" :key="stat.key" class="stat-row">
+            <view class="stat-row-header">
+              <view class="stat-label-group">
+                <view class="stat-icon-circle" :style="{ background: stat.color }">
+                  <text class="stat-icon">{{ stat.icon }}</text>
+                </view>
+                <text class="stat-label">{{ stat.label }}</text>
+              </view>
+              <view class="stat-value-group">
+                <text class="stat-value">{{ stat.value || '--' }}</text>
+                <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+              </view>
             </view>
             <view class="stat-bar">
               <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
@@ -97,12 +103,14 @@
           </view>
         </view>
 
-        <view class="minor-stat-grid">
-          <view v-for="stat in secondaryStats" :key="stat.key" class="minor-stat">
-            <text>{{ stat.label }}</text>
-            <view class="minor-stat-value">
-              <text>{{ stat.value || '--' }}</text>
-              <text v-if="stat.rankLabel" class="minor-rank">{{ stat.rankLabel }}</text>
+        <view class="stat-list secondary">
+          <view v-for="stat in secondaryStats" :key="stat.key" class="stat-row minor">
+            <view class="stat-row-header">
+              <text class="stat-label">{{ stat.label }}</text>
+              <view class="stat-value-group">
+                <text class="stat-value">{{ stat.value || '--' }}</text>
+                <text v-if="stat.rankLabel" class="stat-rank minor-rank">{{ stat.rankLabel }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -1010,51 +1018,89 @@
     padding-bottom: 16rpx;
   }
 
-  .stat-grid {
-    padding: 12rpx 22rpx 8rpx;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .stat-list {
+    padding: 12rpx 22rpx 0;
+    display: flex;
+    flex-direction: column;
     gap: 16rpx;
   }
 
-  .stat-card {
-    padding: 18rpx 14rpx;
-    border-radius: 14rpx;
-    background: #fff;
-    box-shadow: 0 2rpx 10rpx rgba(40, 52, 76, 0.04);
+  .stat-list.secondary {
+    padding-top: 16rpx;
+    padding-bottom: 8rpx;
   }
 
-  .stat-title {
+  .stat-row {
+    padding: 20rpx 24rpx;
+    border-radius: 16rpx;
+    background: #fff;
+    box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
+  }
+
+  .stat-row.minor {
+    padding: 16rpx 24rpx;
+    background: #f8f9fc;
+    box-shadow: none;
+  }
+
+  .stat-row-header {
     display: flex;
     align-items: center;
-    gap: 8rpx;
-    color: #647184;
-    font-size: 26rpx;
-    font-weight: 700;
+    justify-content: space-between;
+  }
+
+  .stat-label-group {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+  }
+
+  .stat-icon-circle {
+    width: 52rpx;
+    height: 52rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
   }
 
   .stat-icon {
-    font-size: 30rpx;
+    font-size: 28rpx;
+    color: #fff;
+  }
+
+  .stat-label {
+    color: #4a5568;
+    font-size: 28rpx;
+    font-weight: 700;
+  }
+
+  .stat-value-group {
+    display: flex;
+    align-items: baseline;
+    gap: 10rpx;
   }
 
   .stat-value {
-    margin-left: auto;
     color: #182134;
     font-size: 36rpx;
     font-weight: 800;
   }
 
   .stat-rank {
-    min-width: 84rpx;
-    text-align: right;
     color: #6d75ef;
-    font-size: 24rpx;
-    font-weight: 900;
+    font-size: 22rpx;
+    font-weight: 800;
+  }
+
+  .stat-rank.minor-rank {
+    color: #8a93a3;
   }
 
   .stat-bar {
-    margin-top: 12rpx;
-    height: 10rpx;
+    margin-top: 14rpx;
+    height: 8rpx;
     border-radius: 999rpx;
     background: #edf1f6;
     overflow: hidden;
@@ -1063,41 +1109,7 @@
   .stat-bar-inner {
     height: 100%;
     border-radius: 999rpx;
-  }
-
-  .minor-stat-grid {
-    margin: 4rpx 22rpx 0;
-    padding: 18rpx 22rpx;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12rpx 48rpx;
-    border-radius: 14rpx;
-    background: #fff;
-  }
-
-  .minor-stat {
-    display: flex;
-    justify-content: space-between;
-    gap: 16rpx;
-    color: #87909f;
-    font-size: 28rpx;
-    font-weight: 700;
-  }
-
-  .minor-stat-value {
-    display: flex;
-    align-items: center;
-    gap: 10rpx;
-    color: #162033;
-  }
-
-  .minor-rank {
-    color: #8a93a3;
-    font-size: 22rpx;
-  }
-
-  .minor-stat-value text:first-child {
-    color: #162033;
+    transition: width 0.3s ease;
   }
 
   .section-tabs {
