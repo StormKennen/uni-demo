@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <view class="detail-page">
     <!-- <view class="top-tabs">
       <view
@@ -25,6 +25,19 @@
       <view v-if="switching" class="switching-overlay">
         <text>切换中...</text>
       </view>
+      <view class="locale-toolbar">
+        <text class="locale-toolbar-label">语言</text>
+        <view class="locale-switch">
+          <text
+            v-for="option in localeOptions"
+            :key="option.value"
+            class="locale-option"
+            :class="{ selected: option.value === selectedLocale }"
+            @click="changeLocale(option.value)">
+            {{ option.label }}
+          </text>
+        </view>
+      </view>
       <view class="hero-card">
         <view class="avatar-column">
           <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
@@ -33,7 +46,7 @@
           </view>
           <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
           <view v-if="canSwitchAwaken" class="awaken-btn" @click="onAwakenToggle">
-            <text>{{ activeAwakenLabel === '觉醒' ? '切换未觉醒' : '切换觉醒' }}</text>
+            <text>切换形态</text>
           </view>
         </view>
 
@@ -42,11 +55,11 @@
             <view class="title-wrap">
               <view class="name-line">
                 <text class="name">{{ detail.name || '未知魔灵' }}</text>
-                <text v-if="detail.alias" class="alias">· {{ detail.alias }}</text>
+                <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
               </view>
               <view class="tag-line">
                 <text v-if="detail.elementName" class="tag accent">{{ detail.elementIcon }} {{ detail.elementName }}</text>
-                <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}★</text>
+                <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
                 <text v-if="detail.archetype" class="tag">{{ detail.archetype }}</text>
                 <text v-if="detail.family" class="tag">{{ detail.family }}</text>
               </view>
@@ -117,7 +130,7 @@
       </view>
 
       <view v-else-if="activeDetailTab === 'skills'" class="skill-section">
-        <view v-if="detail.skills.length === 0" class="empty-card">暂无技能信息</view>
+        <view v-if="detail.skills.length === 0" class="empty-card">暂无技能数据</view>
         <view v-for="skill in detail.skills" :key="skill.id || skill.name" class="skill-card" :class="{ leader: skill.type === 'leader' }">
           <view class="skill-head">
             <image v-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
@@ -126,16 +139,25 @@
               <view class="skill-title">
                 <text>{{ skill.name || '未命名技能' }}</text>
                 <text v-if="skill.cost" class="skill-badge">{{ skill.cost }}</text>
-                <text v-if="skill.cooldown" class="skill-badge">{{ skill.cooldown }}</text>
               </view>
               <text v-if="skill.typeText" class="skill-type">{{ skill.typeText }}</text>
             </view>
           </view>
           <text v-if="skill.description" class="skill-desc">{{ skill.description }}</text>
-          <view v-if="skill.coefficients.length" class="coefficient-list">
-            <view v-for="coefficient in skill.coefficients" :key="coefficient.id || coefficient.name" class="coefficient-item">
-              <text>{{ coefficient.name || '系数' }}</text>
-              <text>{{ coefficient.value }}</text>
+          <view
+            v-if="skill.multiplierFormula || skill.hitCountText || skill.cooldownText"
+            class="skill-meta-list">
+            <view v-if="skill.multiplierFormula" class="skill-meta-item">
+              <text class="skill-meta-label">技能系数</text>
+              <text class="skill-meta-value">{{ skill.multiplierFormula }}</text>
+            </view>
+            <view v-if="skill.hitCountText" class="skill-meta-item">
+              <text class="skill-meta-label">命中次数</text>
+              <text class="skill-meta-value">{{ skill.hitCountText }}</text>
+            </view>
+            <view v-if="skill.cooldownText" class="skill-meta-item">
+              <text class="skill-meta-label">冷却回合</text>
+              <text class="skill-meta-value">{{ skill.cooldownText }}</text>
             </view>
           </view>
         </view>
@@ -148,17 +170,79 @@
   import { computed, ref } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
-  import type {
-    getCompendiumsCharacterQuery,
-    getCompendiumsCharacterRes,
-    getCompendiumsCharacterResAttributes,
-    getCompendiumsCharacterResCategories,
-    getCompendiumsCharacterResSkills,
-    getCompendiumsCharacterResSkillsCoefficients,
-    getCompendiumsCharacterResSkins,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
-  type SectionTabKey = 'skills' | 'review' | 'change' | 'tags' | 'more'
+  type RawRecord = Record<string, any>
+
+  interface RawAttribute {
+    key?: string
+    name?: string
+    displayValue?: string
+    value?: string | number | boolean | null
+    unit?: string
+    rank?: number | string | null
+    total?: number | string | null
+  }
+
+  interface RawCategory {
+    key?: string
+    name?: string
+    valueKey?: string
+    value?: string
+    color?: string
+    icon?: string
+  }
+
+  interface RawCoefficient {
+    id?: string
+    key?: string
+    name?: string
+    level?: string
+    value?: string | number | null
+    unit?: string
+    formula?: string
+    triggerProbability?: string | number | null
+    triggerUnit?: string
+  }
+
+  interface RawSkill {
+    id?: string
+    name?: string
+    type?: string
+    attachment?: string
+    cost?: string
+    cooldown?: string
+    cooldownTurns?: string | number | null
+    description?: string
+    multiplierFormula?: string
+    hitCount?: string | number | null
+    coefficients?: RawCoefficient[]
+  }
+
+  interface RawSkin {
+    id?: string
+    name?: string
+    image?: string
+    attachment?: string
+  }
+
+  interface RawCharacterDetail extends RawRecord {
+    id?: string
+    name?: string
+    code?: string
+    alias?: string
+    aliases?: string[]
+    avatar?: string
+    level?: string
+    stars?: string | number
+    description?: string
+    categories?: RawCategory[]
+    attributes?: RawAttribute[]
+    skills?: RawSkill[]
+    skins?: RawSkin[]
+    familyMembers?: RawRecord[]
+    data?: RawCharacterDetail
+  }
 
   interface NormalizedCoefficient {
     id: string
@@ -175,7 +259,10 @@
     attachment: string
     cost: string
     cooldown: string
+    cooldownText: string
     description: string
+    multiplierFormula: string
+    hitCountText: string
     coefficients: NormalizedCoefficient[]
   }
 
@@ -211,6 +298,11 @@
     name: string
   }
 
+  interface LocaleOption {
+    label: string
+    value: string
+  }
+
   interface CharacterDetail {
     id: string
     name: string
@@ -227,7 +319,7 @@
     family: string
     description: string
     statusText: string
-    attributes: getCompendiumsCharacterResAttributes[]
+    attributes: RawAttribute[]
     categories: NormalizedCategory[]
     skills: NormalizedSkill[]
     skins: NormalizedSkin[]
@@ -252,20 +344,14 @@
   }
 
   const COMPENDIUM_CODE = 'swc'
+  const DEFAULT_LOCALE = 'zh-CN'
+  const AWAKENED_LABEL = '觉醒'
+  const UNAWAKENED_LABEL = '未觉醒'
 
-  // const topTabs = [
-  //   { key: 'main' as const, label: '主要数据' },
-  //   { key: 'runes' as const, label: '符文/我的' },
-  //   { key: 'team' as const, label: '阵容攻略/RTA', dot: true },
-  // ]
-
-  // const sectionTabs = [
-  //   { key: 'skills' as const, label: '技能' },
-  //   { key: 'review' as const, label: '评论倾向' },
-  //   { key: 'change' as const, label: '技改' },
-  //   { key: 'tags' as const, label: '标签' },
-  //   { key: 'more' as const, label: '更多' },
-  // ]
+  const localeOptions: LocaleOption[] = [
+    { label: '简体中文', value: 'zh-CN' },
+    { label: 'English', value: 'en' },
+  ]
 
   const elementBadges = [
     { label: '火', value: 'fire', color: '#f45b62' },
@@ -275,7 +361,6 @@
     { label: '暗', value: 'dark', color: '#8b5cf6' },
   ]
 
-  const activeSectionTab = ref<SectionTabKey>('skills')
   const activeDetailTab = ref<'stats' | 'skills'>('stats')
   const loading = ref(false)
   const switching = ref(false)
@@ -283,6 +368,7 @@
   const characterId = ref('')
   const seedName = ref('')
   const seedAvatar = ref('')
+  const selectedLocale = ref(DEFAULT_LOCALE)
 
   const detail = ref<CharacterDetail>({
     id: '',
@@ -314,7 +400,10 @@
     return ''
   }
 
-  const readRecordString = (record: Record<string, unknown>, keys: string[]): string => {
+  const isRecord = (value: unknown): value is RawRecord =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+  const readRecordString = (record: RawRecord, keys: string[]): string => {
     for (const key of keys) {
       const value = stringifyValue(record[key]).trim()
       if (value) return value
@@ -322,19 +411,19 @@
     return ''
   }
 
-  const readRecordNumber = (record: Record<string, unknown>, keys: string[]): number => {
+  const readRecordNumber = (record: RawRecord, keys: string[]): number => {
     for (const key of keys) {
       const value = record[key]
       if (typeof value === 'number') return value
       if (typeof value === 'string' && value.trim()) {
-        const numberValue = Number(value)
-        if (!Number.isNaN(numberValue)) return numberValue
+        const parsedValue = Number(value)
+        if (!Number.isNaN(parsedValue)) return parsedValue
       }
     }
     return 0
   }
 
-  const readRecordArray = (record: Record<string, unknown>, keys: string[]): unknown[] => {
+  const readRecordArray = (record: RawRecord, keys: string[]): unknown[] => {
     for (const key of keys) {
       const value = record[key]
       if (Array.isArray(value)) return value
@@ -348,15 +437,12 @@
     return url
   }
 
-  const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value)
-
-  const extractDetailData = (res: getCompendiumsCharacterRes): getCompendiumsCharacterRes => {
-    if (isRecord(res) && isRecord(res.data)) return res.data as getCompendiumsCharacterRes
-    return res
+  const extractDetailData = (res: unknown): RawCharacterDetail => {
+    if (isRecord(res) && isRecord(res.data)) return res.data as RawCharacterDetail
+    return (isRecord(res) ? res : {}) as RawCharacterDetail
   }
 
-  const normalizeCategory = (category: getCompendiumsCharacterResCategories): NormalizedCategory => ({
+  const normalizeCategory = (category: RawCategory): NormalizedCategory => ({
     key: category.key || '',
     name: category.name || '',
     valueKey: category.valueKey || '',
@@ -377,17 +463,40 @@
     }
   }
 
-  const normalizeCoefficient = (coefficient: getCompendiumsCharacterResSkillsCoefficients): NormalizedCoefficient => ({
+  const normalizeCoefficient = (coefficient: RawCoefficient): NormalizedCoefficient => ({
     id: coefficient.id || coefficient.key || coefficient.name || '',
     name: coefficient.name || coefficient.level || '',
     value: [
+      coefficient.formula || '',
       stringifyValue(coefficient.value),
       coefficient.unit || '',
-      coefficient.triggerProbability ? `触发 ${stringifyValue(coefficient.triggerProbability)}${coefficient.triggerUnit || ''}` : '',
+      coefficient.triggerProbability
+        ? `触发 ${stringifyValue(coefficient.triggerProbability)}${coefficient.triggerUnit || ''}`
+        : '',
     ]
       .filter(Boolean)
       .join(' '),
   })
+
+  const formatCooldownText = (skill: RawSkill): string => {
+    const cooldownTurns = stringifyValue(skill.cooldownTurns).trim()
+    if (cooldownTurns) return cooldownTurns
+    return (skill.cooldown || '').trim()
+  }
+
+  const formatHitCountText = (skill: RawSkill): string => stringifyValue(skill.hitCount).trim()
+
+  const formatMultiplierFormula = (skill: RawSkill): string => {
+    const formula = (skill.multiplierFormula || '').trim()
+    if (formula) return formula
+    if (!skill.coefficients?.length) return ''
+
+    return skill.coefficients
+      .map(normalizeCoefficient)
+      .map(item => [item.name, item.value].filter(Boolean).join(': '))
+      .filter(Boolean)
+      .join(' / ')
+  }
 
   const formatSkillType = (type = ''): string => {
     const map: Record<string, string> = {
@@ -398,7 +507,7 @@
     return map[type] || type
   }
 
-  const normalizeSkill = (skill: getCompendiumsCharacterResSkills, index: number): NormalizedSkill => ({
+  const normalizeSkill = (skill: RawSkill, index: number): NormalizedSkill => ({
     id: skill.id || skill.name || '',
     name: skill.name || '',
     type: skill.type || '',
@@ -407,11 +516,14 @@
     attachment: normalizeUrl(skill.attachment),
     cost: skill.cost || '',
     cooldown: skill.cooldown || '',
+    cooldownText: formatCooldownText(skill),
     description: skill.description || '',
+    multiplierFormula: formatMultiplierFormula(skill),
+    hitCountText: formatHitCountText(skill),
     coefficients: (skill.coefficients || []).map(normalizeCoefficient),
   })
 
-  const normalizeSkin = (skin: getCompendiumsCharacterResSkins): NormalizedSkin => ({
+  const normalizeSkin = (skin: RawSkin): NormalizedSkin => ({
     id: skin.id || skin.name || '',
     name: skin.name || '',
     image: normalizeUrl(skin.image || skin.attachment),
@@ -423,18 +535,23 @@
   const getCategoryValue = (categories: NormalizedCategory[], key: string): string => getCategory(categories, key)?.value || ''
 
   const normalizeElementKey = (value: string): string => {
-    const normalizedValue = value.trim()
+    const normalizedValue = value.trim().toLowerCase()
     const map: Record<string, string> = {
+      fire: 'fire',
+      water: 'water',
+      wind: 'wind',
+      light: 'light',
+      dark: 'dark',
       火: 'fire',
       水: 'water',
       风: 'wind',
       光: 'light',
       暗: 'dark',
     }
-    return map[normalizedValue] || normalizedValue.toLowerCase()
+    return map[normalizedValue] || normalizedValue
   }
 
-  const readElement = (record: Record<string, unknown>, categories: NormalizedCategory[]): NormalizedElement => {
+  const readElement = (record: RawRecord, categories: NormalizedCategory[]): NormalizedElement => {
     const category = getCategory(categories, 'element')
     const element = record.element
     if (isRecord(element)) {
@@ -445,6 +562,7 @@
         name: name || category?.value || '',
       }
     }
+
     const elementText = stringifyValue(element).trim()
     return {
       key: normalizeElementKey(category?.valueKey || elementText || category?.value || ''),
@@ -452,24 +570,47 @@
     }
   }
 
-  const formatAwakenLabel = (record: Record<string, unknown>, categories: NormalizedCategory[]): string => {
+  const formatAwakenLabel = (record: RawRecord, categories: NormalizedCategory[]): string => {
     const awakenCategory = categories.find(item => ['awakening', 'awaken', 'form', 'stage'].includes(item.key))
     const rawValue =
-      readRecordString(record, ['awakening', 'awaken', 'awakened', 'isAwakened', 'form', 'stage', 'state']) || awakenCategory?.value || ''
+      readRecordString(record, ['awakening', 'awaken', 'awakened', 'isAwakened', 'form', 'stage', 'state']) ||
+      awakenCategory?.value ||
+      ''
     const lowerValue = rawValue.toLowerCase()
-    if (['否', 'false', '0'].includes(lowerValue) || lowerValue.includes('未') || lowerValue.includes('unawaken')) return '未觉醒'
-    if (['是', 'true', '1'].includes(lowerValue) || lowerValue.includes('觉醒') || lowerValue.includes('awaken')) return '觉醒'
-    return rawValue
+
+    if (['否', 'false', '0'].includes(lowerValue) || lowerValue.includes('未觉醒') || lowerValue.includes('unawaken')) {
+      return UNAWAKENED_LABEL
+    }
+
+    if (['是', 'true', '1'].includes(lowerValue) || lowerValue.includes('觉醒') || lowerValue.includes('awaken')) {
+      return AWAKENED_LABEL
+    }
+
+    return rawValue || UNAWAKENED_LABEL
+  }
+
+  const getElementIcon = (elementKey: string): string => {
+    const map: Record<string, string> = {
+      fire: '火',
+      water: '水',
+      wind: '风',
+      light: '光',
+      dark: '暗',
+    }
+    return map[elementKey] || ''
   }
 
   const normalizeFamilyMember = (source: unknown): NormalizedFamilyMember | null => {
     if (!isRecord(source)) return null
+
     const categories = readRecordArray(source, ['categories'])
       .map(normalizeCategoryRecord)
       .filter((item): item is NormalizedCategory => Boolean(item))
     const element = readElement(source, categories)
     const id = readRecordString(source, ['id', 'characterId'])
+
     if (!id) return null
+
     return {
       id,
       name: readRecordString(source, ['name', 'title']),
@@ -483,54 +624,38 @@
     }
   }
 
-  const getElementIcon = (elementKey: string, elementName: string): string => {
-    const key = elementKey || elementName
-    const map: Record<string, string> = {
-      fire: '🔥',
-      火: '🔥',
-      water: '🌊',
-      水: '🌊',
-      wind: '🌪️',
-      风: '🌪️',
-      light: '🛡️',
-      光: '🛡️',
-      dark: '🟣',
-      暗: '🟣',
-    }
-    return map[key] || '✦'
-  }
-
-  const getAttributeByKey = (
-    attributes: getCompendiumsCharacterResAttributes[],
-    keys: string[],
-  ): getCompendiumsCharacterResAttributes | undefined =>
+  const getAttributeByKey = (attributes: RawAttribute[], keys: string[]): RawAttribute | undefined =>
     attributes.find(attribute => {
-      const key = `${attribute.key || ''} ${attribute.name || ''}`.toLowerCase()
-      return keys.some(item => key.includes(item.toLowerCase()))
+      const source = `${attribute.key || ''} ${attribute.name || ''}`.toLowerCase()
+      return keys.some(key => source.includes(key.toLowerCase()))
     })
 
-  const normalizeDetail = (rawRes: getCompendiumsCharacterRes): CharacterDetail => {
+  const formatAttributeValue = (attribute?: RawAttribute): string =>
+    attribute ? `${attribute.displayValue || stringifyValue(attribute.value)}${attribute.unit || ''}` : ''
+
+  const normalizeDetail = (rawRes: unknown): CharacterDetail => {
     const res = extractDetailData(rawRes)
     const record = isRecord(res) ? res : {}
-    const categories = (res.categories || []).map(normalizeCategory)
-    const attributes = res.attributes || []
+    const categories = (Array.isArray(res.categories) ? res.categories : []).map(normalizeCategory)
+    const attributes = Array.isArray(res.attributes) ? res.attributes : []
     const element = readElement(record, categories)
     const familyMembers = readRecordArray(record, ['familyMembers'])
       .map(normalizeFamilyMember)
       .filter((item): item is NormalizedFamilyMember => Boolean(item))
-    const stars = formatAttributeValue(getAttributeByKey(attributes, ['stars', '星级'])).replace(/星$/, '')
-    const aliases = res.aliases || []
+    const starAttribute = formatAttributeValue(getAttributeByKey(attributes, ['stars', '星级']))
+    const stars = starAttribute.replace(/[^\d]/g, '') || stringifyValue(res.stars).trim()
+    const aliases = Array.isArray(res.aliases) ? res.aliases.filter(Boolean) : []
 
     return {
       id: res.id || characterId.value,
       name: res.name || seedName.value,
       code: res.code || '',
-      alias: aliases[0] || '',
+      alias: aliases[0] || res.alias || '',
       aliases,
       avatar: normalizeUrl(res.avatar || seedAvatar.value),
       elementKey: element.key,
       elementName: element.name,
-      elementIcon: getElementIcon(element.key, element.name),
+      elementIcon: getElementIcon(element.key),
       level: res.level || '',
       stars,
       archetype: getCategoryValue(categories, 'archetype'),
@@ -539,8 +664,8 @@
       statusText: '',
       attributes,
       categories,
-      skills: (res.skills || []).map(normalizeSkill),
-      skins: (res.skins || []).map(normalizeSkin),
+      skills: (Array.isArray(res.skills) ? res.skills : []).map(normalizeSkill),
+      skins: (Array.isArray(res.skins) ? res.skins : []).map(normalizeSkin),
       familyMembers,
     }
   }
@@ -552,7 +677,7 @@
     avatar: detail.value.avatar || seedAvatar.value,
     elementKey: detail.value.elementKey,
     elementName: detail.value.elementName,
-    formLabel: '',
+    formLabel: UNAWAKENED_LABEL,
     sortOrder: 0,
     isCurrent: true,
   })
@@ -560,70 +685,42 @@
   const sameElementForms = computed<NormalizedFamilyMember[]>(() => {
     const currentId = detail.value.id || characterId.value
     const currentElementKey = detail.value.elementKey
+
     if (!currentId || !currentElementKey) return []
+
     const forms = detail.value.familyMembers
       .filter(member => member.elementKey === currentElementKey)
       .map(member => ({
         ...member,
         isCurrent: member.id === currentId,
       }))
+
     if (!forms.some(member => member.id === currentId)) {
       forms.unshift(createCurrentFamilyMember())
     }
-    const labeled = forms.map((member, index) => ({
-      ...member,
-      formLabel: member.formLabel || (index === 0 ? '未觉醒' : '觉醒'),
-    }))
-    const awakened = labeled.filter(m => m.formLabel === '觉醒')
-    const unawakened = labeled.filter(m => m.formLabel !== '觉醒')
-    return [...awakened, ...unawakened]
-  })
 
-  const awakenTabs = computed(() => {
-    const labels = new Set(sameElementForms.value.map(m => m.formLabel))
-    const tabs: { label: string }[] = []
-    if (labels.has('觉醒')) tabs.push({ label: '觉醒' })
-    if (labels.has('未觉醒')) tabs.push({ label: '未觉醒' })
-    for (const label of labels) {
-      if (label !== '觉醒' && label !== '未觉醒') tabs.push({ label })
-    }
-    return tabs
+    const normalizedForms = forms
+      .map(member => ({
+        ...member,
+        formLabel: member.formLabel || UNAWAKENED_LABEL,
+      }))
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+
+    const awakened = normalizedForms.filter(member => member.formLabel === AWAKENED_LABEL)
+    const others = normalizedForms.filter(member => member.formLabel !== AWAKENED_LABEL)
+    return [...awakened, ...others]
   })
 
   const activeAwakenLabel = computed(() => {
-    const current = sameElementForms.value.find(m => m.isCurrent)
-    return current?.formLabel || '觉醒'
+    const current = sameElementForms.value.find(member => member.isCurrent)
+    return current?.formLabel || AWAKENED_LABEL
   })
 
   const canSwitchAwaken = computed(() => sameElementForms.value.length > 1)
 
-  const onAwakenToggle = () => {
-    const targetLabel = activeAwakenLabel.value === '觉醒' ? '未觉醒' : '觉醒'
-    const target = sameElementForms.value.find(m => m.formLabel === targetLabel)
-    if (target) switchAwakenForm(target)
-  }
+  const findAttribute = (keys: string[]): RawAttribute | undefined => getAttributeByKey(detail.value.attributes, keys)
 
-  const hasElementForm = (elementKey: string): boolean => {
-    if (elementKey === detail.value.elementKey) return true
-    return detail.value.familyMembers.some(m => m.elementKey === elementKey)
-  }
-
-  const onElementClick = (elementKey: string) => {
-    if (elementKey === detail.value.elementKey) return
-    const currentAwakenLabel = activeAwakenLabel.value
-    const candidates = detail.value.familyMembers.filter(m => m.elementKey === elementKey)
-    if (!candidates.length) return
-    const target = candidates.find(m => m.formLabel === currentAwakenLabel) || candidates[0]
-    if (target) switchAwakenForm(target)
-  }
-
-  const findAttribute = (keys: string[]): getCompendiumsCharacterResAttributes | undefined =>
-    getAttributeByKey(detail.value.attributes, keys)
-
-  const formatAttributeValue = (attribute?: getCompendiumsCharacterResAttributes): string =>
-    attribute ? `${attribute.displayValue || stringifyValue(attribute.value)}${attribute.unit || ''}` : ''
-
-  const formatRankLabel = (attribute?: getCompendiumsCharacterResAttributes): string => {
+  const formatRankLabel = (attribute?: RawAttribute): string => {
     if (!attribute) return ''
     const rank = Number(attribute.rank)
     const total = Number(attribute.total)
@@ -631,10 +728,12 @@
     return `#${rank}/${total}`
   }
 
-  const calculateRankPercent = (attribute: getCompendiumsCharacterResAttributes | undefined, fallback: number): string => {
+  const calculateRankPercent = (attribute: RawAttribute | undefined, fallback: number): string => {
     const rank = Number(attribute?.rank)
     const total = Number(attribute?.total)
-    if (rank > 0 && total > 0) return `${Math.min(100, Math.max(8, ((total - rank + 1) / total) * 100)).toFixed(0)}%`
+    if (rank > 0 && total > 0) {
+      return `${Math.min(100, Math.max(8, ((total - rank + 1) / total) * 100)).toFixed(0)}%`
+    }
     return `${fallback}%`
   }
 
@@ -643,11 +742,12 @@
     const attack = findAttribute(['attack', '攻击'])
     const defense = findAttribute(['defense', '防御'])
     const speed = findAttribute(['speed', '速度'])
+
     return [
       {
         key: 'hp',
         label: '体力',
-        icon: '❤',
+        icon: 'HP',
         value: formatAttributeValue(hp),
         rankLabel: formatRankLabel(hp),
         percent: calculateRankPercent(hp, 42),
@@ -656,7 +756,7 @@
       {
         key: 'attack',
         label: '攻击',
-        icon: '✖',
+        icon: 'ATK',
         value: formatAttributeValue(attack),
         rankLabel: formatRankLabel(attack),
         percent: calculateRankPercent(attack, 34),
@@ -665,7 +765,7 @@
       {
         key: 'defense',
         label: '防御',
-        icon: '⬟',
+        icon: 'DEF',
         value: formatAttributeValue(defense),
         rankLabel: formatRankLabel(defense),
         percent: calculateRankPercent(defense, 68),
@@ -674,7 +774,7 @@
       {
         key: 'speed',
         label: '速度',
-        icon: '●',
+        icon: 'SPD',
         value: formatAttributeValue(speed),
         rankLabel: formatRankLabel(speed),
         percent: calculateRankPercent(speed, 74),
@@ -684,10 +784,11 @@
   })
 
   const secondaryStats = computed<SecondaryStatItem[]>(() => {
-    const critRate = findAttribute(['critRate', '暴击率'])
-    const critDamage = findAttribute(['critDmg', 'critDamage', '暴击伤害'])
+    const critRate = findAttribute(['critrate', '暴击率'])
+    const critDamage = findAttribute(['critdmg', 'critdamage', '暴击伤害'])
     const resistance = findAttribute(['resistance', '效果抵抗'])
     const accuracy = findAttribute(['accuracy', '效果命中'])
+
     return [
       { key: 'critRate', label: '暴击率', value: formatAttributeValue(critRate), rankLabel: formatRankLabel(critRate) },
       { key: 'resistance', label: '效果抵抗', value: formatAttributeValue(resistance), rankLabel: formatRankLabel(resistance) },
@@ -695,6 +796,12 @@
       { key: 'accuracy', label: '效果命中', value: formatAttributeValue(accuracy), rankLabel: formatRankLabel(accuracy) },
     ]
   })
+
+  const changeLocale = (locale: string) => {
+    if (locale === selectedLocale.value) return
+    selectedLocale.value = locale
+    loadDetail()
+  }
 
   const loadDetail = async () => {
     if (!characterId.value) {
@@ -709,10 +816,11 @@
       const query: getCompendiumsCharacterQuery = {
         compendiumId: COMPENDIUM_CODE,
         characterId: characterId.value,
+        locale: selectedLocale.value,
       }
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
-      uni.setNavigationBarTitle({ title: '魔灵召唤' })
+      uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
@@ -723,32 +831,60 @@
 
   const switchAwakenForm = async (form: NormalizedFamilyMember) => {
     if (form.isCurrent || !form.id) return
+
     switching.value = true
+    errorMessage.value = ''
     characterId.value = form.id
     seedName.value = form.name
     seedAvatar.value = form.avatar
     uni.pageScrollTo({ scrollTop: 0, duration: 120 })
+
     try {
       const query: getCompendiumsCharacterQuery = {
         compendiumId: COMPENDIUM_CODE,
         characterId: form.id,
+        locale: selectedLocale.value,
       }
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
+      uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
     } catch (error) {
-      errorMessage.value = typeof error === 'string' ? error : '切换失败，请稍后重试'
+      errorMessage.value = typeof error === 'string' ? error : '切换形态失败，请稍后重试'
     } finally {
       switching.value = false
     }
+  }
+
+  const onAwakenToggle = () => {
+    const targetLabel = activeAwakenLabel.value === AWAKENED_LABEL ? UNAWAKENED_LABEL : AWAKENED_LABEL
+    const target = sameElementForms.value.find(member => member.formLabel === targetLabel)
+    if (target) switchAwakenForm(target)
+  }
+
+  const hasElementForm = (elementKey: string): boolean => {
+    if (elementKey === detail.value.elementKey) return true
+    return detail.value.familyMembers.some(member => member.elementKey === elementKey)
+  }
+
+  const onElementClick = (elementKey: string) => {
+    if (elementKey === detail.value.elementKey) return
+
+    const currentAwakenLabel = activeAwakenLabel.value
+    const candidates = detail.value.familyMembers.filter(member => member.elementKey === elementKey)
+    if (!candidates.length) return
+
+    const target = candidates.find(member => member.formLabel === currentAwakenLabel) || candidates[0]
+    if (target) switchAwakenForm(target)
   }
 
   onLoad((options: Record<string, string | undefined>) => {
     characterId.value = options.characterId || ''
     seedName.value = decodeURIComponent(options.name || '')
     seedAvatar.value = decodeURIComponent(options.avatar || '')
+    selectedLocale.value = options.locale || DEFAULT_LOCALE
     detail.value.name = seedName.value
     detail.value.avatar = normalizeUrl(seedAvatar.value)
-    uni.setNavigationBarTitle({ title: '魔灵召唤' })
+    uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
     loadDetail()
   })
 
@@ -757,9 +893,9 @@
   })
 
   onShareAppMessage(() => ({
-    title: `魔灵召唤 · ${detail.value.name || '图鉴'}`,
+    title: `魔灵详情 · ${detail.value.name || '图鉴'}`,
     imageUrl: detail.value.avatar || '',
-    path: `/subPackages/tools/compendium/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}`,
+    path: `/subPackages/tools/compendium/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}&locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
 </script>
 
@@ -813,6 +949,46 @@
   .content {
     position: relative;
     padding-bottom: 48rpx;
+  }
+
+  .locale-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    margin: 0 22rpx;
+    padding: 16rpx 0 4rpx;
+  }
+
+  .locale-toolbar-label {
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8rpx;
+    padding: 6rpx;
+    border-radius: 999rpx;
+    background: #e8eef5;
+  }
+
+  .locale-option {
+    min-width: 136rpx;
+    height: 56rpx;
+    line-height: 56rpx;
+    text-align: center;
+    border-radius: 999rpx;
+    color: #808997;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-option.selected {
+    background: #2f80ed;
+    color: #fff;
   }
 
   .content-switching {
@@ -1243,6 +1419,40 @@
     white-space: pre-line;
   }
 
+  .skill-meta-list {
+    margin-top: 18rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 10rpx;
+  }
+
+  .skill-meta-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16rpx;
+    padding: 14rpx 16rpx;
+    border-radius: 12rpx;
+    background: #f5f8fc;
+  }
+
+  .skill-meta-item text:first-child,
+  .skill-meta-label {
+    flex: none;
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .skill-meta-value {
+    flex: 1;
+    color: #1f2632;
+    font-size: 24rpx;
+    font-weight: 700;
+    text-align: right;
+    word-break: break-word;
+  }
+
   .coefficient-list {
     margin-top: 18rpx;
     border: 1rpx solid #dceaf8;
@@ -1341,3 +1551,5 @@
     font-size: 26rpx;
   }
 </style>
+
+

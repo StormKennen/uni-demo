@@ -1,5 +1,19 @@
 <template>
   <view class="compendium-page">
+    <view class="locale-toolbar">
+      <text class="locale-toolbar-label">语言</text>
+      <view class="locale-switch">
+        <text
+          v-for="option in localeOptions"
+          :key="option.value"
+          class="locale-option"
+          :class="{ selected: option.value === selectedLocale }"
+          @click="changeLocale(option.value)">
+          {{ option.label }}
+        </text>
+      </view>
+    </view>
+
     <view class="filter-shell">
       <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
         <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
@@ -183,6 +197,11 @@
     value: string
   }
 
+  interface LocaleOption {
+    label: string
+    value: string
+  }
+
   interface CharacterCard {
     id: string
     name: string
@@ -232,6 +251,12 @@
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'
+  const DEFAULT_LOCALE = 'zh-CN'
+
+  const localeOptions: LocaleOption[] = [
+    { label: '简体中文', value: 'zh-CN' },
+    { label: 'English', value: 'en' },
+  ]
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -280,6 +305,7 @@
   ]
 
   const filterExpanded = ref(true)
+  const selectedLocale = ref(DEFAULT_LOCALE)
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
@@ -488,6 +514,7 @@
   const buildQuery = (): CompendiumCharactersQueryParams => {
     const query: CompendiumCharactersQueryParams = {
       compendiumId: COMPENDIUM_CODE,
+      locale: selectedLocale.value,
       page: page.value,
       pageSize: PAGE_SIZE,
       'categories[awaken]': selectedAwaken.value,
@@ -590,6 +617,12 @@
     fetchCharacters(true)
   }
 
+  const changeLocale = (locale: string) => {
+    if (locale === selectedLocale.value) return
+    selectedLocale.value = locale
+    refreshCharacters()
+  }
+
   const selectFilter = (key: FilterKey, value: string) => {
     if (key === 'element') {
       selectedElement.value = value
@@ -627,16 +660,22 @@
       `characterId=${encodeURIComponent(character.id)}`,
       `name=${encodeURIComponent(character.name)}`,
       `avatar=${encodeURIComponent(character.avatar)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
     ].join('&')
     uni.navigateTo({ url: `/subPackages/tools/compendium/detail?${params}` })
   }
 
   const goToEdit = (character: CharacterCard) => {
-    const params = [`characterId=${encodeURIComponent(character.id)}`, `name=${encodeURIComponent(character.name)}`].join('&')
+    const params = [
+      `characterId=${encodeURIComponent(character.id)}`,
+      `name=${encodeURIComponent(character.name)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+    ].join('&')
     uni.navigateTo({ url: `/subPackages/tools/compendium/edit?${params}` })
   }
 
-  onLoad(() => {
+  onLoad((options: Record<string, string | undefined>) => {
+    selectedLocale.value = options.locale || DEFAULT_LOCALE
     uni.setNavigationBarTitle({ title: '魔灵召唤' })
     fetchCharacters(true)
   })
@@ -652,12 +691,12 @@
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => ({
     title: '魔灵召唤 · 凉白开工具箱',
-    path: '/subPackages/tools/compendium/list',
+    path: `/subPackages/tools/compendium/list?locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
 
   onShareTimeline(() => ({
     title: '魔灵召唤 · 凉白开工具箱',
-    query: '',
+    query: `locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
   // #endif
 </script>
@@ -667,6 +706,46 @@
     min-height: 100vh;
     background: #f7f8fb;
     color: #121a26;
+  }
+
+  .locale-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    padding: 20rpx 24rpx 14rpx;
+    background: #f7f8fb;
+  }
+
+  .locale-toolbar-label {
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8rpx;
+    padding: 6rpx;
+    border-radius: 999rpx;
+    background: #e8eef5;
+  }
+
+  .locale-option {
+    min-width: 136rpx;
+    height: 56rpx;
+    line-height: 56rpx;
+    text-align: center;
+    border-radius: 999rpx;
+    color: #808997;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-option.selected {
+    background: #2f80ed;
+    color: #fff;
   }
 
   .filter-shell {

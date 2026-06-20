@@ -142,6 +142,8 @@ export interface getCompendiumsCharactersQuery {
   compendiumId: string
 
   keyword?: string
+  /** 国际化语言参数，例如 en、zh-CN。未提供或未找到翻译时自动回退英文。 */
+  locale?: string
   /** 已废弃，请改用 categories[element] */
   element?: string
   /** 已废弃，请改用 categories[<分类key>] */
@@ -164,7 +166,7 @@ export interface getCompendiumsCharactersQuery {
   minValue?: number
 
   maxValue?: number
-  /** 普通模式按人物字段或动态属性排序；聚合模式按代表人物排序。 聚合模式可传 group，按分组选项 sortOrder 排序。 */
+  /** 普通模式按人物字段或动态属性排序；聚合模式按代表人物排序。 聚合模式可传 stars、attack 等动态属性，也可传 group 按分组选项排序。 若传入当前图鉴未配置的排序 key，将回退为 group 排序并正常返回数据。 */
   sortBy?: string
 
   sortOrder?: string
@@ -211,6 +213,8 @@ export interface getCompendiumsCharacterQuery {
   compendiumId: string
   /** 人物 ID */
   characterId: string
+  /** 国际化语言参数，例如 en、zh-CN。未提供或未找到翻译时自动回退英文。 */
+  locale?: string
 }
 
 /**
@@ -349,11 +353,22 @@ export interface getCompendiumsCompareResItemSkillsCoefficients {
 /** getCompendiumsCompareResItemSkills */
 export interface getCompendiumsCompareResItemSkills {
   attachment?: string
+  /** 技能业务编码；没有时可仅使用 id。 */
+  code?: string
   coefficients?: getCompendiumsCompareResItemSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
+  /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
+  /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
+  /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number
   type?: string
@@ -362,6 +377,7 @@ export interface getCompendiumsCompareResItemSkills {
 /** getCompendiumsCompareResItemSkins */
 export interface getCompendiumsCompareResItemSkins {
   attachment?: string
+  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
   description?: string
   id?: string
   image?: string
@@ -377,9 +393,11 @@ export interface getCompendiumsCompareResItem {
   avatar?: string
   categories?: getCompendiumsCompareResItemCategories[]
   code?: string
+  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
   description?: string
   id?: string
   level?: string
+  /** 按 locale 返回的人物名称；当前语言缺失时自动回退英文。 */
   name?: string
   skills?: getCompendiumsCompareResItemSkills[]
   skins?: getCompendiumsCompareResItemSkins[]

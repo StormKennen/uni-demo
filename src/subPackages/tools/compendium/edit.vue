@@ -1,5 +1,7 @@
 <template>
   <view class="edit-page">
+    <PageLayout title="编辑角色" nav-gradient="linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)" />
+
     <view v-if="loading" class="state-block">
       <text>加载数据中...</text>
     </view>
@@ -10,201 +12,165 @@
     </view>
 
     <view v-else class="content">
-      <view class="section">
-        <text class="section-title">基本信息</text>
-        <view class="field">
-          <text class="field-label">名称</text>
-          <input v-model="form.name" class="field-input" placeholder="角色名称" />
+      <view class="hero-card">
+        <image v-if="heroAvatar" class="hero-avatar" :src="heroAvatar" mode="aspectFill" lazy-load />
+        <view v-else class="hero-avatar hero-avatar-placeholder">
+          <text>{{ heroInitial }}</text>
         </view>
-        <view class="field">
-          <text class="field-label">别名</text>
-          <input v-model="aliasesText" class="field-input" placeholder="多个别名用逗号分隔" />
+
+        <view class="hero-meta">
+          <text class="hero-caption">当前编辑人物</text>
+          <text class="hero-name">{{ displayName }}</text>
+          <text class="hero-locale">语言：{{ selectedLocaleLabel }}</text>
         </view>
-        <view class="field">
-          <text class="field-label">描述</text>
-          <textarea v-model="form.description" class="field-textarea" placeholder="角色描述" :maxlength="500" />
-        </view>
-        <view class="field">
-          <text class="field-label">头像 URL</text>
-          <input v-model="form.avatar" class="field-input" placeholder="头像图片地址" />
-        </view>
-        <view class="field">
-          <text class="field-label">等级</text>
-          <input v-model="form.level" class="field-input" placeholder="等级" />
-        </view>
-        <view class="field">
-          <text class="field-label">排序权重</text>
-          <input v-model="sortOrderText" class="field-input" type="number" placeholder="排序权重（数字）" />
+      </view>
+
+      <view class="locale-toolbar">
+        <text class="locale-toolbar-label">编辑语言</text>
+        <view class="locale-switch">
+          <text
+            v-for="option in localeOptions"
+            :key="option.value"
+            class="locale-option"
+            :class="{ selected: option.value === selectedLocale }"
+            @click="changeLocale(option.value)">
+            {{ option.label }}
+          </text>
         </view>
       </view>
 
       <view class="section">
-        <text class="section-title">分类</text>
-        <view v-for="(value, key) in form.categories" :key="key" class="field">
-          <text class="field-label">{{ categoryLabels[key] || key }}</text>
-          <input v-model="form.categories[key]" class="field-input" :placeholder="'选项 key 或名称'" />
+        <text class="section-title">人物文案</text>
+        <view class="field">
+          <text class="field-label">人物名称</text>
+          <input v-model="form.name" class="field-input" placeholder="请输入人物名称" />
         </view>
+        <text class="field-tip">攻击、生命、防御等数值属性暂不开放编辑。</text>
       </view>
 
       <view class="section">
-        <text class="section-title">属性</text>
-        <view v-for="(value, key) in form.attributes" :key="key" class="field">
-          <text class="field-label">{{ attributeLabels[key] || key }}</text>
-          <input v-model="form.attributes[key]" class="field-input" type="digit" :placeholder="key" />
-        </view>
-      </view>
+        <text class="section-title">技能内容</text>
+        <view v-if="form.skills.length === 0" class="empty-block">当前人物暂无技能数据</view>
 
-      <view class="section">
-        <view class="section-header">
-          <text class="section-title">技能</text>
-        </view>
-        <view v-for="(skill, index) in form.skills" :key="index" class="skill-block">
+        <view v-for="(skill, index) in form.skills" :key="skill.id || String(index)" class="skill-block">
           <view class="skill-head-row">
-            <text class="skill-index">#{{ index + 1 }}</text>
+            <text class="skill-index">技能 {{ index + 1 }}</text>
             <text v-if="skill.type" class="skill-type-label">{{ skill.type }}</text>
           </view>
-          <view class="field">
-            <text class="field-label">名称</text>
-            <input v-model="skill.name" class="field-input" placeholder="技能名称" />
-          </view>
-          <view class="field">
-            <text class="field-label">类型</text>
-            <input v-model="skill.type" class="field-input" placeholder="active / passive / leader" />
-          </view>
-          <view class="field">
-            <text class="field-label">描述</text>
-            <textarea v-model="skill.description" class="field-textarea" placeholder="技能描述" :maxlength="1000" />
-          </view>
-          <view class="field-row">
-            <view class="field half">
-              <text class="field-label">消耗</text>
-              <input v-model="skill.cost" class="field-input" placeholder="消耗" />
-            </view>
-            <view class="field half">
-              <text class="field-label">冷却</text>
-              <input v-model="skill.cooldown" class="field-input" placeholder="冷却" />
-            </view>
-          </view>
-        </view>
-      </view>
 
-      <view class="section">
-        <view class="section-header">
-          <text class="section-title">国际化 (English)</text>
-        </view>
-        <view class="field">
-          <text class="field-label">Name (EN)</text>
-          <input v-model="form.i18nEn.name" class="field-input" placeholder="English name" />
-        </view>
-        <view class="field">
-          <text class="field-label">Description (EN)</text>
-          <textarea v-model="form.i18nEn.description" class="field-textarea" placeholder="English description" :maxlength="500" />
-        </view>
-        <view v-for="(skill, index) in form.skills" :key="'i18n-skill-' + index" class="skill-i18n-block">
-          <text class="skill-i18n-label">技能 #{{ index + 1 }} - {{ skill.name || '未命名' }}</text>
           <view class="field">
-            <text class="field-label">Name (EN)</text>
-            <input v-model="form.i18nEnSkills[skill.id || String(index)].name" class="field-input" placeholder="Skill English name" />
+            <text class="field-label">技能名称</text>
+            <input v-model="skill.name" class="field-input" placeholder="请输入技能名称" />
           </view>
+
           <view class="field">
-            <text class="field-label">Description (EN)</text>
+            <text class="field-label">技能描述</text>
             <textarea
-              v-model="form.i18nEnSkills[skill.id || String(index)].description"
+              v-model="skill.description"
               class="field-textarea"
-              placeholder="Skill English description"
-              :maxlength="1000" />
+              placeholder="请输入技能描述"
+              :maxlength="2000" />
+          </view>
+
+          <view class="field">
+            <text class="field-label">技能次数</text>
+            <input
+              v-model="skill.hitCountText"
+              class="field-input"
+              type="number"
+              placeholder="请输入命中次数 / 攻击次数" />
+          </view>
+
+          <view v-if="skill.coefficients.length" class="coefficient-section">
+            <text class="coefficient-title">技能系数</text>
+            <view
+              v-for="(coefficient, coefficientIndex) in skill.coefficients"
+              :key="coefficient.id || `${index}-${coefficientIndex}`"
+              class="coefficient-item">
+              <view class="field">
+                <text class="field-label">{{ coefficient.name || `系数 ${coefficientIndex + 1}` }}</text>
+                <input
+                  v-model="coefficient.valueText"
+                  class="field-input"
+                  type="digit"
+                  placeholder="请输入技能系数" />
+              </view>
+            </view>
           </view>
         </view>
       </view>
+    </view>
 
-      <view class="action-bar">
-        <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">保存修改</button>
-      </view>
+    <view class="action-bar">
+      <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">保存修改</button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { computed, reactive, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import PageLayout from '@/components/PageLayout.vue'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { patchAdminCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox'
-  import type { patchAdminCompendiumsCharactersBody } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/interface'
 
   const COMPENDIUM_CODE = 'swc'
+  const DEFAULT_LOCALE = 'zh-CN'
+
+  interface LocaleOption {
+    label: string
+    value: string
+  }
+
+  interface SkillCoefficientForm {
+    id: string
+    key: string
+    name: string
+    valueText: string
+    unit: string
+    level: string
+    formula: string
+    description: string
+    triggerProbabilityText: string
+    triggerUnit: string
+    condition: string
+    attachment: string
+  }
 
   interface SkillForm {
     id: string
+    code: string
     name: string
     type: string
     description: string
-    cost: string
-    cooldown: string
-    attachment: string
+    hitCountText: string
     sortOrder: number
+    coefficients: SkillCoefficientForm[]
   }
 
-  interface I18nSkillField {
-    name: string
-    description: string
-  }
+  const localeOptions: LocaleOption[] = [
+    { label: '简体中文', value: 'zh-CN' },
+    { label: 'English', value: 'en' },
+  ]
 
   const loading = ref(false)
   const submitting = ref(false)
   const errorMessage = ref('')
-  const paramCharacterId = ref('')
-  const paramName = ref('')
+  const characterId = ref('')
+  const seedName = ref('')
+  const selectedLocale = ref(DEFAULT_LOCALE)
+  const avatar = ref('')
 
   const form = reactive({
     name: '',
-    aliases: [] as string[],
-    description: '',
-    avatar: '',
-    level: '',
-    sortOrder: 0,
-    categories: {} as Record<string, string>,
-    attributes: {} as Record<string, string>,
     skills: [] as SkillForm[],
-    i18nEn: { name: '', description: '' },
-    i18nEnSkills: {} as Record<string, I18nSkillField>,
   })
 
-  const categoryLabels: Record<string, string> = {
-    element: '属性',
-    archetype: '类型',
-    family: '物种',
-    awaken: '觉醒',
-  }
-
-  const attributeLabels: Record<string, string> = {
-    stars: '星级',
-    hp: '体力',
-    attack: '攻击力',
-    defense: '防御力',
-    speed: '速度',
-    critRate: '暴击率',
-    critDmg: '暴击伤害',
-    accuracy: '效果命中',
-    resistance: '效果抵抗',
-  }
-
-  const aliasesText = computed({
-    get: () => form.aliases.join(', '),
-    set: (value: string) => {
-      form.aliases = value
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean)
-    },
-  })
-
-  const sortOrderText = computed({
-    get: () => String(form.sortOrder || ''),
-    set: (value: string) => {
-      form.sortOrder = Number(value) || 0
-    },
-  })
+  const selectedLocaleLabel = computed(() => localeOptions.find(option => option.value === selectedLocale.value)?.label || selectedLocale.value)
+  const displayName = computed(() => form.name || seedName.value || '未命名人物')
+  const heroAvatar = computed(() => normalizeUrl(avatar.value))
+  const heroInitial = computed(() => displayName.value.slice(0, 1) || '?')
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -215,82 +181,89 @@
     return {}
   }
 
+  const toText = (value: unknown): string => {
+    if (typeof value === 'string') return value
+    if (typeof value === 'number') return String(value)
+    if (typeof value === 'boolean') return value ? 'true' : 'false'
+    return ''
+  }
+
+  const normalizeUrl = (url: string): string => {
+    if (!url) return ''
+    if (url.startsWith('http://')) return url.replace(/^http:/, 'https:')
+    return url
+  }
+
+  const normalizeNumberLike = (value: string): number | string | undefined => {
+    const trimmed = value.trim()
+    if (!trimmed) return undefined
+    const parsed = Number(trimmed)
+    return Number.isNaN(parsed) ? trimmed : parsed
+  }
+
+  const resetForm = () => {
+    form.name = ''
+    form.skills = []
+  }
+
+  const normalizeSkillCoefficient = (source: unknown): SkillCoefficientForm => {
+    const coefficient = isRecord(source) ? source : {}
+    return {
+      id: toText(coefficient.id),
+      key: toText(coefficient.key),
+      name: toText(coefficient.name) || toText(coefficient.level),
+      valueText: toText(coefficient.value),
+      unit: toText(coefficient.unit),
+      level: toText(coefficient.level),
+      formula: toText(coefficient.formula),
+      description: toText(coefficient.description),
+      triggerProbabilityText: toText(coefficient.triggerProbability),
+      triggerUnit: toText(coefficient.triggerUnit),
+      condition: toText(coefficient.condition),
+      attachment: toText(coefficient.attachment),
+    }
+  }
+
+  const normalizeSkill = (source: unknown, index: number): SkillForm => {
+    const skill = isRecord(source) ? source : {}
+    const coefficients = Array.isArray(skill.coefficients) ? skill.coefficients : []
+
+    return {
+      id: toText(skill.id),
+      code: toText(skill.code),
+      name: toText(skill.name) || `技能 ${index + 1}`,
+      type: toText(skill.type),
+      description: toText(skill.description),
+      hitCountText: toText(skill.hitCount),
+      sortOrder: Number(skill.sortOrder) || index,
+      coefficients: coefficients.map(normalizeSkillCoefficient),
+    }
+  }
+
   const loadDetail = async () => {
-    if (!paramCharacterId.value) {
+    if (!characterId.value) {
       errorMessage.value = '缺少角色 ID'
       return
     }
+
     loading.value = true
     errorMessage.value = ''
+    resetForm()
 
     try {
       const query: getCompendiumsCharacterQuery = {
         compendiumId: COMPENDIUM_CODE,
-        characterId: paramCharacterId.value,
+        characterId: characterId.value,
+        locale: selectedLocale.value,
       }
       const rawRes = await getCompendiumsCharacter(query)
       const data = extractData(rawRes)
-
-      form.name = String(data.name || paramName.value || '')
-      form.aliases = Array.isArray(data.aliases) ? data.aliases.filter((a: unknown) => typeof a === 'string') : []
-      form.description = String(data.description || '')
-      form.avatar = String(data.avatar || '')
-      form.level = String(data.level || '')
-      form.sortOrder = Number(data.sortOrder) || 0
-
-      const categories = Array.isArray(data.categories) ? data.categories : []
-      const catMap: Record<string, string> = {}
-      for (const cat of categories) {
-        if (isRecord(cat) && cat.key) {
-          catMap[String(cat.key)] = String(cat.valueKey || cat.value || '')
-        }
-      }
-      form.categories = catMap
-
-      const attributes = Array.isArray(data.attributes) ? data.attributes : []
-      const attrMap: Record<string, string> = {}
-      for (const attr of attributes) {
-        if (isRecord(attr) && attr.key) {
-          attrMap[String(attr.key)] = String(attr.value ?? attr.displayValue ?? '')
-        }
-      }
-      form.attributes = attrMap
-
       const skills = Array.isArray(data.skills) ? data.skills : []
-      form.skills = skills.map((skill: unknown, index: number) => {
-        const s = isRecord(skill) ? skill : {}
-        const skillId = String(s.id || '')
-        const skillForm: SkillForm = {
-          id: skillId,
-          name: String(s.name || ''),
-          type: String(s.type || ''),
-          description: String(s.description || ''),
-          cost: String(s.cost || ''),
-          cooldown: String(s.cooldown || ''),
-          attachment: String(s.attachment || ''),
-          sortOrder: Number(s.sortOrder) || index,
-        }
-        form.i18nEnSkills[skillId || String(index)] = { name: '', description: '' }
-        return skillForm
-      })
 
-      // 预填 i18n（如果后端返回有 i18n 数据）
-      if (isRecord(data.i18n) && isRecord(data.i18n.en)) {
-        const en = data.i18n.en as Record<string, unknown>
-        form.i18nEn.name = String(en.name || '')
-        form.i18nEn.description = String(en.description || '')
-        if (isRecord(en.skills)) {
-          const enSkills = en.skills as Record<string, Record<string, unknown>>
-          for (const [key, val] of Object.entries(enSkills)) {
-            if (form.i18nEnSkills[key]) {
-              form.i18nEnSkills[key].name = String(val?.name || '')
-              form.i18nEnSkills[key].description = String(val?.description || '')
-            }
-          }
-        }
-      }
-
-      uni.setNavigationBarTitle({ title: `编辑 - ${form.name || '角色'}` })
+      form.name = toText(data.name) || seedName.value
+      avatar.value = toText(data.avatar)
+      form.skills = skills.map(normalizeSkill)
+      uni.setNavigationBarTitle({ title: `编辑 - ${displayName.value}` })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '加载失败，请稍后重试'
     } finally {
@@ -298,71 +271,51 @@
     }
   }
 
+  const changeLocale = (locale: string) => {
+    if (locale === selectedLocale.value) return
+    selectedLocale.value = locale
+    loadDetail()
+  }
+
+  const buildSkillPayload = (skill: SkillForm) => ({
+    id: skill.id || undefined,
+    code: skill.code || undefined,
+    name: skill.name || undefined,
+    description: skill.description || undefined,
+    hitCount: normalizeNumberLike(skill.hitCountText),
+    sortOrder: skill.sortOrder,
+    coefficients: skill.coefficients.map(coefficient => ({
+      id: coefficient.id || undefined,
+      key: coefficient.key || undefined,
+      name: coefficient.name || undefined,
+      level: coefficient.level || undefined,
+      formula: coefficient.formula || undefined,
+      description: coefficient.description || undefined,
+      unit: coefficient.unit || undefined,
+      condition: coefficient.condition || undefined,
+      attachment: coefficient.attachment || undefined,
+      triggerProbability: normalizeNumberLike(coefficient.triggerProbabilityText),
+      triggerUnit: coefficient.triggerUnit || undefined,
+      value: normalizeNumberLike(coefficient.valueText),
+    })),
+  })
+
   const handleSubmit = async () => {
-    if (!paramCharacterId.value) return
+    if (!characterId.value) return
     submitting.value = true
 
     try {
-      const body: patchAdminCompendiumsCharactersBody = {
+      const body: Record<string, unknown> = {
         compendiumId: COMPENDIUM_CODE,
-        characterId: paramCharacterId.value,
+        characterId: characterId.value,
+        locale: selectedLocale.value,
         name: form.name || undefined,
-        aliases: form.aliases.length ? form.aliases : undefined,
-        description: form.description || undefined,
-        avatar: form.avatar || undefined,
-        level: form.level || undefined,
-        sortOrder: form.sortOrder || undefined,
+        skills: form.skills.map(buildSkillPayload),
       }
 
-      if (Object.keys(form.categories).length) {
-        body.categories = { ...form.categories }
-      }
-
-      if (Object.keys(form.attributes).length) {
-        const attrs: Record<string, number | string> = {}
-        for (const [key, value] of Object.entries(form.attributes)) {
-          const num = Number(value)
-          attrs[key] = Number.isNaN(num) ? value : num
-        }
-        body.attributes = attrs
-      }
-
-      if (form.skills.length) {
-        body.skills = form.skills.map(skill => ({
-          id: skill.id || undefined,
-          name: skill.name || undefined,
-          type: skill.type || undefined,
-          description: skill.description || undefined,
-          cost: skill.cost || undefined,
-          cooldown: skill.cooldown || undefined,
-          attachment: skill.attachment || undefined,
-          sortOrder: skill.sortOrder,
-        }))
-      }
-
-      const hasI18n = form.i18nEn.name || form.i18nEn.description || Object.values(form.i18nEnSkills).some(s => s.name || s.description)
-      if (hasI18n) {
-        const skillsI18n: Record<string, { name?: string; description?: string }> = {}
-        for (const [key, val] of Object.entries(form.i18nEnSkills)) {
-          if (val.name || val.description) {
-            skillsI18n[key] = {
-              name: val.name || undefined,
-              description: val.description || undefined,
-            }
-          }
-        }
-        body.i18n = {
-          en: {
-            name: form.i18nEn.name || undefined,
-            description: form.i18nEn.description || undefined,
-            skills: Object.keys(skillsI18n).length ? skillsI18n : undefined,
-          },
-        }
-      }
-
-      await patchAdminCompendiumsCharacters(body)
+      await patchAdminCompendiumsCharacters(body as never)
       uni.showToast({ title: '保存成功', icon: 'success' })
-      setTimeout(() => uni.navigateBack(), 800)
+      setTimeout(() => uni.navigateBack(), 700)
     } catch (error) {
       const message = typeof error === 'string' ? error : '保存失败，请稍后重试'
       uni.showToast({ title: message, icon: 'none' })
@@ -372,9 +325,10 @@
   }
 
   onLoad((options: Record<string, string | undefined>) => {
-    paramCharacterId.value = options.characterId || ''
-    paramName.value = decodeURIComponent(options.name || '')
-    uni.setNavigationBarTitle({ title: `编辑 - ${paramName.value || '角色'}` })
+    characterId.value = options.characterId || ''
+    seedName.value = decodeURIComponent(options.name || '')
+    selectedLocale.value = options.locale || DEFAULT_LOCALE
+    uni.setNavigationBarTitle({ title: `编辑 - ${seedName.value || '角色'}` })
     loadDetail()
   })
 </script>
@@ -408,7 +362,101 @@
   }
 
   .content {
-    padding: 20rpx 24rpx;
+    padding: 24rpx;
+  }
+
+  .hero-card {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    margin-bottom: 24rpx;
+    padding: 24rpx;
+    border-radius: 22rpx;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 8rpx 24rpx rgba(29, 78, 216, 0.08);
+  }
+
+  .hero-avatar {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 24rpx;
+    background: #fff;
+    flex: none;
+  }
+
+  .hero-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1d4ed8;
+    font-size: 44rpx;
+    font-weight: 800;
+  }
+
+  .hero-meta {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+  }
+
+  .hero-caption {
+    color: #5b6b86;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .hero-name {
+    color: #0f172a;
+    font-size: 36rpx;
+    font-weight: 800;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .hero-locale {
+    color: #2563eb;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .locale-toolbar-label {
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8rpx;
+    padding: 6rpx;
+    border-radius: 999rpx;
+    background: #e8eef5;
+  }
+
+  .locale-option {
+    min-width: 136rpx;
+    height: 56rpx;
+    line-height: 56rpx;
+    text-align: center;
+    border-radius: 999rpx;
+    color: #808997;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .locale-option.selected {
+    background: #2f80ed;
+    color: #fff;
   }
 
   .section {
@@ -417,13 +465,6 @@
     border-radius: 16rpx;
     background: #fff;
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8rpx;
   }
 
   .section-title {
@@ -440,7 +481,7 @@
 
   .field-label {
     display: block;
-    margin-bottom: 6rpx;
+    margin-bottom: 8rpx;
     color: #667085;
     font-size: 24rpx;
     font-weight: 600;
@@ -460,7 +501,7 @@
 
   .field-textarea {
     width: 100%;
-    min-height: 140rpx;
+    min-height: 180rpx;
     padding: 16rpx 20rpx;
     border: 2rpx solid #e7ebf2;
     border-radius: 12rpx;
@@ -471,13 +512,19 @@
     box-sizing: border-box;
   }
 
-  .field-row {
-    display: flex;
-    gap: 16rpx;
+  .field-tip {
+    color: #8a94a6;
+    font-size: 24rpx;
+    line-height: 1.6;
   }
 
-  .field.half {
-    flex: 1;
+  .empty-block {
+    padding: 24rpx;
+    border-radius: 12rpx;
+    background: #f8f9fb;
+    color: #8a94a6;
+    font-size: 26rpx;
+    text-align: center;
   }
 
   .skill-block {
@@ -496,34 +543,36 @@
   }
 
   .skill-index {
-    color: #667eea;
+    color: #2563eb;
     font-size: 28rpx;
     font-weight: 800;
   }
 
   .skill-type-label {
     padding: 4rpx 14rpx;
-    border-radius: 8rpx;
-    background: #eef2ff;
-    color: #667eea;
+    border-radius: 999rpx;
+    background: #dbeafe;
+    color: #2563eb;
     font-size: 22rpx;
     font-weight: 700;
   }
 
-  .skill-i18n-block {
-    margin-bottom: 20rpx;
-    padding: 16rpx;
-    border: 2rpx dashed #d4d9e2;
-    border-radius: 12rpx;
-    background: #f8f9fb;
+  .coefficient-section {
+    margin-top: 12rpx;
+    padding-top: 12rpx;
+    border-top: 1rpx solid #e8ebf2;
   }
 
-  .skill-i18n-label {
+  .coefficient-title {
     display: block;
     margin-bottom: 12rpx;
-    color: #465164;
+    color: #344054;
     font-size: 26rpx;
     font-weight: 700;
+  }
+
+  .coefficient-item {
+    margin-bottom: 12rpx;
   }
 
   .action-bar {
@@ -542,7 +591,7 @@
     height: 88rpx;
     line-height: 88rpx;
     border-radius: 16rpx;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%);
     color: #fff;
     font-size: 32rpx;
     font-weight: 700;
