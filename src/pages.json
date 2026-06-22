@@ -247,6 +247,24 @@
           }
         },
         {
+          "path": "compendium/lineups",
+          "style": {
+            "navigationBarTitleText": "魔灵召唤阵容"
+          }
+        },
+        {
+          "path": "compendium/lineup-edit",
+          "style": {
+            "navigationBarTitleText": "编辑阵容"
+          }
+        },
+        {
+          "path": "compendium/lineup-relations",
+          "style": {
+            "navigationBarTitleText": "阵容克制关系"
+          }
+        },
+        {
           "path": "magnet-link/index",
           "style": {
             "navigationBarTitleText": "磁力链接",

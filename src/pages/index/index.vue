@@ -121,8 +121,10 @@
 <script setup lang="ts">
   // @ts-ignore
   import { ref, computed, onMounted } from 'vue'
+  import { onShow } from '@dcloudio/uni-app'
   import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
   import { useShare } from '@/utils/share'
+  import { getUserInfo } from '@/utils/storage'
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import PrivacyPopup from '@/components/privacy-popup.vue'
@@ -138,6 +140,7 @@
     disabled?: boolean
     badge?: string
     isWebLink?: boolean
+    requiresAuth?: boolean
   }
 
   // 声明uni全局对象
@@ -154,7 +157,7 @@
     badge: 'NEW',
   }
 
-  const compendiumTools = ref<Tool[]>([
+  const legacyCompendiumTools = ref<Tool[]>([
     {
       id: 21,
       name: '魔灵召唤',
@@ -168,6 +171,34 @@
   ])
 
   // 常用工具集合
+  const currentUserRole = ref(getUserInfo()?.role || '')
+
+  const syncCurrentUserRole = () => {
+    currentUserRole.value = getUserInfo()?.role || ''
+  }
+
+  const isAdmin = computed(() => currentUserRole.value === 'admin')
+
+  const compendiumTools = computed<Tool[]>(() => {
+    const tools = [...legacyCompendiumTools.value]
+
+    if (isAdmin.value) {
+      tools.push({
+        id: 24,
+        name: '魔灵召唤阵容',
+        desc: '阵容管理/克制关系',
+        icon: 'flag',
+        gradient: 'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)',
+        link: '/subPackages/tools/compendium/lineups?compendiumId=swc',
+        disabled: false,
+        badge: 'ADMIN',
+        requiresAuth: true,
+      })
+    }
+
+    return tools
+  })
+
   const commonTools = ref<(Tool & { usageCount?: number; priority?: number })[]>([
     {
       id: 15,
@@ -517,6 +548,10 @@
   }
 
   // 生命周期
+  onMounted(() => {
+    syncCurrentUserRole()
+  })
+
   onMounted(async () => {
     // 执行自动登录检查
     try {
@@ -528,6 +563,10 @@
   })
 
   // 工具点击处理
+  onShow(() => {
+    syncCurrentUserRole()
+  })
+
   const handleActionClick = async (tool: Tool) => {
     if (tool.disabled) {
       uni.showToast({

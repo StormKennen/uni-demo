@@ -162,6 +162,85 @@
           </view>
         </view>
       </view>
+
+      <view class="lineup-section">
+        <view class="lineup-section-head">
+          <view>
+            <text class="lineup-section-title">参与阵容</text>
+            <text class="lineup-section-subtitle">展示该魔灵参与的进攻与防御阵容</text>
+          </view>
+        </view>
+
+        <view v-if="lineupLoading" class="empty-card">
+          <text>加载阵容中...</text>
+        </view>
+
+        <view v-else-if="lineupErrorMessage" class="empty-card">
+          <text>{{ lineupErrorMessage }}</text>
+        </view>
+
+        <view v-else class="lineup-groups">
+          <view class="lineup-group-card">
+            <view class="lineup-group-head">
+              <text class="lineup-group-title">进攻阵容</text>
+              <text class="lineup-group-count">{{ lineupUsage.offenseLineups.length }}</text>
+            </view>
+
+            <view v-if="!lineupUsage.offenseLineups.length" class="empty-inline">暂无进攻阵容</view>
+
+            <view v-for="lineup in lineupUsage.offenseLineups" :key="lineup.id || lineup.name" class="lineup-item-card">
+              <view class="lineup-item-head">
+                <text class="lineup-item-name">{{ lineup.name || '未命名阵容' }}</text>
+                <text class="lineup-item-count">{{ lineup.memberCount }} 人</text>
+              </view>
+              <text v-if="lineup.description" class="lineup-item-desc">{{ lineup.description }}</text>
+              <text class="lineup-item-relation">被哪些防御阵容克制：{{ getRelationSummary(lineup) }}</text>
+
+              <scroll-view v-if="lineup.characters.length" class="lineup-member-scroll" scroll-x>
+                <view class="lineup-member-row">
+                  <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="lineup-member-pill">
+                    <image v-if="member.avatar" class="lineup-member-avatar" :src="member.avatar" mode="aspectFill" />
+                    <view v-else class="lineup-member-avatar lineup-member-avatar-placeholder">
+                      <text>{{ (member.name || '?').slice(0, 1) }}</text>
+                    </view>
+                    <text class="lineup-member-name">{{ member.name || member.label || '未知魔灵' }}</text>
+                  </view>
+                </view>
+              </scroll-view>
+            </view>
+          </view>
+
+          <view class="lineup-group-card">
+            <view class="lineup-group-head">
+              <text class="lineup-group-title">防御阵容</text>
+              <text class="lineup-group-count">{{ lineupUsage.defenseLineups.length }}</text>
+            </view>
+
+            <view v-if="!lineupUsage.defenseLineups.length" class="empty-inline">暂无防御阵容</view>
+
+            <view v-for="lineup in lineupUsage.defenseLineups" :key="lineup.id || lineup.name" class="lineup-item-card">
+              <view class="lineup-item-head">
+                <text class="lineup-item-name">{{ lineup.name || '未命名阵容' }}</text>
+                <text class="lineup-item-count">{{ lineup.memberCount }} 人</text>
+              </view>
+              <text v-if="lineup.description" class="lineup-item-desc">{{ lineup.description }}</text>
+              <text class="lineup-item-relation">可被哪些进攻阵容克制：{{ getRelationSummary(lineup) }}</text>
+
+              <scroll-view v-if="lineup.characters.length" class="lineup-member-scroll" scroll-x>
+                <view class="lineup-member-row">
+                  <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="lineup-member-pill">
+                    <image v-if="member.avatar" class="lineup-member-avatar" :src="member.avatar" mode="aspectFill" />
+                    <view v-else class="lineup-member-avatar lineup-member-avatar-placeholder">
+                      <text>{{ (member.name || '?').slice(0, 1) }}</text>
+                    </view>
+                    <text class="lineup-member-name">{{ member.name || member.label || '未知魔灵' }}</text>
+                  </view>
+                </view>
+              </scroll-view>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -171,6 +250,7 @@
   import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { fetchCharacterLineupUsage, type CharacterLineupUsage, type PublicLineup } from '@/services/compendium-lineups'
 
   type RawRecord = Record<string, any>
 
@@ -364,7 +444,9 @@
   const activeDetailTab = ref<'stats' | 'skills'>('stats')
   const loading = ref(false)
   const switching = ref(false)
+  const lineupLoading = ref(false)
   const errorMessage = ref('')
+  const lineupErrorMessage = ref('')
   const characterId = ref('')
   const seedName = ref('')
   const seedAvatar = ref('')
@@ -391,6 +473,11 @@
     skills: [],
     skins: [],
     familyMembers: [],
+  })
+
+  const lineupUsage = ref<CharacterLineupUsage>({
+    offenseLineups: [],
+    defenseLineups: [],
   })
 
   const stringifyValue = (value: unknown): string => {
@@ -797,6 +884,31 @@
     ]
   })
 
+  const getRelationSummary = (lineup: PublicLineup): string => {
+    const related = lineup.type === 'defense' ? lineup.counters : lineup.counteredBy
+    if (!related.length) return '暂无关联阵容'
+    return related.map(item => item.name).filter(Boolean).join('、')
+  }
+
+  const loadLineupUsage = async (targetCharacterId: string) => {
+    lineupLoading.value = true
+    lineupErrorMessage.value = ''
+
+    try {
+      lineupUsage.value = await fetchCharacterLineupUsage(targetCharacterId, {
+        locale: selectedLocale.value,
+      })
+    } catch (error) {
+      lineupUsage.value = {
+        offenseLineups: [],
+        defenseLineups: [],
+      }
+      lineupErrorMessage.value = typeof error === 'string' ? error : '阵容数据加载失败'
+    } finally {
+      lineupLoading.value = false
+    }
+  }
+
   const changeLocale = (locale: string) => {
     if (locale === selectedLocale.value) return
     selectedLocale.value = locale
@@ -821,6 +933,7 @@
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
+      await loadLineupUsage(characterId.value)
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
@@ -848,6 +961,7 @@
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
+      await loadLineupUsage(form.id)
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '切换形态失败，请稍后重试'
     } finally {
@@ -1451,6 +1565,140 @@
     font-weight: 700;
     text-align: right;
     word-break: break-word;
+  }
+
+  .lineup-section {
+    padding: 8rpx 22rpx 0;
+  }
+
+  .lineup-section-head {
+    margin-bottom: 16rpx;
+  }
+
+  .lineup-section-title {
+    display: block;
+    color: #1d2636;
+    font-size: 32rpx;
+    font-weight: 800;
+  }
+
+  .lineup-section-subtitle {
+    display: block;
+    margin-top: 8rpx;
+    color: #667085;
+    font-size: 24rpx;
+  }
+
+  .lineup-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 18rpx;
+  }
+
+  .lineup-group-card,
+  .lineup-item-card {
+    border-radius: 18rpx;
+    background: #fff;
+    box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
+  }
+
+  .lineup-group-card {
+    padding: 20rpx;
+  }
+
+  .lineup-group-head,
+  .lineup-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+  }
+
+  .lineup-group-title,
+  .lineup-item-name {
+    color: #172033;
+    font-size: 28rpx;
+    font-weight: 800;
+  }
+
+  .lineup-group-count,
+  .lineup-item-count {
+    padding: 6rpx 14rpx;
+    border-radius: 999rpx;
+    background: #eef2ff;
+    color: #4b9df4;
+    font-size: 22rpx;
+    font-weight: 800;
+  }
+
+  .lineup-item-card {
+    margin-top: 16rpx;
+    padding: 18rpx;
+    background: #f8fafc;
+    box-shadow: none;
+  }
+
+  .lineup-item-desc,
+  .lineup-item-relation {
+    display: block;
+    margin-top: 10rpx;
+    color: #667085;
+    font-size: 24rpx;
+    line-height: 1.6;
+  }
+
+  .empty-inline {
+    margin-top: 14rpx;
+    color: #98a2b3;
+    font-size: 24rpx;
+  }
+
+  .lineup-member-scroll {
+    margin-top: 14rpx;
+    white-space: nowrap;
+  }
+
+  .lineup-member-row {
+    display: inline-flex;
+    gap: 12rpx;
+    padding-bottom: 4rpx;
+  }
+
+  .lineup-member-pill {
+    width: 160rpx;
+    padding: 12rpx;
+    border-radius: 16rpx;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8rpx;
+  }
+
+  .lineup-member-avatar {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 16rpx;
+    background: #e5e7eb;
+  }
+
+  .lineup-member-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b9df4;
+    font-weight: 800;
+  }
+
+  .lineup-member-name {
+    width: 100%;
+    color: #172033;
+    font-size: 22rpx;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .coefficient-list {
