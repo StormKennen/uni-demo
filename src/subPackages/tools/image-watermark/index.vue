@@ -278,6 +278,12 @@
 <script setup lang="ts">
 import NavBar from '@/components/nav-bar.vue'
 import { ref, reactive, computed, getCurrentInstance } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
+
+onShow(() => {
+  reportToolVisit('image-watermark')
+})
 
 const canvasId = 'watermarkCanvas'
 const baseImage = reactive({

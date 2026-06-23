@@ -142,7 +142,8 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
   import { deleteAdminLineup, fetchAdminLineups, type AdminLineupSummary, type PaginationState } from '@/services/compendium-lineups'
   import { ensureAdminAccess } from '@/utils/admin'
 
@@ -314,6 +315,10 @@
       },
     })
   }
+
+  onShow(() => {
+    reportToolVisit('compendium-lineups')
+  })
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE

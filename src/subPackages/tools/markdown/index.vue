@@ -78,8 +78,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import { marked } from 'marked'
 import NavBar from '@/components/nav-bar.vue'
+
+onShow(() => {
+  reportToolVisit('markdown')
+})
 
 marked.setOptions({ gfm: true, breaks: true })
 

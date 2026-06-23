@@ -49,7 +49,8 @@
 <script setup lang="ts">
 import { postVideoProcess } from '@/services/apifox/NODEJSDEMO/VIDEO/apifox'
 import { ref } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
 
 const videoLink = ref('')
@@ -245,6 +246,10 @@ const handleShare = () => {
     uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false })
   }
 }
+
+onShow(() => {
+  reportToolVisit('video-watermark')
+})
 
 // #ifdef MP-WEIXIN
 onShareAppMessage(() => ({

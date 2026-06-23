@@ -52,6 +52,8 @@
 
 <script setup>
 import { ref, watch, onMounted, nextTick } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
+import { reportToolVisit } from '@/utils/tracker';
 import NavBar from '@/components/nav-bar.vue';
 import FamilyTreeList from './family-tree-list.vue';
 import FamilyTreeChart from './family-tree-chart.vue';
@@ -78,6 +80,10 @@ watch(viewMode, (newMode) => {
     });
   }
 });
+
+onShow(() => {
+  reportToolVisit('family-tree')
+})
 
 // 页面挂载时，如果默认是树形图模式，初始化图表
 onMounted(() => {

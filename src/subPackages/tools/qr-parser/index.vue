@@ -52,11 +52,15 @@
 
 <script>
 import NavBar from '@/components/nav-bar.vue'
+import { reportToolVisit } from '@/utils/tracker'
 
 export default {
   name: 'QRParser',
   components: {
     NavBar
+  },
+  onShow() {
+    reportToolVisit('qr-parser')
   },
   data() {
     return {

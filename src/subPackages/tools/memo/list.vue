@@ -246,7 +246,13 @@ import {
 } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox';
 
 import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
+
+onShow(() => {
+  reportToolVisit('memo')
+})
 
 // 类型定义
 interface Folder {

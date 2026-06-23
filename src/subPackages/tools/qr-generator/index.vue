@@ -74,6 +74,7 @@
 <script>
   import NavBar from '@/components/nav-bar.vue'
   import UQRCode from 'uqrcodejs'
+  import { reportToolVisit } from '@/utils/tracker'
 
   // H5图片二维码解析：改为运行时动态加载CDN，避免本地依赖
 
@@ -102,6 +103,7 @@
       }
     },
     onShow() {
+      reportToolVisit('qr-generator')
       if (this.clipboardAutoRead || this.inputContent) return
       uni.getClipboardData({
         success: res => {

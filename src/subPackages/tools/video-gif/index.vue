@@ -88,7 +88,8 @@
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
-  import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
 
   const videoSrc = ref('')
   const videoDuration = ref(0)
@@ -396,6 +397,10 @@
   const shareGif = () => {
     uni.showToast({ title: '请长按图片分享', icon: 'none' })
   }
+
+  onShow(() => {
+    reportToolVisit('video-gif')
+  })
 
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => ({

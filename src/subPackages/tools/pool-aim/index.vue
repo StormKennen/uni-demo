@@ -176,7 +176,8 @@ import { getCompendiumsCharacters, getCompendiumsCharacter } from '@/services/ap
 import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCompendiumsCharacterQuery, getCompendiumsCharacterRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface';
 
   import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-  import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
 
   declare const uni: any
 
@@ -1488,6 +1489,10 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     query: '',
   }))
   // #endif
+
+  onShow(() => {
+    reportToolVisit('pool-aim')
+  })
 
   onMounted(() => {
     initializeCanvas()

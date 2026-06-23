@@ -139,6 +139,7 @@
 <script setup lang="ts">
 import { postGeminiChat, getGeminiSessionId, postGeminiSession, getGeminiAuditStatus } from '@/services/apifox/NODEJSDEMO/GEMINI/apifox';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import { ref, nextTick, computed } from 'vue'
 import NavBar from '@/components/nav-bar.vue'
 
@@ -205,6 +206,7 @@ onLoad((options: any) => {
 
 // 页面显示时检查登录状态
 onShow(() => {
+  reportToolVisit('chat')
   checkLoginStatus()
 })
 
