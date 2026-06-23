@@ -110,7 +110,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
 import { SimpleScrambler } from '@/engine/simple-scrambler'
 
@@ -374,6 +375,10 @@ const handleShare = () => {
     uni.showModal({ title: '分享链接', content: shareUrl, showCancel: false })
   }
 }
+
+onShow(() => {
+  reportToolVisit('image-cipher')
+})
 
 // #ifdef MP-WEIXIN
 onShareAppMessage(() => ({

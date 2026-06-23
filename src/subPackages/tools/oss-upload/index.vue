@@ -5,7 +5,8 @@ import FolderPicker from '@/components/FolderPicker.vue';
 // import { post, getOssGetSignature } from '@/services/apifox/NODEJSDEMO/oSS/apifox';
 
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
 import { generateDefaultOssKey } from '@/services/oss'
 import { getOssFormData } from './utils'
@@ -34,6 +35,10 @@ const showFolderPicker = ref(false)
 // 进入页面时仅调用一次获取签名并缓存
 const ossSignature = ref<any>(null)
 const uploadHost = ref<string>('https://lzk-web.oss-cn-beijing.aliyuncs.com')
+
+onShow(() => {
+  reportToolVisit('oss-upload')
+})
 
 // 进入页面时检查登录状态
 onLoad(() => {

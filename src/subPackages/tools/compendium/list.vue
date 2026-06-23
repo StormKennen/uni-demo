@@ -178,7 +178,8 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getUserInfo } from '@/utils/storage'
@@ -673,6 +674,10 @@
     ].join('&')
     uni.navigateTo({ url: `/subPackages/tools/compendium/edit?${params}` })
   }
+
+  onShow(() => {
+    reportToolVisit('compendium-swc')
+  })
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE

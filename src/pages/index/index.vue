@@ -17,14 +17,14 @@
       </view>
       <view class="recent-grid">
         <view
-          v-for="tool in recentTools"
-          :key="tool.id"
+          v-for="item in recentTools"
+          :key="item.key"
           class="recent-item"
-          @click="handleToolClick(tool)">
-          <view class="recent-icon" :style="{ background: tool.gradient }">
-            <uni-icons :type="(tool.icon as any)" size="24" color="#fff" />
+          @click="handleToolClick(item.key, item.tool)">
+          <view class="recent-icon" :style="{ background: item.tool.gradient }">
+            <uni-icons :type="(item.tool.icon as any)" size="24" color="#fff" />
           </view>
-          <text class="recent-name">{{ tool.name }}</text>
+          <text class="recent-name">{{ item.tool.name }}</text>
         </view>
       </view>
     </view>
@@ -45,37 +45,37 @@
         <!-- 网格布局 -->
         <view v-if="cat.layout === 'grid'" class="tools-grid">
           <view
-            v-for="tool in getToolsByCategory(cat.key)"
-            :key="tool.id"
-            :class="['tool-card', { disabled: tool.disabled }]"
-            @click="handleToolClick(tool)">
-            <view class="tool-icon-wrapper" :style="{ background: tool.gradient }">
-              <uni-icons :type="(tool.icon as any)" size="24" color="#fff" />
+            v-for="item in getToolsByCategory(cat.key)"
+            :key="item.key"
+            :class="['tool-card', { disabled: item.tool.disabled }]"
+            @click="handleToolClick(item.key, item.tool)">
+            <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
+              <uni-icons :type="(item.tool.icon as any)" size="24" color="#fff" />
             </view>
-            <text class="tool-name">{{ tool.name }}</text>
-            <text class="tool-desc">{{ tool.desc }}</text>
-            <view v-if="tool.isNew" class="new-dot" />
-            <view v-if="tool.badge" class="tool-badge">{{ tool.badge }}</view>
+            <text class="tool-name">{{ item.tool.name }}</text>
+            <text class="tool-desc">{{ item.tool.desc }}</text>
+            <view v-if="item.tool.isNew" class="new-dot" />
+            <view v-if="item.tool.badge" class="tool-badge">{{ item.tool.badge }}</view>
           </view>
         </view>
 
         <!-- 列表布局 -->
         <view v-else class="tools-list">
           <view
-            v-for="tool in getToolsByCategory(cat.key)"
-            :key="tool.id"
-            :class="['tool-list-item', { disabled: tool.disabled }]"
-            @click="handleToolClick(tool)">
-            <view class="tool-icon-wrapper mini" :style="{ background: tool.gradient }">
-              <uni-icons :type="(tool.icon as any)" size="20" color="#fff" />
+            v-for="item in getToolsByCategory(cat.key)"
+            :key="item.key"
+            :class="['tool-list-item', { disabled: item.tool.disabled }]"
+            @click="handleToolClick(item.key, item.tool)">
+            <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
+              <uni-icons :type="(item.tool.icon as any)" size="20" color="#fff" />
             </view>
             <view class="tool-content">
-              <text class="tool-name">{{ tool.name }}</text>
-              <text class="tool-desc">{{ tool.desc }}</text>
+              <text class="tool-name">{{ item.tool.name }}</text>
+              <text class="tool-desc">{{ item.tool.desc }}</text>
             </view>
             <view class="tool-status">
-              <text v-if="tool.requiresAuth" class="login-badge">需登录</text>
-              <text v-else-if="tool.disabled" class="status-dev">开发中</text>
+              <text v-if="item.tool.requiresAuth" class="login-badge">需登录</text>
+              <text v-else-if="item.tool.disabled" class="status-dev">开发中</text>
               <uni-icons v-else type="right" size="16" color="#ccc" />
             </view>
           </view>
@@ -113,24 +113,31 @@
     CATEGORIES,
     STORAGE_KEY_RECENT,
     STORAGE_KEY_FOLD_STATUS,
-    MAX_RECENT_TOOLS,
   } from '@/config/tools'
   import type { ToolItem } from '@/config/tools'
 
   declare const uni: any
 
+  /** 带 key 的工具项（模板渲染用） */
+  interface KeyedToolItem {
+    key: string
+    tool: ToolItem
+  }
+
   // ── 状态 ──
 
   const currentUserRole = ref(getUserInfo()?.role || '')
   const isAdmin = computed(() => currentUserRole.value === 'admin')
-  const recentToolIds = ref<string[]>([])
+  const recentToolKeys = ref<string[]>([])
   const foldStatus = ref<Record<string, boolean>>({})
 
   // ── 计算属性 ──
 
-  /** 根据角色过滤后的全量工具 */
-  const availableTools = computed(() =>
-    ALL_TOOLS.filter(t => !t.adminOnly || isAdmin.value),
+  /** 根据角色过滤后的全量工具（带 key） */
+  const availableTools = computed<KeyedToolItem[]>(() =>
+    Object.entries(ALL_TOOLS)
+      .filter(([, t]) => !t.adminOnly || isAdmin.value)
+      .map(([key, tool]) => ({ key, tool })),
   )
 
   /** 可见分类（过滤掉没有工具的分类） */
@@ -138,18 +145,18 @@
     CATEGORIES.filter(cat => getToolsByCategory(cat.key).length > 0),
   )
 
-  /** 最近使用的工具列表（最多 MAX_RECENT_TOOLS 个） */
-  const recentTools = computed<ToolItem[]>(() => {
-    const toolMap = new Map(availableTools.value.map(t => [t.id, t]))
-    return recentToolIds.value
-      .map(id => toolMap.get(id))
-      .filter((t): t is ToolItem => !!t)
+  /** 最近使用的工具列表（从缓存 key 数组还原完整数据） */
+  const recentTools = computed<KeyedToolItem[]>(() => {
+    const available = new Set(availableTools.value.map(t => t.key))
+    return recentToolKeys.value
+      .filter(k => available.has(k) && ALL_TOOLS[k])
+      .map(k => ({ key: k, tool: ALL_TOOLS[k] }))
   })
 
   // ── 工具方法 ──
 
-  function getToolsByCategory(categoryKey: string): ToolItem[] {
-    return availableTools.value.filter(t => t.category === categoryKey)
+  function getToolsByCategory(categoryKey: string): KeyedToolItem[] {
+    return availableTools.value.filter(t => t.tool.category === categoryKey)
   }
 
   function isFolded(categoryKey: string): boolean {
@@ -161,17 +168,9 @@
   function loadRecentTools() {
     try {
       const data = uni.getStorageSync(STORAGE_KEY_RECENT)
-      recentToolIds.value = Array.isArray(data) ? data : []
+      recentToolKeys.value = Array.isArray(data) ? data : []
     } catch {
-      recentToolIds.value = []
-    }
-  }
-
-  function saveRecentTools() {
-    try {
-      uni.setStorageSync(STORAGE_KEY_RECENT, recentToolIds.value)
-    } catch {
-      /* 静默 */
+      recentToolKeys.value = []
     }
   }
 
@@ -194,17 +193,6 @@
 
   // ── 核心逻辑 ──
 
-  /** 记录最近使用 */
-  function recordRecentTool(toolId: string) {
-    const list = [...recentToolIds.value]
-    const idx = list.indexOf(toolId)
-    if (idx !== -1) list.splice(idx, 1)
-    list.unshift(toolId)
-    if (list.length > MAX_RECENT_TOOLS) list.length = MAX_RECENT_TOOLS
-    recentToolIds.value = list
-    saveRecentTools()
-  }
-
   /** 切换分类折叠状态 */
   function toggleCategoryFold(categoryKey: string) {
     foldStatus.value = {
@@ -214,15 +202,13 @@
     saveFoldStatus()
   }
 
-  // ── 点击处理 ──
+  // ── 点击处理（纯跳转，不上报——子页面 onShow 会自行上报） ──
 
-  const handleToolClick = async (tool: ToolItem) => {
+  const handleToolClick = async (toolKey: string, tool: ToolItem) => {
     if (tool.disabled) {
       uni.showToast({ title: '功能开发中，敬请期待', icon: 'none', duration: 2000 })
       return
     }
-
-    recordRecentTool(tool.id)
 
     if (tool.isWebLink) {
       uni.navigateTo({

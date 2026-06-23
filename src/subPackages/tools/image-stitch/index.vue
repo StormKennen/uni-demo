@@ -370,7 +370,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad } from "@dcloudio/uni-app";
+import { onLoad, onShow } from "@dcloudio/uni-app";
+import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
 import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
 import { postFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
@@ -467,6 +468,10 @@ const getStitchDataFromUrl = () => {
   return null
   // #endif
 }
+
+onShow(() => {
+  reportToolVisit('image-stitch')
+})
 
 // 页面加载时判断运行环境
 onLoad((options) => {

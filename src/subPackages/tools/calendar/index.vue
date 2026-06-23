@@ -150,7 +150,8 @@
 <script setup lang="ts">
 import { getCalendarMonth, getCalendarDetail, getCalendarAuspicious } from '@/services/apifox/NODEJSDEMO/CALENDAR/apifox'
 import { ref, computed, onMounted } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
 import { formatDate, getTodayStr } from '@/utils/lunar'
 import NavBar from '@/components/nav-bar.vue'
 import { holidays } from './holidays'
@@ -427,6 +428,10 @@ const onShare = () => {
   }
   // #endif
 }
+
+onShow(() => {
+  reportToolVisit('calendar')
+})
 
 onMounted(async () => {
   await loadCalendar()

@@ -215,6 +215,12 @@
 <script setup lang="ts">
 import NavBar from '@/components/nav-bar.vue'
 import { ref, reactive, computed, watch } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { reportToolVisit } from '@/utils/tracker'
+
+onShow(() => {
+  reportToolVisit('video-compress')
+})
 
 // 微信小程序 API 类型声明
 declare const wx: any

@@ -1,6 +1,5 @@
-/** 工具节点 */
+/** 工具节点（不含 key，key 作为字典的键） */
 export interface ToolItem {
-  id: string
   name: string
   desc: string
   icon: string
@@ -23,7 +22,7 @@ export interface CategoryConfig {
   layout: 'grid' | 'list'
 }
 
-/** Storage Key：最近使用 */
+/** Storage Key：最近使用（存放 key 数组） */
 export const STORAGE_KEY_RECENT = 'APP_RECENT_TOOLS'
 /** Storage Key：分类折叠状态 */
 export const STORAGE_KEY_FOLD_STATUS = 'APP_CATEGORY_FOLD_STATUS'
@@ -39,10 +38,13 @@ export const CATEGORIES: CategoryConfig[] = [
   { key: 'entertainment', name: '娱乐', subtitle: 'ENTERTAINMENT', layout: 'grid' },
 ]
 
-export const ALL_TOOLS: ToolItem[] = [
+/**
+ * 全量工具映射表
+ * Key 为高语义化字符串，子页面上报和首页渲染共用同一套 Key
+ */
+export const ALL_TOOLS: Record<string, ToolItem> = {
   // ── 图鉴 ──
-  {
-    id: 'compendium-swc',
+  'compendium-swc': {
     name: '魔灵召唤',
     desc: '魔灵图鉴/筛选/详情',
     icon: 'star',
@@ -51,8 +53,7 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'wiki',
     isNew: true,
   },
-  {
-    id: 'compendium-lineups',
+  'compendium-lineups': {
     name: '魔灵召唤阵容',
     desc: '阵容管理/克制关系',
     icon: 'flag',
@@ -64,8 +65,7 @@ export const ALL_TOOLS: ToolItem[] = [
     adminOnly: true,
   },
   // ── 媒体 ──
-  {
-    id: 'oss-upload',
+  'oss-upload': {
     name: '图片上传',
     desc: '安全快速传输',
     icon: 'upload',
@@ -73,8 +73,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/oss-upload/index',
     category: 'media',
   },
-  {
-    id: 'image-stitch',
+  'image-stitch': {
     name: '图片拼接',
     desc: '多图合成长图',
     icon: 'images',
@@ -82,8 +81,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/image-stitch/index',
     category: 'media',
   },
-  {
-    id: 'image-compress',
+  'image-compress': {
     name: '图片压缩',
     desc: '高效压缩不失真',
     icon: 'image',
@@ -91,8 +89,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/image-compress/index',
     category: 'media',
   },
-  {
-    id: 'image-format',
+  'image-format': {
     name: '图片格式转换',
     desc: 'JPG / PNG / WebP',
     icon: 'color-palette',
@@ -100,8 +97,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/image-format/index',
     category: 'media',
   },
-  {
-    id: 'image-cipher',
+  'image-cipher': {
     name: '图片混淆',
     desc: '多次混淆/还原',
     icon: 'locked',
@@ -109,8 +105,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/image-cipher/index',
     category: 'media',
   },
-  {
-    id: 'image-watermark',
+  'image-watermark': {
     name: '图片加水印',
     desc: '文字/贴纸叠加',
     icon: 'brush',
@@ -118,8 +113,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/image-watermark/index',
     category: 'media',
   },
-  {
-    id: 'video-compress',
+  'video-compress': {
     name: '视频压缩',
     desc: '高效压缩省空间',
     icon: 'videocam',
@@ -127,8 +121,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/video-compress/index',
     category: 'media',
   },
-  {
-    id: 'watermark',
+  'video-watermark': {
     name: '视频去水印',
     desc: '粘贴解析/保存/复制直链',
     icon: 'link',
@@ -136,8 +129,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/watermark/index',
     category: 'media',
   },
-  {
-    id: 'video-gif',
+  'video-gif': {
     name: '视频转GIF',
     desc: '纯前端视频转动图',
     icon: 'videocam',
@@ -146,8 +138,7 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'media',
   },
   // ── 二维码 ──
-  {
-    id: 'qr-generator',
+  'qr-generator': {
     name: '二维码生成',
     desc: '自定义颜色和 Logo',
     icon: 'scan',
@@ -155,8 +146,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/qr-generator/index',
     category: 'qr',
   },
-  {
-    id: 'qr-parser',
+  'qr-parser': {
     name: '二维码解析',
     desc: '扫码识别或图片上传',
     icon: 'camera',
@@ -165,8 +155,7 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'qr',
   },
   // ── 记录 ──
-  {
-    id: 'calendar',
+  'calendar': {
     name: '万年历',
     desc: '黄历查询、择吉日',
     icon: 'calendar',
@@ -174,8 +163,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/calendar/index',
     category: 'record',
   },
-  {
-    id: 'chat',
+  'chat': {
     name: '笔记收藏',
     desc: '个人笔记随手记',
     icon: 'chat',
@@ -183,8 +171,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/chat/index',
     category: 'record',
   },
-  {
-    id: 'memo',
+  'memo': {
     name: '备忘录',
     desc: '备忘录管理，支持分类',
     icon: 'compose',
@@ -193,8 +180,7 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'record',
     requiresAuth: true,
   },
-  {
-    id: 'family-tree',
+  'family-tree': {
     name: '族谱',
     desc: '实时数据，支持编辑',
     icon: 'personadd',
@@ -204,8 +190,7 @@ export const ALL_TOOLS: ToolItem[] = [
     requiresAuth: true,
   },
   // ── 文本 ──
-  {
-    id: 'markdown',
+  'markdown': {
     name: 'Markdown 转 HTML',
     desc: 'Markdown 一键预览/导出',
     icon: 'document',
@@ -213,8 +198,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/subPackages/tools/markdown/index',
     category: 'text',
   },
-  {
-    id: 'magnet-link',
+  'magnet-link': {
     name: '磁力链接',
     desc: '自动补全/过滤/批量替换',
     icon: 'link',
@@ -223,8 +207,7 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'text',
   },
   // ── 娱乐 ──
-  {
-    id: 'pool-aim',
+  'pool-aim': {
     name: '台球瞄准器',
     desc: '台球路线计算/直线/反库',
     icon: 'flag',
@@ -233,4 +216,4 @@ export const ALL_TOOLS: ToolItem[] = [
     category: 'entertainment',
     isNew: true,
   },
-]
+}

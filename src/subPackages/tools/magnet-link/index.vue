@@ -52,6 +52,7 @@
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
   import PageLayout from '@/components/PageLayout.vue'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
@@ -166,6 +167,7 @@
   })
 
   onShow(() => {
+    reportToolVisit('magnet-link')
     if (hasAutoRead || rawInput.value) return
     uni.getClipboardData({
       success: res => {

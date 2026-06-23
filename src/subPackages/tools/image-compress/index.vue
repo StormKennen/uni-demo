@@ -108,7 +108,13 @@
 <script setup lang="ts">
   import NavBar from '@/components/nav-bar.vue'
   import { ref, computed } from 'vue'
+  import { onShow } from '@dcloudio/uni-app'
+  import { reportToolVisit } from '@/utils/tracker'
   import { checkMediaSecurity } from '@/services/security'
+
+  onShow(() => {
+    reportToolVisit('image-compress')
+  })
 
   // 声明uni全局对象
   declare const uni: any
