@@ -128,15 +128,20 @@
 
   const currentUserRole = ref(getUserInfo()?.role || '')
   const isAdmin = computed(() => currentUserRole.value === 'admin')
+  const loggedIn = ref(isUserLoggedIn())
   const recentToolKeys = ref<string[]>([])
   const foldStatus = ref<Record<string, boolean>>({})
 
   // ── 计算属性 ──
 
-  /** 根据角色过滤后的全量工具（带 key） */
+  /** 根据角色和登录状态过滤后的全量工具（带 key） */
   const availableTools = computed<KeyedToolItem[]>(() =>
     Object.entries(ALL_TOOLS)
-      .filter(([, t]) => !t.adminOnly || isAdmin.value)
+      .filter(([, t]) => {
+        if (t.adminOnly && !isAdmin.value) return false
+        if (t.requiresAuth && !loggedIn.value) return false
+        return true
+      })
       .map(([key, tool]) => ({ key, tool })),
   )
 
@@ -217,24 +222,21 @@
       return
     }
 
-    const needLoginServices = ['/subPackages/tools/memo/list']
-    if (needLoginServices.includes(tool.path)) {
-      if (!isUserLoggedIn()) {
-        uni.showModal({
-          title: '需要登录',
-          content: '该功能需要登录后才能使用',
-          confirmText: '去登录',
-          cancelText: '取消',
-          success: (res: UniApp.ShowModalRes) => {
-            if (res.confirm) {
-              uni.navigateTo({
-                url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.path)}`,
-              })
-            }
-          },
-        })
-        return
-      }
+    if (tool.requiresAuth && !isUserLoggedIn()) {
+      uni.showModal({
+        title: '需要登录',
+        content: '该功能需要登录后才能使用',
+        confirmText: '去登录',
+        cancelText: '取消',
+        success: (res: UniApp.ShowModalRes) => {
+          if (res.confirm) {
+            uni.navigateTo({
+              url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.path)}`,
+            })
+          }
+        },
+      })
+      return
     }
 
     uni.navigateTo({ url: tool.path })
@@ -262,6 +264,7 @@
 
   onShow(() => {
     syncCurrentUserRole()
+    loggedIn.value = isUserLoggedIn()
     loadRecentTools()
   })
 
