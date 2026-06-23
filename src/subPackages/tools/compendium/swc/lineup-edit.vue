@@ -212,7 +212,7 @@
   const buildCurrentUrl = (): string => {
     const params: string[] = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (lineupId.value) params.push(`lineupId=${encodeURIComponent(lineupId.value)}`)
-    return `/subPackages/tools/compendium/lineup-edit?${params.join('&')}`
+    return `/subPackages/tools/compendium/swc/lineup-edit?${params.join('&')}`
   }
 
   const resetForm = () => {

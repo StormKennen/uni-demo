@@ -663,7 +663,7 @@
       `avatar=${encodeURIComponent(character.avatar)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
     ].join('&')
-    uni.navigateTo({ url: `/subPackages/tools/compendium/detail?${params}` })
+    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/detail?${params}` })
   }
 
   const goToEdit = (character: CharacterCard) => {
@@ -672,7 +672,7 @@
       `name=${encodeURIComponent(character.name)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
     ].join('&')
-    uni.navigateTo({ url: `/subPackages/tools/compendium/edit?${params}` })
+    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/edit?${params}` })
   }
 
   onShow(() => {
@@ -696,7 +696,7 @@
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => ({
     title: '魔灵召唤 · 凉白开工具箱',
-    path: `/subPackages/tools/compendium/list?locale=${encodeURIComponent(selectedLocale.value)}`,
+    path: `/subPackages/tools/compendium/swc/list?locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
 
   onShareTimeline(() => ({

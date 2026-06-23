@@ -166,7 +166,7 @@
   const buildCurrentUrl = (): string => {
     const params: string[] = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (sourceLineupId.value) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId.value)}`)
-    return `/subPackages/tools/compendium/lineup-relations?${params.join('&')}`
+    return `/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}`
   }
 
   const isTargetSelected = (lineupId: string): boolean =>

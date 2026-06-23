@@ -55,11 +55,11 @@ const switchTab = (tab: string) => {
   
   currentTab.value = tab
   if (tab === 'index') {
-    uni.redirectTo({
+    uni.switchTab({
       url: '/pages/index/index'
     })
   } else if (tab === 'mine') {
-    uni.redirectTo({
+    uni.switchTab({
       url: '/pages/mine/mine'
     })
   }

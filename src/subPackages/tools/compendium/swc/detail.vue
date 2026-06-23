@@ -1009,7 +1009,7 @@
   onShareAppMessage(() => ({
     title: `魔灵详情 · ${detail.value.name || '图鉴'}`,
     imageUrl: detail.value.avatar || '',
-    path: `/subPackages/tools/compendium/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+    path: `/subPackages/tools/compendium/swc/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}&locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
 </script>
 

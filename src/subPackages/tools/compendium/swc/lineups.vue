@@ -212,7 +212,7 @@
     if (selectedStatus.value) params.push(`status=${encodeURIComponent(selectedStatus.value)}`)
     params.push(`locale=${encodeURIComponent(selectedLocale.value)}`)
     const query = params.join('&')
-    return `/subPackages/tools/compendium/lineups${query ? `?${query}` : ''}`
+    return `/subPackages/tools/compendium/swc/lineups${query ? `?${query}` : ''}`
   }
 
   const fetchList = async (reset = false) => {
@@ -272,13 +272,13 @@
 
   const goCreate = () => {
     uni.navigateTo({
-      url: `/subPackages/tools/compendium/lineup-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+      url: `/subPackages/tools/compendium/swc/lineup-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
   const goEdit = (lineupId: string) => {
     uni.navigateTo({
-      url: `/subPackages/tools/compendium/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+      url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
@@ -286,7 +286,7 @@
     const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (sourceLineupId) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId)}`)
     uni.navigateTo({
-      url: `/subPackages/tools/compendium/lineup-relations?${params.join('&')}`,
+      url: `/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}`,
     })
   }
 

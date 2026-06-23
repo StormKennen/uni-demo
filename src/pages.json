@@ -226,7 +226,7 @@
           }
         },
         {
-          "path": "compendium/list",
+          "path": "compendium/swc/list",
           "style": {
             "navigationBarTitleText": "魔灵 wiki-图鉴",
             "enablePullDownRefresh": true,
@@ -234,32 +234,32 @@
           }
         },
         {
-          "path": "compendium/detail",
+          "path": "compendium/swc/detail",
           "style": {
             "navigationBarTitleText": "魔灵 wiki-详情",
             "enablePullDownRefresh": true
           }
         },
         {
-          "path": "compendium/edit",
+          "path": "compendium/swc/edit",
           "style": {
             "navigationBarTitleText": "编辑角色"
           }
         },
         {
-          "path": "compendium/lineups",
+          "path": "compendium/swc/lineups",
           "style": {
             "navigationBarTitleText": "魔灵召唤阵容"
           }
         },
         {
-          "path": "compendium/lineup-edit",
+          "path": "compendium/swc/lineup-edit",
           "style": {
             "navigationBarTitleText": "编辑阵容"
           }
         },
         {
-          "path": "compendium/lineup-relations",
+          "path": "compendium/swc/lineup-relations",
           "style": {
             "navigationBarTitleText": "阵容克制关系"
           }
