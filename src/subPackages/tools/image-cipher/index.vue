@@ -7,7 +7,14 @@
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' }"
     />
 
-    <view class="content">
+    <PlatformRestrictionNotice
+      v-if="isWeixinRestricted"
+      description="根据微信小程序平台运营规范，当前平台暂不提供图片混淆/还原功能，请前往 H5 使用。"
+      action-text="返回首页"
+      @action="goHome"
+    />
+
+    <view v-else class="content">
       <view class="card upload-card">
         <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
           <uni-icons type="image" size="56" color="#b0bec5" />
@@ -113,6 +120,7 @@ import { ref, reactive, computed } from 'vue'
 import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
+import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 import { SimpleScrambler } from '@/engine/simple-scrambler'
 
 const canvasId = 'cipherCanvas'
@@ -142,10 +150,12 @@ const isProcessing = ref(false)
 const canvasWidth = ref(0)
 const canvasHeight = ref(0)
 const isWeixinMiniProgram = ref(false)
+const isWeixinRestricted = ref(false)
 const isH5 = ref(false)
 
 // #ifdef MP-WEIXIN
 isWeixinMiniProgram.value = true
+isWeixinRestricted.value = true
 uni.showShareMenu({ withShareTicket: true })
 // #endif
 
@@ -161,6 +171,15 @@ const platformType = computed<'weapp' | 'h5' | 'app'>(() => {
 
 const SHARE_TITLE = '图片混淆 · 凉白开工具箱'
 const SHARE_PATH = '/subPackages/tools/image-cipher/index'
+
+const goHome = () => {
+  uni.switchTab({
+    url: '/pages/index/index',
+    fail: () => {
+      uni.reLaunch({ url: '/pages/index/index' })
+    }
+  })
+}
 
 const formatFileSize = (size: number) => {
   if (!size) return '—'

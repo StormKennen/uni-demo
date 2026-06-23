@@ -265,6 +265,13 @@
           }
         },
         {
+          "path": "compendium/swc/character-picker",
+          "style": {
+            "navigationBarTitleText": "选择筛选魔灵",
+            "onReachBottomDistance": 120
+          }
+        },
+        {
           "path": "magnet-link/index",
           "style": {
             "navigationBarTitleText": "磁力链接",

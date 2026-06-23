@@ -7,7 +7,14 @@
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)' }"
     />
 
-    <view class="main-content">
+    <PlatformRestrictionNotice
+      v-if="isWeixinRestricted"
+      description="根据微信小程序平台运营规范，当前平台暂不提供视频去水印功能，请前往 H5 使用。"
+      action-text="返回首页"
+      @action="goHome"
+    />
+
+    <view v-else class="main-content">
     <view class="card input-card" v-if="!parsedVideoUrl">
       <textarea
         v-model="videoLink"
@@ -52,6 +59,7 @@ import { ref } from 'vue'
 import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { reportToolVisit } from '@/utils/tracker'
 import NavBar from '@/components/nav-bar.vue'
+import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 
 const videoLink = ref('')
 const parsedVideoUrl = ref('')
@@ -59,10 +67,12 @@ const parsedCover = ref('')
 const isParsing = ref(false)
 const isDownloading = ref(false)
 const isWeixinMiniProgram = ref(false)
+const isWeixinRestricted = ref(false)
 const isH5 = ref(false)
 
 // #ifdef MP-WEIXIN
 isWeixinMiniProgram.value = true
+isWeixinRestricted.value = true
 uni.showShareMenu({ withShareTicket: true })
 // #endif
 
@@ -72,6 +82,15 @@ isH5.value = true
 
 const SHARE_PATH = '/subPackages/tools/watermark/index'
 const SHARE_TITLE = '视频去水印 · 凉白开工具箱'
+
+const goHome = () => {
+  uni.switchTab({
+    url: '/pages/index/index',
+    fail: () => {
+      uni.reLaunch({ url: '/pages/index/index' })
+    }
+  })
+}
 
 const extractVideoUrl = (text: string) => {
   if (!text) return ''

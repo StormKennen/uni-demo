@@ -131,6 +131,15 @@
   const loggedIn = ref(isUserLoggedIn())
   const recentToolKeys = ref<string[]>([])
   const foldStatus = ref<Record<string, boolean>>({})
+  const currentPlatform = ref<'app' | 'h5' | 'mp-weixin'>('app')
+
+  // #ifdef MP-WEIXIN
+  currentPlatform.value = 'mp-weixin'
+  // #endif
+
+  // #ifdef H5
+  currentPlatform.value = 'h5'
+  // #endif
 
   // ── 计算属性 ──
 
@@ -140,6 +149,7 @@
       .filter(([, t]) => {
         if (t.adminOnly && !isAdmin.value) return false
         if (t.requiresAuth && !loggedIn.value) return false
+        if (t.unsupportedPlatforms?.includes(currentPlatform.value)) return false
         return true
       })
       .map(([key, tool]) => ({ key, tool })),
@@ -212,6 +222,11 @@
   const handleToolClick = async (toolKey: string, tool: ToolItem) => {
     if (tool.disabled) {
       uni.showToast({ title: '功能开发中，敬请期待', icon: 'none', duration: 2000 })
+      return
+    }
+
+    if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) {
+      uni.showToast({ title: '当前平台暂不支持该功能', icon: 'none', duration: 2000 })
       return
     }
 

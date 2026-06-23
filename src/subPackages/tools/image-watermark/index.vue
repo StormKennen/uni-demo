@@ -7,7 +7,14 @@
       :custom-style="{ backgroundImage: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }"
     />
 
-    <view class="main-content">
+    <PlatformRestrictionNotice
+      v-if="isWeixinRestricted"
+      description="根据微信小程序平台运营规范，当前平台暂不提供图片加水印功能，请前往 H5 使用。"
+      action-text="返回首页"
+      @action="goHome"
+    />
+
+    <view v-else class="main-content">
       <view class="card upload-card">
         <view v-if="!baseImage.src" class="upload-area" @click="selectBaseImage">
           <uni-icons type="image" size="52" color="#96a0b5" />
@@ -280,6 +287,7 @@ import NavBar from '@/components/nav-bar.vue'
 import { ref, reactive, computed, getCurrentInstance } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { reportToolVisit } from '@/utils/tracker'
+import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 
 onShow(() => {
   reportToolVisit('image-watermark')
@@ -298,6 +306,11 @@ const generatedImage = ref('')
 const isGenerating = ref(false)
 const canvasWidth = ref(0)
 const canvasHeight = ref(0)
+const isWeixinRestricted = ref(false)
+
+// #ifdef MP-WEIXIN
+isWeixinRestricted.value = true
+// #endif
 
 const textWatermark = reactive({
   content: '凉白开工具箱 Water Tools',
@@ -356,6 +369,15 @@ const imagePreviewStyle = computed(() => ({
 }))
 
 const { proxy } = getCurrentInstance() as any
+
+const goHome = () => {
+  uni.switchTab({
+    url: '/pages/index/index',
+    fail: () => {
+      uni.reLaunch({ url: '/pages/index/index' })
+    }
+  })
+}
 
 const setWatermarkMode = (mode: 'text' | 'image') => {
   watermarkMode.value = mode

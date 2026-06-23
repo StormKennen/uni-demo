@@ -42,6 +42,11 @@ function getAuthorization(): string {
   return token ? `Bearer ${token}` : ''
 }
 
+function buildSecurityHeaders(): Record<string, string> {
+  const authorization = getAuthorization()
+  return authorization ? { Authorization: authorization } : {}
+}
+
 function normalizeMediaSecurityResponse(payload: RawSecurityResponse | RawSecurityResponse['data']): MediaSecurityCheckResult {
   const response = (payload as RawSecurityResponse)?.data || payload || {}
   const suggestion = response.suggestion || response.result || (response.safe === false ? 'block' : 'pass')
@@ -67,9 +72,7 @@ export function checkMediaSecurity(filePath: string, scene = 'image_compress'): 
         mediaType: 'image',
         scene,
       },
-      header: {
-        Authorization: getAuthorization(),
-      },
+      header: buildSecurityHeaders(),
       name: 'media',
       success: (res: any) => {
         try {
@@ -107,9 +110,7 @@ export function checkTextSecurity(content: string, scene = 'default'): Promise<T
         content,
         scene,
       },
-      header: {
-        Authorization: getAuthorization(),
-      },
+      header: buildSecurityHeaders(),
       method: 'POST',
       success: (res: any) => {
         try {

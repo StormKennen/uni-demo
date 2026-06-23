@@ -6,6 +6,7 @@ export interface ToolItem {
   gradient: string
   path: string
   category: string
+  unsupportedPlatforms?: string[]
   disabled?: boolean
   badge?: string
   isNew?: boolean
@@ -104,6 +105,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
     path: '/subPackages/tools/image-cipher/index',
     category: 'media',
+    unsupportedPlatforms: ['mp-weixin'],
   },
   'image-watermark': {
     name: '图片加水印',
@@ -112,6 +114,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
     path: '/subPackages/tools/image-watermark/index',
     category: 'media',
+    unsupportedPlatforms: ['mp-weixin'],
   },
   'video-compress': {
     name: '视频压缩',
@@ -128,6 +131,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',
     path: '/subPackages/tools/watermark/index',
     category: 'media',
+    unsupportedPlatforms: ['mp-weixin'],
   },
   'video-gif': {
     name: '视频转GIF',

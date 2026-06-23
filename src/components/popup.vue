@@ -1,14 +1,26 @@
 <template>
   <uni-popup :safe-area="safeArea" ref="popup" :is-mask-click="!disabledMaskClick" @maskClick="maskClick"
     @change="popupChange" :type="type" :backgroundColor="backgroundColor" :borderRadius="borderRadius">
-    <view @touchmove.prevent>
-      <scroll-view :style="{
-        maxHeight: contentHeight,
-      }" scroll-y>
+    <view class="popup-shell" @touchmove.prevent>
+      <scroll-view
+        v-if="scrollable"
+        :style="{
+          maxHeight: contentHeight,
+        }"
+        scroll-y>
         <view :style="keyboardHeight ? `padding-bottom:${keyboardHeight}px` : undefined">
           <slot></slot>
         </view>
       </scroll-view>
+      <view
+        v-else
+        class="popup-static-body"
+        :style="{
+          height: contentHeight,
+          paddingBottom: keyboardHeight ? `${keyboardHeight}px` : undefined,
+        }">
+        <slot></slot>
+      </view>
     </view>
   </uni-popup>
 </template>
@@ -21,9 +33,12 @@ const props = withDefaults(defineProps<{
   safeArea?: boolean
   disabledMaskClick?: boolean
   backgroundColor?: string
+  fullScreen?: boolean
+  scrollable?: boolean
 }>(), {
   type: 'center',
-  backgroundColor: '#fff'
+  backgroundColor: '#fff',
+  scrollable: true,
 })
 
 const visible = defineModel<boolean>()
@@ -33,7 +48,7 @@ const emit = defineEmits(['change'])
 
 uni.getSystemInfo({
   success: (res) => {
-    contentHeight.value = (res.windowHeight - 135) + 'px'
+    contentHeight.value = `${props.fullScreen ? res.windowHeight : (res.windowHeight - 135)}px`
   },
 })
 
@@ -97,4 +112,13 @@ const maskClick = () => {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.popup-shell,
+.popup-static-body {
+  width: 100%;
+}
+
+.popup-static-body {
+  overflow: hidden;
+}
+</style>

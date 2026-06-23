@@ -24,6 +24,8 @@ export interface getAdminLineupsQuery {
   locale?: string
   /** Searches lineup `name` and `description`. */
   keyword?: string
+  /** Exact character id filter. Only lineups containing this exact character member are returned. */
+  characterId?: string
   /** Filter by lineup type. */
   type?: string
   /** Filter by lineup status. */
@@ -87,6 +89,8 @@ export interface getAdminLineupsOptionsQuery {
   locale?: string
   /** Keyword for lineup name and description. */
   keyword?: string
+  /** Exact character id filter. Only lineups containing this exact character member are returned. */
+  characterId?: string
   /** Usually `defense` for source selection or `offense` for target selection. */
   type?: string
   /** Optional lineup status filter. */

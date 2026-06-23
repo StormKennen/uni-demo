@@ -5,14 +5,15 @@
       <text class="hero-subtitle">成员数量需保持 2 到 5 个，提交时会保留你当前的成员顺序。</text>
     </view>
 
-    <view v-if="loading" class="state-block">
-      <text>加载数据中...</text>
-    </view>
+    <StateBlock v-if="loading" class="state-block" text="加载数据中..." />
 
-    <view v-else-if="errorMessage" class="state-block">
-      <text>{{ errorMessage }}</text>
-      <button class="action-btn primary" @click="loadInitialData">重新加载</button>
-    </view>
+    <StateBlock
+      v-else-if="errorMessage"
+      class="state-block"
+      :text="errorMessage"
+      action-text="重新加载"
+      theme="violet"
+      @action="loadInitialData" />
 
     <view v-else class="content">
       <view class="section-card">
@@ -27,7 +28,7 @@
           <text class="field-label">阵容类型</text>
           <view class="chip-row">
             <text
-              v-for="option in typeOptions"
+              v-for="option in LINEUP_TYPE_OPTIONS"
               :key="option.value"
               class="chip"
               :class="{ active: form.type === option.value }"
@@ -41,7 +42,7 @@
           <text class="field-label">状态</text>
           <view class="chip-row">
             <text
-              v-for="option in statusOptions"
+              v-for="option in LINEUP_STATUS_OPTIONS"
               :key="option.value"
               class="chip"
               :class="{ active: form.status === option.value }"
@@ -61,143 +62,62 @@
         </view>
       </view>
 
-      <view class="section-card">
-        <view class="section-head">
-          <text class="section-title">已选成员</text>
-          <text class="section-tip">{{ selectedMembers.length }}/5</text>
-        </view>
-
-        <view v-if="!selectedMembers.length" class="empty-block">
-          <text>还没有选择成员，请从下方搜索结果中添加。</text>
-        </view>
-
-        <view v-else class="selected-list">
-          <view v-for="(member, index) in selectedMembers" :key="member.characterId || member.id" class="selected-card">
-            <text class="member-order">{{ index + 1 }}</text>
-            <image v-if="member.avatar" class="member-avatar" :src="member.avatar" mode="aspectFill" />
-            <view v-else class="member-avatar member-avatar-placeholder">
-              <text>{{ (member.name || '?').slice(0, 1) }}</text>
-            </view>
-            <view class="member-info">
-              <text class="member-name">{{ member.name || member.label || '未知魔灵' }}</text>
-              <text class="member-extra">{{ member.familyName || member.elementName || '--' }}</text>
-            </view>
-            <button class="mini-btn danger" size="mini" @click="removeMember(member.characterId)">移除</button>
-          </view>
-        </view>
-      </view>
-
-      <view class="section-card">
-        <view class="section-head">
-          <text class="section-title">搜索成员</text>
-          <text class="section-tip">远程搜索人物名称或 code</text>
-        </view>
-
-        <view class="search-row">
-          <input
-            v-model="memberKeyword"
-            class="field-input"
-            confirm-type="search"
-            placeholder="输入名称或 code"
-            @confirm="refreshCharacterOptions" />
-          <button class="action-btn primary" size="mini" @click="refreshCharacterOptions">搜索</button>
-        </view>
-
-        <view v-if="memberLoading && !characterOptions.length" class="empty-block">
-          <text>搜索成员中...</text>
-        </view>
-
-        <view v-else-if="!characterOptions.length" class="empty-block">
-          <text>暂无可选人物</text>
-        </view>
-
-        <view v-else class="option-list">
-          <view v-for="option in characterOptions" :key="option.characterId || option.id" class="option-card">
-            <image v-if="option.avatar" class="member-avatar" :src="option.avatar" mode="aspectFill" />
-            <view v-else class="member-avatar member-avatar-placeholder">
-              <text>{{ (option.name || '?').slice(0, 1) }}</text>
-            </view>
-            <view class="member-info">
-              <text class="member-name">{{ option.name || option.label || '未知魔灵' }}</text>
-              <text class="member-extra">
-                {{ option.elementName || '--' }} / {{ option.familyName || '--' }} / {{ option.stars || '--' }}
-              </text>
-            </view>
-            <button
-              class="mini-btn"
-              size="mini"
-              :disabled="isMemberSelected(option.characterId) || selectedMembers.length >= 5"
-              @click="addMember(option)">
-              {{ isMemberSelected(option.characterId) ? '已选择' : '添加' }}
-            </button>
-          </view>
-        </view>
-
-        <view v-if="characterPagination.hasNext" class="load-more">
-          <button class="action-btn" :loading="memberLoadingMore" @click="loadMoreCharacterOptions">加载更多</button>
-        </view>
-      </view>
+      <CharacterPickerPanel
+        v-model="selectedMembers"
+        :compendium-id="COMPENDIUM_CODE"
+        :locale="selectedLocale"
+        selection-mode="multiple"
+        footer-mode="none"
+        :max-count="5"
+        selected-title="已选成员"
+        search-title="搜索成员"
+        search-tip="远程搜索人物名称或 code"
+        search-placeholder="输入名称或 code"
+        empty-selected-text="还没有选择成员，请从下方搜索结果中添加。"
+        empty-search-text="暂无可选人物" />
     </view>
 
-    <view class="bottom-bar">
+    <StickyActionBar>
       <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">
         {{ isEditMode ? '保存修改' : '创建阵容' }}
       </button>
-    </view>
+    </StickyActionBar>
   </view>
 </template>
 
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import CharacterPickerPanel from './components/character-picker-panel.vue'
+  import StateBlock from './components/state-block.vue'
+  import StickyActionBar from './components/sticky-action-bar.vue'
   import {
     createAdminLineup,
-    fetchAdminCharacterOptions,
     fetchAdminLineupDetail,
-    getPaginationOrDefault,
     type AdminLineupDetail,
     type CharacterOption,
-    type CharacterOptionResult,
-    type PaginationState,
+    type LineupStatus,
+    type LineupType,
     updateAdminLineup,
   } from '@/services/compendium-lineups'
   import { ensureAdminAccess } from '@/utils/admin'
+  import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_OPTIONS } from './lineup-meta'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
 
-  interface ChoiceOption {
-    label: string
-    value: 'offense' | 'defense' | 'enabled' | 'disabled'
-  }
-
   interface FormState {
     name: string
-    type: 'offense' | 'defense'
+    type: LineupType
     description: string
-    status: 'enabled' | 'disabled'
+    status: LineupStatus
   }
-
-  const typeOptions: ChoiceOption[] = [
-    { label: '进攻阵容', value: 'offense' },
-    { label: '防御阵容', value: 'defense' },
-  ]
-
-  const statusOptions: ChoiceOption[] = [
-    { label: '启用', value: 'enabled' },
-    { label: '停用', value: 'disabled' },
-  ]
 
   const lineupId = ref('')
   const selectedLocale = ref(DEFAULT_LOCALE)
   const loading = ref(false)
   const submitting = ref(false)
   const errorMessage = ref('')
-  const memberKeyword = ref('')
-  const memberLoading = ref(false)
-  const memberLoadingMore = ref(false)
-  const characterOptions = ref<CharacterOption[]>([])
-  const characterPagination = ref<PaginationState>(getPaginationOrDefault())
   const selectedMembers = ref<CharacterOption[]>([])
 
   const form = reactive<FormState>({
@@ -223,18 +143,6 @@
     selectedMembers.value = []
   }
 
-  const isMemberSelected = (characterId: string): boolean =>
-    selectedMembers.value.some(member => member.characterId === characterId)
-
-  const addMember = (option: CharacterOption) => {
-    if (isMemberSelected(option.characterId) || selectedMembers.value.length >= 5) return
-    selectedMembers.value = [...selectedMembers.value, option]
-  }
-
-  const removeMember = (characterId: string) => {
-    selectedMembers.value = selectedMembers.value.filter(member => member.characterId !== characterId)
-  }
-
   const fillForm = (detail: AdminLineupDetail) => {
     form.name = detail.name
     form.type = (detail.type === 'offense' ? 'offense' : 'defense')
@@ -246,65 +154,17 @@
     }))
   }
 
-  const fetchCharacterOptions = async (reset = true) => {
-    if (memberLoading.value || memberLoadingMore.value) return
-
-    if (reset) {
-      memberLoading.value = true
-    } else {
-      if (!characterPagination.value.hasNext) return
-      memberLoadingMore.value = true
-    }
-
-    try {
-      const nextPage = reset ? 1 : characterPagination.value.page + 1
-      const result: CharacterOptionResult = await fetchAdminCharacterOptions({
-        compendiumId: COMPENDIUM_CODE,
-        locale: selectedLocale.value,
-        keyword: memberKeyword.value.trim() || undefined,
-        status: 'enabled',
-        page: nextPage,
-        pageSize: 20,
-      })
-
-      characterPagination.value = result.pagination
-      characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]
-    } catch (error) {
-      uni.showToast({
-        title: typeof error === 'string' ? error : '加载人物选项失败',
-        icon: 'none',
-      })
-    } finally {
-      memberLoading.value = false
-      memberLoadingMore.value = false
-    }
-  }
-
-  const refreshCharacterOptions = () => {
-    fetchCharacterOptions(true)
-  }
-
-  const loadMoreCharacterOptions = () => {
-    fetchCharacterOptions(false)
-  }
-
   const loadInitialData = async () => {
     loading.value = true
     errorMessage.value = ''
 
     try {
       resetForm()
-      const tasks: Promise<unknown>[] = [fetchCharacterOptions(true)]
-
       if (isEditMode.value) {
-        tasks.unshift(
-          fetchAdminLineupDetail(lineupId.value, {
-            locale: selectedLocale.value,
-          }).then(fillForm),
-        )
+        await fetchAdminLineupDetail(lineupId.value, {
+          locale: selectedLocale.value,
+        }).then(fillForm)
       }
-
-      await Promise.all(tasks)
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '加载阵容数据失败，请稍后重试'
     } finally {
@@ -573,7 +433,6 @@
     font-weight: 700;
   }
 
-  .action-btn.primary,
   .submit-btn {
     background: #7c3aed;
     color: #fff;
@@ -595,16 +454,6 @@
     margin-top: 20rpx;
     display: flex;
     justify-content: center;
-  }
-
-  .bottom-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 20rpx 24rpx 32rpx;
-    background: rgba(246, 247, 251, 0.96);
-    backdrop-filter: blur(12rpx);
   }
 
   .submit-btn {

@@ -233,17 +233,11 @@
         return true
       }
 
-      uni.showToast({
-        title: '所发布内容含违规信息',
-        icon: 'none',
-      })
+      uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
       return false
     } catch (error) {
       console.error('图片内容安全校验失败:', error)
-      uni.showToast({
-        title: '内容安全校验失败，请稍后重试',
-        icon: 'none',
-      })
+      uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
       return false
     } finally {
       isCheckingSecurity.value = false

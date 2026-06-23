@@ -9,6 +9,7 @@ export interface AdminLineupsQuery {
   compendiumId: string
   locale?: string
   keyword?: string
+  characterId?: string
   type?: string
   status?: string
   sortBy?: string
@@ -85,6 +86,7 @@ export interface LineupCharacterPreview {
   element: string
   elementKey: string
   elementName: string
+  archetype: string
   familyKey: string
   familyName: string
   awaken: string
@@ -209,6 +211,11 @@ const normalizeUrl = (url?: string): string => {
 
 const toArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 
+const sanitizeQuery = <T extends Record<string, any>>(query: T): Partial<T> => {
+  const entries = Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  return Object.fromEntries(entries) as Partial<T>
+}
+
 const extractData = (res: unknown): RawRecord => {
   if (isRecord(res) && isRecord(res.data)) return res.data
   return (isRecord(res) ? res : {}) as RawRecord
@@ -239,6 +246,16 @@ const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
     element: toText(record.element || nestedCharacter.elementKey || record.elementKey),
     elementKey: toText(record.elementKey || nestedCharacter.elementKey),
     elementName: toText(record.elementName || nestedCharacter.elementName),
+    archetype: toText(
+      record.archetype ||
+        record.archetypeKey ||
+        record.speciesType ||
+        record.type ||
+        nestedCharacter.archetype ||
+        nestedCharacter.archetypeKey ||
+        nestedCharacter.speciesType ||
+        nestedCharacter.type,
+    ),
     familyKey: toText(record.familyKey || nestedCharacter.familyKey),
     familyName: toText(record.familyName || nestedCharacter.familyName),
     awaken: toText(record.awaken || nestedCharacter.awaken),
@@ -321,7 +338,7 @@ const normalizePublicLineup = (source: unknown): PublicLineup => {
 }
 
 export const fetchAdminLineups = async (query: AdminLineupsQuery): Promise<AdminLineupListResult> => {
-  const res = await http.get('/admin/lineups', query, {})
+  const res = await http.get('/admin/lineups', sanitizeQuery(query), {})
   const data = extractData(res)
   return {
     items: toArray(data.items).map(normalizeLineupSummary),
@@ -335,7 +352,7 @@ export const createAdminLineup = async (payload: CreateAdminLineupBody): Promise
 }
 
 export const fetchAdminLineupOptions = async (query: AdminLineupsOptionsQuery): Promise<LineupOption[]> => {
-  const res = await http.get('/admin/lineups/options', query, {})
+  const res = await http.get('/admin/lineups/options', sanitizeQuery(query), {})
   const data = extractData(res)
   const items = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : []
   return items.map(normalizeLineupOption)
@@ -344,7 +361,7 @@ export const fetchAdminLineupOptions = async (query: AdminLineupsOptionsQuery): 
 export const fetchAdminCharacterOptions = async (
   query: AdminLineupsCharacterOptionsQuery,
 ): Promise<CharacterOptionResult> => {
-  const res = await http.get('/admin/lineups/character-options', query, {})
+  const res = await http.get('/admin/lineups/character-options', sanitizeQuery(query), {})
   const data = extractData(res)
   return {
     items: toArray(data.items).map(normalizeCharacterOption),

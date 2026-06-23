@@ -9,21 +9,18 @@
     </view>
 
     <view class="toolbar-card">
-      <view class="search-row">
-        <input
-          v-model="keyword"
-          class="search-input"
-          confirm-type="search"
-          placeholder="搜索阵容名称或描述"
-          @confirm="refreshList" />
-        <button class="toolbar-btn primary" size="mini" @click="refreshList">搜索</button>
-      </view>
+      <SearchActionRow
+        v-model="keyword"
+        class="search-row"
+        placeholder="搜索阵容名称或描述"
+        theme="amber"
+        @search="refreshList" />
 
       <view class="filter-group">
         <text class="filter-label">类型</text>
         <view class="chip-row">
           <text
-            v-for="option in typeOptions"
+            v-for="option in LINEUP_FILTER_TYPE_OPTIONS"
             :key="option.value"
             class="chip"
             :class="{ active: selectedType === option.value }"
@@ -37,7 +34,7 @@
         <text class="filter-label">状态</text>
         <view class="chip-row">
           <text
-            v-for="option in statusOptions"
+            v-for="option in LINEUP_FILTER_STATUS_OPTIONS"
             :key="option.value"
             class="chip"
             :class="{ active: selectedStatus === option.value }"
@@ -47,37 +44,70 @@
         </view>
       </view>
 
+      <view class="filter-group">
+        <view class="filter-head">
+          <text class="filter-label">人物精准筛选</text>
+          <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
+        </view>
+
+        <text class="filter-helper">
+          {{ selectedCharacterFilters.length ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选` : '未选择人物，默认不过滤' }}
+        </text>
+
+        <view v-if="selectedCharacterFilters.length" class="selected-list compact-list">
+          <view
+            v-for="character in selectedCharacterFilters"
+            :key="character.characterId || character.id"
+            class="selected-chip-card">
+            <image v-if="character.avatar" class="member-avatar" :src="character.avatar" mode="aspectFill" />
+            <view v-else class="member-avatar member-avatar-placeholder">
+              <text>{{ (character.name || character.label || '?').slice(0, 1) }}</text>
+            </view>
+            <view class="member-meta">
+              <text class="member-name">{{ character.name || character.label || '未知魔灵' }}</text>
+              <text class="member-extra">
+                {{ character.elementName || '--' }} / {{ character.familyName || '--' }} / {{ character.stars || '--' }}
+              </text>
+            </view>
+            <button class="mini-btn danger" size="mini" @click="removeCharacterFilter(character.characterId)">移除</button>
+          </view>
+        </view>
+
+        <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
+          <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
+        </view>
+      </view>
+
       <view class="action-row">
         <button class="toolbar-btn primary" @click="goCreate">新增阵容</button>
         <button class="toolbar-btn" @click="goRelations()">克制关系</button>
       </view>
     </view>
 
-    <view v-if="loading && !lineups.length" class="state-block">
-      <text>加载阵容中...</text>
-    </view>
+    <StateBlock v-if="loading && !lineups.length" class="state-block" text="加载阵容中..." />
 
-    <view v-else-if="errorMessage && !lineups.length" class="state-block">
-      <text>{{ errorMessage }}</text>
-      <button class="toolbar-btn primary" @click="refreshList">重新加载</button>
-    </view>
+    <StateBlock
+      v-else-if="errorMessage && !lineups.length"
+      class="state-block"
+      :text="errorMessage"
+      action-text="重新加载"
+      theme="amber"
+      @action="refreshList" />
 
     <view v-else class="content">
       <view class="summary-row">
         <text class="summary-text">共 {{ pagination.total }} 条阵容</text>
-        <text class="summary-text">当前 {{ selectedTypeLabel }} / {{ selectedStatusLabel }}</text>
+        <text class="summary-text">当前 {{ selectedTypeLabel }} / {{ selectedStatusLabel }} / {{ selectedCharacterLabel }}</text>
       </view>
 
-      <view v-if="!lineups.length" class="empty-block">
-        <text>暂无符合条件的阵容</text>
-      </view>
+      <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
 
       <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
         <view class="lineup-head">
           <view class="lineup-title-wrap">
             <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
-            <text class="type-badge" :class="lineup.type">{{ getTypeLabel(lineup.type) }}</text>
-            <text class="status-badge" :class="lineup.status">{{ getStatusLabel(lineup.status) }}</text>
+            <text class="type-badge" :class="lineup.type">{{ getLineupTypeLabel(lineup.type) }}</text>
+            <text class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
           </view>
           <text class="lineup-count">{{ lineup.memberCount }} 人</text>
         </view>
@@ -137,137 +167,71 @@
         <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
       </view>
     </view>
+
   </view>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import { deleteAdminLineup, fetchAdminLineups, type AdminLineupSummary, type PaginationState } from '@/services/compendium-lineups'
+  import { deleteAdminLineup } from '@/services/compendium-lineups'
+  import SearchActionRow from './components/search-action-row.vue'
+  import StateBlock from './components/state-block.vue'
   import { ensureAdminAccess } from '@/utils/admin'
+  import {
+    getLineupStatusLabel,
+    getLineupTypeLabel,
+    LINEUP_FILTER_STATUS_OPTIONS,
+    LINEUP_FILTER_TYPE_OPTIONS,
+  } from './lineup-meta'
+  import { useAdminLineupList } from './composables/use-admin-lineup-list'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
-  const ALL_VALUE = ''
-
-  interface FilterOption {
-    label: string
-    value: string
-  }
-
-  const typeOptions: FilterOption[] = [
-    { label: '全部', value: ALL_VALUE },
-    { label: '进攻', value: 'offense' },
-    { label: '防御', value: 'defense' },
-  ]
-
-  const statusOptions: FilterOption[] = [
-    { label: '全部', value: ALL_VALUE },
-    { label: '启用', value: 'enabled' },
-    { label: '停用', value: 'disabled' },
-  ]
-
-  const keyword = ref('')
-  const selectedType = ref(ALL_VALUE)
-  const selectedStatus = ref(ALL_VALUE)
-  const lineups = ref<AdminLineupSummary[]>([])
-  const pagination = ref<PaginationState>({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false,
-  })
-  const loading = ref(false)
-  const loadingMore = ref(false)
-  const errorMessage = ref('')
-  const deletingId = ref('')
   const selectedLocale = ref(DEFAULT_LOCALE)
+  const {
+    keyword,
+    selectedType,
+    selectedStatus,
+    selectedCharacterFilters,
+    lineups,
+    pagination,
+    loading,
+    loadingMore,
+    errorMessage,
+    selectedTypeLabel,
+    selectedStatusLabel,
+    selectedCharacterLabel,
+    buildCurrentUrl,
+    refreshList,
+    loadMore,
+    selectType,
+    selectStatus,
+    removeCharacterFilter,
+    clearCharacterFilters,
+    applyRouteQuery,
+  } = useAdminLineupList({
+    compendiumId: COMPENDIUM_CODE,
+    locale: selectedLocale,
+  })
+  const deletingId = ref('')
 
-  const selectedTypeLabel = computed(
-    () => typeOptions.find(option => option.value === selectedType.value)?.label || '全部',
-  )
-  const selectedStatusLabel = computed(
-    () => statusOptions.find(option => option.value === selectedStatus.value)?.label || '全部',
-  )
-
-  const getTypeLabel = (type: string): string => {
-    if (type === 'offense') return '进攻'
-    if (type === 'defense') return '防御'
-    return type || '未知'
-  }
-
-  const getStatusLabel = (status: string): string => {
-    if (status === 'enabled') return '启用'
-    if (status === 'disabled') return '停用'
-    return status || '未知'
-  }
-
-  const buildCurrentUrl = (): string => {
-    const params: string[] = []
-    if (keyword.value.trim()) params.push(`keyword=${encodeURIComponent(keyword.value.trim())}`)
-    if (selectedType.value) params.push(`type=${encodeURIComponent(selectedType.value)}`)
-    if (selectedStatus.value) params.push(`status=${encodeURIComponent(selectedStatus.value)}`)
-    params.push(`locale=${encodeURIComponent(selectedLocale.value)}`)
-    const query = params.join('&')
-    return `/subPackages/tools/compendium/swc/lineups${query ? `?${query}` : ''}`
-  }
-
-  const fetchList = async (reset = false) => {
-    if (loading.value || loadingMore.value) return
-
-    if (reset) {
-      loading.value = true
-    } else {
-      if (!pagination.value.hasNext) return
-      loadingMore.value = true
-    }
-
-    errorMessage.value = ''
-    const nextPage = reset ? 1 : pagination.value.page + 1
-
-    try {
-      const result = await fetchAdminLineups({
-        compendiumId: COMPENDIUM_CODE,
-        locale: selectedLocale.value,
-        keyword: keyword.value.trim() || undefined,
-        type: selectedType.value || undefined,
-        status: selectedStatus.value || undefined,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-        page: nextPage,
-        pageSize: 20,
-      })
-
-      pagination.value = result.pagination
-      lineups.value = reset ? result.items : [...lineups.value, ...result.items]
-    } catch (error) {
-      errorMessage.value = typeof error === 'string' ? error : '加载阵容失败，请稍后重试'
-    } finally {
-      loading.value = false
-      loadingMore.value = false
-      uni.stopPullDownRefresh()
-    }
-  }
-
-  const refreshList = () => {
-    fetchList(true)
-  }
-
-  const loadMore = () => {
-    fetchList(false)
-  }
-
-  const selectType = (value: string) => {
-    selectedType.value = value
-    refreshList()
-  }
-
-  const selectStatus = (value: string) => {
-    selectedStatus.value = value
-    refreshList()
+  const openCharacterPicker = () => {
+    uni.navigateTo({
+      url: `/subPackages/tools/compendium/swc/character-picker?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+      events: {
+        confirm: (payload: { selected: typeof selectedCharacterFilters.value }) => {
+          selectedCharacterFilters.value = Array.isArray(payload?.selected) ? payload.selected : []
+          refreshList()
+        },
+      },
+      success: (res) => {
+        res.eventChannel.emit('init', {
+          selected: selectedCharacterFilters.value,
+        })
+      },
+    })
   }
 
   const goCreate = () => {
@@ -322,9 +286,7 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
-    keyword.value = options.keyword || ''
-    selectedType.value = options.type || ALL_VALUE
-    selectedStatus.value = options.status || ALL_VALUE
+    applyRouteQuery(options)
 
     const redirectUrl = buildCurrentUrl()
     if (!ensureAdminAccess(redirectUrl)) return
@@ -398,7 +360,6 @@
     padding: 24rpx;
   }
 
-  .search-row,
   .action-row,
   .summary-row,
   .lineup-head,
@@ -413,17 +374,15 @@
     margin-bottom: 24rpx;
   }
 
-  .search-input {
-    flex: 1;
-    height: 76rpx;
-    padding: 0 24rpx;
-    border-radius: 18rpx;
-    background: #f3f5f9;
-    font-size: 28rpx;
-  }
-
   .filter-group + .filter-group {
     margin-top: 20rpx;
+  }
+
+  .filter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
   }
 
   .filter-label {
@@ -431,6 +390,18 @@
     margin-bottom: 12rpx;
     font-size: 24rpx;
     color: #667085;
+    font-weight: 700;
+  }
+
+  .filter-head .filter-label {
+    margin-bottom: 0;
+  }
+
+  .filter-helper {
+    display: block;
+    margin-top: 12rpx;
+    color: #667085;
+    font-size: 22rpx;
     font-weight: 700;
   }
 
@@ -459,7 +430,8 @@
   }
 
   .toolbar-btn,
-  .card-btn {
+  .card-btn,
+  .mini-btn {
     border-radius: 999rpx;
     font-size: 24rpx;
     font-weight: 700;
@@ -488,6 +460,23 @@
     color: #667085;
     font-size: 24rpx;
     font-weight: 700;
+  }
+
+  .selected-list,
+  .option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+    margin-top: 18rpx;
+  }
+
+  .selected-chip-card {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+    padding: 18rpx;
+    border-radius: 20rpx;
+    background: #f8fafc;
   }
 
   .state-block,
@@ -650,9 +639,22 @@
     font-size: 22rpx;
   }
 
+  .mini-btn.danger {
+    color: #dc2626;
+  }
+
   .card-actions {
     margin-top: 22rpx;
     justify-content: flex-end;
+  }
+
+  .filter-action-row {
+    justify-content: flex-end;
+  }
+
+  .compact-list {
+    max-height: 360rpx;
+    overflow-y: auto;
   }
 
   .load-more {
