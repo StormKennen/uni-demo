@@ -65,6 +65,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     requiresAuth: true,
     adminOnly: true,
   },
+  'summoners-war-coupons': {
+    name: '魔灵兑换券',
+    desc: '礼包码/账号管理',
+    icon: 'gift',
+    gradient: 'linear-gradient(135deg, #e94560 0%, #ff7a59 100%)',
+    path: '/subPackages/tools/compendium/swc/coupons',
+    category: 'wiki',
+    isNew: true,
+  },
   // ── 媒体 ──
   'oss-upload': {
     name: '图片上传',
@@ -159,7 +168,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'qr',
   },
   // ── 记录 ──
-  'calendar': {
+  calendar: {
     name: '万年历',
     desc: '黄历查询、择吉日',
     icon: 'calendar',
@@ -167,7 +176,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/calendar/index',
     category: 'record',
   },
-  'chat': {
+  chat: {
     name: '笔记收藏',
     desc: '个人笔记随手记',
     icon: 'chat',
@@ -175,7 +184,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/chat/index',
     category: 'record',
   },
-  'memo': {
+  memo: {
     name: '备忘录',
     desc: '备忘录管理，支持分类',
     icon: 'compose',
@@ -194,7 +203,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     requiresAuth: true,
   },
   // ── 文本 ──
-  'markdown': {
+  markdown: {
     name: 'Markdown 转 HTML',
     desc: 'Markdown 一键预览/导出',
     icon: 'document',
