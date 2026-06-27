@@ -35,10 +35,16 @@
                 v-for="option in elementOptions"
                 :key="option.value"
                 class="quick-chip element-chip"
-                :class="[{ selected: option.value === selectedElement }, option.value !== ALL_VALUE ? 'element-filter-' + option.value : '']"
+                :class="{ selected: option.value === selectedElement }"
                 @click="selectFilter('element', option.value)">
-                <text v-if="option.value !== ALL_VALUE" class="element-dot"></text>
-                <text>{{ option.label }}</text>
+                <SwcElementBadge
+                  v-if="option.value !== ALL_VALUE"
+                  :element-key="option.value"
+                  :label="option.label"
+                  :size="24"
+                  :font-size="24"
+                  :gap="8" />
+                <text v-else>{{ option.label }}</text>
               </view>
             </view>
           </scroll-view>
@@ -77,7 +83,7 @@
         </view>
 
         <view class="filter-section">
-          <text class="filter-label">星级</text>
+          <text class="filter-label">胎星级</text>
           <scroll-view class="filter-scroll" scroll-x enable-flex>
             <view class="filter-chip-row">
               <view
@@ -139,27 +145,41 @@
           <view v-else class="avatar-placeholder">
             <text>{{ character.name.slice(0, 1) || '?' }}</text>
           </view>
+          <!-- <view v-if="character.elementName" class="avatar-element-badge">
+            <SwcElementBadge
+              :element-key="character.elementKey"
+              :label="character.elementName"
+              :size="20"
+              :font-size="20"
+              :icon-only="true" />
+          </view> -->
           <view v-if="character.stars" class="stars">
-            <text v-for="i in Number(character.stars)" :key="i" class="star-icon">★</text>
+            <text v-for="i in Number(character.birthStars)" :key="i" class="star-icon">★</text>
           </view>
           <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
         </view>
         <view class="character-info">
-          <text class="character-name">
-            {{ isFamilyMode ? character.family || character.name || '未知物种' : character.name || '未知魔灵' }}
-          </text>
+          <view class="character-name-row">
+            <SwcElementBadge
+              v-if="character.elementName"
+              :element-key="character.elementKey"
+              :label="character.elementName"
+              :size="20"
+              :font-size="20"
+              :icon-only="true" />
+            <text class="character-name">
+              {{ character.family }}
+              <!-- {{ isFamilyMode ? character.family || character.name || '未知物种' : character.name || '未知魔灵' }} -->
+            </text>
+          </view>
           <view v-if="isFamilyMode" class="representative-row">
             <text class="representative-label">代表魔灵</text>
             <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
           </view>
-          <view v-else class="meta-row">
-            <!-- <text v-if="character.code" class="meta-chip">No.{{ character.code }}</text> -->
-            <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
-            <text v-if="character.family" class="meta-chip">{{ character.family }}</text>
-          </view>
           <view v-if="isFamilyMode" class="meta-row family-meta-row">
-            <text v-if="character.elementName" class="meta-chip">{{ character.elementName }}</text>
-            <text v-if="character.archetype" class="meta-chip">{{ character.archetype }}</text>
+            <view v-if="character.archetype" class="meta-chip">
+              <text>{{ character.archetype }}</text>
+            </view>
           </view>
           <!-- <view class="stat-row">
             <view v-for="stat in character.stats" :key="stat.key" class="mini-stat">
@@ -179,6 +199,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import SwcElementBadge from './components/swc-element-badge.vue'
   import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
@@ -212,6 +233,7 @@
     elementName: string
     level: string
     stars: string
+    birthStars: number
     archetype: string
     family: string
     stats: CharacterStat[]
@@ -443,6 +465,16 @@
     return value ? `${value}${attribute.unit || ''}` : ''
   }
 
+  const parseBirthStars = (starsText: string, awakenText: string): number => {
+    const matched = starsText.match(/\d+/)
+    const stars = matched ? Number(matched[0]) : 0
+    if (!stars) return 0
+
+    const awaken = awakenText.trim().toLowerCase()
+    const isAwakened = ['awakened', '觉醒', '已觉醒', 'true', '1'].includes(awaken)
+    return Math.max(1, stars - (isAwakened ? 1 : 0))
+  }
+
   const normalizeCharacter = (source: unknown): CharacterCard | null => {
     if (!isRecord(source)) return null
 
@@ -462,6 +494,7 @@
     const elementKey = normalizeElementKey(getCategoryValueKey(categories, 'element') || readString(characterSource, ['element']))
     const elementName = getCategoryValue(categories, 'element') || readString(characterSource, ['elementName'])
     const stars = formatAttribute(attributes, 'stars') || readString(characterSource, ['level', 'star', 'rarity'])
+    const awaken = getCategoryValue(categories, 'awaken') || readString(characterSource, ['awaken', 'awakening', 'awakened'])
     const avatar = readString(characterSource, ['avatar', 'icon', 'image', 'cover', 'portrait'])
     const groupFamily =
       stringifyValue(source.group as RecordValue) ||
@@ -477,6 +510,7 @@
       elementName,
       level: readString(characterSource, ['level']),
       stars: stars.replace(/星$/, ''),
+      birthStars: parseBirthStars(stars, awaken),
       archetype: getCategoryValue(categories, 'archetype') || readString(characterSource, ['speciesType', 'type']),
       family: getCategoryValue(categories, 'family') || groupFamily,
       stats: [
@@ -535,8 +569,8 @@
 
     if (selectedStar.value !== ALL_VALUE) {
       query.attribute = 'stars'
-      query.minValue = Number(selectedStar.value)
-      query.maxValue = Number(selectedStar.value)
+      query.minValue = Number(selectedStar.value) + 1
+      query.maxValue = Number(selectedStar.value) + 1
     }
 
     if (isFamilyMode.value && selectedSort.value === ALL_VALUE) {
@@ -916,72 +950,12 @@
   }
 
   .element-chip {
-    padding-left: 14rpx;
-  }
-
-  .element-dot {
-    width: 18rpx;
-    height: 18rpx;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  .element-filter-fire {
-    color: #d94b3f;
-  }
-
-  .element-filter-water {
-    color: #2f80ed;
-  }
-
-  .element-filter-wind {
-    color: #249a68;
-  }
-
-  .element-filter-light {
-    color: #b78a16;
-  }
-
-  .element-filter-dark {
-    color: #2a2342;
+    padding-left: 18rpx;
+    padding-right: 18rpx;
   }
 
   .element-chip.selected {
     color: #fff;
-  }
-
-  .element-chip.selected .element-dot {
-    background: #fff;
-  }
-
-  .element-filter-fire.selected {
-    border-color: #d94b3f;
-    background: #d94b3f;
-  }
-
-  .element-filter-water.selected {
-    border-color: #2f80ed;
-    background: #2f80ed;
-  }
-
-  .element-filter-wind.selected {
-    border-color: #249a68;
-    background: #249a68;
-  }
-
-  .element-filter-light.selected {
-    border-color: #ffe9a3;
-    background: #ffe9a3;
-    color: #121a26;
-  }
-
-  .element-filter-light.selected .element-dot {
-    background: #121a26;
-  }
-
-  .element-filter-dark.selected {
-    border-color: #2a2342;
-    background: #2a2342;
   }
 
   .character-grid {
@@ -1049,6 +1023,14 @@
     position: relative;
     border-radius: 0 0 16rpx 16rpx;
     background: inherit;
+  }
+
+  .character-name-row,
+  .family-card .character-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    min-width: 0;
   }
 
   .card-element-fire {
@@ -1135,6 +1117,7 @@
 
   .character-name {
     display: block;
+    flex: 1;
     min-width: 0;
     height: 44rpx;
     line-height: 44rpx;
@@ -1183,9 +1166,18 @@
   }
 
   .star-icon {
-    font-size: 24rpx;
+    font-size: 28rpx;
     color: #fbbf24;
     text-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.3);
+  }
+
+  .avatar-element-badge {
+    position: absolute;
+    left: 10rpx;
+    bottom: 10rpx;
+    max-width: calc(100% - 20rpx);
+    min-height: 34rpx;
+    border-radius: 999rpx;
   }
 
   .edit-badge {
@@ -1217,12 +1209,19 @@
   }
 
   .meta-chip {
-    max-width: 150rpx;
-    height: 36rpx;
-    line-height: 36rpx;
-    padding: 0 10rpx;
+    max-width: 170rpx;
+    min-height: 36rpx;
+    padding: 4rpx 10rpx;
     border-radius: 8rpx;
     background: rgba(255, 255, 255, 0.16);
+    color: currentColor;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .meta-chip text {
+    min-width: 0;
     color: currentColor;
     font-size: 22rpx;
     overflow: hidden;

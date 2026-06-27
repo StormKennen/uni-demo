@@ -1,8 +1,8 @@
 <template>
   <view class="relation-page">
     <view class="hero-card">
-      <text class="hero-title">防御阵容 -> 进攻阵容</text>
-      <text class="hero-subtitle">为一个防御阵容配置多个可克制它的进攻阵容，保存时会整组覆盖。</text>
+      <text class="hero-title">阵容映射关系</text>
+      <text class="hero-subtitle">为一个源阵容配置多个目标阵容，保存时会整组覆盖；也会展示哪些上游阵容正在引用当前阵容。</text>
     </view>
 
     <StateBlock v-if="pageLoading" class="state-block" text="加载关系配置中..." />
@@ -18,30 +18,30 @@
     <view v-else class="content">
       <LineupPickerPanel
         v-model:keyword="sourceKeyword"
-        title="防御阵容"
+        title="源阵容"
         tip="选择 sourceLineup"
-        :options="defenseOptions"
+        :options="sourceOptions"
         :selected-items="selectedSource ? [selectedSource] : []"
         :selected-ids="selectedSource ? [selectedSource.id] : []"
         selected-action-text="清空"
         selected-highlight
-        search-placeholder="搜索防御阵容"
-        loading-text="加载防御阵容中..."
-        empty-text="暂无防御阵容可选"
-        :loading="defenseLoading"
-        @search="searchDefenseOptions"
+        search-placeholder="搜索源阵容"
+        loading-text="加载源阵容中..."
+        empty-text="暂无源阵容可选"
+        :loading="sourceLoading"
+        @search="searchSourceOptions"
         @toggle="selectSource"
         @remove="clearSource" />
 
       <view class="section-card">
         <view class="section-head">
-          <text class="section-title">已选进攻阵容</text>
+          <text class="section-title">已选目标阵容</text>
           <text class="section-tip">{{ selectedTargets.length }} 个</text>
         </view>
 
-        <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择防御阵容" />
+        <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
 
-        <StateBlock v-else-if="!selectedTargets.length" class="empty-block" text="当前还没有配置进攻阵容" />
+        <StateBlock v-else-if="!selectedTargets.length" class="empty-block" text="当前还没有配置目标阵容" />
 
         <view v-else class="selected-targets">
           <view v-for="target in selectedTargets" :key="target.id" class="selected-card">
@@ -54,42 +54,55 @@
         </view>
       </view>
 
+      <view class="section-card">
+        <view class="section-head">
+          <text class="section-title">上游引用阵容</text>
+          <text class="section-tip">{{ incomingLineups.length }} 个</text>
+        </view>
+
+        <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
+
+        <StateBlock v-else-if="!incomingLineups.length" class="empty-block" text="当前没有上游阵容引用它" />
+
+        <view v-else class="selected-targets">
+          <view v-for="lineup in incomingLineups" :key="lineup.id" class="selected-card">
+            <view class="option-main">
+              <text class="option-name">{{ lineup.name || '未命名阵容' }}</text>
+              <text class="option-desc">{{ lineup.description || '暂无描述' }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <LineupPickerPanel
         v-model:keyword="targetKeyword"
-        title="搜索进攻阵容"
+        title="搜索目标阵容"
         tip="选择 targetLineups"
-        :options="offenseOptions"
+        :options="targetOptions"
         :selected-ids="selectedTargets.map(item => item.id)"
         selection-mode="multiple"
-        search-placeholder="搜索进攻阵容"
-        loading-text="加载进攻阵容中..."
-        empty-text="暂无进攻阵容可选"
-        :loading="offenseLoading"
+        search-placeholder="搜索目标阵容"
+        loading-text="加载目标阵容中..."
+        empty-text="暂无目标阵容可选"
+        :loading="targetLoading"
         :disabled="!selectedSource"
-        @search="searchOffenseOptions"
+        @search="searchTargetOptions"
         @toggle="toggleTarget" />
     </view>
 
     <StickyActionBar>
-      <button class="submit-btn" :loading="saving" :disabled="saving || !selectedSource" @click="saveRelations">
-        保存克制关系
-      </button>
+      <button class="submit-btn" :loading="saving" :disabled="saving || !selectedSource" @click="saveRelations"> 保存映射关系 </button>
     </StickyActionBar>
   </view>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import LineupPickerPanel from './components/lineup-picker-panel.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
-  import {
-    fetchAdminLineupOptions,
-    fetchLineupRelationDetail,
-    saveLineupRelation,
-    type LineupOption,
-  } from '@/services/compendium-lineups'
+  import { fetchAdminLineupOptions, fetchLineupRelationDetail, saveLineupRelation, type LineupOption } from '@/services/compendium-lineups'
   import { ensureAdminAccess } from '@/utils/admin'
 
   const COMPENDIUM_CODE = 'swc'
@@ -100,14 +113,17 @@
   const targetKeyword = ref('')
   const sourceLineupId = ref('')
   const pageLoading = ref(false)
-  const defenseLoading = ref(false)
-  const offenseLoading = ref(false)
+  const sourceLoading = ref(false)
+  const targetLoading = ref(false)
   const saving = ref(false)
   const errorMessage = ref('')
-  const defenseOptions = ref<LineupOption[]>([])
-  const offenseOptions = ref<LineupOption[]>([])
+  const sourceOptions = ref<LineupOption[]>([])
+  const rawTargetOptions = ref<LineupOption[]>([])
   const selectedSource = ref<LineupOption | null>(null)
   const selectedTargets = ref<LineupOption[]>([])
+  const incomingLineups = ref<LineupOption[]>([])
+
+  const targetOptions = computed(() => rawTargetOptions.value.filter(option => option.id && option.id !== selectedSource.value?.id))
 
   const buildCurrentUrl = (): string => {
     const params: string[] = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
@@ -115,56 +131,54 @@
     return `/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}`
   }
 
-  const isTargetSelected = (lineupId: string): boolean =>
-    selectedTargets.value.some(item => item.id === lineupId)
+  const isTargetSelected = (lineupId: string): boolean => selectedTargets.value.some(item => item.id === lineupId)
 
-  const searchDefenseOptions = async () => {
-    defenseLoading.value = true
+  const searchSourceOptions = async () => {
+    sourceLoading.value = true
     try {
-      defenseOptions.value = await fetchAdminLineupOptions({
+      sourceOptions.value = await fetchAdminLineupOptions({
         compendiumId: COMPENDIUM_CODE,
         locale: selectedLocale.value,
         keyword: sourceKeyword.value.trim() || undefined,
-        type: 'defense',
         status: 'enabled',
         page: 1,
         pageSize: 20,
       })
     } catch (error) {
       uni.showToast({
-        title: typeof error === 'string' ? error : '加载防御阵容失败',
+        title: typeof error === 'string' ? error : '加载源阵容失败',
         icon: 'none',
       })
     } finally {
-      defenseLoading.value = false
+      sourceLoading.value = false
     }
   }
 
-  const searchOffenseOptions = async () => {
-    offenseLoading.value = true
+  const searchTargetOptions = async () => {
+    targetLoading.value = true
     try {
-      offenseOptions.value = await fetchAdminLineupOptions({
+      rawTargetOptions.value = await fetchAdminLineupOptions({
         compendiumId: COMPENDIUM_CODE,
         locale: selectedLocale.value,
         keyword: targetKeyword.value.trim() || undefined,
-        type: 'offense',
         status: 'enabled',
         page: 1,
         pageSize: 20,
       })
     } catch (error) {
       uni.showToast({
-        title: typeof error === 'string' ? error : '加载进攻阵容失败',
+        title: typeof error === 'string' ? error : '加载目标阵容失败',
         icon: 'none',
       })
     } finally {
-      offenseLoading.value = false
+      targetLoading.value = false
     }
   }
 
   const loadRelationDetail = async (lineupId: string) => {
     if (!lineupId) {
       selectedTargets.value = []
+      incomingLineups.value = []
       return
     }
 
@@ -174,12 +188,14 @@
       })
       selectedSource.value = detail.sourceLineup
       selectedTargets.value = detail.targetLineups
+      incomingLineups.value = detail.incomingLineups
     } catch (error) {
       uni.showToast({
-        title: typeof error === 'string' ? error : '加载克制关系失败',
+        title: typeof error === 'string' ? error : '加载映射关系失败',
         icon: 'none',
       })
       selectedTargets.value = []
+      incomingLineups.value = []
     }
   }
 
@@ -193,6 +209,7 @@
     sourceLineupId.value = ''
     selectedSource.value = null
     selectedTargets.value = []
+    incomingLineups.value = []
   }
 
   const toggleTarget = (option: LineupOption) => {
@@ -215,12 +232,12 @@
     errorMessage.value = ''
 
     try {
-      await Promise.all([searchDefenseOptions(), searchOffenseOptions()])
+      await Promise.all([searchSourceOptions(), searchTargetOptions()])
 
       if (sourceLineupId.value) {
         await loadRelationDetail(sourceLineupId.value)
         if (!selectedSource.value) {
-          selectedSource.value = defenseOptions.value.find(item => item.id === sourceLineupId.value) || null
+          selectedSource.value = sourceOptions.value.find(item => item.id === sourceLineupId.value) || null
         }
       }
     } catch (error) {
@@ -243,6 +260,7 @@
 
       selectedSource.value = result.sourceLineup
       selectedTargets.value = result.targetLineups
+      incomingLineups.value = result.incomingLineups
 
       uni.showToast({
         title: '保存成功',
@@ -264,7 +282,7 @@
 
     if (!ensureAdminAccess(buildCurrentUrl())) return
 
-    uni.setNavigationBarTitle({ title: '阵容克制关系' })
+    uni.setNavigationBarTitle({ title: '阵容映射关系' })
     loadInitialData()
   })
 </script>

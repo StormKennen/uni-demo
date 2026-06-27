@@ -14,6 +14,8 @@ import type {
   getAdminLineupsOptionsRes,
   getAdminLineupsQuery,
   getAdminLineupsRes,
+  getAdminLineupsTypesQuery,
+  getAdminLineupsTypesRes,
   getCharactersCharacterIdLineupsQuery,
   getCharactersCharacterIdLineupsRes,
   patchAdminLineupsLineupIdBody,
@@ -138,7 +140,7 @@ export const deleteAdminLineupsLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Get lineup relation detail for one defense lineup
+ * @description CompendiumLineups/Get lineup relation detail for one source lineup
  * @url GET /admin/lineup-relations/{sourceLineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105493
  */
@@ -152,7 +154,20 @@ export const getAdminLineupRelationsSourceLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Save relation targets for one defense lineup
+ * @description CompendiumLineups/Get distinct lineup types for one compendium
+ * @url GET /admin/lineups/types
+ * @host https://app.apifox.com/link/project/7048425/apis/api-477759054
+ */
+export const getAdminLineupsTypes = async (
+  params: Expand<getAdminLineupsTypesQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getAdminLineupsTypesRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/admin/lineups/types', params, _config)
+}
+
+/**
+ * @description CompendiumLineups/Save relation targets for one source lineup
  * @url POST /admin/lineup-relations
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064665
  */

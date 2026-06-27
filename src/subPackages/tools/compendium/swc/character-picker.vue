@@ -27,6 +27,7 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
   import CharacterPickerPanel from './components/character-picker-panel.vue'
   import type { CharacterOption } from '@/services/compendium-lineups'
+  import { getStorageSync, setStorageSync } from '@/utils/storage'
 
   const DEFAULT_LOCALE = 'zh-CN'
   const DEFAULT_COMPENDIUM_ID = 'swc'
@@ -35,28 +36,56 @@
   const selectedLocale = ref(DEFAULT_LOCALE)
   const selectedCharacters = ref<CharacterOption[]>([])
   const pickerPanelRef = ref<InstanceType<typeof CharacterPickerPanel> | null>(null)
+  const cacheKey = ref('compendium:swc:lineups:character-picker:draft')
+  const resultKey = ref('compendium:swc:lineups:character-picker:result')
 
   const handleCancel = () => {
     uni.navigateBack()
   }
 
   const handleConfirm = (selection: CharacterOption[]) => {
-    const eventChannel = getOpenerEventChannel()
-    eventChannel.emit('confirm', {
-      selected: selection,
-    })
+    setStorageSync(
+      resultKey.value,
+      selection.map(item => ({ ...item })),
+    )
     uni.navigateBack()
   }
 
   onLoad((options: Record<string, string | undefined>) => {
     compendiumId.value = options.compendiumId || DEFAULT_COMPENDIUM_ID
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    cacheKey.value = options.cacheKey ? decodeURIComponent(options.cacheKey) : 'compendium:swc:lineups:character-picker:draft'
+    resultKey.value = options.resultKey ? decodeURIComponent(options.resultKey) : 'compendium:swc:lineups:character-picker:result'
     uni.setNavigationBarTitle({ title: '选择筛选魔灵' })
 
-    const eventChannel = getOpenerEventChannel()
-    eventChannel.on('init', (payload: { selected?: CharacterOption[] }) => {
-      selectedCharacters.value = Array.isArray(payload?.selected) ? payload.selected.map(item => ({ ...item })) : []
-    })
+    const cached = getStorageSync(cacheKey.value)
+    if (Array.isArray(cached) && cached.length) {
+      selectedCharacters.value = cached.map(item => ({ ...item }))
+      return
+    }
+
+    const selectedCharacterIds = (options.selectedCharacterIds || '')
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean)
+
+    selectedCharacters.value = selectedCharacterIds.map(characterId => ({
+      id: characterId,
+      characterId,
+      name: '',
+      label: characterId,
+      avatar: '',
+      element: '',
+      elementKey: '',
+      elementName: '',
+      archetype: '',
+      familyKey: '',
+      familyName: '',
+      awaken: '',
+      awakenName: '',
+      stars: '',
+      status: 'enabled',
+    }))
   })
 
   onReachBottom(() => {

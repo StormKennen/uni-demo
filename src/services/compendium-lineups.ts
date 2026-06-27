@@ -1,6 +1,6 @@
 import http from '@/services/http'
 
-export type LineupType = 'offense' | 'defense'
+export type LineupType = string
 export type LineupStatus = 'enabled' | 'disabled'
 
 type RawRecord = Record<string, any>
@@ -35,6 +35,10 @@ export interface AdminLineupsCharacterOptionsQuery {
   status?: string
   page?: number
   pageSize?: number
+}
+
+export interface AdminLineupTypesQuery {
+  compendiumId: string
 }
 
 export interface AdminLineupDetailQuery {
@@ -101,8 +105,8 @@ export interface AdminLineupSummary {
   description: string
   status: LineupStatus | string
   memberCount: number
-  countersCount: number
-  counteredByCount: number
+  targetLineupsCount: number
+  sourceLineupsCount: number
   characters: LineupCharacterPreview[]
 }
 
@@ -118,7 +122,16 @@ export interface LineupOption {
   description: string
   status: LineupStatus | string
   memberCount: number
+  targetLineupsCount: number
+  sourceLineupsCount: number
   characters: LineupCharacterPreview[]
+}
+
+export interface LineupTypeOption {
+  key: string
+  value: string
+  label: string
+  count: number
 }
 
 export interface CharacterOption extends LineupCharacterPreview {
@@ -151,6 +164,8 @@ export interface RelationDetail {
   sourceLineup: LineupOption | null
   targetLineupIds: string[]
   targetLineups: LineupOption[]
+  incomingLineupIds: string[]
+  incomingLineups: LineupOption[]
 }
 
 export interface PublicLineupReference {
@@ -165,14 +180,17 @@ export interface PublicLineup {
   type: string
   description: string
   memberCount: number
+  targetLineupsCount: number
+  sourceLineupsCount: number
   characters: LineupCharacterPreview[]
-  counters: PublicLineupReference[]
-  counteredBy: PublicLineupReference[]
+  targetLineupIds: string[]
+  targetLineups: PublicLineupReference[]
+  incomingLineupIds: string[]
+  incomingLineups: PublicLineupReference[]
 }
 
 export interface CharacterLineupUsage {
-  offenseLineups: PublicLineup[]
-  defenseLineups: PublicLineup[]
+  lineups: PublicLineup[]
 }
 
 const emptyPagination = (): PaginationState => ({
@@ -184,8 +202,7 @@ const emptyPagination = (): PaginationState => ({
   hasPrev: false,
 })
 
-const isRecord = (value: unknown): value is RawRecord =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+const isRecord = (value: unknown): value is RawRecord => typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const toText = (value: unknown): string => {
   if (typeof value === 'string') return value
@@ -264,8 +281,7 @@ const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
   }
 }
 
-const normalizeLineupCharacters = (source: unknown): LineupCharacterPreview[] =>
-  toArray(source).map(normalizeCharacterPreview)
+const normalizeLineupCharacters = (source: unknown): LineupCharacterPreview[] => toArray(source).map(normalizeCharacterPreview)
 
 const normalizeLineupSummary = (source: unknown): AdminLineupSummary => {
   const record = isRecord(source) ? source : {}
@@ -276,8 +292,8 @@ const normalizeLineupSummary = (source: unknown): AdminLineupSummary => {
     description: toText(record.description),
     status: toText(record.status),
     memberCount: toNumber(record.memberCount),
-    countersCount: toNumber(record.countersCount),
-    counteredByCount: toNumber(record.counteredByCount),
+    targetLineupsCount: toNumber(record.targetLineupsCount),
+    sourceLineupsCount: toNumber(record.sourceLineupsCount),
     characters: normalizeLineupCharacters(record.characters),
   }
 }
@@ -291,6 +307,8 @@ const normalizeLineupOption = (source: unknown): LineupOption => {
     description: toText(record.description),
     status: toText(record.status),
     memberCount: toNumber(record.memberCount),
+    targetLineupsCount: toNumber(record.targetLineupsCount),
+    sourceLineupsCount: toNumber(record.sourceLineupsCount),
     characters: normalizeLineupCharacters(record.characters),
   }
 }
@@ -331,9 +349,17 @@ const normalizePublicLineup = (source: unknown): PublicLineup => {
     type: toText(record.type),
     description: toText(record.description),
     memberCount: toNumber(record.memberCount),
+    targetLineupsCount: toNumber(record.targetLineupsCount),
+    sourceLineupsCount: toNumber(record.sourceLineupsCount),
     characters: normalizeLineupCharacters(record.characters),
-    counters: toArray(record.counters).map(normalizeReference),
-    counteredBy: toArray(record.counteredBy).map(normalizeReference),
+    targetLineupIds: toArray(record.targetLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
+    targetLineups: toArray(record.targetLineups).map(normalizeReference),
+    incomingLineupIds: toArray(record.incomingLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
+    incomingLineups: toArray(record.incomingLineups).map(normalizeReference),
   }
 }
 
@@ -354,13 +380,28 @@ export const createAdminLineup = async (payload: CreateAdminLineupBody): Promise
 export const fetchAdminLineupOptions = async (query: AdminLineupsOptionsQuery): Promise<LineupOption[]> => {
   const res = await http.get('/admin/lineups/options', sanitizeQuery(query), {})
   const data = extractData(res)
-  const items = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : []
+  const items = Array.isArray(data.items) ? data.items : Array.isArray(res) ? res : []
   return items.map(normalizeLineupOption)
 }
 
-export const fetchAdminCharacterOptions = async (
-  query: AdminLineupsCharacterOptionsQuery,
-): Promise<CharacterOptionResult> => {
+export const fetchAdminLineupTypes = async (query: AdminLineupTypesQuery): Promise<LineupTypeOption[]> => {
+  const res = await http.get('/admin/lineups/types', sanitizeQuery(query), {})
+  const data = extractData(res)
+  const items = Array.isArray(data.items) ? data.items : Array.isArray(res) ? res : []
+  return items
+    .map(item => {
+      const record = isRecord(item) ? item : {}
+      return {
+        key: toText(record.key),
+        value: toText(record.value || record.key),
+        label: toText(record.label || record.value || record.key),
+        count: toNumber(record.count),
+      }
+    })
+    .filter(item => Boolean(item.value))
+}
+
+export const fetchAdminCharacterOptions = async (query: AdminLineupsCharacterOptionsQuery): Promise<CharacterOptionResult> => {
   const res = await http.get('/admin/lineups/character-options', sanitizeQuery(query), {})
   const data = extractData(res)
   return {
@@ -381,18 +422,12 @@ const fetchAdminLineupDetailFromUnknown = (res: unknown): AdminLineupDetail => {
   }
 }
 
-export const fetchAdminLineupDetail = async (
-  lineupId: string,
-  query: AdminLineupDetailQuery = {},
-): Promise<AdminLineupDetail> => {
+export const fetchAdminLineupDetail = async (lineupId: string, query: AdminLineupDetailQuery = {}): Promise<AdminLineupDetail> => {
   const res = await http.get(`/admin/lineups/${lineupId}`, query, {})
   return fetchAdminLineupDetailFromUnknown(res)
 }
 
-export const updateAdminLineup = async (
-  lineupId: string,
-  payload: UpdateAdminLineupBody,
-): Promise<AdminLineupDetail> => {
+export const updateAdminLineup = async (lineupId: string, payload: UpdateAdminLineupBody): Promise<AdminLineupDetail> => {
   const res = await http.patch(`/admin/lineups/${lineupId}`, payload, {})
   return fetchAdminLineupDetailFromUnknown(res)
 }
@@ -401,16 +436,19 @@ export const deleteAdminLineup = async (lineupId: string): Promise<void> => {
   await http.delete(`/admin/lineups/${lineupId}`, {}, {})
 }
 
-export const fetchLineupRelationDetail = async (
-  sourceLineupId: string,
-  query: AdminLineupDetailQuery = {},
-): Promise<RelationDetail> => {
+export const fetchLineupRelationDetail = async (sourceLineupId: string, query: AdminLineupDetailQuery = {}): Promise<RelationDetail> => {
   const res = await http.get(`/admin/lineup-relations/${sourceLineupId}`, query, {})
   const data = extractData(res)
   return {
     sourceLineup: isRecord(data.sourceLineup) ? normalizeLineupOption(data.sourceLineup) : null,
-    targetLineupIds: toArray(data.targetLineupIds).map(item => toText(item)).filter(Boolean),
+    targetLineupIds: toArray(data.targetLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
     targetLineups: toArray(data.targetLineups).map(normalizeLineupOption),
+    incomingLineupIds: toArray(data.incomingLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
+    incomingLineups: toArray(data.incomingLineups).map(normalizeLineupOption),
   }
 }
 
@@ -419,8 +457,14 @@ export const saveLineupRelation = async (payload: SaveLineupRelationBody): Promi
   const data = extractData(res)
   return {
     sourceLineup: isRecord(data.sourceLineup) ? normalizeLineupOption(data.sourceLineup) : null,
-    targetLineupIds: toArray(data.targetLineupIds).map(item => toText(item)).filter(Boolean),
+    targetLineupIds: toArray(data.targetLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
     targetLineups: toArray(data.targetLineups).map(normalizeLineupOption),
+    incomingLineupIds: toArray(data.incomingLineupIds)
+      .map(item => toText(item))
+      .filter(Boolean),
+    incomingLineups: toArray(data.incomingLineups).map(normalizeLineupOption),
   }
 }
 
@@ -432,13 +476,10 @@ export const fetchCharacterLineupUsage = async (
   const data = extractData(res)
 
   return {
-    offenseLineups: toArray(data.offenseLineups).map(normalizePublicLineup),
-    defenseLineups: toArray(data.defenseLineups).map(normalizePublicLineup),
+    lineups: toArray(data.lineups).map(normalizePublicLineup),
   }
 }
 
-export const hasPaginationNextPage = (pagination?: PaginationState | null): boolean =>
-  Boolean(pagination && pagination.hasNext)
+export const hasPaginationNextPage = (pagination?: PaginationState | null): boolean => Boolean(pagination && pagination.hasNext)
 
-export const getPaginationOrDefault = (pagination?: PaginationState | null): PaginationState =>
-  pagination || emptyPagination()
+export const getPaginationOrDefault = (pagination?: PaginationState | null): PaginationState => pagination || emptyPagination()

@@ -26,9 +26,14 @@
 
         <view class="field">
           <text class="field-label">阵容类型</text>
-          <view class="chip-row">
+          <input v-model="form.type" class="field-input" placeholder="请输入阵容类型，如竞技场防守" maxlength="60" />
+          <view class="preset-head">
+            <text class="preset-title">快速填写</text>
+            <text class="preset-tip">点选后仍可继续手动修改</text>
+          </view>
+          <view class="chip-row preset-chip-row">
             <text
-              v-for="option in LINEUP_TYPE_OPTIONS"
+              v-for="option in LINEUP_TYPE_PRESET_OPTIONS"
               :key="option.value"
               class="chip"
               :class="{ active: form.type === option.value }"
@@ -54,11 +59,7 @@
 
         <view class="field">
           <text class="field-label">阵容描述</text>
-          <textarea
-            v-model="form.description"
-            class="field-textarea"
-            maxlength="1000"
-            placeholder="请输入阵容思路、适用场景或关键打法" />
+          <textarea v-model="form.description" class="field-textarea" maxlength="1000" placeholder="请输入阵容思路、适用场景或关键打法" />
         </view>
       </view>
 
@@ -101,7 +102,7 @@
     updateAdminLineup,
   } from '@/services/compendium-lineups'
   import { ensureAdminAccess } from '@/utils/admin'
-  import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_OPTIONS } from './lineup-meta'
+  import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -122,7 +123,7 @@
 
   const form = reactive<FormState>({
     name: '',
-    type: 'defense',
+    type: '竞技场防守',
     description: '',
     status: 'enabled',
   })
@@ -137,7 +138,7 @@
 
   const resetForm = () => {
     form.name = ''
-    form.type = 'defense'
+    form.type = '竞技场防守'
     form.description = ''
     form.status = 'enabled'
     selectedMembers.value = []
@@ -145,9 +146,9 @@
 
   const fillForm = (detail: AdminLineupDetail) => {
     form.name = detail.name
-    form.type = (detail.type === 'offense' ? 'offense' : 'defense')
+    form.type = detail.type || '竞技场防守'
     form.description = detail.description
-    form.status = (detail.status === 'disabled' ? 'disabled' : 'enabled')
+    form.status = detail.status === 'disabled' ? 'disabled' : 'enabled'
     selectedMembers.value = detail.characters.map(item => ({
       ...item.character,
       characterId: item.characterId || item.character.characterId || item.character.id,
@@ -181,6 +182,14 @@
       return false
     }
 
+    if (!form.type.trim()) {
+      uni.showToast({
+        title: '请输入阵容类型',
+        icon: 'none',
+      })
+      return false
+    }
+
     if (selectedMembers.value.length < 2 || selectedMembers.value.length > 5) {
       uni.showToast({
         title: '成员数量需在 2 到 5 个之间',
@@ -199,7 +208,7 @@
 
     const basePayload = {
       name: form.name.trim(),
-      type: form.type,
+      type: form.type.trim(),
       description: form.description.trim(),
       status: form.status,
       characterIds: selectedMembers.value.map(member => member.characterId),
@@ -309,6 +318,26 @@
     margin-top: 22rpx;
   }
 
+  .preset-head {
+    margin-top: 14rpx;
+    margin-bottom: 12rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+  }
+
+  .preset-title {
+    color: #475467;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .preset-tip {
+    color: #98a2b3;
+    font-size: 20rpx;
+  }
+
   .field-label {
     display: block;
     margin-bottom: 12rpx;
@@ -336,6 +365,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12rpx;
+  }
+
+  .preset-chip-row {
+    margin-top: 0;
   }
 
   .chip {

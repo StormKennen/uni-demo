@@ -3,24 +3,19 @@
     <view class="hero-banner">
       <view>
         <text class="hero-title">SWC 阵容管理</text>
-        <text class="hero-subtitle">独立管理进攻、防御阵容，以及防御阵容的克制关系。</text>
+        <text class="hero-subtitle">独立管理阵容类型与阵容映射关系，支持一个阵容对应多个目标阵容。</text>
       </view>
       <text class="hero-badge">ADMIN</text>
     </view>
 
     <view class="toolbar-card">
-      <SearchActionRow
-        v-model="keyword"
-        class="search-row"
-        placeholder="搜索阵容名称或描述"
-        theme="amber"
-        @search="refreshList" />
+      <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
 
       <view class="filter-group">
         <text class="filter-label">类型</text>
         <view class="chip-row">
           <text
-            v-for="option in LINEUP_FILTER_TYPE_OPTIONS"
+            v-for="option in lineupTypeOptions"
             :key="option.value"
             class="chip"
             :class="{ active: selectedType === option.value }"
@@ -54,24 +49,14 @@
           {{ selectedCharacterFilters.length ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选` : '未选择人物，默认不过滤' }}
         </text>
 
-        <view v-if="selectedCharacterFilters.length" class="selected-list compact-list">
-          <view
-            v-for="character in selectedCharacterFilters"
-            :key="character.characterId || character.id"
-            class="selected-chip-card">
-            <image v-if="character.avatar" class="member-avatar" :src="character.avatar" mode="aspectFill" />
-            <view v-else class="member-avatar member-avatar-placeholder">
-              <text>{{ (character.name || character.label || '?').slice(0, 1) }}</text>
-            </view>
-            <view class="member-meta">
-              <text class="member-name">{{ character.name || character.label || '未知魔灵' }}</text>
-              <text class="member-extra">
-                {{ character.elementName || '--' }} / {{ character.familyName || '--' }} / {{ character.stars || '--' }}
-              </text>
-            </view>
-            <button class="mini-btn danger" size="mini" @click="removeCharacterFilter(character.characterId)">移除</button>
-          </view>
-        </view>
+        <CharacterAvatarGrid
+          v-if="selectedCharacterFilters.length"
+          class="selected-avatar-list"
+          :items="selectedCharacterFilters"
+          :columns="5"
+          action-text="移除"
+          action-theme="danger"
+          @action="removeCharacterFilter" />
 
         <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
           <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
@@ -80,7 +65,7 @@
 
       <view class="action-row">
         <button class="toolbar-btn primary" @click="goCreate">新增阵容</button>
-        <button class="toolbar-btn" @click="goRelations()">克制关系</button>
+        <button class="toolbar-btn" @click="goRelations()">映射关系</button>
       </view>
     </view>
 
@@ -106,7 +91,7 @@
         <view class="lineup-head">
           <view class="lineup-title-wrap">
             <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
-            <text class="type-badge" :class="lineup.type">{{ getLineupTypeLabel(lineup.type) }}</text>
+            <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
             <text class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
           </view>
           <text class="lineup-count">{{ lineup.memberCount }} 人</text>
@@ -120,12 +105,12 @@
             <text class="metric-value">{{ lineup.memberCount }}</text>
           </view>
           <view class="metric-item">
-            <text class="metric-label">可克制</text>
-            <text class="metric-value">{{ lineup.countersCount }}</text>
+            <text class="metric-label">目标阵容</text>
+            <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
           </view>
           <view class="metric-item">
-            <text class="metric-label">被克制</text>
-            <text class="metric-value">{{ lineup.counteredByCount }}</text>
+            <text class="metric-label">上游阵容</text>
+            <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
           </view>
         </view>
 
@@ -146,20 +131,8 @@
 
         <view class="card-actions">
           <button class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
-          <button
-            v-if="lineup.type === 'defense'"
-            class="card-btn"
-            size="mini"
-            @click="goRelations(lineup.id)">
-            克制关系
-          </button>
-          <button
-            class="card-btn danger"
-            size="mini"
-            :loading="deletingId === lineup.id"
-            @click="confirmDelete(lineup.id)">
-            删除
-          </button>
+          <button class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
+          <button class="card-btn danger" size="mini" :loading="deletingId === lineup.id" @click="confirmDelete(lineup.id)"> 删除 </button>
         </view>
       </view>
 
@@ -167,29 +140,28 @@
         <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
       </view>
     </view>
-
   </view>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import { deleteAdminLineup } from '@/services/compendium-lineups'
+  import { deleteAdminLineup, fetchAdminLineupTypes, type LineupTypeOption } from '@/services/compendium-lineups'
+  import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
+  import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
   import { ensureAdminAccess } from '@/utils/admin'
-  import {
-    getLineupStatusLabel,
-    getLineupTypeLabel,
-    LINEUP_FILTER_STATUS_OPTIONS,
-    LINEUP_FILTER_TYPE_OPTIONS,
-  } from './lineup-meta'
+  import { ALL_VALUE, getLineupTypeToneClass, getLineupStatusLabel, getLineupTypeLabel, LINEUP_FILTER_STATUS_OPTIONS } from './lineup-meta'
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
+  const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineups:character-picker:draft'
+  const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineups:character-picker:result'
   const selectedLocale = ref(DEFAULT_LOCALE)
+  const dynamicLineupTypes = ref<LineupTypeOption[]>([])
   const {
     keyword,
     selectedType,
@@ -216,21 +188,39 @@
     locale: selectedLocale,
   })
   const deletingId = ref('')
+  const lineupTypeOptions = computed(() => [
+    { label: '全部', value: ALL_VALUE },
+    ...dynamicLineupTypes.value.map(option => ({
+      label: option.count > 0 ? `${option.label} (${option.count})` : option.label,
+      value: option.value,
+    })),
+  ])
+
+  const loadLineupTypes = async () => {
+    try {
+      dynamicLineupTypes.value = await fetchAdminLineupTypes({
+        compendiumId: COMPENDIUM_CODE,
+      })
+    } catch (error) {
+      dynamicLineupTypes.value = []
+    }
+  }
 
   const openCharacterPicker = () => {
+    setStorageSync(
+      CHARACTER_PICKER_CACHE_KEY,
+      selectedCharacterFilters.value.map(item => ({ ...item })),
+    )
+    removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
+    const selectedCharacterIds = selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean)
+
     uni.navigateTo({
-      url: `/subPackages/tools/compendium/swc/character-picker?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
-      events: {
-        confirm: (payload: { selected: typeof selectedCharacterFilters.value }) => {
-          selectedCharacterFilters.value = Array.isArray(payload?.selected) ? payload.selected : []
-          refreshList()
-        },
-      },
-      success: (res) => {
-        res.eventChannel.emit('init', {
-          selected: selectedCharacterFilters.value,
-        })
-      },
+      url:
+        `/subPackages/tools/compendium/swc/character-picker?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}` +
+        `&locale=${encodeURIComponent(selectedLocale.value)}` +
+        `&cacheKey=${encodeURIComponent(CHARACTER_PICKER_CACHE_KEY)}` +
+        `&resultKey=${encodeURIComponent(CHARACTER_PICKER_RESULT_KEY)}` +
+        `&selectedCharacterIds=${encodeURIComponent(selectedCharacterIds.join(','))}`,
     })
   }
 
@@ -282,6 +272,14 @@
 
   onShow(() => {
     reportToolVisit('compendium-lineups')
+    loadLineupTypes()
+
+    const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
+    if (Array.isArray(pickerResult)) {
+      selectedCharacterFilters.value = pickerResult.map(item => ({ ...item }))
+      removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
+      refreshList()
+    }
   })
 
   onLoad((options: Record<string, string | undefined>) => {
@@ -292,6 +290,7 @@
     if (!ensureAdminAccess(redirectUrl)) return
 
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })
+    loadLineupTypes()
     refreshList()
   })
 
@@ -462,21 +461,8 @@
     font-weight: 700;
   }
 
-  .selected-list,
-  .option-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16rpx;
+  .selected-avatar-list {
     margin-top: 18rpx;
-  }
-
-  .selected-chip-card {
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
-    padding: 18rpx;
-    border-radius: 20rpx;
-    background: #f8fafc;
   }
 
   .state-block,
@@ -527,6 +513,11 @@
   .type-badge.defense {
     background: #ede9fe;
     color: #6d28d9;
+  }
+
+  .type-badge.custom {
+    background: #ecfeff;
+    color: #0f766e;
   }
 
   .status-badge.enabled {
@@ -650,11 +641,6 @@
 
   .filter-action-row {
     justify-content: flex-end;
-  }
-
-  .compact-list {
-    max-height: 360rpx;
-    overflow-y: auto;
   }
 
   .load-more {

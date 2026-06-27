@@ -1,5 +1,5 @@
 <template>
-  <view class="character-picker-panel" :class="{ 'with-footer': footerMode === 'manual' }">
+  <view class="character-picker-panel">
     <view class="picker-body">
       <view class="section-card">
         <view class="section-head">
@@ -9,25 +9,15 @@
 
         <StateBlock v-if="!draftSelected.length" class="empty-block" :text="emptySelectedText" />
 
-        <view v-else class="selected-list">
-          <view
-            v-for="(member, index) in draftSelected"
-            :key="member.characterId || member.id"
-            class="selected-card">
-            <text v-if="selectionMode === 'multiple'" class="member-order">{{ index + 1 }}</text>
-            <image v-if="member.avatar" class="member-avatar" :src="member.avatar" mode="aspectFill" />
-            <view v-else class="member-avatar member-avatar-placeholder">
-              <text>{{ (member.name || member.label || '?').slice(0, 1) }}</text>
-            </view>
-            <view class="member-info">
-              <text class="member-name">{{ member.name || member.label || '未知魔灵' }}</text>
-              <text class="member-extra">
-                {{ member.elementName || '--' }} / {{ member.familyName || '--' }} / {{ member.stars || '--' }}
-              </text>
-            </view>
-            <button class="mini-btn danger" size="mini" @click="removeMember(member.characterId)">移除</button>
-          </view>
-        </view>
+        <CharacterAvatarGrid
+          v-else
+          class="selected-list"
+          :items="draftSelected"
+          :columns="selectedGridColumns"
+          :show-order="selectionMode === 'multiple'"
+          action-text="移除"
+          action-theme="danger"
+          @action="removeMember" />
       </view>
 
       <view class="section-head">
@@ -69,13 +59,16 @@
                     v-for="option in elementOptions"
                     :key="option.value"
                     class="quick-chip element-chip"
-                    :class="[
-                      { selected: option.value === selectedElement },
-                      option.value !== ALL_VALUE ? 'element-filter-' + option.value : '',
-                    ]"
+                    :class="{ selected: option.value === selectedElement }"
                     @click="selectQuickFilter('element', option.value)">
-                    <text v-if="option.value !== ALL_VALUE" class="element-dot"></text>
-                    <text>{{ option.label }}</text>
+                    <SwcElementBadge
+                      v-if="option.value !== ALL_VALUE"
+                      :element-key="option.value"
+                      :label="option.label"
+                      :size="24"
+                      :font-size="24"
+                      :gap="8" />
+                    <text v-else>{{ option.label }}</text>
                   </view>
                 </view>
               </scroll-view>
@@ -139,61 +132,55 @@
 
         <StateBlock v-else-if="!characterOptions.length" class="empty-block" :text="emptySearchText" />
 
-        <scroll-view
-          v-else
-          class="options-scroll"
-          scroll-y
-          lower-threshold="120"
-          @scrolltolower="handleOptionsScrollToLower">
-          <view v-if="filteredCharacterOptions.length" class="option-list">
-            <view v-for="option in filteredCharacterOptions" :key="option.characterId || option.id" class="option-card">
-              <image v-if="option.avatar" class="member-avatar" :src="option.avatar" mode="aspectFill" />
-              <view v-else class="member-avatar member-avatar-placeholder">
-                <text>{{ (option.name || '?').slice(0, 1) }}</text>
+        <view v-else class="options-scroll-wrap" :style="optionsScrollStyle">
+          <scroll-view class="options-scroll" scroll-y lower-threshold="120" @scrolltolower="handleOptionsScrollToLower">
+            <view v-if="filteredCharacterOptions.length" class="option-list">
+              <view v-for="option in filteredCharacterOptions" :key="option.characterId || option.id" class="option-card">
+                <image v-if="option.avatar" class="member-avatar" :src="option.avatar" mode="aspectFill" />
+                <view v-else class="member-avatar member-avatar-placeholder">
+                  <text>{{ (option.name || '?').slice(0, 1) }}</text>
+                </view>
+                <view class="member-info">
+                  <text class="member-name">{{ option.name || option.label || '未知魔灵' }}</text>
+                  <view class="member-extra">
+                    <view v-if="option.elementName" class="member-meta-pill member-meta-element">
+                      <SwcElementBadge
+                        :element-key="option.elementKey || option.element"
+                        :label="option.elementName"
+                        :size="20"
+                        :font-size="22"
+                        :gap="6" />
+                    </view>
+                    <text v-if="option.familyName" class="member-meta-pill">{{ option.familyName }}</text>
+                    <text v-if="option.stars" class="member-meta-pill">{{ option.stars }}</text>
+                    <text v-if="!option.elementName && !option.familyName && !option.stars" class="member-meta-fallback">--</text>
+                  </view>
+                </view>
+                <button class="mini-btn" size="mini" :disabled="isAddDisabled(option.characterId)" @click="toggleMember(option)">
+                  {{ getOptionActionText(option.characterId) }}
+                </button>
               </view>
-              <view class="member-info">
-                <text class="member-name">{{ option.name || option.label || '未知魔灵' }}</text>
-                <text class="member-extra">
-                  {{ option.elementName || '--' }} / {{ option.familyName || '--' }} / {{ option.stars || '--' }}
-                </text>
-              </view>
-              <button
-                class="mini-btn"
-                size="mini"
-                :disabled="isAddDisabled(option.characterId)"
-                @click="toggleMember(option)">
-                {{ getOptionActionText(option.characterId) }}
-              </button>
             </view>
-          </view>
 
-          <StateBlock
-            v-else
-            class="empty-block filter-empty-block"
-            :text="filteredEmptyText" />
+            <StateBlock v-else class="empty-block filter-empty-block" :text="filteredEmptyText" />
 
-          <view v-if="memberLoadingMore" class="load-more">
-            <text class="load-more-text">加载更多中...</text>
-          </view>
+            <view v-if="memberLoadingMore" class="load-more">
+              <text class="load-more-text">加载更多中...</text>
+            </view>
 
-          <view v-else-if="canLoadMore" class="load-more">
-            <button class="action-btn load-more-btn" :loading="memberLoadingMore" @click="handleLoadMoreClick">
-              加载更多
-            </button>
-          </view>
+            <view v-else-if="canLoadMore" class="load-more">
+              <button class="action-btn load-more-btn" :loading="memberLoadingMore" @click="handleLoadMoreClick"> 加载更多 </button>
+            </view>
 
-          <view v-else-if="showNoMoreText" class="load-more">
-            <text class="load-more-text muted">没有更多了</text>
-          </view>
-        </scroll-view>
+            <view v-else-if="showNoMoreText" class="load-more">
+              <text class="load-more-text muted">没有更多了</text>
+            </view>
+          </scroll-view>
+        </view>
       </view>
     </view>
 
-    <StickyActionBar
-      v-if="footerMode === 'manual'"
-      :fixed="false"
-      :bottom-padding="24"
-      background="rgba(246, 247, 251, 0.96)">
+    <StickyActionBar v-if="footerMode === 'manual'" :fixed="footerFixed" :bottom-padding="24" background="rgba(246, 247, 251, 0.96)">
       <button class="footer-btn cancel-btn" @click="handleCancel">{{ cancelText }}</button>
       <button class="footer-btn confirm-btn" @click="handleConfirm">{{ confirmText }}</button>
     </StickyActionBar>
@@ -201,8 +188,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue'
+  import CharacterAvatarGrid from './character-avatar-grid.vue'
   import SearchActionRow from './search-action-row.vue'
+  import SwcElementBadge from './swc-element-badge.vue'
   import StateBlock from './state-block.vue'
   import StickyActionBar from './sticky-action-bar.vue'
   import {
@@ -256,42 +245,47 @@
     { label: '1★', value: '1' },
   ]
 
-  const props = withDefaults(defineProps<{
-    active?: boolean
-    compendiumId: string
-    locale?: string
-    modelValue?: CharacterOption[]
-    selectionMode?: SelectionMode
-    footerMode?: FooterMode
-    maxCount?: number
-    selectedTitle?: string
-    searchTitle?: string
-    searchTip?: string
-    searchPlaceholder?: string
-    emptySelectedText?: string
-    emptySearchText?: string
-    loadingText?: string
-    cancelText?: string
-    confirmText?: string
-    showQuickFilters?: boolean
-  }>(), {
-    active: true,
-    locale: 'zh-CN',
-    modelValue: () => [],
-    selectionMode: 'multiple',
-    footerMode: 'manual',
-    maxCount: 5,
-    selectedTitle: '已选成员',
-    searchTitle: '搜索成员',
-    searchTip: '远程搜索人物名称或 code',
-    searchPlaceholder: '输入名称或 code',
-    emptySelectedText: '还没有选择成员，请从下方搜索结果中添加。',
-    emptySearchText: '暂无可选人物',
-    loadingText: '搜索成员中...',
-    cancelText: '取消',
-    confirmText: '确认',
-    showQuickFilters: true,
-  })
+  const props = withDefaults(
+    defineProps<{
+      active?: boolean
+      compendiumId: string
+      locale?: string
+      modelValue?: CharacterOption[]
+      selectionMode?: SelectionMode
+      footerMode?: FooterMode
+      maxCount?: number
+      selectedTitle?: string
+      searchTitle?: string
+      searchTip?: string
+      searchPlaceholder?: string
+      emptySelectedText?: string
+      emptySearchText?: string
+      loadingText?: string
+      cancelText?: string
+      confirmText?: string
+      showQuickFilters?: boolean
+      footerFixed?: boolean
+    }>(),
+    {
+      active: true,
+      locale: 'zh-CN',
+      modelValue: () => [],
+      selectionMode: 'multiple',
+      footerMode: 'manual',
+      maxCount: 5,
+      selectedTitle: '已选成员',
+      searchTitle: '搜索成员',
+      searchTip: '远程搜索人物名称或 code',
+      searchPlaceholder: '输入名称或 code',
+      emptySelectedText: '还没有选择成员，请从下方搜索结果中添加。',
+      emptySearchText: '暂无可选人物',
+      loadingText: '搜索成员中...',
+      cancelText: '取消',
+      confirmText: '确认',
+      showQuickFilters: true,
+      footerFixed: true,
+    },
+  )
 
   const emit = defineEmits<{
     (event: 'update:modelValue', value: CharacterOption[]): void
@@ -307,14 +301,15 @@
   const characterPagination = ref<PaginationState>(getPaginationOrDefault())
   const draftSelected = ref<CharacterOption[]>([])
   const initialized = ref(false)
+  const optionsScrollHeight = ref(360)
   const filterExpanded = ref(true)
   const selectedElement = ref(ALL_VALUE)
   const selectedAwaken = ref(ALL_VALUE)
   const selectedType = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
+  const instance = getCurrentInstance()
 
-  const cloneSelection = (items: CharacterOption[] = []): CharacterOption[] =>
-    items.map(item => ({ ...item }))
+  const cloneSelection = (items: CharacterOption[] = []): CharacterOption[] => items.map(item => ({ ...item }))
 
   const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
 
@@ -353,9 +348,9 @@
     return `${draftSelected.value.length}/${props.maxCount}`
   })
 
-  const supportsTypeFilter = computed(() =>
-    characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))),
-  )
+  const selectedGridColumns = computed(() => (props.selectionMode === 'single' ? 1 : Math.min(Math.max(props.maxCount, 1), 5)))
+
+  const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
 
   const hasActiveFilters = computed(
     () =>
@@ -407,16 +402,47 @@
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(() =>
-    initialized.value && characterPagination.value.hasNext && !memberLoading.value,
-  )
+  const canLoadMore = computed(() => initialized.value && characterPagination.value.hasNext && !memberLoading.value)
 
-  const showNoMoreText = computed(() =>
-    initialized.value && !characterPagination.value.hasNext && characterOptions.value.length > 0,
-  )
+  const showNoMoreText = computed(() => initialized.value && !characterPagination.value.hasNext && characterOptions.value.length > 0)
 
-  const isMemberSelected = (characterId: string): boolean =>
-    draftSelected.value.some(member => member.characterId === characterId)
+  const optionsScrollStyle = computed(() => ({
+    height: `${optionsScrollHeight.value}px`,
+  }))
+
+  const updateOptionsScrollHeight = () => {
+    nextTick(() => {
+      setTimeout(() => {
+        if (!instance?.proxy) return
+        const query = uni.createSelectorQuery().in(instance?.proxy)
+        query.select('.character-picker-panel').boundingClientRect()
+        query.select('.options-scroll-wrap').boundingClientRect()
+        query.select('.sticky-action-bar').boundingClientRect()
+        query.exec((rects: any[]) => {
+          const [panelRect, scrollRect, footerRect] = rects || []
+          if (typeof scrollRect?.top !== 'number') return
+
+          let windowHeight = 0
+          try {
+            windowHeight = uni.getSystemInfoSync().windowHeight || 0
+          } catch (error) {
+            windowHeight = 0
+          }
+
+          const panelBottom = panelRect?.height ? panelRect.top + panelRect.height : windowHeight
+          const footerTop = footerRect?.top || panelBottom || windowHeight
+          const availableBottom = Math.min(footerTop, panelBottom || footerTop, windowHeight || footerTop)
+          const nextHeight = Math.floor(availableBottom - scrollRect.top)
+
+          if (nextHeight > 120) {
+            optionsScrollHeight.value = nextHeight
+          }
+        })
+      }, 50)
+    })
+  }
+
+  const isMemberSelected = (characterId: string): boolean => draftSelected.value.some(member => member.characterId === characterId)
 
   const isAddDisabled = (characterId: string): boolean => {
     if (isMemberSelected(characterId)) return false
@@ -496,6 +522,7 @@
       characterPagination.value = result.pagination
       characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]
       initialized.value = true
+      updateOptionsScrollHeight()
     } catch (error) {
       uni.showToast({
         title: typeof error === 'string' ? error : '加载人物选项失败',
@@ -504,6 +531,7 @@
     } finally {
       memberLoading.value = false
       memberLoadingMore.value = false
+      updateOptionsScrollHeight()
     }
   }
 
@@ -581,10 +609,29 @@
     }
   })
 
+  watch(
+    () => [
+      props.active,
+      props.footerMode,
+      props.showQuickFilters,
+      filterExpanded.value,
+      draftSelected.value.length,
+      characterOptions.value.length,
+      filteredCharacterOptions.value.length,
+    ],
+    () => updateOptionsScrollHeight(),
+    { flush: 'post' },
+  )
+
+  onMounted(() => {
+    updateOptionsScrollHeight()
+  })
+
   defineExpose({
     refreshCharacterOptions,
     loadMoreCharacterOptions,
     syncDraftFromModel,
+    updateOptionsScrollHeight,
   })
 </script>
 
@@ -595,10 +642,6 @@
     background: #f6f7fb;
     display: flex;
     flex-direction: column;
-  }
-
-  .character-picker-panel.with-footer {
-    padding-bottom: calc(176rpx + env(safe-area-inset-bottom));
   }
 
   .picker-body {
@@ -615,6 +658,7 @@
     background: #fff;
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
     overflow: hidden;
+    flex-shrink: 0;
   }
 
   .search-card {
@@ -622,6 +666,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .section-head {
@@ -797,75 +842,18 @@
   }
 
   .element-chip {
-    padding-left: 14rpx;
-  }
-
-  .element-dot {
-    width: 18rpx;
-    height: 18rpx;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
-  .element-filter-fire {
-    color: #d94b3f;
-  }
-
-  .element-filter-water {
-    color: #2f80ed;
-  }
-
-  .element-filter-wind {
-    color: #249a68;
-  }
-
-  .element-filter-light {
-    color: #b78a16;
-  }
-
-  .element-filter-dark {
-    color: #2a2342;
+    padding-left: 18rpx;
+    padding-right: 18rpx;
   }
 
   .element-chip.selected {
     color: #fff;
   }
 
-  .element-chip.selected .element-dot {
-    background: #fff;
+  .selected-list {
+    padding: 0 24rpx 24rpx;
   }
 
-  .element-filter-fire.selected {
-    border-color: #d94b3f;
-    background: #d94b3f;
-  }
-
-  .element-filter-water.selected {
-    border-color: #2f80ed;
-    background: #2f80ed;
-  }
-
-  .element-filter-wind.selected {
-    border-color: #249a68;
-    background: #249a68;
-  }
-
-  .element-filter-light.selected {
-    border-color: #ffe9a3;
-    background: #ffe9a3;
-    color: #111827;
-  }
-
-  .element-filter-light.selected .element-dot {
-    background: #111827;
-  }
-
-  .element-filter-dark.selected {
-    border-color: #2a2342;
-    background: #2a2342;
-  }
-
-  .selected-list,
   .option-list {
     display: flex;
     flex-direction: column;
@@ -873,12 +861,14 @@
     padding: 0 24rpx 24rpx;
   }
 
-  .options-scroll {
-    flex: 1;
-    min-height: 0;
+  .options-scroll-wrap {
+    overflow: hidden;
   }
 
-  .selected-card,
+  .options-scroll {
+    height: 100%;
+  }
+
   .option-card {
     display: flex;
     align-items: center;
@@ -886,14 +876,6 @@
     padding: 18rpx;
     border-radius: 20rpx;
     background: #f8fafc;
-  }
-
-  .member-order {
-    width: 40rpx;
-    text-align: center;
-    color: #7c3aed;
-    font-size: 24rpx;
-    font-weight: 800;
   }
 
   .member-avatar {
@@ -932,8 +914,36 @@
   }
 
   .member-extra {
-    margin-top: 6rpx;
+    min-height: 34rpx;
+    margin-top: 8rpx;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8rpx;
+    align-items: center;
+  }
+
+  .member-meta-pill {
+    max-width: 180rpx;
+    min-height: 34rpx;
+    padding: 4rpx 10rpx;
+    border-radius: 999rpx;
+    background: #eef2f7;
     color: #667085;
+    font-size: 22rpx;
+    line-height: 26rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .member-meta-element {
+    display: inline-flex;
+    align-items: center;
+    padding-right: 12rpx;
+  }
+
+  .member-meta-fallback {
+    color: #98a2b3;
     font-size: 22rpx;
   }
 

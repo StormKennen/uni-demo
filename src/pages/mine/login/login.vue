@@ -328,88 +328,127 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
   const onBack = ()=>{
     uni.navigateBack()
   }
+
+  const handleLoginPasswordConfirm = () => {
+    mobileLogin()
+  }
+
+  const handleRegisterPasswordConfirm = () => {
+    userRegister()
+  }
 </script>
 
 <template>
   <view class="login">
-    <uni-nav-bar @clickLeft="onBack" left-icon="left" backgroundColor="none" title="" statusBar :border="false"></uni-nav-bar>
-    <LoginHeaderText />
-    <!-- 登录界面 -->
-    <view v-if="loginType === 'mobile'" class="mobile">
-      <view class="mobile-number">
-        <uni-easyinput
-          :clearable="false"
-          type="number"
-          :inputBorder="false"
-          :styles="inputStyles"
-          v-model="mobileNumber"
-          placeholder="请输入手机号"
-          @input="inputMobile"></uni-easyinput>
-      </view>
-      <view class="mobile-password">
-        <uni-easyinput
-          :clearable="false"
-          type="password"
-          :inputBorder="false"
-          :styles="inputStyles"
-          v-model="password"
-          placeholder="请输入密码"
-          @input="inputPassword">
-        </uni-easyinput>
-      </view>
-      <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
-      <view class="login-btns">
-        <button class="btn btn-login" @click="mobileLogin">登录</button>
-      </view>
-    </view>
-    <!-- 注册界面 -->
-    <view v-else-if="loginType === 'register'" class="mobile">
-      <view class="mobile-number">
-        <uni-easyinput
-          :clearable="false"
-          type="number"
-          :inputBorder="false"
-          :styles="inputStyles"
-          v-model="mobileNumber"
-          placeholder="请输入手机号"
-          @input="inputMobile"></uni-easyinput>
-      </view>
-      <view class="mobile-password">
-        <uni-easyinput
-          :clearable="false"
-          type="password"
-          :inputBorder="false"
-          :styles="inputStyles"
-          v-model="password"
-          placeholder="请输入密码"
-          @input="inputPassword">
-        </uni-easyinput>
-      </view>
-      <view class="mobile-confirm-password">
-        <uni-easyinput
-          :clearable="false"
-          type="password"
-          :inputBorder="false"
-          :styles="inputStyles"
-          v-model="confirmPassword"
-          placeholder="请确认密码"
-          @input="inputConfirmPassword">
-        </uni-easyinput>
-      </view>
-      <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
-      <view class="login-btns">
-        <button class="btn btn-register" @click="userRegister">注册</button>
-      </view>
-    </view>
-    <!-- 协议确认只在注册时显示 -->
-    <view v-if="loginType === 'register'" class="read-protocol">
-      <!-- <ReadProtocol v-model="isRead" /> -->
-      <view class="read-protocol">
-        <label class="radio" @click="onConfirmRead">
-          <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
-          <text class="radio-text">我已阅读并同意</text>
-        </label>
-        <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+    <uni-nav-bar
+      @clickLeft="onBack"
+      left-icon="left"
+      backgroundColor="transparent"
+      title=""
+      statusBar
+      :border="false" />
+    <view class="login-body">
+      <LoginHeaderText />
+      <view class="auth-card">
+        <view class="auth-tabs">
+          <view
+            class="auth-tab"
+            :class="{ active: loginType === 'mobile' }"
+            @click="changeLoginType('mobile')">
+            登录
+          </view>
+          <view
+            class="auth-tab"
+            :class="{ active: loginType === 'register' }"
+            @click="changeLoginType('register')">
+            注册
+          </view>
+        </view>
+
+        <!-- 登录界面 -->
+        <view v-if="loginType === 'mobile'" class="mobile">
+          <view class="mobile-number">
+            <uni-easyinput
+              :clearable="false"
+              type="number"
+              :inputBorder="false"
+              :styles="inputStyles"
+              v-model="mobileNumber"
+              placeholder="请输入手机号"
+              @input="inputMobile"></uni-easyinput>
+          </view>
+          <view class="mobile-password">
+            <uni-easyinput
+              :clearable="false"
+              type="password"
+              :inputBorder="false"
+              :styles="inputStyles"
+              v-model="password"
+              placeholder="请输入密码"
+              confirm-type="done"
+              @input="inputPassword"
+              @confirm="handleLoginPasswordConfirm">
+            </uni-easyinput>
+          </view>
+          <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
+          <view class="login-btns">
+            <button class="btn btn-login" @click="mobileLogin">登录</button>
+          </view>
+        </view>
+
+        <!-- 注册界面 -->
+        <view v-else-if="loginType === 'register'" class="mobile">
+          <view class="mobile-number">
+            <uni-easyinput
+              :clearable="false"
+              type="number"
+              :inputBorder="false"
+              :styles="inputStyles"
+              v-model="mobileNumber"
+              placeholder="请输入手机号"
+              @input="inputMobile"></uni-easyinput>
+          </view>
+          <view class="mobile-password">
+            <uni-easyinput
+              :clearable="false"
+              type="password"
+              :inputBorder="false"
+              :styles="inputStyles"
+              v-model="password"
+              placeholder="请输入密码"
+              @input="inputPassword">
+            </uni-easyinput>
+          </view>
+          <view class="mobile-confirm-password">
+            <uni-easyinput
+              :clearable="false"
+              type="password"
+              :inputBorder="false"
+              :styles="inputStyles"
+              v-model="confirmPassword"
+              placeholder="请确认密码"
+              confirm-type="done"
+              @input="inputConfirmPassword"
+              @confirm="handleRegisterPasswordConfirm">
+            </uni-easyinput>
+          </view>
+          <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
+          <view class="login-btns">
+            <button class="btn btn-register" @click="userRegister">注册</button>
+          </view>
+        </view>
+
+        <!-- 协议确认只在注册时显示 -->
+        <view v-if="loginType === 'register'" class="read-protocol">
+          <!-- <ReadProtocol v-model="isRead" /> -->
+          <view class="read-protocol">
+            <label class="radio" @click="onConfirmRead">
+              <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
+              <text class="radio-text">我已阅读并同意</text>
+            </label>
+            <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+          </view>
+        </view>
       </view>
     </view>
     <view class="">
@@ -421,89 +460,170 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
 <style lang="scss" scoped>
   .login {
     position: relative;
-    height: 100%;
+    min-height: 100vh;
     width: 100%;
+    box-sizing: border-box;
     background: linear-gradient(180deg, #d5dfff 0.06%, #eff3ff 26%, #fff 49%, #fff 100%);
+    padding-bottom: env(safe-area-inset-bottom);
+
     .btn {
-      border-radius: 6rpx;
+      border-radius: 24rpx;
       font-size: 32rpx;
-      font-weight: 500;
-      height: 92rpx;
-      line-height: 92rpx;
+      font-weight: 600;
+      height: 96rpx;
+      line-height: 96rpx;
       &::after {
         display: none;
       }
     }
+
+    .login-body {
+      padding: 0 28rpx 40rpx;
+    }
+
+    .auth-card {
+      margin-top: 20rpx;
+      padding: 24rpx 24rpx 32rpx;
+      border-radius: 32rpx;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 20rpx 48rpx rgba(34, 60, 120, 0.12);
+      backdrop-filter: blur(12rpx);
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12rpx;
+      padding: 8rpx;
+      margin-bottom: 28rpx;
+      border-radius: 999rpx;
+      background: #eef3ff;
+    }
+
+    .auth-tab {
+      height: 72rpx;
+      line-height: 72rpx;
+      text-align: center;
+      border-radius: 999rpx;
+      color: $ga-gray-7;
+      font-size: 28rpx;
+      font-weight: 600;
+    }
+
+    .auth-tab.active {
+      background: #fff;
+      color: $ga-brand-4;
+      box-shadow: 0 8rpx 20rpx rgba(0, 70, 180, 0.12);
+    }
+
     .mobile {
-      padding: 0 48rpx 48rpx 48rpx;
+      padding: 0;
       .mobile-input {
         border: none;
         border-radius: 0;
       }
-      :deep(.uni-input-input){
+
+      :deep(.uni-input-input) {
         caret-color: #0046b4;
       }
+
+      :deep(.uni-easyinput) {
+        width: 100%;
+      }
+
+      :deep(.uni-easyinput__content) {
+        min-height: 96rpx;
+        border-radius: 24rpx;
+        background: transparent !important;
+      }
+
+      :deep(.uni-easyinput__content-input) {
+        height: 96rpx;
+        font-size: 30rpx;
+      }
+
       .mobile-number {
         display: flex;
         align-items: center;
-        height: 92rpx;
-        line-height: 92rpx;
+        min-height: 96rpx;
         margin-bottom: 24rpx;
-        background: $ga-gray-2;
-        font-size: 26rpx;
+        padding: 0 24rpx;
+        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border-radius: 24rpx;
+        background: #f7f9ff;
+        font-size: 28rpx;
       }
+
       .mobile-password {
-        height: 92rpx;
-        line-height: 92rpx;
+        min-height: 96rpx;
         margin-bottom: 24rpx;
-        background: $ga-gray-2;
-        font-size: 26rpx;
+        padding: 0 24rpx;
+        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border-radius: 24rpx;
+        background: #f7f9ff;
+        font-size: 28rpx;
       }
+
       .mobile-confirm-password {
-        height: 92rpx;
-        line-height: 92rpx;
-        background: $ga-gray-2;
-        font-size: 26rpx;
+        min-height: 96rpx;
+        padding: 0 24rpx;
+        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border-radius: 24rpx;
+        background: #f7f9ff;
+        font-size: 28rpx;
       }
+
       .change-register,
       .change-login {
-        margin: 32rpx 0;
+        margin: 24rpx 0 32rpx;
         color: $ga-brand-4;
         font-size: 26rpx;
         text-align: center;
         cursor: pointer;
       }
+
       .login-btns {
         .btn-login,
         .btn-register {
           background: $ga-brand-4;
           color: $ga-gray-0;
+          box-shadow: 0 16rpx 30rpx rgba(0, 70, 180, 0.18);
         }
       }
     }
+
     .read-protocol {
+      margin-top: 24rpx;
       text-align: center;
     }
   }
+
   .read-protocol {
     font-size: 24rpx;
     color: $ga-gray-6;
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+    row-gap: 8rpx;
+    column-gap: 4rpx;
+
     .radio {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-wrap: nowrap;
     }
+
     .radio-radio {
       transform: scale(0.6);
       font-size: 24rpx;
     }
+
     .radio-text {
       margin-left: -4rpx;
     }
+
     .protocol {
       color: $ga-brand-4;
     }

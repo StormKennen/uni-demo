@@ -1,15 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
-import {
-  fetchAdminLineups,
-  type AdminLineupSummary,
-  type CharacterOption,
-  type PaginationState,
-} from '@/services/compendium-lineups'
-import {
-  ALL_VALUE,
-  LINEUP_FILTER_STATUS_OPTIONS,
-  LINEUP_FILTER_TYPE_OPTIONS,
-} from '../lineup-meta'
+import { fetchAdminLineups, type AdminLineupSummary, type CharacterOption, type PaginationState } from '@/services/compendium-lineups'
+import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -22,11 +13,7 @@ const createDefaultPagination = (pageSize: number): PaginationState => ({
   hasPrev: false,
 })
 
-export const useAdminLineupList = (params: {
-  compendiumId: string
-  locale: Ref<string>
-  pageSize?: number
-}) => {
+export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<string>; pageSize?: number }) => {
   const pageSize = params.pageSize || DEFAULT_PAGE_SIZE
 
   const keyword = ref('')
@@ -42,23 +29,18 @@ export const useAdminLineupList = (params: {
   const errorMessage = ref('')
 
   const selectedTypeLabel = computed(
-    () => LINEUP_FILTER_TYPE_OPTIONS.find(option => option.value === selectedType.value)?.label || '全部',
+    () => LINEUP_FILTER_TYPE_OPTIONS.find(option => option.value === selectedType.value)?.label || selectedType.value || '全部',
   )
   const selectedStatusLabel = computed(
     () => LINEUP_FILTER_STATUS_OPTIONS.find(option => option.value === selectedStatus.value)?.label || '全部',
   )
-  const selectedCharacterIds = computed(() =>
-    selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean),
-  )
+  const selectedCharacterIds = computed(() => selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean))
   const selectedCharacterLabel = computed(() =>
     selectedCharacterIds.value.length ? `人物 ${selectedCharacterIds.value.length} 个` : '全部人物',
   )
   const hasMultiCharacterFilter = computed(() => selectedCharacterIds.value.length > 1)
 
-  const createCharacterFilter = (
-    characterId: string,
-    option: Partial<CharacterOption> = {},
-  ): CharacterOption => ({
+  const createCharacterFilter = (characterId: string, option: Partial<CharacterOption> = {}): CharacterOption => ({
     id: option.id || characterId,
     characterId,
     name: option.name || option.label || characterId,
@@ -76,13 +58,18 @@ export const useAdminLineupList = (params: {
     status: option.status || 'enabled',
   })
 
-  const buildCurrentUrl = (): string => {
+  const buildCurrentUrl = (
+    overrides: {
+      characterIds?: string[]
+    } = {},
+  ): string => {
+    const characterIds = overrides.characterIds || selectedCharacterIds.value
     const query: string[] = []
     if (keyword.value.trim()) query.push(`keyword=${encodeURIComponent(keyword.value.trim())}`)
     if (selectedType.value) query.push(`type=${encodeURIComponent(selectedType.value)}`)
     if (selectedStatus.value) query.push(`status=${encodeURIComponent(selectedStatus.value)}`)
-    if (selectedCharacterIds.value.length) {
-      query.push(`characterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}`)
+    if (characterIds.length) {
+      query.push(`characterIds=${encodeURIComponent(characterIds.join(','))}`)
     }
     query.push(`locale=${encodeURIComponent(params.locale.value)}`)
     return `/subPackages/tools/compendium/swc/lineups${query.length ? `?${query.join('&')}` : ''}`

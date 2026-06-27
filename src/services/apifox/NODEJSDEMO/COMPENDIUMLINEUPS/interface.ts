@@ -26,6 +26,8 @@ export interface getAdminLineupsQuery {
   keyword?: string
   /** Exact character id filter. Only lineups containing this exact character member are returned. */
   characterId?: string
+  /** Multi-character AND filter. The lineup must contain all specified character ids. Accepts either a JSON array string like ["id1","id2"] or a comma-separated string like id1,id2. */
+  characterIds?: any
   /** Filter by lineup type. */
   type?: string
   /** Filter by lineup status. */
@@ -66,11 +68,8 @@ export interface postAdminLineupsBody {
 /** Whether the lineup is available for public matching and management. */
 export type postAdminLineupsBodyStatus = 'enabled' | 'disabled'
 
-/** Lineup category.
-- `offense`: an attacking lineup used to break defenses
-- `defense`: a defending lineup that can be countered by offense lineups
- */
-export type postAdminLineupsBodyType = 'offense' | 'defense'
+/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
+export type postAdminLineupsBodyType = string
 
 /**
  * @description CompendiumLineups/Create a lineup--接口返回值
@@ -91,6 +90,8 @@ export interface getAdminLineupsOptionsQuery {
   keyword?: string
   /** Exact character id filter. Only lineups containing this exact character member are returned. */
   characterId?: string
+  /** Multi-character AND filter. The lineup must contain all specified character ids. Accepts either a JSON array string like ["id1","id2"] or a comma-separated string like id1,id2. */
+  characterIds?: any
   /** Usually `defense` for source selection or `offense` for target selection. */
   type?: string
   /** Optional lineup status filter. */
@@ -165,11 +166,8 @@ export interface patchAdminLineupsLineupIdBody {
 /** Whether the lineup is available for public matching and management. */
 export type patchAdminLineupsLineupIdBodyStatus = 'enabled' | 'disabled'
 
-/** Lineup category.
-- `offense`: an attacking lineup used to break defenses
-- `defense`: a defending lineup that can be countered by offense lineups
- */
-export type patchAdminLineupsLineupIdBodyType = 'offense' | 'defense'
+/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
+export type patchAdminLineupsLineupIdBodyType = string
 
 /**
  * @description CompendiumLineups/Update a lineup--接口返回值
@@ -184,7 +182,7 @@ export type patchAdminLineupsLineupIdRes = string
 export type deleteAdminLineupsLineupIdRes = string
 
 /**
- * @description CompendiumLineups/Get lineup relation detail for one defense lineup--接口请求Query参数
+ * @description CompendiumLineups/Get lineup relation detail for one source lineup--接口请求Query参数
  * @url GET /admin/lineup-relations/{sourceLineupId}
  */
 export interface getAdminLineupRelationsSourceLineupIdQuery {
@@ -193,26 +191,43 @@ export interface getAdminLineupRelationsSourceLineupIdQuery {
 }
 
 /**
- * @description CompendiumLineups/Get lineup relation detail for one defense lineup--接口返回值
+ * @description CompendiumLineups/Get lineup relation detail for one source lineup--接口返回值
  * @url GET /admin/lineup-relations/{sourceLineupId}
  */
 export type getAdminLineupRelationsSourceLineupIdRes = string
 
 /**
- * @description CompendiumLineups/Save relation targets for one defense lineup--接口请求Body参数
+ * @description CompendiumLineups/Get distinct lineup types for one compendium--接口请求Query参数
+ * @url GET /admin/lineups/types
+ */
+export interface getAdminLineupsTypesQuery {
+  /** Game code or game id. */
+  compendiumId: string
+  /** Optional lineup status filter before aggregating types. */
+  status?: string
+}
+
+/**
+ * @description CompendiumLineups/Get distinct lineup types for one compendium--接口返回值
+ * @url GET /admin/lineups/types
+ */
+export type getAdminLineupsTypesRes = string
+
+/**
+ * @description CompendiumLineups/Save relation targets for one source lineup--接口请求Body参数
  * @url POST /admin/lineup-relations
  */
 export interface postAdminLineupRelationsBody {
   /** Game code or game id used for cross-checking the relation save request. */
   compendiumId?: string
-  /** Defense lineup id being edited. */
+  /** Source lineup id being edited. */
   sourceLineupId: string
-  /** Offense lineup ids that can counter the source defense lineup. */
+  /** Target lineup ids mapped from the source lineup. */
   targetLineupIds?: string[]
 }
 
 /**
- * @description CompendiumLineups/Save relation targets for one defense lineup--接口返回值
+ * @description CompendiumLineups/Save relation targets for one source lineup--接口返回值
  * @url POST /admin/lineup-relations
  */
 export type postAdminLineupRelationsRes = string

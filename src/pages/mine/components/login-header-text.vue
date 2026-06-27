@@ -19,7 +19,7 @@ const props = defineProps<Props>()
 
 <style lang="scss" scoped>
 .login-header{
-  padding: 96rpx 32rpx 24rpx 32rpx;
+  padding: 40rpx 8rpx 12rpx;
   box-sizing: border-box;
   .hello {
     .hello-text{
@@ -32,19 +32,19 @@ const props = defineProps<Props>()
   }
   .welcome {
     .welcome-text{
-      font-size: 48rpx;
+      font-size: 52rpx;
       font-weight: 700;
-      line-height: 150%;
+      line-height: 1.25;
       color: $ga-gray-8;
       font-family: 'Alibaba PuHuiTi 3.0';
     }
   }
   .service {
-    margin-top: 6rpx;
+    margin-top: 12rpx;
     .service-text{
       font-size: 26rpx;
-      font-weight: 300;
-      line-height: 150%;
+      font-weight: 400;
+      line-height: 1.5;
       color: $ga-gray-7;
       font-family: 'Alibaba PuHuiTi 3.0';
     }
