@@ -9,6 +9,17 @@
       </view>
     </view>
 
+    <view class="login-tip-card" :class="{ logged: isLoggedIn }">
+      <view class="login-tip-main">
+        <view class="login-tip-icon">{{ isLoggedIn ? '稳' : '!' }}</view>
+        <view class="login-tip-content">
+          <text class="login-tip-title">{{ loginTipTitle }}</text>
+          <text class="login-tip-text">{{ loginTipText }}</text>
+        </view>
+      </view>
+      <button v-if="!isLoggedIn" class="login-tip-btn" @click="goLogin">快捷登录</button>
+    </view>
+
     <view v-if="!backendVerified" class="notice-card">
       <text class="notice-title">为什么需要后端？</text>
       <text class="notice-text">
@@ -22,7 +33,7 @@
       <view class="section-header">
         <view>
           <text class="section-title">账号列表</text>
-          <text class="section-desc">最多保存 {{ maxAccounts }} 个{{ gameConfig.accountIdLabel }}，仅保存在本机缓存。</text>
+          <text class="section-desc">最多保存 {{ maxAccounts }} 个{{ gameConfig.accountIdLabel }}，{{ accountStorageDesc }}</text>
         </view>
         <button class="ghost-btn" @click="addAccount">添加账号</button>
       </view>
@@ -149,9 +160,10 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShow } from '@dcloudio/uni-app'
   import { getGameCouponConfig } from '@/config/game-coupons'
   import { getGameCouponCodes, getGameCouponProfile, hasGameCouponBackend, redeemGameCoupons } from '@/services/game-coupons'
+  import { checkLoginStatus } from '@/utils/autoLogin'
   import type { GameCouponConfig } from '@/config/game-coupons'
   import type {
     GameCouponAccount,
@@ -184,6 +196,7 @@
   const backendReady = computed(() => hasGameCouponBackend())
   const backendVerified = ref(false)
   const initialized = ref(false)
+  const isLoggedIn = ref(false)
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
   const combinedCodes = computed(() => {
@@ -200,8 +213,37 @@
 
   const redeemDisabled = computed(() => redeeming.value || validAccounts.value.length === 0 || combinedCodes.value.length === 0)
 
+  const loginTipTitle = computed(() => (isLoggedIn.value ? '已登录，数据更稳妥' : '未登录也能使用'))
+
+  const loginTipText = computed(() =>
+    isLoggedIn.value
+      ? '当前支持快捷登录，游戏号可跟随账号保存，后续不会因为清缓存或更换设备轻易丢失。'
+      : '你可以先直接兑换；但账号只保存在当前设备，清缓存、重装或换手机后可能丢失。建议先快捷登录。',
+  )
+
+  const accountStorageDesc = computed(() => (isLoggedIn.value ? '登录后可通过账号保存并降低丢失风险。' : '未登录时仅保存在本机缓存。'))
+
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
+  }
+
+  function refreshLoginState() {
+    const { isLoggedIn: loggedIn } = checkLoginStatus()
+    isLoggedIn.value = loggedIn
+  }
+
+  function buildCurrentPageUrl() {
+    const params = [
+      `gameId=${encodeURIComponent(gameConfig.value.gameId)}`,
+      `compendiumId=${encodeURIComponent(gameConfig.value.compendiumId)}`,
+    ]
+    return `/subPackages/tools/game-coupons/index?${params.join('&')}`
+  }
+
+  function goLogin() {
+    uni.navigateTo({
+      url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}`,
+    })
   }
 
   function getDefaultServer() {
@@ -436,6 +478,7 @@
   function initializePage() {
     if (initialized.value) return
     initialized.value = true
+    refreshLoginState()
     loadAccounts()
     if (backendReady.value) {
       loadCodes()
@@ -447,6 +490,10 @@
   onLoad(options => {
     applyRouteOptions(options as RouteOptions)
     initializePage()
+  })
+
+  onShow(() => {
+    refreshLoginState()
   })
 
   onMounted(() => {
@@ -520,6 +567,7 @@
     }
   }
 
+  .login-tip-card,
   .notice-card,
   .section-card {
     margin-top: 24rpx;
@@ -532,6 +580,77 @@
   .notice-card {
     border: 2rpx solid rgba(245, 158, 11, 0.18);
     background: #fffaf0;
+  }
+
+  .login-tip-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24rpx;
+    border: 2rpx solid rgba(245, 158, 11, 0.18);
+    background: #fffaf0;
+
+    &.logged {
+      border-color: rgba(24, 160, 88, 0.18);
+      background: #f0fff6;
+
+      .login-tip-icon {
+        color: $success;
+        background: rgba(24, 160, 88, 0.12);
+      }
+    }
+  }
+
+  .login-tip-main {
+    display: flex;
+    align-items: flex-start;
+    min-width: 0;
+    flex: 1;
+    gap: 18rpx;
+  }
+
+  .login-tip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52rpx;
+    height: 52rpx;
+    border-radius: 18rpx;
+    flex-shrink: 0;
+    color: $warning;
+    font-size: 28rpx;
+    font-weight: 800;
+    background: rgba(245, 158, 11, 0.14);
+  }
+
+  .login-tip-content {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .login-tip-title,
+  .login-tip-text {
+    display: block;
+  }
+
+  .login-tip-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .login-tip-text {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    line-height: 1.6;
+    color: $text-secondary;
+  }
+
+  .login-tip-btn {
+    padding: 18rpx 26rpx;
+    flex-shrink: 0;
+    color: #fff;
+    background: linear-gradient(135deg, #e94560 0%, #ff7a59 100%);
   }
 
   .notice-title,
