@@ -1,24 +1,41 @@
 <script setup lang="ts">
-import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
+import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
+import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface';
+import PrivacyPopup from '@/components/privacy-popup.vue'
 
-  import { nextTick, ref, watch } from 'vue'
+  import { ref } from 'vue'
   import LoginHeaderText from '../components/login-header-text.vue'
   import ReadDialog from '../components/read-dialog.vue'
-  import { PostBizUserLogin, PostBizUserSendSmsCode } from '@/services/apifox/3903128/shangWuXiaoChengXu/apifox'
-  import { getStorageSync, getWxSession, setIsGoChatCoze, setStorageSync, setToken, setRefreshToken, setWxUserInfo, setWxEncryptedData, setUserInfo, clearLoginData, setTokenExpiresAt, setRefreshTokenExpiresAt } from '@/utils/storage'
-  import { wxCode2Session, wxGetUserInfo, wxLogin } from '@/utils/wxLogin'
+  import { setIsGoChatCoze, setToken, setRefreshToken, setWxUserInfo, setWxEncryptedData, setUserInfo, setTokenExpiresAt, setRefreshTokenExpiresAt } from '@/utils/storage'
+  import { wxGetUserInfo } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
 
   type LoginType = 'mobile' | 'register'
+  type AuthMode = 'wechat' | 'account'
   const isRead = ref(false)
-  const readDialogRef = ref(null)
+  const readDialogRef = ref<any>(null)
   const loginType = ref<LoginType>('mobile')
-  const redirectUrl = ref()
+  const authMode = ref<AuthMode>('account')
+  const redirectUrl = ref('')
+  const wechatLoginLoading = ref(false)
+  const isMpWeixin = ref(false)
+
+  // #ifdef MP-WEIXIN
+  isMpWeixin.value = true
+  authMode.value = 'wechat'
+  // #endif
 
   const changeLoginType = (type: LoginType) => {
     loginType.value = type
+  }
+
+  const switchAuthMode = (mode: AuthMode) => {
+    authMode.value = mode
+    if (mode === 'account') {
+      loginType.value = 'mobile'
+    }
   }
 
   onLoad(async (option: any) => {
@@ -52,11 +69,12 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
         console.log('🚀 ~ checkAutoLogin ~ 自动登录成功:', user)
         
         if (redirectUrl.value) {
-          const url = { url: redirectUrl.value }
+          const targetUrl = decodeURIComponent(redirectUrl.value)
+          const url = { url: targetUrl }
           console.log('Auto login redirect url:', url)
           if (
-            redirectUrl.value === '/pages/index/index' ||
-            redirectUrl.value === '/pages/mine/mine'
+            targetUrl === '/pages/index/index' ||
+            targetUrl === '/pages/mine/mine'
           ) {
             return uni.switchTab(url)
           } else {
@@ -120,6 +138,24 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     })
     
     setTimeout(() => {
+      if (redirectUrl.value) {
+        const targetUrl = decodeURIComponent(redirectUrl.value)
+        if (
+          targetUrl === '/pages/index/index' ||
+          targetUrl === '/pages/mine/mine'
+        ) {
+          uni.switchTab({
+            url: targetUrl,
+          })
+          return
+        }
+
+        uni.redirectTo({
+          url: targetUrl,
+        })
+        return
+      }
+
       // #ifdef MP-WEIXIN
       uni.switchTab({
         url: '/pages/index/index'
@@ -134,14 +170,17 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     }, 1000)
   }
 
-  const popup = ref(null)
-  const change = (val: any) => {
-    console.log('change', val)
-  }
-
   const onConfirmRead = () => {
     isRead.value = true
     console.log('🚀 ~ onConfirmRead ~ isRead:', isRead.value)
+  }
+
+  const ensureAgreementConfirmed = () => {
+    if (isRead.value) {
+      return true
+    }
+    readDialogRef.value?.open()
+    return false
   }
 
   const mobileNumber = ref()
@@ -208,6 +247,72 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
         title: errorMessage,
         icon: 'none',
       })
+    }
+  }
+
+  const getWechatLoginCode = async (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: (res) => {
+          if (res.code) {
+            resolve(res.code)
+            return
+          }
+          reject(new Error('未获取到微信登录凭证'))
+        },
+        fail: (error) => {
+          reject(error)
+        },
+      })
+    })
+  }
+
+  const wechatQuickLogin = async () => {
+    if (!ensureAgreementConfirmed()) {
+      return
+    }
+
+    if (wechatLoginLoading.value) {
+      return
+    }
+
+    try {
+      wechatLoginLoading.value = true
+      uni.showLoading({
+        title: '微信登录中...',
+        mask: true,
+      })
+
+      const code = await getWechatLoginCode()
+      const payload: postAuthWechatLoginBody = {
+        code,
+        source: 'mp',
+      }
+      const res: postAuthWechatLoginRes = await postAuthWechatLogin(payload)
+
+      if (!res?.tokens?.access?.token || !res?.user) {
+        throw new Error('登录结果不完整，请稍后重试')
+      }
+
+      await loginSuccess(res)
+    } catch (error: any) {
+      console.warn('🚀 ~ wechatQuickLogin ~ error:', error)
+
+      let errorMessage = '微信登录失败，请稍后重试'
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      }
+
+      uni.showToast({
+        title: errorMessage,
+        icon: 'none',
+      })
+    } finally {
+      wechatLoginLoading.value = false
+      uni.hideLoading()
     }
   }
 
@@ -350,7 +455,7 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     <view class="login-body">
       <LoginHeaderText />
       <view class="auth-card">
-        <view class="auth-tabs">
+        <view v-if="!isMpWeixin || authMode === 'account'" class="auth-tabs">
           <view
             class="auth-tab"
             :class="{ active: loginType === 'mobile' }"
@@ -365,8 +470,24 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
           </view>
         </view>
 
+        <!-- #ifdef MP-WEIXIN -->
+        <view v-if="authMode === 'wechat'" class="wechat-auth">
+          <view class="wechat-auth__hero">
+            <view class="wechat-auth__icon">微</view>
+            <text class="wechat-auth__title">微信快捷登录</text>
+            <text class="wechat-auth__desc">一键完成登录，首次使用会自动创建账号，后续可补充手机号和资料。</text>
+          </view>
+          <button class="btn btn-wechat wechat-auth__btn" :loading="wechatLoginLoading" @click="wechatQuickLogin">
+            微信快捷登录
+          </button>
+          <view class="wechat-auth__footer">
+            <text class="wechat-auth__switch" @click="switchAuthMode('account')">使用账号密码登录</text>
+          </view>
+        </view>
+        <!-- #endif -->
+
         <!-- 登录界面 -->
-        <view v-if="loginType === 'mobile'" class="mobile">
+        <view v-if="(!isMpWeixin || authMode === 'account') && loginType === 'mobile'" class="mobile">
           <view class="mobile-number">
             <uni-easyinput
               :clearable="false"
@@ -394,10 +515,16 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
           <view class="login-btns">
             <button class="btn btn-login" @click="mobileLogin">登录</button>
           </view>
+
+          <!-- #ifdef MP-WEIXIN -->
+          <view class="quick-login quick-login--switch-only">
+            <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+          </view>
+          <!-- #endif -->
         </view>
 
         <!-- 注册界面 -->
-        <view v-else-if="loginType === 'register'" class="mobile">
+        <view v-else-if="(!isMpWeixin || authMode === 'account') && loginType === 'register'" class="mobile">
           <view class="mobile-number">
             <uni-easyinput
               :clearable="false"
@@ -436,11 +563,15 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
           <view class="login-btns">
             <button class="btn btn-register" @click="userRegister">注册</button>
           </view>
+
+          <!-- #ifdef MP-WEIXIN -->
+          <view class="quick-login quick-login--switch-only quick-login--register">
+            <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+          </view>
+          <!-- #endif -->
         </view>
 
-        <!-- 协议确认只在注册时显示 -->
-        <view v-if="loginType === 'register'" class="read-protocol">
-          <!-- <ReadProtocol v-model="isRead" /> -->
+        <view class="read-protocol">
           <view class="read-protocol">
             <label class="radio" @click="onConfirmRead">
               <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
@@ -454,6 +585,9 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
     <view class="">
       <ReadDialog ref="readDialogRef" :confirm="onConfirmRead" />
     </view>
+    <!-- #ifdef MP-WEIXIN -->
+    <PrivacyPopup />
+    <!-- #endif -->
   </view>
 </template>
 
@@ -590,6 +724,124 @@ import { postAuthLogin, postAuthRegister } from '@/services/apifox/NODEJSDEMO/AU
           box-shadow: 0 16rpx 30rpx rgba(0, 70, 180, 0.18);
         }
       }
+
+      .quick-login {
+        margin-top: 28rpx;
+        padding-top: 8rpx;
+
+        &--register {
+          margin-top: 32rpx;
+        }
+
+        &--switch-only {
+          padding-top: 0;
+          text-align: center;
+        }
+      }
+
+      .quick-login-divider {
+        position: relative;
+        margin-bottom: 24rpx;
+        text-align: center;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 0;
+          width: 100%;
+          height: 2rpx;
+          background: rgba(0, 70, 180, 0.08);
+          transform: translateY(-50%);
+        }
+      }
+
+      .quick-login-divider__text {
+        position: relative;
+        z-index: 1;
+        display: inline-block;
+        padding: 0 20rpx;
+        color: $ga-gray-6;
+        font-size: 24rpx;
+        background: rgba(255, 255, 255, 0.94);
+      }
+
+      .btn-wechat {
+        background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
+        color: #fff;
+        box-shadow: 0 16rpx 30rpx rgba(24, 181, 102, 0.18);
+      }
+
+      .quick-login-tip {
+        display: block;
+        margin-top: 16rpx;
+        color: $ga-gray-6;
+        font-size: 24rpx;
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      .quick-login-link {
+        color: $ga-brand-4;
+        font-size: 26rpx;
+        font-weight: 500;
+      }
+    }
+
+    .wechat-auth {
+      padding: 16rpx 8rpx 8rpx;
+      text-align: center;
+    }
+
+    .wechat-auth__hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18rpx;
+      margin-bottom: 36rpx;
+    }
+
+    .wechat-auth__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 112rpx;
+      height: 112rpx;
+      border-radius: 32rpx;
+      background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
+      box-shadow: 0 18rpx 36rpx rgba(24, 181, 102, 0.2);
+      color: #fff;
+      font-size: 48rpx;
+      font-weight: 700;
+    }
+
+    .wechat-auth__title {
+      color: $ga-gray-9;
+      font-size: 40rpx;
+      font-weight: 700;
+    }
+
+    .wechat-auth__desc {
+      color: $ga-gray-6;
+      font-size: 26rpx;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .wechat-auth__btn {
+      background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
+      color: #fff;
+      box-shadow: 0 16rpx 30rpx rgba(24, 181, 102, 0.18);
+    }
+
+    .wechat-auth__footer {
+      margin-top: 28rpx;
+    }
+
+    .wechat-auth__switch {
+      color: $ga-brand-4;
+      font-size: 26rpx;
+      font-weight: 500;
     }
 
     .read-protocol {

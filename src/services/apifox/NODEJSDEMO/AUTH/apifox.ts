@@ -19,6 +19,8 @@ import type {
   postAuthSendVerificationEmailRes,
   postAuthVerifyEmailQuery,
   postAuthVerifyEmailRes,
+  postAuthWechatLoginBody,
+  postAuthWechatLoginRes,
 } from './interface'
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
@@ -125,4 +127,17 @@ export const postAuthLogin = async (
 ): Promise<Expand<postAuthLoginRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post('/auth/login', data, _config)
+}
+
+/**
+ * @description Auth/微信快捷登录
+ * @url POST /auth/wechat-login
+ * @host https://app.apifox.com/link/project/7048425/apis/api-479259597
+ */
+export const postAuthWechatLogin = async (
+  data: Expand<postAuthWechatLoginBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postAuthWechatLoginRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/auth/wechat-login', data, _config)
 }
