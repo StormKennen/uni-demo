@@ -1,65 +1,65 @@
-export type SummonersWarServer = 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
+import type { GameCouponConfig } from '@/config/game-coupons'
 
-export interface SummonersWarServerOption {
-  value: SummonersWarServer
-  label: string
-  shortLabel: string
-}
-
-export interface SwCouponCode {
+export interface GameCouponCode {
   code: string
   reward?: string
   source?: string
 }
 
-export interface SwCouponAccount {
+export interface GameCouponAccount {
   id: string
-  server: SummonersWarServer
-  hiveId: string
+  server: string
+  accountId: string
   nickname?: string
   avatarUrl?: string
   profileAvailable?: boolean
 }
 
-export interface SwCouponProfile {
-  hiveId: string
-  server: SummonersWarServer
+export interface GameCouponProfile {
+  gameId: string
+  compendiumId: string
+  accountId: string
+  server: string
   nickname?: string
   avatarUrl?: string
   available: boolean
   message?: string
 }
 
-export interface SwCouponCodesResponse {
-  codes: SwCouponCode[]
+export interface GameCouponCodesResponse {
+  gameId?: string
+  compendiumId?: string
+  codes: GameCouponCode[]
   cached?: boolean
   cacheTime?: string
   updatedAt?: string
 }
 
-export type SwCouponRedeemStatus = 'pending' | 'redeeming' | 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed'
+export type GameCouponRedeemStatus = 'pending' | 'redeeming' | 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed'
 
-export interface SwCouponRedeemResultItem {
+export interface GameCouponRedeemResultItem {
   code: string
   reward?: string
-  status: SwCouponRedeemStatus
+  status: GameCouponRedeemStatus
   message?: string
 }
 
-export interface SwCouponRedeemAccountResult {
-  account: SwCouponAccount
+export interface GameCouponRedeemAccountResult {
+  account: GameCouponAccount
   success: number
   alreadyUsed: number
   failed: number
-  results: SwCouponRedeemResultItem[]
+  results: GameCouponRedeemResultItem[]
 }
 
-export interface SwCouponRedeemResponse {
+export interface GameCouponRedeemResponse {
+  gameId?: string
+  compendiumId?: string
   total: number
   success: number
   alreadyUsed: number
   failed: number
-  accountResults: SwCouponRedeemAccountResult[]
+  accountResults: GameCouponRedeemAccountResult[]
 }
 
 interface ApiEnvelope<T> {
@@ -69,22 +69,15 @@ interface ApiEnvelope<T> {
   data?: T
 }
 
-const API_PREFIX = '/summoners-war/coupons'
-
-export const SUMMONERS_WAR_SERVERS: SummonersWarServerOption[] = [
-  { value: 'global', label: '国际服 Global', shortLabel: 'Global' },
-  { value: 'korea', label: '韩服 Korea', shortLabel: 'Korea' },
-  { value: 'japan', label: '日服 Japan', shortLabel: 'Japan' },
-  { value: 'china', label: '国服 China', shortLabel: 'China' },
-  { value: 'asia', label: '亚服 Asia', shortLabel: 'Asia' },
-  { value: 'europe', label: '欧服 Europe', shortLabel: 'Europe' },
-]
+const API_PREFIX = '/game-coupons'
 
 function getBaseUrl() {
-  return String(import.meta.env.VITE_APP_SW_COUPON_BASE_URL || import.meta.env.VITE_APP_BASE_URL || '').replace(/\/$/, '')
+  return String(
+    import.meta.env.VITE_APP_GAME_COUPON_BASE_URL || import.meta.env.VITE_APP_SW_COUPON_BASE_URL || import.meta.env.VITE_APP_BASE_URL || '',
+  ).replace(/\/$/, '')
 }
 
-export function hasSummonersWarCouponBackend() {
+export function hasGameCouponBackend() {
   return getBaseUrl().length > 0
 }
 
@@ -105,6 +98,12 @@ function unwrapResponse<T>(payload: unknown): T {
   throw new Error(envelope.message || envelope.msg || '请求失败')
 }
 
+function getGamePath(config: GameCouponConfig, path: string) {
+  const gamePath = `${API_PREFIX}/${encodeURIComponent(config.gameId)}${path}`
+  const separator = gamePath.includes('?') ? '&' : '?'
+  return `${gamePath}${separator}compendium_id=${encodeURIComponent(config.compendiumId)}`
+}
+
 function request<T>(path: string, method: UniApp.RequestOptions['method'], data?: object) {
   const baseUrl = getBaseUrl()
 
@@ -114,7 +113,7 @@ function request<T>(path: string, method: UniApp.RequestOptions['method'], data?
 
   return new Promise<T>((resolve, reject) => {
     uni.request({
-      url: `${baseUrl}${API_PREFIX}${path}`,
+      url: `${baseUrl}${path}`,
       method,
       data,
       timeout: 120000,
@@ -139,21 +138,23 @@ function request<T>(path: string, method: UniApp.RequestOptions['method'], data?
   })
 }
 
-export function getSummonersWarCouponCodes() {
-  return request<SwCouponCodesResponse>('/codes', 'GET')
+export function getGameCouponCodes(config: GameCouponConfig) {
+  return request<GameCouponCodesResponse>(getGamePath(config, '/codes'), 'GET')
 }
 
-export function getSummonersWarProfile(hiveId: string, server: SummonersWarServer) {
-  const query = `?hive_id=${encodeURIComponent(hiveId)}&server=${encodeURIComponent(server)}`
-  return request<SwCouponProfile>(`/profile${query}`, 'GET')
+export function getGameCouponProfile(config: GameCouponConfig, accountId: string, server: string) {
+  const query = `/profile?account_id=${encodeURIComponent(accountId)}&server=${encodeURIComponent(server)}`
+  return request<GameCouponProfile>(getGamePath(config, query), 'GET')
 }
 
-export function redeemSummonersWarCoupons(accounts: SwCouponAccount[], codes: SwCouponCode[]) {
-  return request<SwCouponRedeemResponse>('/redeem', 'POST', {
+export function redeemGameCoupons(config: GameCouponConfig, accounts: GameCouponAccount[], codes: GameCouponCode[]) {
+  return request<GameCouponRedeemResponse>(getGamePath(config, '/redeem'), 'POST', {
+    game_id: config.gameId,
+    compendium_id: config.compendiumId,
     accounts: accounts.map(account => ({
       id: account.id,
       server: account.server,
-      hive_id: account.hiveId,
+      account_id: account.accountId,
     })),
     codes,
   })
