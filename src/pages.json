@@ -253,12 +253,6 @@
           }
         },
         {
-          "path": "compendium/swc/coupons",
-          "style": {
-            "navigationBarTitleText": "魔灵召唤兑换券"
-          }
-        },
-        {
           "path": "compendium/swc/lineup-edit",
           "style": {
             "navigationBarTitleText": "编辑阵容"
@@ -289,6 +283,12 @@
           "style": {
             "navigationBarTitleText": "视频转GIF",
             "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "game-coupons/index",
+          "style": {
+            "navigationBarTitleText": "游戏兑换券"
           }
         }
       ]

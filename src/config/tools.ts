@@ -70,7 +70,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     desc: '礼包码/账号管理',
     icon: 'gift',
     gradient: 'linear-gradient(135deg, #e94560 0%, #ff7a59 100%)',
-    path: '/subPackages/tools/compendium/swc/coupons',
+    path: '/subPackages/tools/game-coupons/index?gameId=swc&compendiumId=swc',
     category: 'wiki',
     isNew: true,
   },

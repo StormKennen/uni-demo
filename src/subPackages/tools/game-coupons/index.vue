@@ -1,9 +1,9 @@
 <template>
   <view class="coupon-page">
     <view class="hero-card">
-      <view class="hero-badge">Summoners War</view>
-      <text class="hero-title">魔灵召唤兑换券</text>
-      <text class="hero-desc">保存常用 Hive ID，一键获取可用礼包码并提交兑换。</text>
+      <view class="hero-badge">{{ gameConfig.heroBadge }}</view>
+      <text class="hero-title">{{ gameConfig.title }}</text>
+      <text class="hero-desc">{{ gameConfig.subtitle }}</text>
       <view class="hero-status" :class="{ warning: !backendVerified }">
         <text>{{ backendVerified ? '已连接后端接口' : '等待后端接口接入/验证' }}</text>
       </view>
@@ -12,8 +12,9 @@
     <view v-if="!backendVerified" class="notice-card">
       <text class="notice-title">为什么需要后端？</text>
       <text class="notice-text">
-        兑换站点没有开放跨域访问，官方兑换也需要服务端密钥/代理。当前页面先完成账号、券码、结果展示等前端能力，接口契约见
-        docs/summoners-war-coupon-backend.md。
+        兑换站点/官方兑换通常不开放跨域访问，也可能需要服务端密钥或平台登录态。当前页面采用通用游戏兑换券前端架构，当前游戏为
+        {{ gameConfig.gameName }}（gameId={{ gameConfig.gameId }}，compendiumId={{ gameConfig.compendiumId }}），后端契约见
+        {{ gameConfig.backendDocPath }}。
       </text>
     </view>
 
@@ -21,7 +22,7 @@
       <view class="section-header">
         <view>
           <text class="section-title">账号列表</text>
-          <text class="section-desc">最多保存 5 个 Hive ID，仅保存在本机缓存。</text>
+          <text class="section-desc">最多保存 {{ maxAccounts }} 个{{ gameConfig.accountIdLabel }}，仅保存在本机缓存。</text>
         </view>
         <button class="ghost-btn" @click="addAccount">添加账号</button>
       </view>
@@ -34,7 +35,9 @@
           </view>
           <view class="account-info">
             <text class="account-name">{{ account.nickname || '未识别昵称' }}</text>
-            <text class="account-meta"> {{ account.hiveId || '待填写 Hive ID' }} · {{ getServerShortLabel(account.server) }} </text>
+            <text class="account-meta">
+              {{ account.accountId || gameConfig.accountIdEmptyText }} · {{ getServerShortLabel(account.server) }}
+            </text>
             <text v-if="account.profileAvailable === false" class="profile-tip">资料查询暂不可用</text>
           </view>
           <button v-if="accounts.length > 1" class="remove-btn" @click="removeAccount(index)">移除</button>
@@ -47,13 +50,13 @@
           <input
             class="hive-input"
             type="text"
-            placeholder="输入 Hive ID"
-            :value="account.hiveId"
-            @input="updateHiveId(index, String($event.detail.value || ''))" />
+            :placeholder="gameConfig.accountIdPlaceholder"
+            :value="account.accountId"
+            @input="updateAccountId(index, String($event.detail.value || ''))" />
         </view>
 
         <view class="account-actions">
-          <button class="secondary-btn" :disabled="!account.hiveId || profileLoadingId === account.id" @click="refreshProfile(index)">
+          <button class="secondary-btn" :disabled="!account.accountId || profileLoadingId === account.id" @click="refreshProfile(index)">
             {{ profileLoadingId === account.id ? '识别中...' : '识别头像/昵称' }}
           </button>
         </view>
@@ -98,7 +101,7 @@
       <view class="section-header">
         <view>
           <text class="section-title">开始兑换</text>
-          <text class="section-desc">会为每个已填写 Hive ID 的账号兑换全部券码。</text>
+          <text class="section-desc">会为每个已填写{{ gameConfig.accountIdLabel }}的账号兑换全部券码。</text>
         </view>
       </view>
 
@@ -127,7 +130,7 @@
         <view v-for="group in resultGroups" :key="group.account.id" class="result-group">
           <view class="result-group-header">
             <text class="result-account">
-              {{ group.account.nickname || group.account.hiveId }} · {{ getServerShortLabel(group.account.server) }}
+              {{ group.account.nickname || group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
             </text>
             <text class="result-count">{{ group.success }} 成功</text>
           </view>
@@ -146,42 +149,45 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import {
-    SUMMONERS_WAR_SERVERS,
-    getSummonersWarCouponCodes,
-    getSummonersWarProfile,
-    hasSummonersWarCouponBackend,
-    redeemSummonersWarCoupons,
-  } from '@/services/summoners-war-coupons'
+  import { onLoad } from '@dcloudio/uni-app'
+  import { getGameCouponConfig } from '@/config/game-coupons'
+  import { getGameCouponCodes, getGameCouponProfile, hasGameCouponBackend, redeemGameCoupons } from '@/services/game-coupons'
+  import type { GameCouponConfig } from '@/config/game-coupons'
   import type {
-    SummonersWarServer,
-    SwCouponAccount,
-    SwCouponCode,
-    SwCouponRedeemAccountResult,
-    SwCouponRedeemResponse,
-    SwCouponRedeemStatus,
-  } from '@/services/summoners-war-coupons'
+    GameCouponAccount,
+    GameCouponCode,
+    GameCouponRedeemAccountResult,
+    GameCouponRedeemResponse,
+    GameCouponRedeemStatus,
+  } from '@/services/game-coupons'
 
-  const STORAGE_KEY = 'SWC_COUPON_ACCOUNTS'
-  const MAX_ACCOUNTS = 5
+  interface RouteOptions {
+    gameId?: string
+    game_id?: string
+    compendiumId?: string
+    compendium_id?: string
+  }
 
-  const accounts = ref<SwCouponAccount[]>([])
-  const remoteCodes = ref<SwCouponCode[]>([])
-  const manualCodes = ref<SwCouponCode[]>([])
+  const maxAccounts = 5
+  const gameConfig = ref<GameCouponConfig>(getGameCouponConfig())
+  const accounts = ref<GameCouponAccount[]>([])
+  const remoteCodes = ref<GameCouponCode[]>([])
+  const manualCodes = ref<GameCouponCode[]>([])
   const manualCode = ref('')
   const loadingCodes = ref(false)
   const codeLoadError = ref('')
   const redeeming = ref(false)
   const redeemError = ref('')
-  const summary = ref<SwCouponRedeemResponse | null>(null)
-  const resultGroups = ref<SwCouponRedeemAccountResult[]>([])
+  const summary = ref<GameCouponRedeemResponse | null>(null)
+  const resultGroups = ref<GameCouponRedeemAccountResult[]>([])
   const profileLoadingId = ref('')
-  const backendReady = computed(() => hasSummonersWarCouponBackend())
+  const backendReady = computed(() => hasGameCouponBackend())
   const backendVerified = ref(false)
-  const serverLabels = SUMMONERS_WAR_SERVERS.map(item => item.label)
+  const initialized = ref(false)
+  const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
   const combinedCodes = computed(() => {
-    const map = new Map<string, SwCouponCode>()
+    const map = new Map<string, GameCouponCode>()
     ;[...remoteCodes.value, ...manualCodes.value].forEach(item => {
       const key = item.code.trim().toUpperCase()
       if (!key || map.has(key)) return
@@ -190,7 +196,7 @@
     return Array.from(map.values())
   })
 
-  const validAccounts = computed(() => accounts.value.filter(account => account.hiveId.trim().length > 0))
+  const validAccounts = computed(() => accounts.value.filter(account => account.accountId.trim().length > 0))
 
   const redeemDisabled = computed(() => redeeming.value || validAccounts.value.length === 0 || combinedCodes.value.length === 0)
 
@@ -198,36 +204,49 @@
     return typeof value === 'object' && value !== null && !Array.isArray(value)
   }
 
-  function createAccount(): SwCouponAccount {
+  function getDefaultServer() {
+    return gameConfig.value.defaultServer || gameConfig.value.servers[0]?.value || ''
+  }
+
+  function createAccount(): GameCouponAccount {
     return {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      server: 'global',
-      hiveId: '',
+      server: getDefaultServer(),
+      accountId: '',
     }
   }
 
-  function normalizeServer(value: unknown): SummonersWarServer {
-    const found = SUMMONERS_WAR_SERVERS.find(item => item.value === value)
-    return found?.value || 'global'
+  function normalizeServer(value: unknown): string {
+    const found = gameConfig.value.servers.find(item => item.value === value)
+    return found?.value || getDefaultServer()
   }
 
-  function normalizeAccount(value: unknown): SwCouponAccount | null {
+  function normalizeAccount(value: unknown): GameCouponAccount | null {
     if (!isRecord(value)) return null
 
+    const legacyHiveId = typeof value.hiveId === 'string' ? value.hiveId : ''
     return {
       id: typeof value.id === 'string' && value.id ? value.id : createAccount().id,
       server: normalizeServer(value.server),
-      hiveId: typeof value.hiveId === 'string' ? value.hiveId : '',
+      accountId: typeof value.accountId === 'string' ? value.accountId : legacyHiveId,
       nickname: typeof value.nickname === 'string' ? value.nickname : undefined,
       avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
       profileAvailable: typeof value.profileAvailable === 'boolean' ? value.profileAvailable : undefined,
     }
   }
 
+  function getStorageKeys() {
+    return [gameConfig.value.storageKey, 'SWC_COUPON_ACCOUNTS']
+  }
+
   function loadAccounts() {
     try {
-      const stored = uni.getStorageSync(STORAGE_KEY)
-      const parsed = Array.isArray(stored) ? stored.map(normalizeAccount).filter((item): item is SwCouponAccount => !!item) : []
+      let stored: unknown = []
+      for (const key of getStorageKeys()) {
+        stored = uni.getStorageSync(key)
+        if (Array.isArray(stored) && stored.length) break
+      }
+      const parsed = Array.isArray(stored) ? stored.map(normalizeAccount).filter((item): item is GameCouponAccount => !!item) : []
       accounts.value = parsed.length ? parsed : [createAccount()]
     } catch {
       accounts.value = [createAccount()]
@@ -236,15 +255,15 @@
 
   function saveAccounts() {
     try {
-      uni.setStorageSync(STORAGE_KEY, accounts.value)
+      uni.setStorageSync(gameConfig.value.storageKey, accounts.value)
     } catch {
       /* 本地缓存失败不阻断兑换 */
     }
   }
 
   function addAccount() {
-    if (accounts.value.length >= MAX_ACCOUNTS) {
-      uni.showToast({ title: `最多保存 ${MAX_ACCOUNTS} 个账号`, icon: 'none' })
+    if (accounts.value.length >= maxAccounts) {
+      uni.showToast({ title: `最多保存 ${maxAccounts} 个账号`, icon: 'none' })
       return
     }
     accounts.value.push(createAccount())
@@ -257,37 +276,37 @@
     saveAccounts()
   }
 
-  function getServerIndex(server: SummonersWarServer) {
+  function getServerIndex(server: string) {
     return Math.max(
       0,
-      SUMMONERS_WAR_SERVERS.findIndex(item => item.value === server),
+      gameConfig.value.servers.findIndex(item => item.value === server),
     )
   }
 
-  function getServerLabel(server: SummonersWarServer) {
-    return SUMMONERS_WAR_SERVERS[getServerIndex(server)].label
+  function getServerLabel(server: string) {
+    return gameConfig.value.servers[getServerIndex(server)]?.label || server
   }
 
-  function getServerShortLabel(server: SummonersWarServer) {
-    return SUMMONERS_WAR_SERVERS[getServerIndex(server)].shortLabel
+  function getServerShortLabel(server: string) {
+    return gameConfig.value.servers[getServerIndex(server)]?.shortLabel || server
   }
 
-  function getAvatarText(account: SwCouponAccount) {
-    return (account.nickname || account.hiveId || 'SW').slice(0, 2).toUpperCase()
+  function getAvatarText(account: GameCouponAccount) {
+    return (account.nickname || account.accountId || gameConfig.value.gameId).slice(0, 2).toUpperCase()
   }
 
   function changeServer(index: number, event: { detail: { value: number | string } }) {
     const serverIndex = Number(event.detail.value)
-    const server = SUMMONERS_WAR_SERVERS[serverIndex]?.value || 'global'
+    const server = gameConfig.value.servers[serverIndex]?.value || getDefaultServer()
     accounts.value[index].server = server
     accounts.value[index].profileAvailable = undefined
     saveAccounts()
   }
 
-  function updateHiveId(index: number, value: string) {
+  function updateAccountId(index: number, value: string) {
     const nextValue = value.trim()
     const account = accounts.value[index]
-    account.hiveId = nextValue
+    account.accountId = nextValue
     account.nickname = undefined
     account.avatarUrl = undefined
     account.profileAvailable = undefined
@@ -296,7 +315,7 @@
 
   async function refreshProfile(index: number) {
     const account = accounts.value[index]
-    if (!account.hiveId) return
+    if (!account.accountId) return
 
     if (!backendReady.value) {
       account.profileAvailable = false
@@ -307,7 +326,7 @@
 
     profileLoadingId.value = account.id
     try {
-      const profile = await getSummonersWarProfile(account.hiveId, account.server)
+      const profile = await getGameCouponProfile(gameConfig.value, account.accountId, account.server)
       account.nickname = profile.nickname
       account.avatarUrl = profile.avatarUrl
       account.profileAvailable = profile.available
@@ -332,7 +351,7 @@
     loadingCodes.value = true
     codeLoadError.value = ''
     try {
-      const data = await getSummonersWarCouponCodes()
+      const data = await getGameCouponCodes(gameConfig.value)
       remoteCodes.value = data.codes || []
       backendVerified.value = true
     } catch (err) {
@@ -361,7 +380,7 @@
     }
 
     if (!validAccounts.value.length) {
-      redeemError.value = '请至少填写一个 Hive ID。'
+      redeemError.value = `请至少填写一个${gameConfig.value.accountIdLabel}。`
       return
     }
 
@@ -376,7 +395,7 @@
     resultGroups.value = []
 
     try {
-      const data = await redeemSummonersWarCoupons(validAccounts.value, combinedCodes.value)
+      const data = await redeemGameCoupons(gameConfig.value, validAccounts.value, combinedCodes.value)
       summary.value = data
       resultGroups.value = data.accountResults || []
       saveAccounts()
@@ -394,8 +413,8 @@
     return source || '自动'
   }
 
-  function getStatusLabel(status: SwCouponRedeemStatus) {
-    const labels: Record<SwCouponRedeemStatus, string> = {
+  function getStatusLabel(status: GameCouponRedeemStatus) {
+    const labels: Record<GameCouponRedeemStatus, string> = {
       pending: '等待',
       redeeming: '兑换中',
       success: '成功',
@@ -407,13 +426,31 @@
     return labels[status] || '失败'
   }
 
-  onMounted(() => {
+  function applyRouteOptions(options: RouteOptions = {}) {
+    const gameId = options.gameId || options.game_id || 'swc'
+    const config = getGameCouponConfig(gameId)
+    const compendiumId = options.compendiumId || options.compendium_id || config.compendiumId
+    gameConfig.value = { ...config, compendiumId }
+  }
+
+  function initializePage() {
+    if (initialized.value) return
+    initialized.value = true
     loadAccounts()
     if (backendReady.value) {
       loadCodes()
     } else {
       codeLoadError.value = '后端接口未配置，暂时只能手动添加券码。'
     }
+  }
+
+  onLoad(options => {
+    applyRouteOptions(options as RouteOptions)
+    initializePage()
+  })
+
+  onMounted(() => {
+    initializePage()
   })
 </script>
 
