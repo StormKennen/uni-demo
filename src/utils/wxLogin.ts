@@ -1,7 +1,7 @@
-import { postAuthLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
+import { postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
+import type { postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface';
 
-import { PostBizUserCode2session } from "@/services/apifox/3903128/shangWuXiaoChengXu/apifox"
-import { getToken, setStorageSync, setWxSession, setToken, setWxUserInfo } from "./storage"
+import { getToken, setWxSession, setToken, setWxUserInfo } from "./storage"
 
 
 
@@ -28,16 +28,14 @@ export const wxCode2Session = async () => {
     const code = await wxLogin()
     console.log('wxCode2Session-code:', code);
     
-    // 使用微信code进行静默登录
-    const res = await postAuthLogin({
+    const res = await postAuthWechatLogin({
       code: code as string,
-      type: 'wx'
+      source: 'mp',
     })
     console.log('wxCode2Session-res:', res);
     
-    // 保存登录信息
-    if (res.data) {
-      setWxSession(res.data.user)
+    if (res.user) {
+      setWxSession(res.user)
       return res
     }
     
@@ -74,7 +72,7 @@ export const wxGetUserInfo = async () => {
 export const checkLoginBeforeNavigator = (url?: string) => {
   if (!getToken()) {
     uni.navigateTo({
-      url: `/pages/mine/login/login?redirectUrl=${url || ''}`
+      url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(url || '')}`
     })
     return false
   }
@@ -106,19 +104,17 @@ export const wxSilentLogin = async () => {
     const code = await wxLogin()
     console.log('获取微信code成功:', code)
     
-    // 使用code进行登录
-    const res = await postAuthLogin({
+    const res: postAuthWechatLoginRes = await postAuthWechatLogin({
       code: code as string,
-      type: 'wx'
+      source: 'mp',
     })
     
-    if (res.data) {
-      // 保存登录信息
-      setToken(res.data.tokens.access.token)
-      setWxUserInfo(res.data.user)
-      setWxSession(res.data.user)
+    if (res.tokens?.access?.token && res.user) {
+      setToken(res.tokens.access.token)
+      setWxUserInfo(res.user)
+      setWxSession(res.user)
       
-      console.log('微信静默登录成功:', res.data.user)
+      console.log('微信静默登录成功:', res.user)
       return true
     }
     // #endif

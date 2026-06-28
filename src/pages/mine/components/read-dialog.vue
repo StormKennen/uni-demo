@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
   import { ref } from 'vue'
   type Props = {
     confirm: () => void
@@ -18,8 +19,16 @@
   const onCancel = () => {
     popup.value?.close()
   }
-  const onPrivacy = () => {}
-  const onProtocol = () => {}
+  const onPrivacy = () => {
+    uni.navigateTo({
+      url: PrivacyPageUrl,
+    })
+  }
+  const onProtocol = () => {
+    uni.navigateTo({
+      url: ProtocolPageUrl,
+    })
+  }
 
   defineExpose({
     open,

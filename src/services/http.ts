@@ -115,6 +115,7 @@ export class Request {
   private isAuthRequest(url: string): boolean {
     const authEndpoints = [
       '/auth/login',
+      '/auth/wechat-login',
       '/auth/register', 
       '/auth/refresh-tokens',
       '/auth/forgot-password',
@@ -378,5 +379,4 @@ export class Request {
 const http = new Request()
 
 export default http
-
 
