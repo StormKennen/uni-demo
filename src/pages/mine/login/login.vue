@@ -455,131 +455,128 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     <view class="login-body">
       <LoginHeaderText />
       <view class="auth-card">
-        <view v-if="!isMpWeixin || authMode === 'account'" class="auth-tabs">
-          <view
-            class="auth-tab"
-            :class="{ active: loginType === 'mobile' }"
-            @click="changeLoginType('mobile')">
-            登录
-          </view>
-          <view
-            class="auth-tab"
-            :class="{ active: loginType === 'register' }"
-            @click="changeLoginType('register')">
-            注册
-          </view>
-        </view>
-
-        <!-- #ifdef MP-WEIXIN -->
-        <view v-if="authMode === 'wechat'" class="wechat-auth">
-          <view class="wechat-auth__hero">
-            <view class="wechat-auth__icon">微</view>
-            <text class="wechat-auth__title">微信快捷登录</text>
-            <text class="wechat-auth__desc">一键完成登录，首次使用会自动创建账号，后续可补充手机号和资料。</text>
-          </view>
-          <button class="btn btn-wechat wechat-auth__btn" :loading="wechatLoginLoading" @click="wechatQuickLogin">
-            微信快捷登录
-          </button>
-          <view class="wechat-auth__footer">
-            <text class="wechat-auth__switch" @click="switchAuthMode('account')">使用账号密码登录</text>
-          </view>
-        </view>
-        <!-- #endif -->
-
-        <!-- 登录界面 -->
-        <view v-if="(!isMpWeixin || authMode === 'account') && loginType === 'mobile'" class="mobile">
-          <view class="mobile-number">
-            <uni-easyinput
-              :clearable="false"
-              type="number"
-              :inputBorder="false"
-              :styles="inputStyles"
-              v-model="mobileNumber"
-              placeholder="请输入手机号"
-              @input="inputMobile"></uni-easyinput>
-          </view>
-          <view class="mobile-password">
-            <uni-easyinput
-              :clearable="false"
-              type="password"
-              :inputBorder="false"
-              :styles="inputStyles"
-              v-model="password"
-              placeholder="请输入密码"
-              confirm-type="done"
-              @input="inputPassword"
-              @confirm="handleLoginPasswordConfirm">
-            </uni-easyinput>
-          </view>
-          <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
-          <view class="login-btns">
-            <button class="btn btn-login" @click="mobileLogin">登录</button>
+        <view class="auth-card__content">
+          <view v-if="!isMpWeixin || authMode === 'account'" class="auth-tabs">
+            <view
+              class="auth-tab"
+              :class="{ active: loginType === 'mobile' }"
+              @click="changeLoginType('mobile')">
+              登录
+            </view>
+            <view
+              class="auth-tab"
+              :class="{ active: loginType === 'register' }"
+              @click="changeLoginType('register')">
+              注册
+            </view>
           </view>
 
           <!-- #ifdef MP-WEIXIN -->
-          <view class="quick-login quick-login--switch-only">
-            <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+          <view v-if="authMode === 'wechat'" class="wechat-auth">
+            <button class="btn btn-wechat wechat-auth__btn" :loading="wechatLoginLoading" @click="wechatQuickLogin">
+              微信快捷登录
+            </button>
+            <view class="wechat-auth__footer">
+              <text class="wechat-auth__switch" @click="switchAuthMode('account')">使用账号密码登录</text>
+            </view>
           </view>
           <!-- #endif -->
-        </view>
 
-        <!-- 注册界面 -->
-        <view v-else-if="(!isMpWeixin || authMode === 'account') && loginType === 'register'" class="mobile">
-          <view class="mobile-number">
-            <uni-easyinput
-              :clearable="false"
-              type="number"
-              :inputBorder="false"
-              :styles="inputStyles"
-              v-model="mobileNumber"
-              placeholder="请输入手机号"
-              @input="inputMobile"></uni-easyinput>
-          </view>
-          <view class="mobile-password">
-            <uni-easyinput
-              :clearable="false"
-              type="password"
-              :inputBorder="false"
-              :styles="inputStyles"
-              v-model="password"
-              placeholder="请输入密码"
-              @input="inputPassword">
-            </uni-easyinput>
-          </view>
-          <view class="mobile-confirm-password">
-            <uni-easyinput
-              :clearable="false"
-              type="password"
-              :inputBorder="false"
-              :styles="inputStyles"
-              v-model="confirmPassword"
-              placeholder="请确认密码"
-              confirm-type="done"
-              @input="inputConfirmPassword"
-              @confirm="handleRegisterPasswordConfirm">
-            </uni-easyinput>
-          </view>
-          <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
-          <view class="login-btns">
-            <button class="btn btn-register" @click="userRegister">注册</button>
+          <!-- 登录界面 -->
+          <view v-if="(!isMpWeixin || authMode === 'account') && loginType === 'mobile'" class="mobile">
+            <view class="mobile-number">
+              <uni-easyinput
+                :clearable="false"
+                type="number"
+                :inputBorder="false"
+                :styles="inputStyles"
+                v-model="mobileNumber"
+                placeholder="请输入手机号"
+                @input="inputMobile"></uni-easyinput>
+            </view>
+            <view class="mobile-password">
+              <uni-easyinput
+                :clearable="false"
+                type="password"
+                :inputBorder="false"
+                :styles="inputStyles"
+                v-model="password"
+                placeholder="请输入密码"
+                confirm-type="done"
+                @input="inputPassword"
+                @confirm="handleLoginPasswordConfirm">
+              </uni-easyinput>
+            </view>
+            <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
+            <view class="login-btns">
+              <button class="btn btn-login" @click="mobileLogin">登录</button>
+            </view>
+
+            <!-- #ifdef MP-WEIXIN -->
+            <view class="quick-login quick-login--switch-only">
+              <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+            </view>
+            <!-- #endif -->
           </view>
 
-          <!-- #ifdef MP-WEIXIN -->
-          <view class="quick-login quick-login--switch-only quick-login--register">
-            <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+          <!-- 注册界面 -->
+          <view v-else-if="(!isMpWeixin || authMode === 'account') && loginType === 'register'" class="mobile">
+            <view class="mobile-number">
+              <uni-easyinput
+                :clearable="false"
+                type="number"
+                :inputBorder="false"
+                :styles="inputStyles"
+                v-model="mobileNumber"
+                placeholder="请输入手机号"
+                @input="inputMobile"></uni-easyinput>
+            </view>
+            <view class="mobile-password">
+              <uni-easyinput
+                :clearable="false"
+                type="password"
+                :inputBorder="false"
+                :styles="inputStyles"
+                v-model="password"
+                placeholder="请输入密码"
+                @input="inputPassword">
+              </uni-easyinput>
+            </view>
+            <view class="mobile-confirm-password">
+              <uni-easyinput
+                :clearable="false"
+                type="password"
+                :inputBorder="false"
+                :styles="inputStyles"
+                v-model="confirmPassword"
+                placeholder="请确认密码"
+                confirm-type="done"
+                @input="inputConfirmPassword"
+                @confirm="handleRegisterPasswordConfirm">
+              </uni-easyinput>
+            </view>
+            <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
+            <view class="login-btns">
+              <button class="btn btn-register" @click="userRegister">注册</button>
+            </view>
+
+            <!-- #ifdef MP-WEIXIN -->
+            <view class="quick-login quick-login--switch-only quick-login--register">
+              <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+            </view>
+            <!-- #endif -->
           </view>
-          <!-- #endif -->
         </view>
 
-        <view class="read-protocol">
-          <view class="read-protocol">
-            <label class="radio" @click="onConfirmRead">
-              <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
-              <text class="radio-text">我已阅读并同意</text>
-            </label>
-            <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
-          </view>
-        </view>
+      </view>
+    </view>
+    <view class="login-footer">
+      <view class="read-protocol">
+        <label class="radio" @click="onConfirmRead">
+          <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
+          <text class="radio-text">我已阅读并同意</text>
+        </label>
+        <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
       </view>
     </view>
     <view class="">
@@ -596,6 +593,8 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     position: relative;
     min-height: 100vh;
     width: 100%;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     background: linear-gradient(180deg, #d5dfff 0.06%, #eff3ff 26%, #fff 49%, #fff 100%);
     padding-bottom: env(safe-area-inset-bottom);
@@ -612,16 +611,24 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     }
 
     .login-body {
+      flex: 1;
       padding: 0 28rpx 40rpx;
+      box-sizing: border-box;
     }
 
     .auth-card {
+      display: flex;
+      flex-direction: column;
       margin-top: 20rpx;
       padding: 24rpx 24rpx 32rpx;
-      border-radius: 32rpx;
-      background: rgba(255, 255, 255, 0.94);
-      box-shadow: 0 20rpx 48rpx rgba(34, 60, 120, 0.12);
-      backdrop-filter: blur(12rpx);
+      // border-radius: 32rpx;
+      // background: rgba(255, 255, 255, 0.94);
+      // box-shadow: 0 20rpx 48rpx rgba(34, 60, 120, 0.12);
+      // backdrop-filter: blur(12rpx);
+    }
+
+    .auth-card__content {
+      flex: 1;
     }
 
     .auth-tabs {
@@ -789,49 +796,20 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     }
 
     .wechat-auth {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
       padding: 16rpx 8rpx 8rpx;
       text-align: center;
     }
 
-    .wechat-auth__hero {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18rpx;
-      margin-bottom: 36rpx;
-    }
-
-    .wechat-auth__icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 112rpx;
-      height: 112rpx;
-      border-radius: 32rpx;
-      background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
-      box-shadow: 0 18rpx 36rpx rgba(24, 181, 102, 0.2);
-      color: #fff;
-      font-size: 48rpx;
-      font-weight: 700;
-    }
-
-    .wechat-auth__title {
-      color: $ga-gray-9;
-      font-size: 40rpx;
-      font-weight: 700;
-    }
-
-    .wechat-auth__desc {
-      color: $ga-gray-6;
-      font-size: 26rpx;
-      line-height: 1.7;
-      text-align: center;
-    }
-
     .wechat-auth__btn {
+      margin-top: 120rpx;
       background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
       color: #fff;
       box-shadow: 0 16rpx 30rpx rgba(24, 181, 102, 0.18);
+      width: 100%;
     }
 
     .wechat-auth__footer {
@@ -844,10 +822,11 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       font-weight: 500;
     }
 
-    .read-protocol {
-      margin-top: 24rpx;
-      text-align: center;
-    }
+  }
+
+  .login-footer {
+    padding: 24rpx 28rpx calc(env(safe-area-inset-bottom) + 24rpx);
+    box-sizing: border-box;
   }
 
   .read-protocol {
