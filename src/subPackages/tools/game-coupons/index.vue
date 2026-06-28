@@ -1,157 +1,117 @@
 <template>
   <view class="coupon-page">
-    <view class="hero-card">
-      <view class="hero-badge">{{ gameConfig.heroBadge }}</view>
-      <text class="hero-title">{{ gameConfig.title }}</text>
-      <text class="hero-desc">{{ gameConfig.subtitle }}</text>
-      <view class="hero-status" :class="{ warning: !backendVerified }">
-        <text>{{ backendVerified ? '已连接后端接口' : '等待后端接口接入/验证' }}</text>
-      </view>
+    <view class="page-head">
+      <text class="page-title">{{ gameConfig.title }}</text>
+      <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
     </view>
 
-    <view class="login-tip-card" :class="{ logged: isLoggedIn }">
-      <view class="login-tip-main">
-        <view class="login-tip-icon">{{ isLoggedIn ? '稳' : '!' }}</view>
-        <view class="login-tip-content">
-          <text class="login-tip-title">{{ loginTipTitle }}</text>
-          <text class="login-tip-text">{{ loginTipText }}</text>
-        </view>
+    <view class="promo-card" @click="goLogin">
+      <view class="promo-top">
+        <text class="promo-emoji">🤖</text>
+        <text class="promo-title">新码出来时帮你自动兑换</text>
       </view>
-      <button v-if="!isLoggedIn" class="login-tip-btn" @click="goLogin">快捷登录</button>
+      <text class="promo-desc">不用打开网站，{{ isLoggedIn ? '登录后游戏号跟随账号保存' : '30 秒内到账' }}</text>
+      <view class="promo-tags">
+        <text class="promo-tag">试用 30 天免费</text>
+        <text class="promo-tag">不绑卡</text>
+        <text class="promo-tag">加密存储</text>
+      </view>
+      <text class="promo-link">{{ isLoggedIn ? '已登录 · 数据更稳妥' : '立即登录试用 →' }}</text>
     </view>
 
-    <view v-if="!backendVerified" class="notice-card">
-      <text class="notice-title">为什么需要后端？</text>
-      <text class="notice-text">
-        兑换站点/官方兑换通常不开放跨域访问，也可能需要服务端密钥或平台登录态。当前页面采用通用游戏兑换券前端架构，当前游戏为
-        {{ gameConfig.gameName }}（gameId={{ gameConfig.gameId }}，compendiumId={{ gameConfig.compendiumId }}），后端契约见
-        {{ gameConfig.backendDocPath }}。
-      </text>
-    </view>
-
-    <view class="section-card">
-      <view class="section-header">
-        <view>
-          <text class="section-title">账号列表</text>
-          <text class="section-desc">最多保存 {{ maxAccounts }} 个{{ gameConfig.accountIdLabel }}，{{ accountStorageDesc }}</text>
-        </view>
-        <button class="ghost-btn" @click="addAccount">添加账号</button>
-      </view>
-
-      <view v-for="(account, index) in accounts" :key="account.id" class="account-item">
-        <view class="account-main">
-          <view class="avatar-wrap">
-            <image v-if="account.avatarUrl" class="avatar-img" :src="account.avatarUrl" mode="aspectFill" />
-            <text v-else class="avatar-text">{{ getAvatarText(account) }}</text>
-          </view>
-          <view class="account-info">
-            <text class="account-name">{{ account.nickname || '未识别昵称' }}</text>
-            <text class="account-meta">
-              {{ account.accountId || gameConfig.accountIdEmptyText }} · {{ getServerShortLabel(account.server) }}
-            </text>
-            <text v-if="account.profileAvailable === false" class="profile-tip">资料查询暂不可用</text>
-          </view>
-          <button v-if="accounts.length > 1" class="remove-btn" @click="removeAccount(index)">移除</button>
-        </view>
-
-        <view class="account-form">
-          <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
-            <view class="picker-value">{{ getServerLabel(account.server) }}</view>
-          </picker>
-          <input
-            class="hive-input"
-            type="text"
-            :placeholder="gameConfig.accountIdPlaceholder"
-            :value="account.accountId"
-            @input="updateAccountId(index, String($event.detail.value || ''))" />
-        </view>
-
-        <view class="account-actions">
-          <button class="secondary-btn" :disabled="!account.accountId || profileLoadingId === account.id" @click="refreshProfile(index)">
-            {{ profileLoadingId === account.id ? '识别中...' : '识别头像/昵称' }}
-          </button>
-        </view>
-      </view>
-    </view>
-
-    <view class="section-card">
-      <view class="section-header">
-        <view>
-          <text class="section-title">兑换券码</text>
-          <text class="section-desc">自动券码来自后端；也可以手动补充。</text>
-        </view>
-        <button class="ghost-btn" :disabled="loadingCodes || !backendReady" @click="loadCodes">
-          {{ loadingCodes ? '刷新中' : '刷新' }}
-        </button>
-      </view>
-
-      <view class="manual-row">
+    <view class="block">
+      <text class="block-label">账号列表</text>
+      <view v-for="(account, index) in accounts" :key="account.id" class="account-row">
+        <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
+          <view class="picker-value">{{ getServerShortLabel(account.server) }}</view>
+        </picker>
         <input
-          class="manual-input"
+          class="hive-input"
           type="text"
-          placeholder="手动输入优惠券码"
-          :value="manualCode"
-          @input="manualCode = String($event.detail.value || '').toUpperCase()" />
-        <button class="primary-small" @click="addManualCode">添加</button>
+          :placeholder="`${gameConfig.accountIdLabel} #${index + 1}`"
+          :value="account.accountId"
+          @input="updateAccountId(index, String($event.detail.value || ''))" />
+        <view v-if="accounts.length > 1" class="row-remove" @click="removeAccount(index)">×</view>
       </view>
-
-      <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
-      <view v-if="combinedCodes.length" class="code-list">
-        <view v-for="item in combinedCodes" :key="item.code" class="code-item">
-          <view>
-            <text class="code-text">{{ item.code }}</text>
-            <text class="code-reward">{{ item.reward || '奖励信息待确认' }}</text>
-          </view>
-          <text class="code-source">{{ getSourceLabel(item.source) }}</text>
-        </view>
-      </view>
-      <view v-else class="empty-box">暂无券码，请刷新或手动添加。</view>
+      <button class="add-account-btn" @click="addAccount">+ 添加账号</button>
     </view>
 
-    <view class="section-card redeem-card">
-      <view class="section-header">
-        <view>
-          <text class="section-title">开始兑换</text>
-          <text class="section-desc">会为每个已填写{{ gameConfig.accountIdLabel }}的账号兑换全部券码。</text>
-        </view>
+    <label class="auto-toggle">
+      <checkbox class="auto-checkbox" :checked="autoRedeem" @click="toggleAutoRedeem" />
+      <view class="auto-text">
+        <text class="auto-title">开启自动兑换（30 天免费试用）</text>
+        <text class="auto-hint">勾选后，新码出来时不再需要打开此页</text>
       </view>
+    </label>
 
-      <button class="redeem-btn" :disabled="redeemDisabled" @click="startRedeem">
-        {{ redeeming ? '兑换中...' : '获取并兑换所有优惠券' }}
-      </button>
+    <button class="redeem-btn" :disabled="redeemDisabled" @click="startRedeem">
+      {{ redeeming ? '兑换中...' : '获取并兑换所有优惠券' }}
+    </button>
 
-      <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
+    <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
 
-      <view v-if="summary" class="summary-grid">
-        <view class="summary-item success">
-          <text class="summary-num">{{ summary.success }}</text>
-          <text class="summary-label">成功</text>
-        </view>
-        <view class="summary-item used">
-          <text class="summary-num">{{ summary.alreadyUsed }}</text>
-          <text class="summary-label">已使用</text>
-        </view>
-        <view class="summary-item failed">
-          <text class="summary-num">{{ summary.failed }}</text>
-          <text class="summary-label">失败</text>
-        </view>
+    <view class="manual-block">
+      <view class="manual-toggle" @click="showManual = !showManual">
+        <text>{{ showManual ? '▼' : '▶' }} 手动添加优惠券码</text>
       </view>
-
-      <view v-if="resultGroups.length" class="result-groups">
-        <view v-for="group in resultGroups" :key="group.account.id" class="result-group">
-          <view class="result-group-header">
-            <text class="result-account">
-              {{ group.account.nickname || group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
-            </text>
-            <text class="result-count">{{ group.success }} 成功</text>
-          </view>
-          <view v-for="item in group.results" :key="`${group.account.id}-${item.code}`" class="result-row">
-            <view>
-              <text class="result-code">{{ item.code }}</text>
-              <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
+      <view v-if="showManual" class="manual-panel">
+        <view class="manual-row">
+          <input
+            class="manual-input"
+            type="text"
+            placeholder="输入优惠券码"
+            :value="manualCode"
+            @input="manualCode = String($event.detail.value || '').toUpperCase()" />
+          <button class="manual-add-btn" @click="addManualCode">添加</button>
+        </view>
+        <view class="manual-foot">
+          <text class="codes-count">已知券码 {{ combinedCodes.length }} 个</text>
+          <text class="refresh-link" :class="{ disabled: loadingCodes || !backendReady }" @click="loadCodes">
+            {{ loadingCodes ? '刷新中...' : '刷新' }}
+          </text>
+        </view>
+        <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
+        <view v-if="combinedCodes.length" class="code-list">
+          <view v-for="item in combinedCodes" :key="item.code" class="code-item">
+            <view class="code-main">
+              <text class="code-text">{{ item.code }}</text>
+              <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
             </view>
-            <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
+            <text class="code-source">{{ getSourceLabel(item.source) }}</text>
           </view>
+        </view>
+      </view>
+    </view>
+
+    <view v-if="summary" class="summary-grid">
+      <view class="summary-item success">
+        <text class="summary-num">{{ summary.success }}</text>
+        <text class="summary-label">成功</text>
+      </view>
+      <view class="summary-item used">
+        <text class="summary-num">{{ summary.alreadyUsed }}</text>
+        <text class="summary-label">已使用</text>
+      </view>
+      <view class="summary-item failed">
+        <text class="summary-num">{{ summary.failed }}</text>
+        <text class="summary-label">失败</text>
+      </view>
+    </view>
+
+    <view v-if="resultGroups.length" class="result-groups">
+      <view v-for="group in resultGroups" :key="group.account.id" class="result-group">
+        <view class="result-group-header">
+          <text class="result-account">
+            {{ group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
+          </text>
+          <text class="result-count">{{ group.success }} 成功</text>
+        </view>
+        <view v-for="item in group.results" :key="`${group.account.id}-${item.code}`" class="result-row">
+          <view class="result-main">
+            <text class="result-code">{{ item.code }}</text>
+            <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
+          </view>
+          <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
         </view>
       </view>
     </view>
@@ -162,7 +122,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { getGameCouponConfig } from '@/config/game-coupons'
-  import { getGameCouponCodes, getGameCouponProfile, hasGameCouponBackend, redeemGameCoupons } from '@/services/game-coupons'
+  import { getGameCouponCodes, hasGameCouponBackend, redeemGameCoupons } from '@/services/game-coupons'
   import { checkLoginStatus } from '@/utils/autoLogin'
   import type { GameCouponConfig } from '@/config/game-coupons'
   import type {
@@ -192,11 +152,12 @@
   const redeemError = ref('')
   const summary = ref<GameCouponRedeemResponse | null>(null)
   const resultGroups = ref<GameCouponRedeemAccountResult[]>([])
-  const profileLoadingId = ref('')
   const backendReady = computed(() => hasGameCouponBackend())
   const backendVerified = ref(false)
   const initialized = ref(false)
   const isLoggedIn = ref(false)
+  const autoRedeem = ref(false)
+  const showManual = ref(false)
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
   const combinedCodes = computed(() => {
@@ -212,16 +173,6 @@
   const validAccounts = computed(() => accounts.value.filter(account => account.accountId.trim().length > 0))
 
   const redeemDisabled = computed(() => redeeming.value || validAccounts.value.length === 0 || combinedCodes.value.length === 0)
-
-  const loginTipTitle = computed(() => (isLoggedIn.value ? '已登录，数据更稳妥' : '未登录也能使用'))
-
-  const loginTipText = computed(() =>
-    isLoggedIn.value
-      ? '当前支持快捷登录，游戏号可跟随账号保存，后续不会因为清缓存或更换设备轻易丢失。'
-      : '你可以先直接兑换；但账号只保存在当前设备，清缓存、重装或换手机后可能丢失。建议先快捷登录。',
-  )
-
-  const accountStorageDesc = computed(() => (isLoggedIn.value ? '登录后可通过账号保存并降低丢失风险。' : '未登录时仅保存在本机缓存。'))
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -325,16 +276,8 @@
     )
   }
 
-  function getServerLabel(server: string) {
-    return gameConfig.value.servers[getServerIndex(server)]?.label || server
-  }
-
   function getServerShortLabel(server: string) {
     return gameConfig.value.servers[getServerIndex(server)]?.shortLabel || server
-  }
-
-  function getAvatarText(account: GameCouponAccount) {
-    return (account.nickname || account.accountId || gameConfig.value.gameId).slice(0, 2).toUpperCase()
   }
 
   function changeServer(index: number, event: { detail: { value: number | string } }) {
@@ -355,33 +298,15 @@
     saveAccounts()
   }
 
-  async function refreshProfile(index: number) {
-    const account = accounts.value[index]
-    if (!account.accountId) return
-
-    if (!backendReady.value) {
-      account.profileAvailable = false
-      saveAccounts()
-      uni.showToast({ title: '后端接入后可识别资料', icon: 'none' })
+  function toggleAutoRedeem() {
+    if (!isLoggedIn.value) {
+      autoRedeem.value = false
+      uni.showToast({ title: '自动兑换托管需先登录', icon: 'none' })
+      goLogin()
       return
     }
-
-    profileLoadingId.value = account.id
-    try {
-      const profile = await getGameCouponProfile(gameConfig.value, account.accountId, account.server)
-      account.nickname = profile.nickname
-      account.avatarUrl = profile.avatarUrl
-      account.profileAvailable = profile.available
-      if (!profile.available) {
-        uni.showToast({ title: profile.message || '暂未识别到资料', icon: 'none' })
-      }
-      saveAccounts()
-    } catch (err) {
-      account.profileAvailable = false
-      uni.showToast({ title: err instanceof Error ? err.message : '资料识别失败', icon: 'none' })
-    } finally {
-      profileLoadingId.value = ''
-    }
+    autoRedeem.value = !autoRedeem.value
+    uni.showToast({ title: autoRedeem.value ? '已开启自动兑换托管' : '已关闭自动兑换', icon: 'none' })
   }
 
   async function loadCodes() {
@@ -502,186 +427,170 @@
 </script>
 
 <style lang="scss" scoped>
-  $bg-color: #f6f7fb;
-  $card-bg: #ffffff;
-  $text-primary: #172033;
-  $text-secondary: #5e6678;
-  $text-hint: #96a0b5;
-  $border-color: #edf0f6;
-  $accent: #e94560;
-  $success: #18a058;
-  $warning: #f59e0b;
-  $error: #ef4444;
-  $radius-lg: 28rpx;
-  $shadow: 0 12rpx 36rpx rgba(23, 32, 51, 0.08);
+  $page-bg: #0b0b12;
+  $card-bg: #15151f;
+  $card-border: rgba(255, 255, 255, 0.07);
+  $field-bg: #1c1c28;
+  $field-border: rgba(255, 255, 255, 0.1);
+  $text-primary: #f1f2f7;
+  $text-secondary: #9aa0b2;
+  $text-hint: #6b7180;
+  $accent: #ff3d6b;
+  $accent-2: #e94560;
+  $success: #34d399;
+  $warning: #fbbf24;
+  $error: #f87171;
 
   .coupon-page {
     min-height: 100vh;
-    padding: 28rpx 28rpx 56rpx;
-    background: $bg-color;
+    padding: 48rpx 32rpx 80rpx;
+    background: $page-bg;
   }
 
-  .hero-card {
-    padding: 40rpx 34rpx;
-    border-radius: 36rpx;
-    color: #fff;
-    background: linear-gradient(135deg, #181a2f 0%, #e94560 100%);
-    box-shadow: 0 18rpx 44rpx rgba(233, 69, 96, 0.24);
+  /* 头部 */
+  .page-head {
+    margin-bottom: 36rpx;
   }
 
-  .hero-badge {
-    display: inline-flex;
-    padding: 8rpx 18rpx;
-    border-radius: 999rpx;
-    font-size: 22rpx;
-    background: rgba(255, 255, 255, 0.16);
-  }
-
-  .hero-title {
+  .page-title {
     display: block;
-    margin-top: 28rpx;
     font-size: 44rpx;
-    font-weight: 700;
+    font-weight: 800;
+    color: $text-primary;
   }
 
-  .hero-desc {
+  .page-subtitle {
     display: block;
-    margin-top: 14rpx;
-    font-size: 26rpx;
+    margin-top: 12rpx;
+    font-size: 24rpx;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.84);
+    color: $text-secondary;
   }
 
-  .hero-status {
-    display: inline-flex;
-    margin-top: 28rpx;
-    padding: 10rpx 18rpx;
-    border-radius: 999rpx;
-    font-size: 22rpx;
-    color: #d7ffe8;
-    background: rgba(24, 160, 88, 0.24);
-
-    &.warning {
-      color: #fff3cf;
-      background: rgba(245, 158, 11, 0.28);
-    }
-  }
-
-  .login-tip-card,
-  .notice-card,
-  .section-card {
-    margin-top: 24rpx;
-    padding: 30rpx;
-    border-radius: $radius-lg;
+  /* 自动兑换宣传卡 */
+  .promo-card {
+    padding: 32rpx;
+    border-radius: 24rpx;
+    border: 2rpx solid $card-border;
     background: $card-bg;
-    box-shadow: $shadow;
   }
 
-  .notice-card {
-    border: 2rpx solid rgba(245, 158, 11, 0.18);
-    background: #fffaf0;
-  }
-
-  .login-tip-card {
+  .promo-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 14rpx;
+  }
+
+  .promo-emoji {
+    font-size: 32rpx;
+  }
+
+  .promo-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .promo-desc {
+    display: block;
+    margin-top: 12rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+
+  .promo-tags {
+    display: flex;
+    flex-wrap: wrap;
     gap: 24rpx;
-    border: 2rpx solid rgba(245, 158, 11, 0.18);
-    background: #fffaf0;
+    margin-top: 18rpx;
+  }
 
-    &.logged {
-      border-color: rgba(24, 160, 88, 0.18);
-      background: #f0fff6;
+  .promo-tag {
+    font-size: 22rpx;
+    color: $text-secondary;
 
-      .login-tip-icon {
-        color: $success;
-        background: rgba(24, 160, 88, 0.12);
-      }
+    &::before {
+      content: '✓ ';
+      color: $success;
     }
   }
 
-  .login-tip-main {
-    display: flex;
-    align-items: flex-start;
-    min-width: 0;
-    flex: 1;
-    gap: 18rpx;
+  .promo-link {
+    display: block;
+    margin-top: 18rpx;
+    font-size: 24rpx;
+    font-weight: 600;
+    color: $accent;
   }
 
-  .login-tip-icon {
+  /* 通用块 */
+  .block {
+    margin-top: 40rpx;
+  }
+
+  .block-label {
+    display: block;
+    margin-bottom: 18rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+
+  /* 账号行 */
+  .account-row {
+    display: flex;
+    align-items: stretch;
+    gap: 16rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .server-picker {
+    flex-shrink: 0;
+    width: 200rpx;
+  }
+
+  .picker-value {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 84rpx;
+    padding: 0 22rpx;
+    border-radius: 16rpx;
+    border: 2rpx solid $field-border;
+    font-size: 26rpx;
+    color: $text-primary;
+    background: $field-bg;
+  }
+
+  .hive-input {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    height: 84rpx;
+    padding: 0 24rpx;
+    border-radius: 16rpx;
+    border: 2rpx solid $field-border;
+    font-size: 26rpx;
+    color: $text-primary;
+    background: $field-bg;
+  }
+
+  .row-remove {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 52rpx;
-    height: 52rpx;
-    border-radius: 18rpx;
     flex-shrink: 0;
-    color: $warning;
-    font-size: 28rpx;
-    font-weight: 800;
-    background: rgba(245, 158, 11, 0.14);
-  }
-
-  .login-tip-content {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .login-tip-title,
-  .login-tip-text {
-    display: block;
-  }
-
-  .login-tip-title {
-    font-size: 30rpx;
-    font-weight: 700;
-    color: $text-primary;
-  }
-
-  .login-tip-text {
-    margin-top: 8rpx;
-    font-size: 24rpx;
-    line-height: 1.6;
-    color: $text-secondary;
-  }
-
-  .login-tip-btn {
-    padding: 18rpx 26rpx;
-    flex-shrink: 0;
-    color: #fff;
-    background: linear-gradient(135deg, #e94560 0%, #ff7a59 100%);
-  }
-
-  .notice-title,
-  .section-title {
-    display: block;
-    font-size: 30rpx;
-    font-weight: 700;
-    color: $text-primary;
-  }
-
-  .notice-text,
-  .section-desc {
-    display: block;
-    margin-top: 8rpx;
-    font-size: 24rpx;
-    line-height: 1.6;
-    color: $text-secondary;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24rpx;
-    margin-bottom: 24rpx;
+    width: 64rpx;
+    height: 84rpx;
+    border-radius: 16rpx;
+    font-size: 40rpx;
+    line-height: 1;
+    color: $text-hint;
+    background: rgba(255, 255, 255, 0.04);
   }
 
   button {
     margin: 0;
-    border-radius: 999rpx;
-    font-size: 24rpx;
     line-height: 1;
 
     &::after {
@@ -689,228 +598,205 @@
     }
   }
 
-  .ghost-btn,
-  .secondary-btn {
-    padding: 18rpx 24rpx;
-    color: $accent;
-    background: rgba(233, 69, 96, 0.08);
-  }
-
-  .account-item {
-    padding: 24rpx 0;
-    border-top: 2rpx solid $border-color;
-
-    &:first-of-type {
-      border-top: 0;
-    }
-  }
-
-  .account-main {
-    display: flex;
-    align-items: center;
-    gap: 20rpx;
-  }
-
-  .avatar-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 88rpx;
-    height: 88rpx;
-    border-radius: 26rpx;
-    flex-shrink: 0;
-    overflow: hidden;
-    color: #fff;
-    background: linear-gradient(135deg, #ff8a65 0%, #e94560 100%);
-  }
-
-  .avatar-img {
+  .add-account-btn {
     width: 100%;
-    height: 100%;
+    height: 84rpx;
+    border-radius: 16rpx;
+    border: 2rpx dashed $field-border;
+    font-size: 26rpx;
+    color: $text-secondary;
+    background: transparent;
   }
 
-  .avatar-text {
-    font-size: 28rpx;
-    font-weight: 700;
+  /* 自动兑换开关 */
+  .auto-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 16rpx;
+    margin-top: 32rpx;
   }
 
-  .account-info {
+  .auto-checkbox {
+    margin-top: 4rpx;
+    transform: scale(0.86);
+  }
+
+  .auto-text {
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     flex: 1;
   }
 
-  .account-name,
-  .account-meta,
-  .profile-tip {
-    display: block;
-  }
-
-  .account-name {
-    font-size: 28rpx;
-    font-weight: 700;
+  .auto-title {
+    font-size: 26rpx;
     color: $text-primary;
   }
 
-  .account-meta,
-  .profile-tip {
+  .auto-hint {
     margin-top: 6rpx;
     font-size: 22rpx;
     color: $text-hint;
   }
 
-  .remove-btn {
-    padding: 14rpx 18rpx;
-    color: $error;
-    background: rgba(239, 68, 68, 0.08);
-  }
-
-  .account-form {
-    display: grid;
-    grid-template-columns: 230rpx minmax(0, 1fr);
-    gap: 18rpx;
-    margin-top: 22rpx;
-  }
-
-  .picker-value,
-  .hive-input,
-  .manual-input {
-    box-sizing: border-box;
-    width: 100%;
-    min-height: 82rpx;
-    padding: 0 22rpx;
-    border-radius: 20rpx;
-    font-size: 26rpx;
-    color: $text-primary;
-    background: #f7f8fb;
-  }
-
-  .picker-value {
-    display: flex;
-    align-items: center;
-  }
-
-  .account-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 18rpx;
-  }
-
-  .manual-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 136rpx;
-    gap: 16rpx;
-  }
-
-  .primary-small {
+  /* 主按钮 */
+  .redeem-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 96rpx;
+    margin-top: 36rpx;
+    border-radius: 18rpx;
+    font-size: 30rpx;
+    font-weight: 700;
     color: #fff;
-    background: $accent;
+    background: linear-gradient(135deg, $accent 0%, $accent-2 100%);
+    box-shadow: 0 12rpx 30rpx rgba(255, 61, 107, 0.28);
+
+    &[disabled] {
+      opacity: 0.5;
+      box-shadow: none;
+    }
   }
 
   .inline-error {
     margin-top: 18rpx;
     padding: 18rpx 20rpx;
-    border-radius: 18rpx;
+    border-radius: 14rpx;
     font-size: 24rpx;
     line-height: 1.5;
     color: $error;
-    background: rgba(239, 68, 68, 0.08);
+    background: rgba(248, 113, 113, 0.12);
   }
 
-  .code-list,
-  .result-groups {
-    display: flex;
-    flex-direction: column;
-    gap: 16rpx;
+  /* 手动添加 */
+  .manual-block {
+    margin-top: 32rpx;
+  }
+
+  .manual-toggle {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .manual-panel {
     margin-top: 22rpx;
   }
 
-  .code-item,
-  .result-row,
-  .result-group-header {
+  .manual-row {
+    display: flex;
+    gap: 16rpx;
+  }
+
+  .manual-input {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    height: 84rpx;
+    padding: 0 24rpx;
+    border-radius: 16rpx;
+    border: 2rpx solid $field-border;
+    font-size: 26rpx;
+    color: $text-primary;
+    background: $field-bg;
+  }
+
+  .manual-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 120rpx;
+    height: 84rpx;
+    border-radius: 16rpx;
+    font-size: 26rpx;
+    color: $text-primary;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .manual-foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20rpx;
+    margin-top: 20rpx;
+  }
+
+  .codes-count {
+    font-size: 22rpx;
+    color: $text-hint;
+  }
+
+  .refresh-link {
+    font-size: 24rpx;
+    color: $accent;
+
+    &.disabled {
+      color: $text-hint;
+    }
+  }
+
+  .code-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14rpx;
+    margin-top: 20rpx;
   }
 
   .code-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18rpx;
     padding: 20rpx;
-    border-radius: 20rpx;
-    background: #f7f8fb;
+    border-radius: 16rpx;
+    border: 2rpx solid $card-border;
+    background: rgba(255, 255, 255, 0.03);
   }
 
-  .code-text,
-  .code-reward,
-  .result-code,
-  .result-msg {
+  .code-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .code-text {
     display: block;
-  }
-
-  .code-text,
-  .result-code {
     font-size: 26rpx;
     font-weight: 700;
     color: $text-primary;
   }
 
-  .code-reward,
-  .result-msg {
+  .code-reward {
+    display: block;
     margin-top: 6rpx;
     font-size: 22rpx;
     color: $text-secondary;
   }
 
   .code-source {
+    flex-shrink: 0;
     padding: 8rpx 14rpx;
     border-radius: 999rpx;
-    flex-shrink: 0;
-    font-size: 22rpx;
+    font-size: 20rpx;
     color: $accent;
-    background: rgba(233, 69, 96, 0.08);
+    background: rgba(255, 61, 107, 0.12);
   }
 
-  .empty-box {
-    margin-top: 20rpx;
-    padding: 42rpx 24rpx;
-    border-radius: 20rpx;
-    font-size: 24rpx;
-    text-align: center;
-    color: $text-hint;
-    background: #f7f8fb;
-  }
-
-  .redeem-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 92rpx;
-    color: #fff;
-    font-size: 28rpx;
-    font-weight: 700;
-    background: linear-gradient(135deg, #e94560 0%, #ff7a59 100%);
-    box-shadow: 0 12rpx 24rpx rgba(233, 69, 96, 0.2);
-
-    &[disabled] {
-      opacity: 0.56;
-    }
-  }
-
+  /* 结果统计 */
   .summary-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16rpx;
-    margin-top: 24rpx;
+    margin-top: 36rpx;
   }
 
   .summary-item {
-    padding: 22rpx 10rpx;
-    border-radius: 20rpx;
+    padding: 24rpx 10rpx;
+    border-radius: 18rpx;
     text-align: center;
-    background: #f7f8fb;
+    border: 2rpx solid $card-border;
+    background: $card-bg;
 
     &.success .summary-num {
       color: $success;
@@ -923,67 +809,105 @@
     }
   }
 
-  .summary-num,
+  .summary-num {
+    display: block;
+    font-size: 40rpx;
+    font-weight: 800;
+    color: $text-primary;
+  }
+
   .summary-label {
     display: block;
-  }
-
-  .summary-num {
-    font-size: 36rpx;
-    font-weight: 800;
-  }
-
-  .summary-label {
     margin-top: 6rpx;
     font-size: 22rpx;
     color: $text-secondary;
   }
 
+  .result-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+    margin-top: 24rpx;
+  }
+
   .result-group {
-    padding: 20rpx;
-    border-radius: 22rpx;
-    background: #f7f8fb;
+    padding: 22rpx;
+    border-radius: 18rpx;
+    border: 2rpx solid $card-border;
+    background: $card-bg;
   }
 
   .result-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
     padding-bottom: 16rpx;
-    border-bottom: 2rpx solid $border-color;
+    border-bottom: 2rpx solid $card-border;
   }
 
-  .result-account,
-  .result-count {
+  .result-account {
     font-size: 24rpx;
     font-weight: 700;
     color: $text-primary;
   }
 
+  .result-count {
+    font-size: 24rpx;
+    font-weight: 700;
+    color: $success;
+  }
+
   .result-row {
-    padding: 16rpx 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+    padding-top: 16rpx;
+  }
+
+  .result-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .result-code {
+    display: block;
+    font-size: 26rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .result-msg {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
   }
 
   .result-status {
+    flex-shrink: 0;
     padding: 8rpx 14rpx;
     border-radius: 999rpx;
-    flex-shrink: 0;
     font-size: 22rpx;
     color: $text-secondary;
-    background: #eef1f6;
+    background: rgba(255, 255, 255, 0.06);
 
     &.success {
       color: $success;
-      background: rgba(24, 160, 88, 0.1);
+      background: rgba(52, 211, 153, 0.14);
     }
 
     &.already_used {
       color: $warning;
-      background: rgba(245, 158, 11, 0.12);
+      background: rgba(251, 191, 36, 0.14);
     }
 
     &.invalid_coupon,
     &.invalid_id,
     &.failed {
       color: $error;
-      background: rgba(239, 68, 68, 0.08);
+      background: rgba(248, 113, 113, 0.14);
     }
   }
 </style>
