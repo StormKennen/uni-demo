@@ -4,6 +4,12 @@
     <view class="page-head">
       <text class="page-title">{{ gameConfig.title }}</text>
       <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
+      <view class="login-tip" :class="{ guest: !isLoggedIn }">
+        <text class="login-tip-text">
+          {{ isLoggedIn ? '已登录：账号已云端托管，换设备或清缓存都不会丢失。' : '未登录：账号仅保存在本机，清理缓存或换设备会丢失。登录后自动同步到云端，永不丢失。' }}
+        </text>
+        <text v-if="!isLoggedIn" class="login-link" @click="goLogin">登录同步 ›</text>
+      </view>
     </view>
 
     <!-- 账号卡片 -->
@@ -21,10 +27,15 @@
         </picker>
 
         <view class="account-main">
-          <text class="account-id">{{ account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText }}</text>
+          <view class="account-line">
+            <text class="account-name">{{ account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText }}</text>
+            <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
+          </view>
           <view class="account-sub">
-            <text v-if="account.nickname" class="nickname">{{ account.nickname }}</text>
-            <text v-else class="status-dot" :class="account.status || 'pending'">{{ getStatusText(account.status) }}</text>
+            <text class="server-name">{{ getServerFullLabel(account.server) }}</text>
+            <text v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-id-sub">
+              {{ account.accountIdMasked || account.accountId }}
+            </text>
           </view>
         </view>
 
@@ -181,8 +192,8 @@
     postGameCouponsGameIdRedeemBodyAccountsItem,
     postGameCouponsGameIdRedeemResAccountResults,
   } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
-  import { getGameCouponConfig } from '@/config/game-coupons'
-  import type { GameCouponConfig } from '@/config/game-coupons'
+  import { getGameCouponConfig } from './config'
+  import type { GameCouponConfig } from './config'
   import { checkLoginStatus } from '@/utils/autoLogin'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
@@ -281,6 +292,11 @@
     return gameConfig.value.servers[getServerIndex(server)]?.shortLabel || server
   }
 
+  /** 区服中文+英文全称，用于账号展示 */
+  function getServerFullLabel(server: string) {
+    return gameConfig.value.servers[getServerIndex(server)]?.label || server
+  }
+
   function localId() {
     return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   }
@@ -294,6 +310,19 @@
     if (status === 'invalid') return '无效'
     if (status === 'disabled') return '已停用'
     return '未验证'
+  }
+
+  /** 账号右侧校验状态徽标文案：active=已校验，invalid=无效，其余=未校验 */
+  function getStatusBadgeText(status?: string) {
+    if (status === 'active') return '已校验'
+    if (status === 'invalid') return '无效'
+    return '未校验'
+  }
+
+  function getStatusBadgeClass(status?: string) {
+    if (status === 'active') return 'ok'
+    if (status === 'invalid') return 'bad'
+    return 'pending'
   }
 
   function getSourceLabel(source?: string) {
@@ -433,7 +462,22 @@
     saveLocalAccounts()
   }
 
-  async function removeAccount(index: number) {
+  function removeAccount(index: number) {
+    const account = accounts.value[index]
+    if (!account) return
+    const name = account.nickname || account.accountIdMasked || account.accountId || gameConfig.value.accountIdLabel
+    uni.showModal({
+      title: '删除账号',
+      content: `确定删除「${name}」吗？删除后不可恢复。`,
+      confirmText: '删除',
+      confirmColor: '#dc2626',
+      success: res => {
+        if (res.confirm) doRemoveAccount(index)
+      },
+    })
+  }
+
+  async function doRemoveAccount(index: number) {
     const account = accounts.value[index]
     if (!account) return
 
@@ -441,6 +485,7 @@
       try {
         await deleteGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
         accounts.value.splice(index, 1)
+        toast('已删除')
       } catch (err) {
         toast(errMsg(err, '删除失败'))
       }
@@ -449,6 +494,7 @@
 
     accounts.value.splice(index, 1)
     saveLocalAccounts()
+    toast('已删除')
   }
 
   async function changeServer(index: number, event: { detail: { value: number | string } }) {
@@ -578,6 +624,8 @@
   /* ----------------------------- 兑换 ----------------------------- */
 
   async function startRedeem() {
+    // 防止未请求完成时重复点击
+    if (redeeming.value) return
     if (!validAccounts.value.length) {
       redeemError.value = `请至少添加并填写一个${gameConfig.value.accountIdLabel}`
       return
@@ -591,6 +639,7 @@
     redeemError.value = ''
     redeemSummary.value = null
     resultGroups.value = []
+    uni.showLoading({ title: '兑换中…', mask: true })
 
     const payloadAccounts: postGameCouponsGameIdRedeemBodyAccountsItem[] = validAccounts.value.map(account =>
       account.managed
@@ -606,18 +655,30 @@
         { accounts: payloadAccounts, codes: payloadCodes },
       )
       resultGroups.value = res.accountResults || []
+      const successCount = res.success || 0
+      const alreadyUsedCount = res.alreadyUsed || 0
+      const failedCount = res.failed || 0
       redeemSummary.value = {
-        success: res.success || 0,
-        alreadyUsed: res.alreadyUsed || 0,
-        failed: res.failed || 0,
-        total: (res.success || 0) + (res.alreadyUsed || 0) + (res.failed || 0),
+        success: successCount,
+        alreadyUsed: alreadyUsedCount,
+        failed: failedCount,
+        total: successCount + alreadyUsedCount + failedCount,
       }
       if (isLoggedIn.value) {
         loadSummary()
         if (showRecords.value) loadRecords()
       }
+      uni.hideLoading()
+      uni.showModal({
+        title: successCount > 0 ? '兑换成功' : '兑换完成',
+        content: `成功兑换 ${successCount} 个礼包码\n已使用 ${alreadyUsedCount} 个 · 失败 ${failedCount} 个`,
+        showCancel: false,
+        confirmText: '知道了',
+      })
     } catch (err) {
+      uni.hideLoading()
       redeemError.value = errMsg(err, '兑换请求失败')
+      toast(redeemError.value)
     } finally {
       redeeming.value = false
     }
@@ -820,8 +881,15 @@
     min-width: 0;
   }
 
-  .account-id {
-    display: block;
+  .account-line {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .account-name {
+    flex: 1;
+    min-width: 0;
     font-size: 28rpx;
     color: $text-primary;
     overflow: hidden;
@@ -829,26 +897,43 @@
     text-overflow: ellipsis;
   }
 
+  .status-badge {
+    flex-shrink: 0;
+    padding: 2rpx 14rpx;
+    font-size: 20rpx;
+    border-radius: 999rpx;
+    color: $text-hint;
+    background: rgba(148, 163, 184, 0.16);
+
+    &.ok {
+      color: $success;
+      background: rgba(22, 163, 74, 0.12);
+    }
+
+    &.bad {
+      color: $error;
+      background: rgba(220, 38, 38, 0.12);
+    }
+  }
+
   .account-sub {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
     margin-top: 4rpx;
   }
 
-  .nickname {
+  .server-name {
     font-size: 22rpx;
-    color: $success;
+    color: $text-secondary;
   }
 
-  .status-dot {
+  .account-id-sub {
     font-size: 22rpx;
     color: $text-hint;
-
-    &.active {
-      color: $success;
-    }
-
-    &.invalid {
-      color: $error;
-    }
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .account-actions {
