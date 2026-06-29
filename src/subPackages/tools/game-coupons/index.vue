@@ -5,7 +5,7 @@
       <text class="hero-title">{{ gameConfig.title }}</text>
       <text class="hero-desc">{{ gameConfig.subtitle }}</text>
       <view class="hero-status" :class="{ warning: !backendVerified }">
-        <text>{{ backendVerified ? '已连接后端接口' : '等待后端接口接入/验证' }}</text>
+        <text>{{ backendVerified ? '兑换服务已就绪' : '兑换服务准备中' }}</text>
       </view>
     </view>
 
@@ -18,15 +18,6 @@
         </view>
       </view>
       <button v-if="!isLoggedIn" class="login-tip-btn" @click="goLogin">快捷登录</button>
-    </view>
-
-    <view v-if="!backendVerified" class="notice-card">
-      <text class="notice-title">为什么需要后端？</text>
-      <text class="notice-text">
-        兑换站点/官方兑换通常不开放跨域访问，也可能需要服务端密钥或平台登录态。当前页面采用通用游戏兑换券前端架构，当前游戏为
-        {{ gameConfig.gameName }}（gameId={{ gameConfig.gameId }}，compendiumId={{ gameConfig.compendiumId }}），后端契约见
-        {{ gameConfig.backendDocPath }}。
-      </text>
     </view>
 
     <view class="section-card">
@@ -78,7 +69,7 @@
       <view class="section-header">
         <view>
           <text class="section-title">兑换券码</text>
-          <text class="section-desc">自动券码来自后端；也可以手动补充。</text>
+          <text class="section-desc">自动获取最新券码；也可以手动补充。</text>
         </view>
         <button class="ghost-btn" :disabled="loadingCodes || !backendReady" @click="loadCodes">
           {{ loadingCodes ? '刷新中' : '刷新' }}
@@ -362,7 +353,7 @@
     if (!backendReady.value) {
       account.profileAvailable = false
       saveAccounts()
-      uni.showToast({ title: '后端接入后可识别资料', icon: 'none' })
+      uni.showToast({ title: '资料识别服务暂不可用', icon: 'none' })
       return
     }
 
@@ -386,7 +377,7 @@
 
   async function loadCodes() {
     if (!backendReady.value) {
-      codeLoadError.value = '后端接口未配置，暂时只能手动添加券码。'
+      codeLoadError.value = '券码服务暂不可用，请手动添加券码。'
       return
     }
 
@@ -417,7 +408,7 @@
 
   async function startRedeem() {
     if (!backendReady.value) {
-      redeemError.value = '后端接口未配置，无法直接兑换。'
+      redeemError.value = '兑换服务暂不可用，请稍后再试。'
       return
     }
 
@@ -483,7 +474,7 @@
     if (backendReady.value) {
       loadCodes()
     } else {
-      codeLoadError.value = '后端接口未配置，暂时只能手动添加券码。'
+      codeLoadError.value = '券码服务暂不可用，请手动添加券码。'
     }
   }
 
@@ -568,18 +559,12 @@
   }
 
   .login-tip-card,
-  .notice-card,
   .section-card {
     margin-top: 24rpx;
     padding: 30rpx;
     border-radius: $radius-lg;
     background: $card-bg;
     box-shadow: $shadow;
-  }
-
-  .notice-card {
-    border: 2rpx solid rgba(245, 158, 11, 0.18);
-    background: #fffaf0;
   }
 
   .login-tip-card {
@@ -653,7 +638,6 @@
     background: linear-gradient(135deg, #e94560 0%, #ff7a59 100%);
   }
 
-  .notice-title,
   .section-title {
     display: block;
     font-size: 30rpx;
@@ -661,7 +645,6 @@
     color: $text-primary;
   }
 
-  .notice-text,
   .section-desc {
     display: block;
     margin-top: 8rpx;
