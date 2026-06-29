@@ -29,6 +29,7 @@
         <view class="account-main">
           <view class="account-line">
             <text class="account-name">{{ account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText }}</text>
+            <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
             <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
           </view>
           <view class="account-sub">
@@ -40,6 +41,13 @@
         </view>
 
         <view class="account-actions">
+          <view
+            v-if="isLoggedIn && !account.managed"
+            class="mini-btn primary"
+            :class="{ loading: account.syncing }"
+            @click="syncLocalAccount(index)">
+            {{ account.syncing ? '同步中' : '同步云端' }}
+          </view>
           <view class="mini-btn" :class="{ loading: account.verifying }" @click="verifyAccount(index)">
             {{ account.verifying ? '验证中' : '验证' }}
           </view>
@@ -114,8 +122,8 @@
       </view>
     </view>
 
-    <!-- 统计 -->
-    <view v-if="stats" class="stats-row">
+    <!-- 统计（仅登录态展示，游客模式不触发统计接口） -->
+    <view v-if="isLoggedIn && stats" class="stats-row">
       <view class="stat success">
         <text class="stat-num">{{ stats.success }}</text>
         <text class="stat-label">成功</text>
@@ -214,6 +222,7 @@
     status?: AccountStatus
     autoRedeemEnabled?: boolean
     verifying?: boolean
+    syncing?: boolean
   }
 
   interface RouteOptions {
@@ -247,6 +256,8 @@
 
   const isLoggedIn = ref(false)
   const initialized = ref(false)
+  // 登录后自动同步本地账号的并发锁（非响应式）
+  let autoSyncing = false
 
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
@@ -381,11 +392,12 @@
     }
   }
 
-  function loadLocalAccounts() {
+  /** 读取并解析本地缓存账号为 VM（managed=false） */
+  function parseStoredAccounts(): AccountVM[] {
     try {
       const stored = uni.getStorageSync(getStorageKey())
       const list = Array.isArray(stored) ? stored : []
-      accounts.value = list
+      return list
         .filter(item => item && typeof item === 'object')
         .map(item => ({
           id: typeof item.id === 'string' && item.id ? item.id : localId(),
@@ -395,7 +407,25 @@
           nickname: typeof item.nickname === 'string' ? item.nickname : undefined,
         }))
     } catch {
-      accounts.value = []
+      return []
+    }
+  }
+
+  function loadLocalAccounts() {
+    accounts.value = parseStoredAccounts()
+  }
+
+  /** 从本地缓存中移除指定账号（登录后同步/删除本地账号时调用） */
+  function dropLocalAccount(id: string) {
+    try {
+      const stored = uni.getStorageSync(getStorageKey())
+      const list = Array.isArray(stored) ? stored : []
+      uni.setStorageSync(
+        getStorageKey(),
+        list.filter(item => item && item.id !== id),
+      )
+    } catch {
+      /* 缓存失败不阻断 */
     }
   }
 
@@ -406,7 +436,7 @@
       const res = await getGameCouponsGameIdAccounts(gameConfig.value.gameId, {
         compendium_id: gameConfig.value.compendiumId,
       })
-      accounts.value = (res.accounts || []).map(item => ({
+      const managed: AccountVM[] = (res.accounts || []).map(item => ({
         id: String(item.id || ''),
         managed: true,
         server: item.server || getDefaultServer(),
@@ -417,9 +447,86 @@
         status: item.status,
         autoRedeemEnabled: item.autoRedeemEnabled,
       }))
+      // 保留登录前的本地缓存账号，展示「本地」标识并支持同步到云端
+      const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
+      accounts.value = [...managed, ...locals]
     } catch (err) {
       toast(errMsg(err, '获取托管账号失败'))
     }
+  }
+
+  /** 把本地缓存账号上传为云端托管账号 */
+  async function syncLocalAccount(index: number) {
+    const account = accounts.value[index]
+    if (!account || account.managed || account.syncing) return
+    if (!account.accountId.trim()) {
+      toast('本地账号信息缺失，无法同步')
+      return
+    }
+    account.syncing = true
+    try {
+      await postGameCouponsGameIdAccounts(
+        gameConfig.value.gameId,
+        { compendium_id: gameConfig.value.compendiumId },
+        { account_id: account.accountId.trim(), server: account.server as ServerValue },
+      )
+      dropLocalAccount(account.id)
+      await loadManagedAccounts()
+      toast('已同步到云端')
+    } catch (err) {
+      account.syncing = false
+      toast(errMsg(err, '同步失败'))
+    }
+  }
+
+  /**
+   * 登录后自动把本机缓存的全部账号上传到云端。
+   * 去重：1) 本地内部按 server + accountId 去重；
+   *      2) 后端 createAccount 以 account_id 指纹做 upsert，重复上传不会产生重复账号。
+   * 上传成功的从本机缓存移除；失败的保留，下次进入或手动「同步云端」时重试。
+   */
+  async function autoSyncLocalAccounts(): Promise<number> {
+    if (autoSyncing) return 0
+    autoSyncing = true
+    try {
+      const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
+      const seen = new Set<string>()
+      const unique: AccountVM[] = []
+      locals.forEach(item => {
+        const key = `${item.server}::${item.accountId.trim().toLowerCase()}`
+        if (seen.has(key)) {
+          dropLocalAccount(item.id) // 本地重复项直接清掉
+          return
+        }
+        seen.add(key)
+        unique.push(item)
+      })
+      let synced = 0
+      for (const item of unique) {
+        try {
+          await postGameCouponsGameIdAccounts(
+            gameConfig.value.gameId,
+            { compendium_id: gameConfig.value.compendiumId },
+            { account_id: item.accountId.trim(), server: item.server as ServerValue },
+          )
+          dropLocalAccount(item.id)
+          synced += 1
+        } catch {
+          /* 单个失败保留本地，不阻断其余账号 */
+        }
+      }
+      return synced
+    } finally {
+      autoSyncing = false
+    }
+  }
+
+  /** 进入登录态：先自动同步本地账号，再加载云端账号与统计 */
+  async function enterLoggedInMode() {
+    const synced = await autoSyncLocalAccounts()
+    await loadManagedAccounts()
+    loadSummary()
+    if (synced > 0) toast(`已自动同步 ${synced} 个本地账号到云端`)
   }
 
   function changeNewServer(event: { detail: { value: number | string } }) {
@@ -493,7 +600,12 @@
     }
 
     accounts.value.splice(index, 1)
-    saveLocalAccounts()
+    if (isLoggedIn.value) {
+      // 登录态下删除的是未同步的本地账号，需同步从缓存移除
+      dropLocalAccount(account.id)
+    } else {
+      saveLocalAccounts()
+    }
     toast('已删除')
   }
 
@@ -738,8 +850,7 @@
     initialized.value = true
     refreshLoginState()
     if (isLoggedIn.value) {
-      loadManagedAccounts()
-      loadSummary()
+      enterLoggedInMode()
     } else {
       loadLocalAccounts()
     }
@@ -756,8 +867,7 @@
     refreshLoginState()
     if (!initialized.value) return
     if (isLoggedIn.value && !wasLoggedIn) {
-      loadManagedAccounts()
-      loadSummary()
+      enterLoggedInMode()
     }
   })
 
@@ -897,6 +1007,15 @@
     text-overflow: ellipsis;
   }
 
+  .local-badge {
+    flex-shrink: 0;
+    padding: 2rpx 14rpx;
+    font-size: 20rpx;
+    border-radius: 999rpx;
+    color: $warning;
+    background: rgba(217, 119, 6, 0.12);
+  }
+
   .status-badge {
     flex-shrink: 0;
     padding: 2rpx 14rpx;
@@ -938,8 +1057,11 @@
 
   .account-actions {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 12rpx;
     flex-shrink: 0;
+    max-width: 220rpx;
   }
 
   .mini-btn {
@@ -948,6 +1070,11 @@
     color: $accent;
     background: rgba(79, 110, 242, 0.08);
     border-radius: 12rpx;
+
+    &.primary {
+      color: #fff;
+      background: $accent;
+    }
 
     &.danger {
       color: $error;
