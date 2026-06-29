@@ -122,6 +122,8 @@
 </template>
 
 <script setup lang="ts">
+import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postAccountsAccountIdAutoRedeem, postAccountsAccountIdVerify, deleteGameIdAccountsAccountId, patchGameIdAccountsAccountId, getGameIdAccountsAccountId, postGameCouponsGameIdAccounts, getGameCouponsGameIdAccounts, postGameCouponsGameIdRedeem, getGameCouponsGameIdProfile, postGameIdCodesManual, getGameCouponsGameIdCodes } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox';
+
   import { computed, onMounted, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { getGameCouponConfig } from '@/config/game-coupons'
