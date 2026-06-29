@@ -25,12 +25,15 @@
         <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
           <view class="picker-value">{{ getServerShortLabel(account.server) }}</view>
         </picker>
-        <input
-          class="hive-input"
-          type="text"
-          :placeholder="`${gameConfig.accountIdLabel} #${index + 1}`"
-          :value="account.accountId"
-          @input="updateAccountId(index, String($event.detail.value || ''))" />
+        <view class="hive-input-wrap">
+          <input
+            class="hive-input"
+            type="text"
+            :placeholder="`${gameConfig.accountIdLabel} #${index + 1}`"
+            :value="account.accountId"
+            @input="updateAccountId(index, String($event.detail.value || ''))" />
+          <text v-if="account.nickname" class="wizard-name">{{ account.nickname }}</text>
+        </view>
         <view v-if="accounts.length > 1" class="row-remove" @click="removeAccount(index)">×</view>
       </view>
       <button class="add-account-btn" @click="addAccount">+ 添加账号</button>
@@ -102,7 +105,7 @@
       <view v-for="group in resultGroups" :key="group.account.id" class="result-group">
         <view class="result-group-header">
           <text class="result-account">
-            {{ group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
+            {{ group.account.nickname || group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
           </text>
           <text class="result-count">{{ group.success }} 成功</text>
         </view>
@@ -562,10 +565,15 @@
     background: $field-bg;
   }
 
-  .hive-input {
-    box-sizing: border-box;
+  .hive-input-wrap {
     flex: 1;
     min-width: 0;
+    position: relative;
+  }
+
+  .hive-input {
+    box-sizing: border-box;
+    width: 100%;
     height: 84rpx;
     padding: 0 24rpx;
     border-radius: 16rpx;
@@ -573,6 +581,15 @@
     font-size: 26rpx;
     color: $text-primary;
     background: $field-bg;
+  }
+
+  .wizard-name {
+    display: block;
+    margin-top: 6rpx;
+    padding-left: 24rpx;
+    font-size: 22rpx;
+    color: $success;
+    line-height: 1.3;
   }
 
   .row-remove {

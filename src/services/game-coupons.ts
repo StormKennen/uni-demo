@@ -58,6 +58,7 @@ export interface GameCouponProfile {
   accountId: string
   server: string
   nickname?: string
+  serverName?: string
   avatarUrl?: string
   available: boolean
   message?: string
