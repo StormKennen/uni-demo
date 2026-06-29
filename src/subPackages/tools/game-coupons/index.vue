@@ -256,6 +256,8 @@
 
   const isLoggedIn = ref(false)
   const initialized = ref(false)
+  // 登录后自动同步本地账号的并发锁（非响应式）
+  let autoSyncing = false
 
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
@@ -475,6 +477,56 @@
       account.syncing = false
       toast(errMsg(err, '同步失败'))
     }
+  }
+
+  /**
+   * 登录后自动把本机缓存的全部账号上传到云端。
+   * 去重：1) 本地内部按 server + accountId 去重；
+   *      2) 后端 createAccount 以 account_id 指纹做 upsert，重复上传不会产生重复账号。
+   * 上传成功的从本机缓存移除；失败的保留，下次进入或手动「同步云端」时重试。
+   */
+  async function autoSyncLocalAccounts(): Promise<number> {
+    if (autoSyncing) return 0
+    autoSyncing = true
+    try {
+      const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
+      const seen = new Set<string>()
+      const unique: AccountVM[] = []
+      locals.forEach(item => {
+        const key = `${item.server}::${item.accountId.trim().toLowerCase()}`
+        if (seen.has(key)) {
+          dropLocalAccount(item.id) // 本地重复项直接清掉
+          return
+        }
+        seen.add(key)
+        unique.push(item)
+      })
+      let synced = 0
+      for (const item of unique) {
+        try {
+          await postGameCouponsGameIdAccounts(
+            gameConfig.value.gameId,
+            { compendium_id: gameConfig.value.compendiumId },
+            { account_id: item.accountId.trim(), server: item.server as ServerValue },
+          )
+          dropLocalAccount(item.id)
+          synced += 1
+        } catch {
+          /* 单个失败保留本地，不阻断其余账号 */
+        }
+      }
+      return synced
+    } finally {
+      autoSyncing = false
+    }
+  }
+
+  /** 进入登录态：先自动同步本地账号，再加载云端账号与统计 */
+  async function enterLoggedInMode() {
+    const synced = await autoSyncLocalAccounts()
+    await loadManagedAccounts()
+    loadSummary()
+    if (synced > 0) toast(`已自动同步 ${synced} 个本地账号到云端`)
   }
 
   function changeNewServer(event: { detail: { value: number | string } }) {
@@ -798,8 +850,7 @@
     initialized.value = true
     refreshLoginState()
     if (isLoggedIn.value) {
-      loadManagedAccounts()
-      loadSummary()
+      enterLoggedInMode()
     } else {
       loadLocalAccounts()
     }
@@ -816,8 +867,7 @@
     refreshLoginState()
     if (!initialized.value) return
     if (isLoggedIn.value && !wasLoggedIn) {
-      loadManagedAccounts()
-      loadSummary()
+      enterLoggedInMode()
     }
   })
 
