@@ -1,115 +1,132 @@
 <template>
   <view class="coupon-page">
+    <!-- 头部 -->
     <view class="page-head">
       <text class="page-title">{{ gameConfig.title }}</text>
       <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
     </view>
 
-    <view class="promo-card" @click="goLogin">
-      <view class="promo-top">
-        <text class="promo-emoji">🤖</text>
-        <text class="promo-title">新码出来时帮你自动兑换</text>
+    <!-- 账号卡片 -->
+    <view class="card">
+      <view class="card-head">
+        <text class="card-title">我的账号</text>
+        <text class="card-tag">{{ isLoggedIn ? '云端托管' : '本机保存' }}</text>
       </view>
-      <text class="promo-desc">不用打开网站，{{ isLoggedIn ? '登录后游戏号跟随账号保存' : '30 秒内到账' }}</text>
-      <view class="promo-tags">
-        <text class="promo-tag">试用 30 天免费</text>
-        <text class="promo-tag">不绑卡</text>
-        <text class="promo-tag">加密存储</text>
-      </view>
-      <text class="promo-link">{{ isLoggedIn ? '已登录 · 数据更稳妥' : '立即登录试用 →' }}</text>
-    </view>
 
-    <view class="block">
-      <text class="block-label">账号列表</text>
+      <view v-if="!accounts.length" class="empty-tip">还没有账号，先在下方添加一个吧</view>
+
       <view v-for="(account, index) in accounts" :key="account.id" class="account-row">
         <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
-          <view class="picker-value">{{ getServerShortLabel(account.server) }}</view>
+          <view class="server-chip">{{ getServerShortLabel(account.server) }}</view>
         </picker>
-        <view class="hive-input-wrap">
-          <input
-            class="hive-input"
-            type="text"
-            :placeholder="`${gameConfig.accountIdLabel} #${index + 1}`"
-            :value="account.accountId"
-            @input="updateAccountId(index, String($event.detail.value || ''))" />
-          <text v-if="account.nickname" class="wizard-name">{{ account.nickname }}</text>
+
+        <view class="account-main">
+          <text class="account-id">{{ account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText }}</text>
+          <view class="account-sub">
+            <text v-if="account.nickname" class="nickname">{{ account.nickname }}</text>
+            <text v-else class="status-dot" :class="account.status || 'pending'">{{ getStatusText(account.status) }}</text>
+          </view>
         </view>
-        <view v-if="accounts.length > 1" class="row-remove" @click="removeAccount(index)">×</view>
+
+        <view class="account-actions">
+          <view class="mini-btn" :class="{ loading: account.verifying }" @click="verifyAccount(index)">
+            {{ account.verifying ? '验证中' : '验证' }}
+          </view>
+          <view class="mini-btn danger" @click="removeAccount(index)">删除</view>
+        </view>
       </view>
-      <button class="add-account-btn" @click="addAccount">+ 添加账号</button>
+
+      <!-- 添加账号表单 -->
+      <view class="add-form">
+        <picker class="server-picker" :range="serverLabels" :value="getServerIndex(newAccount.server)" @change="changeNewServer($event)">
+          <view class="server-chip">{{ getServerShortLabel(newAccount.server) }}</view>
+        </picker>
+        <input
+          class="add-input"
+          type="text"
+          :placeholder="gameConfig.accountIdPlaceholder"
+          :value="newAccount.accountId"
+          @input="newAccount.accountId = String($event.detail.value || '').trim()" />
+        <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
+          {{ addingAccount ? '...' : '添加' }}
+        </view>
+      </view>
     </view>
 
-    <label class="auto-toggle">
-      <checkbox class="auto-checkbox" :checked="autoRedeem" @click="toggleAutoRedeem" />
+    <!-- 自动兑换 -->
+    <view class="auto-card">
       <view class="auto-text">
-        <text class="auto-title">开启自动兑换（30 天免费试用）</text>
-        <text class="auto-hint">勾选后，新码出来时不再需要打开此页</text>
+        <text class="auto-title">自动兑换托管</text>
+        <text class="auto-hint">{{ isLoggedIn ? '新码出来时自动帮你兑换' : '登录后开启，新码自动到账' }}</text>
       </view>
-    </label>
+      <switch v-if="!isLoggedIn" class="auto-switch" :checked="false" @click="goLogin" />
+      <text v-else class="auto-link" @click="toggleAllAuto">{{ allAutoOn ? '全部关闭' : '全部开启' }}</text>
+    </view>
 
+    <!-- 主按钮 -->
     <button class="redeem-btn" :disabled="redeemDisabled" @click="startRedeem">
-      {{ redeeming ? '兑换中...' : '获取并兑换所有优惠券' }}
+      {{ redeeming ? '兑换中…' : '一键兑换全部券码' }}
     </button>
-
     <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
 
-    <view class="manual-block">
-      <view class="manual-toggle" @click="showManual = !showManual">
-        <text>{{ showManual ? '▼' : '▶' }} 手动添加优惠券码</text>
+    <!-- 券码区 -->
+    <view class="card codes-card">
+      <view class="card-head" @click="showCodes = !showCodes">
+        <text class="card-title">可用券码 {{ combinedCodes.length }}</text>
+        <text class="card-toggle">{{ showCodes ? '收起' : '展开' }}</text>
       </view>
-      <view v-if="showManual" class="manual-panel">
+
+      <view v-if="showCodes" class="codes-body">
         <view class="manual-row">
           <input
             class="manual-input"
             type="text"
-            placeholder="输入优惠券码"
+            placeholder="手动输入券码"
             :value="manualCode"
             @input="manualCode = String($event.detail.value || '').toUpperCase()" />
-          <button class="manual-add-btn" @click="addManualCode">添加</button>
-        </view>
-        <view class="manual-foot">
-          <text class="codes-count">已知券码 {{ combinedCodes.length }} 个</text>
-          <text class="refresh-link" :class="{ disabled: loadingCodes || !backendReady }" @click="loadCodes">
-            {{ loadingCodes ? '刷新中...' : '刷新' }}
-          </text>
+          <view class="manual-add" @click="addManualCode">添加</view>
+          <view class="manual-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
+            {{ loadingCodes ? '…' : '刷新' }}
+          </view>
         </view>
         <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
         <view v-if="combinedCodes.length" class="code-list">
           <view v-for="item in combinedCodes" :key="item.code" class="code-item">
-            <view class="code-main">
+            <view class="code-info">
               <text class="code-text">{{ item.code }}</text>
               <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
             </view>
             <text class="code-source">{{ getSourceLabel(item.source) }}</text>
           </view>
         </view>
+        <view v-else class="empty-tip">暂无券码，可点击刷新或手动添加</view>
       </view>
     </view>
 
-    <view v-if="summary" class="summary-grid">
-      <view class="summary-item success">
-        <text class="summary-num">{{ summary.success }}</text>
-        <text class="summary-label">成功</text>
+    <!-- 统计 -->
+    <view v-if="stats" class="stats-row">
+      <view class="stat success">
+        <text class="stat-num">{{ stats.success }}</text>
+        <text class="stat-label">成功</text>
       </view>
-      <view class="summary-item used">
-        <text class="summary-num">{{ summary.alreadyUsed }}</text>
-        <text class="summary-label">已使用</text>
+      <view class="stat used">
+        <text class="stat-num">{{ stats.alreadyUsed }}</text>
+        <text class="stat-label">已使用</text>
       </view>
-      <view class="summary-item failed">
-        <text class="summary-num">{{ summary.failed }}</text>
-        <text class="summary-label">失败</text>
+      <view class="stat failed">
+        <text class="stat-num">{{ stats.failed }}</text>
+        <text class="stat-label">失败</text>
       </view>
     </view>
 
-    <view v-if="resultGroups.length" class="result-groups">
-      <view v-for="group in resultGroups" :key="group.account.id" class="result-group">
-        <view class="result-group-header">
-          <text class="result-account">
-            {{ group.account.nickname || group.account.accountId }} · {{ getServerShortLabel(group.account.server) }}
-          </text>
+    <!-- 本次兑换结果分组 -->
+    <view v-if="resultGroups.length" class="result-list">
+      <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
+        <view class="result-head">
+          <text class="result-account">{{ groupTitle(group) }}</text>
           <text class="result-count">{{ group.success }} 成功</text>
         </view>
-        <view v-for="item in group.results" :key="`${group.account.id}-${item.code}`" class="result-row">
+        <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
           <view class="result-main">
             <text class="result-code">{{ item.code }}</text>
             <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
@@ -118,25 +135,75 @@
         </view>
       </view>
     </view>
+
+    <!-- 兑换记录（登录态） -->
+    <view v-if="isLoggedIn" class="card">
+      <view class="card-head" @click="toggleRecords">
+        <text class="card-title">兑换记录</text>
+        <text class="card-toggle">{{ showRecords ? '收起' : '查看' }}</text>
+      </view>
+      <view v-if="showRecords" class="record-body">
+        <view v-if="!records.length" class="empty-tip">暂无兑换记录</view>
+        <view v-for="record in records" :key="record.id" class="record-row">
+          <view class="record-main">
+            <text class="record-code">{{ record.couponCode }}</text>
+            <text class="record-sub">{{ record.accountIdMasked }} · {{ getServerShortLabel(record.server || '') }}</text>
+          </view>
+          <text class="result-status" :class="record.resultStatus">{{ getStatusLabel(record.resultStatus) }}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postAccountsAccountIdAutoRedeem, postAccountsAccountIdVerify, deleteGameIdAccountsAccountId, patchGameIdAccountsAccountId, getGameIdAccountsAccountId, postGameCouponsGameIdAccounts, getGameCouponsGameIdAccounts, postGameCouponsGameIdRedeem, getGameCouponsGameIdProfile, postGameIdCodesManual, getGameCouponsGameIdCodes } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox';
-
   import { computed, onMounted, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
-  import { getGameCouponConfig } from '@/config/game-coupons'
-  import { getGameCouponCodes, hasGameCouponBackend, redeemGameCoupons } from '@/services/game-coupons'
-  import { checkLoginStatus } from '@/utils/autoLogin'
-  import type { GameCouponConfig } from '@/config/game-coupons'
+  import {
+    deleteGameIdAccountsAccountId,
+    getGameCouponsGameIdAccounts,
+    getGameCouponsGameIdCodes,
+    getGameCouponsGameIdProfile,
+    getGameCouponsGameIdRedeemRecords,
+    getGameIdAccountsAccountId,
+    getGameIdRedeemRecordsSummary,
+    patchGameIdAccountsAccountId,
+    postAccountsAccountIdAutoRedeem,
+    postAccountsAccountIdVerify,
+    postGameCouponsGameIdAccounts,
+    postGameCouponsGameIdRedeem,
+    postGameIdCodesManual,
+  } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
   import type {
-    GameCouponAccount,
-    GameCouponCode,
-    GameCouponRedeemAccountResult,
-    GameCouponRedeemResponse,
-    GameCouponRedeemStatus,
-  } from '@/services/game-coupons'
+    getGameCouponsGameIdCodesResCodes,
+    getGameCouponsGameIdRedeemRecordsResResults,
+    getGameIdRedeemRecordsSummaryRes,
+    postGameCouponsGameIdRedeemBodyAccountsItem,
+    postGameCouponsGameIdRedeemResAccountResults,
+  } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
+  import { getGameCouponConfig } from '@/config/game-coupons'
+  import type { GameCouponConfig } from '@/config/game-coupons'
+  import { checkLoginStatus } from '@/utils/autoLogin'
+
+  type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
+  type AccountStatus = 'active' | 'invalid' | 'pending' | 'disabled'
+
+  interface AccountVM {
+    /** 托管账号为后端 ObjectId，游客为本地临时 ID */
+    id: string
+    /** 是否后端托管账号 */
+    managed: boolean
+    server: string
+    /** 游客模式存明文 Hive ID，托管模式为空 */
+    accountId: string
+    /** 托管模式的脱敏展示值 */
+    accountIdMasked?: string
+    accountLabel?: string
+    nickname?: string
+    status?: AccountStatus
+    autoRedeemEnabled?: boolean
+    verifying?: boolean
+  }
 
   interface RouteOptions {
     gameId?: string
@@ -147,131 +214,60 @@ import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postA
 
   const maxAccounts = 5
   const gameConfig = ref<GameCouponConfig>(getGameCouponConfig())
-  const accounts = ref<GameCouponAccount[]>([])
-  const remoteCodes = ref<GameCouponCode[]>([])
-  const manualCodes = ref<GameCouponCode[]>([])
+  const accounts = ref<AccountVM[]>([])
+  const newAccount = ref<{ server: string; accountId: string }>({ server: 'global', accountId: '' })
+  const addingAccount = ref(false)
+
+  const remoteCodes = ref<getGameCouponsGameIdCodesResCodes[]>([])
+  const manualCodes = ref<getGameCouponsGameIdCodesResCodes[]>([])
   const manualCode = ref('')
   const loadingCodes = ref(false)
   const codeLoadError = ref('')
+  const showCodes = ref(false)
+
   const redeeming = ref(false)
   const redeemError = ref('')
-  const summary = ref<GameCouponRedeemResponse | null>(null)
-  const resultGroups = ref<GameCouponRedeemAccountResult[]>([])
-  const backendReady = computed(() => hasGameCouponBackend())
-  const backendVerified = ref(false)
-  const initialized = ref(false)
+  const redeemSummary = ref<getGameIdRedeemRecordsSummaryRes | null>(null)
+  const resultGroups = ref<postGameCouponsGameIdRedeemResAccountResults[]>([])
+
+  const records = ref<getGameCouponsGameIdRedeemRecordsResResults[]>([])
+  const summary = ref<getGameIdRedeemRecordsSummaryRes | null>(null)
+  const showRecords = ref(false)
+
   const isLoggedIn = ref(false)
-  const autoRedeem = ref(false)
-  const showManual = ref(false)
+  const initialized = ref(false)
+
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
   const combinedCodes = computed(() => {
-    const map = new Map<string, GameCouponCode>()
+    const map = new Map<string, getGameCouponsGameIdCodesResCodes>()
     ;[...remoteCodes.value, ...manualCodes.value].forEach(item => {
-      const key = item.code.trim().toUpperCase()
+      const key = String(item.code || '')
+        .trim()
+        .toUpperCase()
       if (!key || map.has(key)) return
       map.set(key, { ...item, code: key })
     })
     return Array.from(map.values())
   })
 
-  const validAccounts = computed(() => accounts.value.filter(account => account.accountId.trim().length > 0))
+  const validAccounts = computed(() => accounts.value.filter(account => account.managed || account.accountId.trim().length > 0))
 
   const redeemDisabled = computed(() => redeeming.value || validAccounts.value.length === 0 || combinedCodes.value.length === 0)
 
-  function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
-  }
+  const allAutoOn = computed(() => accounts.value.length > 0 && accounts.value.every(account => account.autoRedeemEnabled))
+
+  const stats = computed(() => summary.value || redeemSummary.value)
+
+  /* ----------------------------- 工具 ----------------------------- */
 
   function refreshLoginState() {
     const { isLoggedIn: loggedIn } = checkLoginStatus()
     isLoggedIn.value = loggedIn
   }
 
-  function buildCurrentPageUrl() {
-    const params = [
-      `gameId=${encodeURIComponent(gameConfig.value.gameId)}`,
-      `compendiumId=${encodeURIComponent(gameConfig.value.compendiumId)}`,
-    ]
-    return `/subPackages/tools/game-coupons/index?${params.join('&')}`
-  }
-
-  function goLogin() {
-    uni.navigateTo({
-      url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}`,
-    })
-  }
-
-  function getDefaultServer() {
-    return gameConfig.value.defaultServer || gameConfig.value.servers[0]?.value || ''
-  }
-
-  function createAccount(): GameCouponAccount {
-    return {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      server: getDefaultServer(),
-      accountId: '',
-    }
-  }
-
-  function normalizeServer(value: unknown): string {
-    const found = gameConfig.value.servers.find(item => item.value === value)
-    return found?.value || getDefaultServer()
-  }
-
-  function normalizeAccount(value: unknown): GameCouponAccount | null {
-    if (!isRecord(value)) return null
-
-    const legacyHiveId = typeof value.hiveId === 'string' ? value.hiveId : ''
-    return {
-      id: typeof value.id === 'string' && value.id ? value.id : createAccount().id,
-      server: normalizeServer(value.server),
-      accountId: typeof value.accountId === 'string' ? value.accountId : legacyHiveId,
-      nickname: typeof value.nickname === 'string' ? value.nickname : undefined,
-      avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
-      profileAvailable: typeof value.profileAvailable === 'boolean' ? value.profileAvailable : undefined,
-    }
-  }
-
-  function getStorageKeys() {
-    return [gameConfig.value.storageKey, 'SWC_COUPON_ACCOUNTS']
-  }
-
-  function loadAccounts() {
-    try {
-      let stored: unknown = []
-      for (const key of getStorageKeys()) {
-        stored = uni.getStorageSync(key)
-        if (Array.isArray(stored) && stored.length) break
-      }
-      const parsed = Array.isArray(stored) ? stored.map(normalizeAccount).filter((item): item is GameCouponAccount => !!item) : []
-      accounts.value = parsed.length ? parsed : [createAccount()]
-    } catch {
-      accounts.value = [createAccount()]
-    }
-  }
-
-  function saveAccounts() {
-    try {
-      uni.setStorageSync(gameConfig.value.storageKey, accounts.value)
-    } catch {
-      /* 本地缓存失败不阻断兑换 */
-    }
-  }
-
-  function addAccount() {
-    if (accounts.value.length >= maxAccounts) {
-      uni.showToast({ title: `最多保存 ${maxAccounts} 个账号`, icon: 'none' })
-      return
-    }
-    accounts.value.push(createAccount())
-    saveAccounts()
-  }
-
-  function removeAccount(index: number) {
-    accounts.value.splice(index, 1)
-    if (!accounts.value.length) accounts.value.push(createAccount())
-    saveAccounts()
+  function getDefaultServer(): string {
+    return gameConfig.value.defaultServer || gameConfig.value.servers[0]?.value || 'global'
   }
 
   function getServerIndex(server: string) {
@@ -285,136 +281,408 @@ import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postA
     return gameConfig.value.servers[getServerIndex(server)]?.shortLabel || server
   }
 
-  function changeServer(index: number, event: { detail: { value: number | string } }) {
-    const serverIndex = Number(event.detail.value)
-    const server = gameConfig.value.servers[serverIndex]?.value || getDefaultServer()
-    accounts.value[index].server = server
-    accounts.value[index].profileAvailable = undefined
-    saveAccounts()
+  function localId() {
+    return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   }
 
-  function updateAccountId(index: number, value: string) {
-    const nextValue = value.trim()
-    const account = accounts.value[index]
-    account.accountId = nextValue
-    account.nickname = undefined
-    account.avatarUrl = undefined
-    account.profileAvailable = undefined
-    saveAccounts()
+  function getStorageKey() {
+    return gameConfig.value.storageKey
   }
 
-  function toggleAutoRedeem() {
-    if (!isLoggedIn.value) {
-      autoRedeem.value = false
-      uni.showToast({ title: '自动兑换托管需先登录', icon: 'none' })
-      goLogin()
+  function getStatusText(status?: string) {
+    if (status === 'active') return '已验证'
+    if (status === 'invalid') return '无效'
+    if (status === 'disabled') return '已停用'
+    return '未验证'
+  }
+
+  function getSourceLabel(source?: string) {
+    const map: Record<string, string> = { preset: '预置', upstream: '社区', manual: '手动', admin: '官方', swgt: '官方' }
+    return map[source || ''] || '自动'
+  }
+
+  function getStatusLabel(status?: string) {
+    const map: Record<string, string> = {
+      pending: '等待',
+      redeeming: '兑换中',
+      success: '成功',
+      already_used: '已使用',
+      invalid_coupon: '券码无效',
+      invalid_id: 'ID 无效',
+      failed: '失败',
+    }
+    return map[status || ''] || '失败'
+  }
+
+  function groupTitle(group: postGameCouponsGameIdRedeemResAccountResults) {
+    const account = group.account
+    const name = account?.accountId || account?.id || '账号'
+    return `${name} · ${getServerShortLabel(account?.server || '')}`
+  }
+
+  function toast(title: string) {
+    uni.showToast({ title, icon: 'none' })
+  }
+
+  /* ----------------------------- 登录跳转 ----------------------------- */
+
+  function buildCurrentPageUrl() {
+    const params = [
+      `gameId=${encodeURIComponent(gameConfig.value.gameId)}`,
+      `compendiumId=${encodeURIComponent(gameConfig.value.compendiumId)}`,
+    ]
+    return `/subPackages/tools/game-coupons/index?${params.join('&')}`
+  }
+
+  function goLogin() {
+    uni.navigateTo({ url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}` })
+  }
+
+  /* ----------------------------- 本地账号缓存 ----------------------------- */
+
+  function saveLocalAccounts() {
+    if (isLoggedIn.value) return
+    try {
+      uni.setStorageSync(
+        getStorageKey(),
+        accounts.value.map(item => ({ id: item.id, server: item.server, accountId: item.accountId, nickname: item.nickname })),
+      )
+    } catch {
+      /* 缓存失败不阻断 */
+    }
+  }
+
+  function loadLocalAccounts() {
+    try {
+      const stored = uni.getStorageSync(getStorageKey())
+      const list = Array.isArray(stored) ? stored : []
+      accounts.value = list
+        .filter(item => item && typeof item === 'object')
+        .map(item => ({
+          id: typeof item.id === 'string' && item.id ? item.id : localId(),
+          managed: false,
+          server: gameConfig.value.servers.some(s => s.value === item.server) ? item.server : getDefaultServer(),
+          accountId: typeof item.accountId === 'string' ? item.accountId : '',
+          nickname: typeof item.nickname === 'string' ? item.nickname : undefined,
+        }))
+    } catch {
+      accounts.value = []
+    }
+  }
+
+  /* ----------------------------- 托管账号 ----------------------------- */
+
+  async function loadManagedAccounts() {
+    try {
+      const res = await getGameCouponsGameIdAccounts(gameConfig.value.gameId, {
+        compendium_id: gameConfig.value.compendiumId,
+      })
+      accounts.value = (res.accounts || []).map(item => ({
+        id: String(item.id || ''),
+        managed: true,
+        server: item.server || getDefaultServer(),
+        accountId: '',
+        accountIdMasked: item.accountIdMasked,
+        accountLabel: item.accountLabel,
+        nickname: item.nickname,
+        status: item.status,
+        autoRedeemEnabled: item.autoRedeemEnabled,
+      }))
+    } catch (err) {
+      toast(errMsg(err, '获取托管账号失败'))
+    }
+  }
+
+  function changeNewServer(event: { detail: { value: number | string } }) {
+    const idx = Number(event.detail.value)
+    newAccount.value.server = gameConfig.value.servers[idx]?.value || getDefaultServer()
+  }
+
+  async function addAccount() {
+    if (accounts.value.length >= maxAccounts) {
+      toast(`最多保存 ${maxAccounts} 个账号`)
       return
     }
-    autoRedeem.value = !autoRedeem.value
-    uni.showToast({ title: autoRedeem.value ? '已开启自动兑换托管' : '已关闭自动兑换', icon: 'none' })
+    const accountId = newAccount.value.accountId.trim()
+    if (!accountId) {
+      toast(`请输入${gameConfig.value.accountIdLabel}`)
+      return
+    }
+    const server = newAccount.value.server || getDefaultServer()
+
+    if (isLoggedIn.value) {
+      addingAccount.value = true
+      try {
+        await postGameCouponsGameIdAccounts(
+          gameConfig.value.gameId,
+          { compendium_id: gameConfig.value.compendiumId },
+          { account_id: accountId, server: server as ServerValue },
+        )
+        await loadManagedAccounts()
+        newAccount.value.accountId = ''
+      } catch (err) {
+        toast(errMsg(err, '添加账号失败'))
+      } finally {
+        addingAccount.value = false
+      }
+      return
+    }
+
+    accounts.value.push({ id: localId(), managed: false, server, accountId })
+    newAccount.value.accountId = ''
+    saveLocalAccounts()
   }
+
+  async function removeAccount(index: number) {
+    const account = accounts.value[index]
+    if (!account) return
+
+    if (account.managed) {
+      try {
+        await deleteGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
+        accounts.value.splice(index, 1)
+      } catch (err) {
+        toast(errMsg(err, '删除失败'))
+      }
+      return
+    }
+
+    accounts.value.splice(index, 1)
+    saveLocalAccounts()
+  }
+
+  async function changeServer(index: number, event: { detail: { value: number | string } }) {
+    const account = accounts.value[index]
+    if (!account) return
+    const idx = Number(event.detail.value)
+    const server = gameConfig.value.servers[idx]?.value || getDefaultServer()
+    account.server = server
+    account.nickname = undefined
+    account.status = 'pending'
+
+    if (account.managed) {
+      try {
+        await patchGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id }, { server: server as ServerValue })
+        await refreshManagedAccount(index)
+      } catch (err) {
+        toast(errMsg(err, '更新区服失败'))
+      }
+      return
+    }
+    saveLocalAccounts()
+  }
+
+  async function refreshManagedAccount(index: number) {
+    const account = accounts.value[index]
+    if (!account || !account.managed) return
+    try {
+      const detail = await getGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
+      account.server = detail.server || account.server
+      account.accountIdMasked = detail.accountIdMasked
+      account.nickname = detail.nickname
+      account.status = detail.status
+      account.autoRedeemEnabled = detail.autoRedeemEnabled
+    } catch {
+      /* 刷新失败忽略 */
+    }
+  }
+
+  async function verifyAccount(index: number) {
+    const account = accounts.value[index]
+    if (!account) return
+    account.verifying = true
+    try {
+      if (account.managed) {
+        await postAccountsAccountIdVerify({ gameId: gameConfig.value.gameId, accountId: account.id })
+        await refreshManagedAccount(index)
+        toast(account.nickname ? `已验证：${account.nickname}` : '验证完成')
+      } else {
+        if (!account.accountId.trim()) {
+          toast(`请先填写${gameConfig.value.accountIdLabel}`)
+          return
+        }
+        const res = await getGameCouponsGameIdProfile(gameConfig.value.gameId, {
+          account_id: account.accountId.trim(),
+          server: account.server,
+          compendium_id: gameConfig.value.compendiumId,
+        })
+        account.nickname = res.nickname
+        account.status = res.available ? 'active' : 'invalid'
+        toast(res.available ? `验证成功：${res.nickname || '有效账号'}` : res.message || '账号无效')
+        saveLocalAccounts()
+      }
+    } catch (err) {
+      account.status = 'invalid'
+      toast(errMsg(err, '验证失败'))
+    } finally {
+      account.verifying = false
+    }
+  }
+
+  async function toggleAllAuto() {
+    const next = !allAutoOn.value
+    const managed = accounts.value.filter(item => item.managed)
+    if (!managed.length) {
+      toast('暂无托管账号')
+      return
+    }
+    try {
+      await Promise.all(
+        managed.map(account =>
+          postAccountsAccountIdAutoRedeem({ gameId: gameConfig.value.gameId, accountId: account.id }, { enabled: next }),
+        ),
+      )
+      managed.forEach(account => {
+        account.autoRedeemEnabled = next
+      })
+      toast(next ? '已开启自动兑换托管' : '已关闭自动兑换')
+    } catch (err) {
+      toast(errMsg(err, '设置失败'))
+    }
+  }
+
+  /* ----------------------------- 券码 ----------------------------- */
 
   async function loadCodes() {
-    if (!backendReady.value) {
-      codeLoadError.value = '后端接口未配置，暂时只能手动添加券码。'
-      return
-    }
-
+    if (loadingCodes.value) return
     loadingCodes.value = true
     codeLoadError.value = ''
     try {
-      const data = await getGameCouponCodes(gameConfig.value)
-      remoteCodes.value = data.codes || []
-      backendVerified.value = true
+      const res = await getGameCouponsGameIdCodes(gameConfig.value.gameId, {
+        compendium_id: gameConfig.value.compendiumId,
+      })
+      remoteCodes.value = res.codes || []
     } catch (err) {
-      backendVerified.value = false
-      codeLoadError.value = err instanceof Error ? err.message : '获取券码失败'
+      codeLoadError.value = errMsg(err, '获取券码失败')
     } finally {
       loadingCodes.value = false
     }
   }
 
-  function addManualCode() {
+  async function addManualCode() {
     const code = manualCode.value.trim().toUpperCase()
     if (!code) return
     if (combinedCodes.value.some(item => item.code === code)) {
-      uni.showToast({ title: '券码已存在', icon: 'none' })
+      toast('券码已存在')
       return
     }
     manualCodes.value.push({ code, source: 'manual' })
     manualCode.value = ''
+    try {
+      await postGameIdCodesManual(gameConfig.value.gameId, { compendium_id: gameConfig.value.compendiumId }, { code })
+    } catch {
+      /* 入库失败不影响本地兑换 */
+    }
   }
 
+  /* ----------------------------- 兑换 ----------------------------- */
+
   async function startRedeem() {
-    if (!backendReady.value) {
-      redeemError.value = '后端接口未配置，无法直接兑换。'
-      return
-    }
-
     if (!validAccounts.value.length) {
-      redeemError.value = `请至少填写一个${gameConfig.value.accountIdLabel}。`
+      redeemError.value = `请至少添加并填写一个${gameConfig.value.accountIdLabel}`
       return
     }
-
     if (!combinedCodes.value.length) {
-      redeemError.value = '请先获取或添加优惠券码。'
+      redeemError.value = '请先获取或添加优惠券码'
       return
     }
 
     redeeming.value = true
     redeemError.value = ''
-    summary.value = null
+    redeemSummary.value = null
     resultGroups.value = []
 
+    const payloadAccounts: postGameCouponsGameIdRedeemBodyAccountsItem[] = validAccounts.value.map(account =>
+      account.managed
+        ? { id: account.id, server: account.server as ServerValue }
+        : { id: account.id, server: account.server as ServerValue, account_id: account.accountId.trim() },
+    )
+    const payloadCodes = combinedCodes.value.map(item => ({ code: item.code as string, reward: item.reward }))
+
     try {
-      const data = await redeemGameCoupons(gameConfig.value, validAccounts.value, combinedCodes.value)
-      summary.value = data
-      resultGroups.value = data.accountResults || []
-      saveAccounts()
+      const res = await postGameCouponsGameIdRedeem(
+        gameConfig.value.gameId,
+        { compendium_id: gameConfig.value.compendiumId },
+        { accounts: payloadAccounts, codes: payloadCodes },
+      )
+      resultGroups.value = res.accountResults || []
+      redeemSummary.value = {
+        success: res.success || 0,
+        alreadyUsed: res.alreadyUsed || 0,
+        failed: res.failed || 0,
+        total: (res.success || 0) + (res.alreadyUsed || 0) + (res.failed || 0),
+      }
+      if (isLoggedIn.value) {
+        loadSummary()
+        if (showRecords.value) loadRecords()
+      }
     } catch (err) {
-      redeemError.value = err instanceof Error ? err.message : '兑换请求失败'
+      redeemError.value = errMsg(err, '兑换请求失败')
     } finally {
       redeeming.value = false
     }
   }
 
-  function getSourceLabel(source?: string) {
-    if (source === 'manual') return '手动'
-    if (source === 'crowdsourced') return '众包'
-    if (source === 'swgt') return 'SWGT'
-    return source || '自动'
+  /* ----------------------------- 记录与统计 ----------------------------- */
+
+  async function loadSummary() {
+    try {
+      summary.value = await getGameIdRedeemRecordsSummary(gameConfig.value.gameId, {
+        compendium_id: gameConfig.value.compendiumId,
+      })
+    } catch {
+      /* 统计失败忽略 */
+    }
   }
 
-  function getStatusLabel(status: GameCouponRedeemStatus) {
-    const labels: Record<GameCouponRedeemStatus, string> = {
-      pending: '等待',
-      redeeming: '兑换中',
-      success: '成功',
-      already_used: '已使用',
-      invalid_coupon: '无效',
-      invalid_id: 'ID 无效',
-      failed: '失败',
+  async function loadRecords() {
+    try {
+      const res = await getGameCouponsGameIdRedeemRecords(gameConfig.value.gameId, {
+        compendium_id: gameConfig.value.compendiumId,
+        limit: 20,
+        sortBy: 'redeemedAt:desc',
+      })
+      records.value = res.results || []
+    } catch (err) {
+      toast(errMsg(err, '获取记录失败'))
     }
-    return labels[status] || '失败'
   }
+
+  function toggleRecords() {
+    showRecords.value = !showRecords.value
+    if (showRecords.value && !records.value.length) loadRecords()
+  }
+
+  /* ----------------------------- 错误处理 ----------------------------- */
+
+  function errMsg(err: unknown, fallback: string) {
+    if (typeof err === 'string') return err
+    if (err instanceof Error) return err.message
+    if (err && typeof err === 'object' && 'message' in err) return String((err as { message: unknown }).message)
+    return fallback
+  }
+
+  /* ----------------------------- 初始化 ----------------------------- */
 
   function applyRouteOptions(options: RouteOptions = {}) {
     const gameId = options.gameId || options.game_id || 'swc'
     const config = getGameCouponConfig(gameId)
     const compendiumId = options.compendiumId || options.compendium_id || config.compendiumId
     gameConfig.value = { ...config, compendiumId }
+    newAccount.value.server = getDefaultServer()
   }
 
   function initializePage() {
     if (initialized.value) return
     initialized.value = true
     refreshLoginState()
-    loadAccounts()
-    if (backendReady.value) {
-      loadCodes()
+    if (isLoggedIn.value) {
+      loadManagedAccounts()
+      loadSummary()
     } else {
-      codeLoadError.value = '后端接口未配置，暂时只能手动添加券码。'
+      loadLocalAccounts()
     }
+    loadCodes()
   }
 
   onLoad(options => {
@@ -423,7 +691,13 @@ import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postA
   })
 
   onShow(() => {
+    const wasLoggedIn = isLoggedIn.value
     refreshLoginState()
+    if (!initialized.value) return
+    if (isLoggedIn.value && !wasLoggedIn) {
+      loadManagedAccounts()
+      loadSummary()
+    }
   })
 
   onMounted(() => {
@@ -432,448 +706,434 @@ import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postA
 </script>
 
 <style lang="scss" scoped>
-  $page-bg: #0b0b12;
-  $card-bg: #15151f;
-  $card-border: rgba(255, 255, 255, 0.07);
-  $field-bg: #1c1c28;
-  $field-border: rgba(255, 255, 255, 0.1);
-  $text-primary: #f1f2f7;
-  $text-secondary: #9aa0b2;
-  $text-hint: #6b7180;
-  $accent: #ff3d6b;
-  $accent-2: #e94560;
-  $success: #34d399;
-  $warning: #fbbf24;
-  $error: #f87171;
+  $page-bg: #f4f5f7;
+  $card-bg: #ffffff;
+  $border: #ebedf0;
+  $field-bg: #f6f7f9;
+  $text-primary: #1f2330;
+  $text-secondary: #6b7180;
+  $text-hint: #9aa0ad;
+  $accent: #4f6ef2;
+  $accent-2: #6a8bff;
+  $success: #16a34a;
+  $warning: #d97706;
+  $error: #dc2626;
 
   .coupon-page {
     min-height: 100vh;
-    padding: 48rpx 32rpx 80rpx;
+    padding: 32rpx 28rpx 80rpx;
     background: $page-bg;
+    box-sizing: border-box;
   }
 
   /* 头部 */
   .page-head {
-    margin-bottom: 36rpx;
+    margin-bottom: 28rpx;
   }
 
   .page-title {
     display: block;
-    font-size: 44rpx;
-    font-weight: 800;
+    font-size: 40rpx;
+    font-weight: 700;
     color: $text-primary;
   }
 
   .page-subtitle {
     display: block;
-    margin-top: 12rpx;
+    margin-top: 8rpx;
     font-size: 24rpx;
-    line-height: 1.6;
     color: $text-secondary;
+    line-height: 1.5;
   }
 
-  /* 自动兑换宣传卡 */
-  .promo-card {
-    padding: 32rpx;
-    border-radius: 24rpx;
-    border: 2rpx solid $card-border;
+  /* 卡片 */
+  .card {
+    margin-bottom: 24rpx;
+    padding: 24rpx;
     background: $card-bg;
+    border-radius: 20rpx;
+    border: 1rpx solid $border;
   }
 
-  .promo-top {
+  .card-head {
     display: flex;
     align-items: center;
-    gap: 14rpx;
+    justify-content: space-between;
+    margin-bottom: 16rpx;
   }
 
-  .promo-emoji {
-    font-size: 32rpx;
-  }
-
-  .promo-title {
-    font-size: 30rpx;
-    font-weight: 700;
+  .card-title {
+    font-size: 28rpx;
+    font-weight: 600;
     color: $text-primary;
   }
 
-  .promo-desc {
-    display: block;
-    margin-top: 12rpx;
-    font-size: 24rpx;
-    color: $text-secondary;
-  }
-
-  .promo-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24rpx;
-    margin-top: 18rpx;
-  }
-
-  .promo-tag {
+  .card-tag {
     font-size: 22rpx;
-    color: $text-secondary;
-
-    &::before {
-      content: '✓ ';
-      color: $success;
-    }
+    color: $accent;
+    background: rgba(79, 110, 242, 0.1);
+    padding: 4rpx 16rpx;
+    border-radius: 999rpx;
   }
 
-  .promo-link {
-    display: block;
-    margin-top: 18rpx;
+  .card-toggle {
     font-size: 24rpx;
-    font-weight: 600;
     color: $accent;
   }
 
-  /* 通用块 */
-  .block {
-    margin-top: 40rpx;
-  }
-
-  .block-label {
-    display: block;
-    margin-bottom: 18rpx;
+  .empty-tip {
+    padding: 24rpx 0;
     font-size: 24rpx;
-    color: $text-secondary;
+    color: $text-hint;
+    text-align: center;
   }
 
   /* 账号行 */
   .account-row {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 16rpx;
-    margin-bottom: 16rpx;
+    padding: 16rpx 0;
+    border-top: 1rpx solid $border;
+  }
+
+  .account-row:first-of-type {
+    border-top: none;
   }
 
   .server-picker {
     flex-shrink: 0;
-    width: 200rpx;
   }
 
-  .picker-value {
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
-    width: 100%;
-    height: 84rpx;
-    padding: 0 22rpx;
-    border-radius: 16rpx;
-    border: 2rpx solid $field-border;
-    font-size: 26rpx;
+  .server-chip {
+    min-width: 96rpx;
+    padding: 10rpx 16rpx;
+    font-size: 22rpx;
     color: $text-primary;
     background: $field-bg;
+    border-radius: 12rpx;
+    text-align: center;
   }
 
-  .hive-input-wrap {
+  .account-main {
     flex: 1;
     min-width: 0;
-    position: relative;
   }
 
-  .hive-input {
-    box-sizing: border-box;
-    width: 100%;
-    height: 84rpx;
-    padding: 0 24rpx;
-    border-radius: 16rpx;
-    border: 2rpx solid $field-border;
-    font-size: 26rpx;
-    color: $text-primary;
-    background: $field-bg;
-  }
-
-  .wizard-name {
+  .account-id {
     display: block;
-    margin-top: 6rpx;
-    padding-left: 24rpx;
+    font-size: 28rpx;
+    color: $text-primary;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .account-sub {
+    margin-top: 4rpx;
+  }
+
+  .nickname {
     font-size: 22rpx;
     color: $success;
-    line-height: 1.3;
   }
 
-  .row-remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 64rpx;
-    height: 84rpx;
-    border-radius: 16rpx;
-    font-size: 40rpx;
-    line-height: 1;
+  .status-dot {
+    font-size: 22rpx;
     color: $text-hint;
-    background: rgba(255, 255, 255, 0.04);
-  }
 
-  button {
-    margin: 0;
-    line-height: 1;
+    &.active {
+      color: $success;
+    }
 
-    &::after {
-      border: 0;
+    &.invalid {
+      color: $error;
     }
   }
 
-  .add-account-btn {
-    width: 100%;
-    height: 84rpx;
-    border-radius: 16rpx;
-    border: 2rpx dashed $field-border;
-    font-size: 26rpx;
-    color: $text-secondary;
-    background: transparent;
-  }
-
-  /* 自动兑换开关 */
-  .auto-toggle {
+  .account-actions {
     display: flex;
-    align-items: flex-start;
-    gap: 16rpx;
-    margin-top: 32rpx;
+    gap: 12rpx;
+    flex-shrink: 0;
   }
 
-  .auto-checkbox {
-    margin-top: 4rpx;
-    transform: scale(0.86);
+  .mini-btn {
+    padding: 10rpx 20rpx;
+    font-size: 22rpx;
+    color: $accent;
+    background: rgba(79, 110, 242, 0.08);
+    border-radius: 12rpx;
+
+    &.danger {
+      color: $error;
+      background: rgba(220, 38, 38, 0.08);
+    }
+
+    &.loading {
+      opacity: 0.6;
+    }
   }
 
-  .auto-text {
+  /* 添加账号 */
+  .add-form {
     display: flex;
-    flex-direction: column;
-    min-width: 0;
+    align-items: center;
+    gap: 12rpx;
+    margin-top: 16rpx;
+    padding-top: 16rpx;
+    border-top: 1rpx dashed $border;
+  }
+
+  .add-input {
     flex: 1;
+    height: 64rpx;
+    padding: 0 20rpx;
+    font-size: 26rpx;
+    color: $text-primary;
+    background: $field-bg;
+    border-radius: 12rpx;
+  }
+
+  .add-btn {
+    flex-shrink: 0;
+    padding: 0 28rpx;
+    height: 64rpx;
+    line-height: 64rpx;
+    font-size: 24rpx;
+    color: #fff;
+    background: $accent;
+    border-radius: 12rpx;
+
+    &.disabled {
+      opacity: 0.6;
+    }
+  }
+
+  /* 自动兑换 */
+  .auto-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+    padding: 24rpx;
+    background: $card-bg;
+    border-radius: 20rpx;
+    border: 1rpx solid $border;
   }
 
   .auto-title {
-    font-size: 26rpx;
-    color: $text-primary;
-  }
-
-  .auto-hint {
-    margin-top: 6rpx;
-    font-size: 22rpx;
-    color: $text-hint;
-  }
-
-  /* 主按钮 */
-  .redeem-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 96rpx;
-    margin-top: 36rpx;
-    border-radius: 18rpx;
-    font-size: 30rpx;
-    font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, $accent 0%, $accent-2 100%);
-    box-shadow: 0 12rpx 30rpx rgba(255, 61, 107, 0.28);
-
-    &[disabled] {
-      opacity: 0.5;
-      box-shadow: none;
-    }
-  }
-
-  .inline-error {
-    margin-top: 18rpx;
-    padding: 18rpx 20rpx;
-    border-radius: 14rpx;
-    font-size: 24rpx;
-    line-height: 1.5;
-    color: $error;
-    background: rgba(248, 113, 113, 0.12);
-  }
-
-  /* 手动添加 */
-  .manual-block {
-    margin-top: 32rpx;
-  }
-
-  .manual-toggle {
-    font-size: 26rpx;
+    display: block;
+    font-size: 28rpx;
     font-weight: 600;
     color: $text-primary;
   }
 
-  .manual-panel {
-    margin-top: 22rpx;
+  .auto-hint {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+
+  .auto-link {
+    font-size: 24rpx;
+    color: $accent;
+  }
+
+  .auto-switch {
+    transform: scale(0.85);
+  }
+
+  /* 主按钮 */
+  .redeem-btn {
+    width: 100%;
+    height: 92rpx;
+    line-height: 92rpx;
+    margin-bottom: 16rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, $accent, $accent-2);
+    border-radius: 20rpx;
+    border: none;
+
+    &[disabled] {
+      opacity: 0.5;
+    }
+
+    &::after {
+      border: none;
+    }
+  }
+
+  .inline-error {
+    margin-bottom: 16rpx;
+    font-size: 24rpx;
+    color: $error;
+  }
+
+  /* 券码 */
+  .codes-card .card-head {
+    margin-bottom: 0;
+  }
+
+  .codes-body {
+    margin-top: 16rpx;
   }
 
   .manual-row {
     display: flex;
-    gap: 16rpx;
+    align-items: center;
+    gap: 12rpx;
+    margin-bottom: 16rpx;
   }
 
   .manual-input {
-    box-sizing: border-box;
     flex: 1;
-    min-width: 0;
-    height: 84rpx;
-    padding: 0 24rpx;
-    border-radius: 16rpx;
-    border: 2rpx solid $field-border;
+    height: 64rpx;
+    padding: 0 20rpx;
     font-size: 26rpx;
     color: $text-primary;
     background: $field-bg;
+    border-radius: 12rpx;
   }
 
-  .manual-add-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .manual-add,
+  .manual-refresh {
     flex-shrink: 0;
-    width: 120rpx;
-    height: 84rpx;
-    border-radius: 16rpx;
-    font-size: 26rpx;
-    color: $text-primary;
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .manual-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 20rpx;
-  }
-
-  .codes-count {
-    font-size: 22rpx;
-    color: $text-hint;
-  }
-
-  .refresh-link {
+    padding: 0 24rpx;
+    height: 64rpx;
+    line-height: 64rpx;
     font-size: 24rpx;
+    border-radius: 12rpx;
+  }
+
+  .manual-add {
+    color: #fff;
+    background: $accent;
+  }
+
+  .manual-refresh {
     color: $accent;
+    background: rgba(79, 110, 242, 0.08);
 
     &.disabled {
-      color: $text-hint;
+      opacity: 0.6;
     }
   }
 
   .code-list {
     display: flex;
     flex-direction: column;
-    gap: 14rpx;
-    margin-top: 20rpx;
+    gap: 10rpx;
   }
 
   .code-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 18rpx;
-    padding: 20rpx;
-    border-radius: 16rpx;
-    border: 2rpx solid $card-border;
-    background: rgba(255, 255, 255, 0.03);
+    padding: 16rpx 20rpx;
+    background: $field-bg;
+    border-radius: 12rpx;
   }
 
-  .code-main {
-    min-width: 0;
+  .code-info {
     flex: 1;
+    min-width: 0;
   }
 
   .code-text {
     display: block;
     font-size: 26rpx;
-    font-weight: 700;
+    font-weight: 600;
     color: $text-primary;
   }
 
   .code-reward {
     display: block;
-    margin-top: 6rpx;
+    margin-top: 4rpx;
     font-size: 22rpx;
     color: $text-secondary;
   }
 
   .code-source {
     flex-shrink: 0;
-    padding: 8rpx 14rpx;
-    border-radius: 999rpx;
-    font-size: 20rpx;
-    color: $accent;
-    background: rgba(255, 61, 107, 0.12);
+    font-size: 22rpx;
+    color: $text-hint;
   }
 
-  /* 结果统计 */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  /* 统计 */
+  .stats-row {
+    display: flex;
     gap: 16rpx;
-    margin-top: 36rpx;
+    margin-bottom: 24rpx;
   }
 
-  .summary-item {
-    padding: 24rpx 10rpx;
-    border-radius: 18rpx;
-    text-align: center;
-    border: 2rpx solid $card-border;
+  .stat {
+    flex: 1;
+    padding: 24rpx 0;
     background: $card-bg;
-
-    &.success .summary-num {
-      color: $success;
-    }
-    &.used .summary-num {
-      color: $warning;
-    }
-    &.failed .summary-num {
-      color: $error;
-    }
+    border-radius: 16rpx;
+    border: 1rpx solid $border;
+    text-align: center;
   }
 
-  .summary-num {
+  .stat-num {
     display: block;
     font-size: 40rpx;
-    font-weight: 800;
+    font-weight: 700;
     color: $text-primary;
   }
 
-  .summary-label {
+  .stat-label {
     display: block;
     margin-top: 6rpx;
     font-size: 22rpx;
     color: $text-secondary;
   }
 
-  .result-groups {
+  .stat.success .stat-num {
+    color: $success;
+  }
+
+  .stat.used .stat-num {
+    color: $warning;
+  }
+
+  .stat.failed .stat-num {
+    color: $error;
+  }
+
+  /* 结果分组 */
+  .result-list {
     display: flex;
     flex-direction: column;
     gap: 16rpx;
-    margin-top: 24rpx;
+    margin-bottom: 24rpx;
   }
 
   .result-group {
-    padding: 22rpx;
-    border-radius: 18rpx;
-    border: 2rpx solid $card-border;
+    padding: 20rpx;
     background: $card-bg;
+    border-radius: 16rpx;
+    border: 1rpx solid $border;
   }
 
-  .result-group-header {
+  .result-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20rpx;
-    padding-bottom: 16rpx;
-    border-bottom: 2rpx solid $card-border;
+    margin-bottom: 12rpx;
   }
 
   .result-account {
-    font-size: 24rpx;
-    font-weight: 700;
+    font-size: 26rpx;
+    font-weight: 600;
     color: $text-primary;
   }
 
   .result-count {
-    font-size: 24rpx;
-    font-weight: 700;
+    font-size: 22rpx;
     color: $success;
   }
 
@@ -881,52 +1141,76 @@ import { getGameIdRedeemRecordsSummary, getGameCouponsGameIdRedeemRecords, postA
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20rpx;
-    padding-top: 16rpx;
+    padding: 12rpx 0;
+    border-top: 1rpx solid $border;
   }
 
   .result-main {
-    min-width: 0;
     flex: 1;
+    min-width: 0;
   }
 
   .result-code {
     display: block;
     font-size: 26rpx;
-    font-weight: 700;
     color: $text-primary;
   }
 
   .result-msg {
     display: block;
-    margin-top: 6rpx;
+    margin-top: 4rpx;
     font-size: 22rpx;
-    color: $text-secondary;
+    color: $text-hint;
   }
 
   .result-status {
     flex-shrink: 0;
-    padding: 8rpx 14rpx;
-    border-radius: 999rpx;
-    font-size: 22rpx;
+    font-size: 24rpx;
     color: $text-secondary;
-    background: rgba(255, 255, 255, 0.06);
 
     &.success {
       color: $success;
-      background: rgba(52, 211, 153, 0.14);
     }
 
     &.already_used {
       color: $warning;
-      background: rgba(251, 191, 36, 0.14);
     }
 
     &.invalid_coupon,
     &.invalid_id,
     &.failed {
       color: $error;
-      background: rgba(248, 113, 113, 0.14);
     }
+  }
+
+  /* 记录 */
+  .record-body {
+    margin-top: 8rpx;
+  }
+
+  .record-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14rpx 0;
+    border-top: 1rpx solid $border;
+  }
+
+  .record-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .record-code {
+    display: block;
+    font-size: 26rpx;
+    color: $text-primary;
+  }
+
+  .record-sub {
+    display: block;
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: $text-hint;
   }
 </style>
