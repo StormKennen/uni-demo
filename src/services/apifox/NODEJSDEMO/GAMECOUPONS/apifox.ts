@@ -35,6 +35,9 @@ import type {
   postGameIdCodesManualQuery,
   postGameIdCodesManualRes,
 } from './interface'
+
+export type * from './interface'
+
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
@@ -49,7 +52,7 @@ export const getGameCouponsGameIdCodes = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameCouponsGameIdCodesRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/game-coupons/${gameId}/codes', params, _config)
+  return http.get(`/game-coupons/${gameId}/codes`, params, _config)
 }
 
 /**
@@ -64,7 +67,7 @@ export const postGameIdCodesManual = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postGameIdCodesManualRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/game-coupons/${gameId}/codes/manual', data, _config)
+  return http.post(`/game-coupons/${gameId}/codes/manual`, data, _config)
 }
 
 /**
@@ -78,7 +81,7 @@ export const getGameCouponsGameIdProfile = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameCouponsGameIdProfileRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/game-coupons/${gameId}/profile', params, _config)
+  return http.get(`/game-coupons/${gameId}/profile`, params, _config)
 }
 
 /**
@@ -93,7 +96,7 @@ export const postGameCouponsGameIdRedeem = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postGameCouponsGameIdRedeemRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/game-coupons/${gameId}/redeem', data, _config)
+  return http.post(`/game-coupons/${gameId}/redeem`, data, _config)
 }
 
 /**
@@ -107,7 +110,7 @@ export const getGameCouponsGameIdAccounts = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameCouponsGameIdAccountsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/game-coupons/${gameId}/accounts', params, _config)
+  return http.get(`/game-coupons/${gameId}/accounts`, params, _config)
 }
 
 /**
@@ -122,7 +125,7 @@ export const postGameCouponsGameIdAccounts = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postGameCouponsGameIdAccountsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/game-coupons/${gameId}/accounts', data, _config)
+  return http.post(`/game-coupons/${gameId}/accounts`, data, _config)
 }
 
 /**
@@ -136,7 +139,7 @@ export const getGameIdAccountsAccountId = async (
 ): Promise<Expand<getGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    '/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}',
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
     {},
     _config,
   )
@@ -154,7 +157,7 @@ export const patchGameIdAccountsAccountId = async (
 ): Promise<Expand<patchGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.patch(
-    '/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}',
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
     data,
     _config,
   )
@@ -171,7 +174,7 @@ export const deleteGameIdAccountsAccountId = async (
 ): Promise<Expand<deleteGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.delete(
-    '/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}',
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
     {},
     _config,
   )
@@ -188,7 +191,7 @@ export const postAccountsAccountIdVerify = async (
 ): Promise<Expand<postAccountsAccountIdVerifyRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
-    '/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/verify',
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/verify`,
     {},
     _config,
   )
@@ -206,7 +209,7 @@ export const postAccountsAccountIdAutoRedeem = async (
 ): Promise<Expand<postAccountsAccountIdAutoRedeemRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
-    '/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/auto-redeem',
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/auto-redeem`,
     data,
     _config,
   )
@@ -223,7 +226,7 @@ export const getGameCouponsGameIdRedeemRecords = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameCouponsGameIdRedeemRecordsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/game-coupons/${gameId}/redeem-records', params, _config)
+  return http.get(`/game-coupons/${gameId}/redeem-records`, params, _config)
 }
 
 /**
@@ -238,7 +241,7 @@ export const getGameIdRedeemRecordsSummary = async (
 ): Promise<Expand<getGameIdRedeemRecordsSummaryRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    '/game-coupons/${gameId}/redeem-records/summary',
+    `/game-coupons/${gameId}/redeem-records/summary`,
     params,
     _config,
   )
