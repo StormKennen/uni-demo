@@ -2,8 +2,10 @@
   <view class="lineup-page">
     <view class="hero-banner">
       <view>
-        <text class="hero-title">SWC 阵容管理</text>
-        <text class="hero-subtitle">独立管理阵容类型与阵容映射关系，支持一个阵容对应多个目标阵容。</text>
+        <text class="hero-title">魔灵召唤阵容</text>
+        <text class="hero-subtitle">{{
+          isAdmin ? '管理阵容类型与映射关系，支持一个阵容对应多个目标阵容。' : '浏览大家分享的阵容，登录后可发布并管理自己的阵容。'
+        }}</text>
       </view>
       <text v-if="isAdmin" class="hero-badge">ADMIN</text>
     </view>
@@ -25,7 +27,7 @@
         </view>
       </view>
 
-      <view class="filter-group">
+      <view v-if="isAdmin" class="filter-group">
         <text class="filter-label">状态</text>
         <view class="chip-row">
           <text
@@ -40,32 +42,40 @@
       </view>
 
       <view class="filter-group">
-        <view class="filter-head">
-          <text class="filter-label">人物精准筛选</text>
-          <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
+        <view class="filter-head" @click="toggleCharacterFilter">
+          <text class="filter-label">
+            人物精准筛选{{ selectedCharacterFilters.length ? ` · 已选 ${selectedCharacterFilters.length}` : '' }}
+          </text>
+          <text class="filter-toggle">{{ characterFilterExpanded ? '收起' : '展开' }}</text>
         </view>
 
-        <text class="filter-helper">
-          {{ selectedCharacterFilters.length ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选` : '未选择人物，默认不过滤' }}
-        </text>
+        <view v-if="characterFilterExpanded" class="filter-body">
+          <view class="filter-head">
+            <text class="filter-helper">
+              {{
+                selectedCharacterFilters.length ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选` : '未选择人物，默认不过滤'
+              }}
+            </text>
+            <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
+          </view>
 
-        <CharacterAvatarGrid
-          v-if="selectedCharacterFilters.length"
-          class="selected-avatar-list"
-          :items="selectedCharacterFilters"
-          :columns="5"
-          action-text="移除"
-          action-theme="danger"
-          @action="removeCharacterFilter" />
+          <CharacterAvatarGrid
+            v-if="selectedCharacterFilters.length"
+            class="selected-avatar-list"
+            :items="selectedCharacterFilters"
+            :columns="5"
+            action-text="移除"
+            action-theme="danger"
+            @action="removeCharacterFilter" />
 
-        <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
-          <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
+          <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
+            <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
+          </view>
         </view>
       </view>
 
-      <view class="action-row">
-        <button class="toolbar-btn primary" @click="goCreate">新增阵容</button>
-        <button v-if="isAdmin" class="toolbar-btn" @click="goRelations()">映射关系</button>
+      <view v-if="isAdmin" class="action-row">
+        <button class="toolbar-btn" @click="goRelations()">映射关系</button>
       </view>
     </view>
 
@@ -82,7 +92,11 @@
     <view v-else class="content">
       <view class="summary-row">
         <text class="summary-text">共 {{ pagination.total }} 条阵容</text>
-        <text class="summary-text">当前 {{ selectedTypeLabel }} / {{ selectedStatusLabel }} / {{ selectedCharacterLabel }}</text>
+        <text class="summary-text">{{
+          isAdmin
+            ? `当前 ${selectedTypeLabel} / ${selectedStatusLabel} / ${selectedCharacterLabel}`
+            : `当前 ${selectedTypeLabel} / ${selectedCharacterLabel}`
+        }}</text>
       </view>
 
       <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
@@ -92,14 +106,14 @@
           <view class="lineup-title-wrap">
             <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
             <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
-            <text class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
+            <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
           </view>
           <text class="lineup-count">{{ lineup.memberCount }} 人</text>
         </view>
 
         <text v-if="lineup.description" class="lineup-desc">{{ lineup.description }}</text>
 
-        <view class="metric-row">
+        <view v-if="isAdmin" class="metric-row">
           <view class="metric-item">
             <text class="metric-label">成员</text>
             <text class="metric-value">{{ lineup.memberCount }}</text>
@@ -130,12 +144,12 @@
         </scroll-view>
 
         <view class="reaction-row">
-          <text class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-            👍 {{ lineup.likeCount }}
-          </text>
-          <text class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-            👎 {{ lineup.dislikeCount }}
-          </text>
+          <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+            <text>👍 {{ lineup.likeCount }}</text>
+          </view>
+          <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+            <text>👎 {{ lineup.dislikeCount }}</text>
+          </view>
           <text class="reaction-score">热度 {{ lineup.score }}</text>
         </view>
 
@@ -157,6 +171,11 @@
         <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
       </view>
     </view>
+
+    <view class="fab" @click="goCreate">
+      <text class="fab-icon">+</text>
+      <text class="fab-text">{{ isLoggedIn ? '新增阵容' : '登录发布' }}</text>
+    </view>
   </view>
 </template>
 
@@ -172,7 +191,7 @@
     type ReactionValue,
     type UserLineupSummary,
   } from '@/services/compendium-lineups'
-  import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
+  import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
   import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
@@ -213,7 +232,13 @@
   })
   const deletingId = ref('')
   const reactingId = ref('')
+  const characterFilterExpanded = ref(false)
   const isAdmin = computed(() => isAdminUser())
+  const isLoggedIn = computed(() => !!getToken())
+
+  const toggleCharacterFilter = () => {
+    characterFilterExpanded.value = !characterFilterExpanded.value
+  }
   const lineupTypeOptions = computed(() => [
     { label: '全部', value: ALL_VALUE },
     ...dynamicLineupTypes.value.map(option => ({
@@ -251,12 +276,14 @@
   }
 
   const goCreate = () => {
+    if (!ensureLoginAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
   const goEdit = (lineupId: string) => {
+    if (!ensureLoginAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
@@ -337,9 +364,6 @@
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     applyRouteQuery(options)
 
-    const redirectUrl = buildCurrentUrl()
-    if (!ensureLoginAccess(redirectUrl)) return
-
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })
     loadLineupTypes()
     refreshList()
@@ -359,7 +383,7 @@
     min-height: 100vh;
     background: #f6f7fb;
     color: #172033;
-    padding-bottom: 36rpx;
+    padding-bottom: 180rpx;
   }
 
   .hero-banner {
@@ -693,17 +717,26 @@
   .reaction-row {
     display: flex;
     align-items: center;
-    gap: 16rpx;
+    gap: 20rpx;
     margin-top: 20rpx;
   }
 
   .reaction-btn {
-    padding: 8rpx 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120rpx;
+    min-height: 64rpx;
+    padding: 0 28rpx;
     border-radius: 999rpx;
     background: #f3f5f9;
     color: #475467;
-    font-size: 24rpx;
+    font-size: 26rpx;
     font-weight: 700;
+  }
+
+  .reaction-btn:active {
+    opacity: 0.7;
   }
 
   .reaction-btn.active {
@@ -726,5 +759,48 @@
     display: flex;
     justify-content: center;
     margin-top: 12rpx;
+  }
+
+  .filter-toggle {
+    flex-shrink: 0;
+    font-size: 24rpx;
+    color: #b45309;
+    font-weight: 700;
+  }
+
+  .filter-body {
+    margin-top: 16rpx;
+  }
+
+  .fab {
+    position: fixed;
+    right: 32rpx;
+    bottom: 60rpx;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    padding: 0 32rpx;
+    height: 92rpx;
+    border-radius: 999rpx;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 12rpx 28rpx rgba(217, 119, 6, 0.4);
+  }
+
+  .fab:active {
+    opacity: 0.85;
+  }
+
+  .fab-icon {
+    font-size: 44rpx;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .fab-text {
+    font-size: 28rpx;
+    color: #fff;
+    font-weight: 700;
   }
 </style>
