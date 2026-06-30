@@ -4,6 +4,7 @@ import http from '@/services/http'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteAdminLineupsLineupIdRes,
+  deleteCompendiumsLineupsLineupIdRes,
   getAdminLineupRelationsSourceLineupIdQuery,
   getAdminLineupRelationsSourceLineupIdRes,
   getAdminLineupsCharacterOptionsQuery,
@@ -18,18 +19,28 @@ import type {
   getAdminLineupsTypesRes,
   getCharactersCharacterIdLineupsQuery,
   getCharactersCharacterIdLineupsRes,
+  getCompendiumsLineupsLineupIdQuery,
+  getCompendiumsLineupsLineupIdRes,
+  getCompendiumsLineupsQuery,
+  getCompendiumsLineupsRes,
   patchAdminLineupsLineupIdBody,
   patchAdminLineupsLineupIdRes,
+  patchCompendiumsLineupsLineupIdBody,
+  patchCompendiumsLineupsLineupIdRes,
   postAdminLineupRelationsBody,
   postAdminLineupRelationsRes,
   postAdminLineupsBody,
   postAdminLineupsRes,
+  postCompendiumsLineupsBody,
+  postCompendiumsLineupsRes,
+  postLineupsLineupIdReactionBody,
+  postLineupsLineupIdReactionRes,
 } from './interface'
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
- * @description CompendiumLineups/Get lineup usage for a character
+ * @description CompendiumLineups/获取人物关联阵容
  * @url GET /compendiums/characters/{characterId}/lineups
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064661
  */
@@ -73,6 +84,19 @@ export const postAdminLineups = async (
 }
 
 /**
+ * @description CompendiumLineups/Get distinct lineup types for one compendium
+ * @url GET /admin/lineups/types
+ * @host https://app.apifox.com/link/project/7048425/apis/api-477759054
+ */
+export const getAdminLineupsTypes = async (
+  params: Expand<getAdminLineupsTypesQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getAdminLineupsTypesRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/admin/lineups/types', params, _config)
+}
+
+/**
  * @description CompendiumLineups/Get lineup options for select components
  * @url GET /admin/lineups/options
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105490
@@ -99,6 +123,19 @@ export const getAdminLineupsCharacterOptions = async (
 }
 
 /**
+ * @description CompendiumLineups/获取阵容列表（用户侧）
+ * @url GET /compendiums/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141957
+ */
+export const getCompendiumsLineups = async (
+  params: Expand<getCompendiumsLineupsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsLineupsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/compendiums/lineups', params, _config)
+}
+
+/**
  * @description CompendiumLineups/Get lineup detail
  * @url GET /admin/lineups/{lineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105492
@@ -113,6 +150,33 @@ export const getAdminLineupsLineupId = async (
 }
 
 /**
+ * @description CompendiumLineups/创建阵容（用户侧）
+ * @url POST /compendiums/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141958
+ */
+export const postCompendiumsLineups = async (
+  data: Expand<postCompendiumsLineupsBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postCompendiumsLineupsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/compendiums/lineups', data, _config)
+}
+
+/**
+ * @description CompendiumLineups/获取阵容详情（用户侧）
+ * @url GET /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141959
+ */
+export const getCompendiumsLineupsLineupId = async (
+  lineupId: string,
+  params: Expand<getCompendiumsLineupsLineupIdQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsLineupsLineupIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/compendiums/lineups/${lineupId}', params, _config)
+}
+
+/**
  * @description CompendiumLineups/Update a lineup
  * @url PATCH /admin/lineups/{lineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064663
@@ -124,6 +188,20 @@ export const patchAdminLineupsLineupId = async (
 ): Promise<Expand<patchAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.patch('/admin/lineups/${lineupId}', data, _config)
+}
+
+/**
+ * @description CompendiumLineups/编辑阵容（用户侧）
+ * @url PATCH /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141960
+ */
+export const patchCompendiumsLineupsLineupId = async (
+  lineupId: string,
+  data: Expand<patchCompendiumsLineupsLineupIdBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<patchCompendiumsLineupsLineupIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.patch('/compendiums/lineups/${lineupId}', data, _config)
 }
 
 /**
@@ -154,16 +232,30 @@ export const getAdminLineupRelationsSourceLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Get distinct lineup types for one compendium
- * @url GET /admin/lineups/types
- * @host https://app.apifox.com/link/project/7048425/apis/api-477759054
+ * @description CompendiumLineups/删除阵容（用户侧）
+ * @url DELETE /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141961
  */
-export const getAdminLineupsTypes = async (
-  params: Expand<getAdminLineupsTypesQuery>,
+export const deleteCompendiumsLineupsLineupId = async (
+  lineupId: string,
   config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getAdminLineupsTypesRes>> => {
+): Promise<Expand<deleteCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/types', params, _config)
+  return http.delete('/compendiums/lineups/${lineupId}', {}, _config)
+}
+
+/**
+ * @description CompendiumLineups/阵容点赞/点踩（态度切换）
+ * @url POST /compendiums/lineups/{lineupId}/reaction
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141962
+ */
+export const postLineupsLineupIdReaction = async (
+  lineupId: string,
+  data: Expand<postLineupsLineupIdReactionBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postLineupsLineupIdReactionRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/compendiums/lineups/${lineupId}/reaction', data, _config)
 }
 
 /**
