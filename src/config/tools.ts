@@ -56,14 +56,12 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   },
   'compendium-lineups': {
     name: '魔灵召唤阵容',
-    desc: '阵容管理/克制关系',
+    desc: '阵容分享/点赞，登录后可发布',
     icon: 'flag',
     gradient: 'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)',
     path: '/subPackages/tools/compendium/swc/lineups?compendiumId=swc',
     category: 'wiki',
-    badge: 'ADMIN',
-    requiresAuth: true,
-    adminOnly: true,
+    isNew: true,
   },
   'summoners-war-coupons': {
     name: '魔灵兑换券',
