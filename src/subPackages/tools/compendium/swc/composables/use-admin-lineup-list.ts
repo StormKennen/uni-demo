@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
-import { fetchAdminLineups, type AdminLineupSummary, type CharacterOption, type PaginationState } from '@/services/compendium-lineups'
+import { fetchUserLineups, type CharacterOption, type PaginationState, type UserLineupSummary } from '@/services/compendium-lineups'
 import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -20,8 +20,8 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
   const selectedType = ref(ALL_VALUE)
   const selectedStatus = ref(ALL_VALUE)
   const selectedCharacterFilters = ref<CharacterOption[]>([])
-  const allMatchedLineups = ref<AdminLineupSummary[]>([])
-  const lineups = ref<AdminLineupSummary[]>([])
+  const allMatchedLineups = ref<UserLineupSummary[]>([])
+  const lineups = ref<UserLineupSummary[]>([])
   const pagination = ref<PaginationState>(createDefaultPagination(pageSize))
   const loading = ref(false)
   const loadingMore = ref(false)
@@ -78,7 +78,7 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
   const isCharacterFilterSelected = (characterId: string): boolean =>
     selectedCharacterFilters.value.some(item => item.characterId === characterId)
 
-  const matchesSelectedCharacters = (lineup: AdminLineupSummary): boolean => {
+  const matchesSelectedCharacters = (lineup: UserLineupSummary): boolean => {
     if (!selectedCharacterIds.value.length) return true
     const memberIds = new Set(lineup.characters.map(item => item.characterId).filter(Boolean))
     return selectedCharacterIds.value.every(characterId => memberIds.has(characterId))
@@ -96,14 +96,14 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     }
   }
 
-  const fetchAllMatchedLineups = async (): Promise<AdminLineupSummary[]> => {
+  const fetchAllMatchedLineups = async (): Promise<UserLineupSummary[]> => {
     const [primaryCharacterId] = selectedCharacterIds.value
-    const collected: AdminLineupSummary[] = []
+    const collected: UserLineupSummary[] = []
     let nextPage = 1
     let hasNext = true
 
     while (hasNext) {
-      const result = await fetchAdminLineups({
+      const result = await fetchUserLineups({
         compendiumId: params.compendiumId,
         locale: params.locale.value,
         keyword: keyword.value.trim() || undefined,
@@ -156,7 +156,7 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
         return
       }
 
-      const result = await fetchAdminLineups({
+      const result = await fetchUserLineups({
         compendiumId: params.compendiumId,
         locale: params.locale.value,
         keyword: keyword.value.trim() || undefined,

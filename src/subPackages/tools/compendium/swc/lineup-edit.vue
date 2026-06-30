@@ -93,15 +93,15 @@
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
   import {
-    createAdminLineup,
-    fetchAdminLineupDetail,
-    type AdminLineupDetail,
+    createUserLineup,
+    fetchUserLineupDetail,
     type CharacterOption,
     type LineupStatus,
     type LineupType,
-    updateAdminLineup,
+    type UserLineupDetail,
+    updateUserLineup,
   } from '@/services/compendium-lineups'
-  import { ensureAdminAccess } from '@/utils/admin'
+  import { ensureLoginAccess } from '@/utils/admin'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
 
   const COMPENDIUM_CODE = 'swc'
@@ -144,7 +144,7 @@
     selectedMembers.value = []
   }
 
-  const fillForm = (detail: AdminLineupDetail) => {
+  const fillForm = (detail: UserLineupDetail) => {
     form.name = detail.name
     form.type = detail.type || '竞技场防守'
     form.description = detail.description
@@ -162,9 +162,15 @@
     try {
       resetForm()
       if (isEditMode.value) {
-        await fetchAdminLineupDetail(lineupId.value, {
+        const detail = await fetchUserLineupDetail(lineupId.value, {
           locale: selectedLocale.value,
-        }).then(fillForm)
+        })
+        if (detail.canEdit === false) {
+          uni.showToast({ title: '无权编辑该阵容', icon: 'none' })
+          setTimeout(() => uni.navigateBack(), 600)
+          return
+        }
+        fillForm(detail)
       }
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '加载阵容数据失败，请稍后重试'
@@ -216,9 +222,9 @@
 
     try {
       if (isEditMode.value) {
-        await updateAdminLineup(lineupId.value, basePayload)
+        await updateUserLineup(lineupId.value, basePayload)
       } else {
-        await createAdminLineup({
+        await createUserLineup({
           compendiumId: COMPENDIUM_CODE,
           ...basePayload,
         })
@@ -233,8 +239,9 @@
         uni.navigateBack()
       }, 500)
     } catch (error) {
+      const status = (error as { code?: number; statusCode?: number })?.code ?? (error as { statusCode?: number })?.statusCode
       uni.showToast({
-        title: typeof error === 'string' ? error : '保存失败，请稍后重试',
+        title: status === 403 ? '无权操作该阵容' : typeof error === 'string' ? error : '保存失败，请稍后重试',
         icon: 'none',
       })
     } finally {
@@ -246,7 +253,7 @@
     lineupId.value = options.lineupId || ''
     selectedLocale.value = options.locale || DEFAULT_LOCALE
 
-    if (!ensureAdminAccess(buildCurrentUrl())) return
+    if (!ensureLoginAccess(buildCurrentUrl())) return
 
     uni.setNavigationBarTitle({ title: isEditMode.value ? '编辑阵容' : '新建阵容' })
     loadInitialData()

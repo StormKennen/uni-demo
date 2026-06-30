@@ -51,7 +51,7 @@ export const getCharactersCharacterIdLineups = async (
 ): Promise<Expand<getCharactersCharacterIdLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    '/compendiums/characters/${characterId}/lineups',
+    `/compendiums/characters/${characterId}/lineups`,
     params,
     _config,
   )
@@ -146,7 +146,7 @@ export const getAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/${lineupId}', params, _config)
+  return http.get(`/admin/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -173,7 +173,7 @@ export const getCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums/lineups/${lineupId}', params, _config)
+  return http.get(`/compendiums/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -187,7 +187,7 @@ export const patchAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/admin/lineups/${lineupId}', data, _config)
+  return http.patch(`/admin/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -201,7 +201,7 @@ export const patchCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/compendiums/lineups/${lineupId}', data, _config)
+  return http.patch(`/compendiums/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -214,7 +214,7 @@ export const deleteAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/admin/lineups/${lineupId}', {}, _config)
+  return http.delete(`/admin/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -228,7 +228,7 @@ export const getAdminLineupRelationsSourceLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupRelationsSourceLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineup-relations/${sourceLineupId}', params, _config)
+  return http.get(`/admin/lineup-relations/${sourceLineupId}`, params, _config)
 }
 
 /**
@@ -241,7 +241,7 @@ export const deleteCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/compendiums/lineups/${lineupId}', {}, _config)
+  return http.delete(`/compendiums/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -255,7 +255,7 @@ export const postLineupsLineupIdReaction = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postLineupsLineupIdReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/compendiums/lineups/${lineupId}/reaction', data, _config)
+  return http.post(`/compendiums/lineups/${lineupId}/reaction`, data, _config)
 }
 
 /**

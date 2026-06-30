@@ -5,7 +5,7 @@
         <text class="hero-title">SWC 阵容管理</text>
         <text class="hero-subtitle">独立管理阵容类型与阵容映射关系，支持一个阵容对应多个目标阵容。</text>
       </view>
-      <text class="hero-badge">ADMIN</text>
+      <text v-if="isAdmin" class="hero-badge">ADMIN</text>
     </view>
 
     <view class="toolbar-card">
@@ -65,7 +65,7 @@
 
       <view class="action-row">
         <button class="toolbar-btn primary" @click="goCreate">新增阵容</button>
-        <button class="toolbar-btn" @click="goRelations()">映射关系</button>
+        <button v-if="isAdmin" class="toolbar-btn" @click="goRelations()">映射关系</button>
       </view>
     </view>
 
@@ -129,10 +129,27 @@
           </view>
         </scroll-view>
 
-        <view class="card-actions">
-          <button class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
-          <button class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
-          <button class="card-btn danger" size="mini" :loading="deletingId === lineup.id" @click="confirmDelete(lineup.id)"> 删除 </button>
+        <view class="reaction-row">
+          <text class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+            👍 {{ lineup.likeCount }}
+          </text>
+          <text class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+            👎 {{ lineup.dislikeCount }}
+          </text>
+          <text class="reaction-score">热度 {{ lineup.score }}</text>
+        </view>
+
+        <view v-if="canManageLineup(lineup) || isAdmin" class="card-actions">
+          <button v-if="canManageLineup(lineup)" class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
+          <button v-if="isAdmin" class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
+          <button
+            v-if="canManageLineup(lineup)"
+            class="card-btn danger"
+            size="mini"
+            :loading="deletingId === lineup.id"
+            @click="confirmDelete(lineup.id)">
+            删除
+          </button>
         </view>
       </view>
 
@@ -144,17 +161,22 @@
 </template>
 
 <script setup lang="ts">
-import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteAdminLineupsLineupId, getAdminLineupRelationsSourceLineupId, deleteCompendiumsLineupsLineupId, postAdminLineupRelations, postLineupsLineupIdReaction } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox';
-
   import { computed, ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import { deleteAdminLineup, fetchAdminLineupTypes, type LineupTypeOption } from '@/services/compendium-lineups'
+  import {
+    deleteUserLineup,
+    fetchAdminLineupTypes,
+    reactToLineup,
+    type LineupTypeOption,
+    type ReactionValue,
+    type UserLineupSummary,
+  } from '@/services/compendium-lineups'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
-  import { ensureAdminAccess } from '@/utils/admin'
+  import { canManageLineup, ensureLoginAccess, isAdminUser } from '@/utils/admin'
   import { ALL_VALUE, getLineupTypeToneClass, getLineupStatusLabel, getLineupTypeLabel, LINEUP_FILTER_STATUS_OPTIONS } from './lineup-meta'
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
 
@@ -190,6 +212,8 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
     locale: selectedLocale,
   })
   const deletingId = ref('')
+  const reactingId = ref('')
+  const isAdmin = computed(() => isAdminUser())
   const lineupTypeOptions = computed(() => [
     { label: '全部', value: ALL_VALUE },
     ...dynamicLineupTypes.value.map(option => ({
@@ -254,7 +278,7 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
         if (!res.confirm) return
         deletingId.value = lineupId
         try {
-          await deleteAdminLineup(lineupId)
+          await deleteUserLineup(lineupId)
           uni.showToast({
             title: '删除成功',
             icon: 'success',
@@ -262,7 +286,7 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
           refreshList()
         } catch (error) {
           uni.showToast({
-            title: typeof error === 'string' ? error : '删除失败，请稍后重试',
+            title: resolveReactionError(error, '删除失败，请稍后重试'),
             icon: 'none',
           })
         } finally {
@@ -270,6 +294,31 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
         }
       },
     })
+  }
+
+  const resolveReactionError = (error: unknown, fallback: string): string => {
+    const status = (error as { code?: number; statusCode?: number })?.code ?? (error as { statusCode?: number })?.statusCode
+    if (status === 403) return '无权操作该阵容'
+    return typeof error === 'string' ? error : fallback
+  }
+
+  const handleReaction = async (lineup: UserLineupSummary, value: ReactionValue) => {
+    if (reactingId.value) return
+    reactingId.value = lineup.id
+    try {
+      const result = await reactToLineup(lineup.id, value)
+      lineup.likeCount = result.likeCount
+      lineup.dislikeCount = result.dislikeCount
+      lineup.score = result.score
+      lineup.myReaction = result.myReaction
+    } catch (error) {
+      uni.showToast({
+        title: typeof error === 'string' ? error : '操作失败，请稍后重试',
+        icon: 'none',
+      })
+    } finally {
+      reactingId.value = ''
+    }
   }
 
   onShow(() => {
@@ -289,7 +338,7 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
     applyRouteQuery(options)
 
     const redirectUrl = buildCurrentUrl()
-    if (!ensureAdminAccess(redirectUrl)) return
+    if (!ensureLoginAccess(redirectUrl)) return
 
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })
     loadLineupTypes()
@@ -639,6 +688,34 @@ import { getCompendiumsLineupsLineupId, patchCompendiumsLineupsLineupId, deleteA
   .card-actions {
     margin-top: 22rpx;
     justify-content: flex-end;
+  }
+
+  .reaction-row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-top: 20rpx;
+  }
+
+  .reaction-btn {
+    padding: 8rpx 20rpx;
+    border-radius: 999rpx;
+    background: #f3f5f9;
+    color: #475467;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .reaction-btn.active {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .reaction-score {
+    margin-left: auto;
+    color: #98a2b3;
+    font-size: 22rpx;
+    font-weight: 700;
   }
 
   .filter-action-row {
