@@ -206,6 +206,16 @@
                   </view>
                 </view>
               </scroll-view>
+
+              <view class="lineup-reaction-row">
+                <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+                  👍 {{ lineup.likeCount }}
+                </text>
+                <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+                  👎 {{ lineup.dislikeCount }}
+                </text>
+                <text class="lineup-reaction-score">热度 {{ lineup.score }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -219,7 +229,13 @@
   import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
-  import { fetchCharacterLineupUsage, type CharacterLineupUsage, type PublicLineup } from '@/services/compendium-lineups'
+  import {
+    fetchCharacterLineupUsage,
+    reactToLineup,
+    type CharacterLineupUsage,
+    type PublicLineup,
+    type ReactionValue,
+  } from '@/services/compendium-lineups'
 
   type RawRecord = Record<string, any>
 
@@ -874,6 +890,27 @@
       lineupErrorMessage.value = typeof error === 'string' ? error : '阵容数据加载失败'
     } finally {
       lineupLoading.value = false
+    }
+  }
+
+  const reactingLineupId = ref('')
+
+  const handleReaction = async (lineup: PublicLineup, value: ReactionValue) => {
+    if (reactingLineupId.value) return
+    reactingLineupId.value = lineup.id
+    try {
+      const result = await reactToLineup(lineup.id, value)
+      lineup.likeCount = result.likeCount
+      lineup.dislikeCount = result.dislikeCount
+      lineup.score = result.score
+      lineup.myReaction = result.myReaction
+    } catch (error) {
+      uni.showToast({
+        title: typeof error === 'string' ? error : '操作失败，请稍后重试',
+        icon: 'none',
+      })
+    } finally {
+      reactingLineupId.value = ''
     }
   }
 
@@ -1653,6 +1690,34 @@
   .lineup-member-scroll {
     margin-top: 14rpx;
     white-space: nowrap;
+  }
+
+  .lineup-reaction-row {
+    margin-top: 16rpx;
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+  }
+
+  .lineup-reaction-btn {
+    padding: 6rpx 18rpx;
+    border-radius: 999rpx;
+    background: #f3f5f9;
+    color: #475467;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .lineup-reaction-btn.active {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .lineup-reaction-score {
+    margin-left: auto;
+    color: #98a2b3;
+    font-size: 20rpx;
+    font-weight: 700;
   }
 
   .lineup-member-row {
