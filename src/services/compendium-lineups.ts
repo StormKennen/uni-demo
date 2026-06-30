@@ -8,6 +8,7 @@ import {
   postLineupsLineupIdReaction,
   getCharactersCharacterIdLineups,
 } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
 import { getAnonymousId } from '@/utils/anonymous-id'
 
 export type LineupType = string
@@ -470,6 +471,15 @@ export const fetchAdminLineupTypes = async (query: AdminLineupTypesQuery): Promi
 
 export const fetchAdminCharacterOptions = async (query: AdminLineupsCharacterOptionsQuery): Promise<CharacterOptionResult> => {
   const res = await http.get('/admin/lineups/character-options', sanitizeQuery(query), {})
+  const data = extractData(res)
+  return {
+    items: toArray(data.items).map(normalizeCharacterOption),
+    pagination: normalizePagination(data.pagination),
+  }
+}
+
+export const fetchCharacterOptions = async (query: AdminLineupsCharacterOptionsQuery): Promise<CharacterOptionResult> => {
+  const res = await getCompendiumsCharacters(sanitizeQuery(query) as any, {})
   const data = extractData(res)
   return {
     items: toArray(data.items).map(normalizeCharacterOption),

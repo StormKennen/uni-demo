@@ -196,11 +196,13 @@
   import StickyActionBar from './sticky-action-bar.vue'
   import {
     fetchAdminCharacterOptions,
+    fetchCharacterOptions as fetchUserCharacterOptions,
     getPaginationOrDefault,
     type CharacterOption,
     type CharacterOptionResult,
     type PaginationState,
   } from '@/services/compendium-lineups'
+  import { isAdminUser } from '@/utils/admin'
 
   type SelectionMode = 'single' | 'multiple'
   type FooterMode = 'manual' | 'none'
@@ -510,7 +512,8 @@
 
     try {
       const nextPage = reset ? 1 : characterPagination.value.page + 1
-      const result: CharacterOptionResult = await fetchAdminCharacterOptions({
+      const loadOptions = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
+      const result: CharacterOptionResult = await loadOptions({
         compendiumId: props.compendiumId,
         locale: props.locale,
         keyword: memberKeyword.value.trim() || undefined,
