@@ -196,7 +196,14 @@
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
   import { canManageLineup, ensureLoginAccess, isAdminUser } from '@/utils/admin'
-  import { ALL_VALUE, getLineupTypeToneClass, getLineupStatusLabel, getLineupTypeLabel, LINEUP_FILTER_STATUS_OPTIONS } from './lineup-meta'
+  import {
+    ALL_VALUE,
+    getLineupTypeToneClass,
+    getLineupStatusLabel,
+    getLineupTypeLabel,
+    LINEUP_FILTER_STATUS_OPTIONS,
+    LINEUP_TYPE_PRESET_OPTIONS,
+  } from './lineup-meta'
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
 
   const COMPENDIUM_CODE = 'swc'
@@ -239,15 +246,35 @@
   const toggleCharacterFilter = () => {
     characterFilterExpanded.value = !characterFilterExpanded.value
   }
-  const lineupTypeOptions = computed(() => [
-    { label: '全部', value: ALL_VALUE },
-    ...dynamicLineupTypes.value.map(option => ({
-      label: option.count > 0 ? `${option.label} (${option.count})` : option.label,
-      value: option.value,
-    })),
-  ])
+  const lineupTypeOptions = computed(() => {
+    if (isAdmin.value) {
+      return [
+        { label: '全部', value: ALL_VALUE },
+        ...dynamicLineupTypes.value.map(option => ({
+          label: option.count > 0 ? `${option.label} (${option.count})` : option.label,
+          value: option.value,
+        })),
+      ]
+    }
+
+    const seen = new Set<string>()
+    const derived: Array<{ label: string; value: string }> = []
+    const pushType = (value: string) => {
+      const type = (value || '').trim()
+      if (!type || seen.has(type)) return
+      seen.add(type)
+      derived.push({ label: getLineupTypeLabel(type), value: type })
+    }
+    LINEUP_TYPE_PRESET_OPTIONS.forEach(option => pushType(option.value))
+    lineups.value.forEach(lineup => pushType(lineup.type))
+    return [{ label: '全部', value: ALL_VALUE }, ...derived]
+  })
 
   const loadLineupTypes = async () => {
+    if (!isAdmin.value) {
+      dynamicLineupTypes.value = []
+      return
+    }
     try {
       dynamicLineupTypes.value = await fetchAdminLineupTypes({
         compendiumId: COMPENDIUM_CODE,
