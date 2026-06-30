@@ -1,4 +1,14 @@
 import http from '@/services/http'
+import {
+  getCompendiumsLineups,
+  getCompendiumsLineupsLineupId,
+  postCompendiumsLineups,
+  patchCompendiumsLineupsLineupId,
+  deleteCompendiumsLineupsLineupId,
+  postLineupsLineupIdReaction,
+  getCharactersCharacterIdLineups,
+} from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import { getAnonymousId } from '@/utils/anonymous-id'
 
 export type LineupType = string
 export type LineupStatus = 'enabled' | 'disabled'
@@ -81,6 +91,28 @@ export interface PaginationState {
   hasPrev: boolean
 }
 
+export type ReactionValue = 1 | -1
+
+/** 阵容互动/归属字段（用户侧接口返回）。 */
+export interface LineupInteractionFields {
+  source: string // 'admin' | 'user'
+  createdBy: string | null
+  updatedBy: string | null
+  likeCount: number
+  dislikeCount: number
+  score: number
+  myReaction: number // 1 赞 / -1 踩 / 0 未表态
+  canEdit: boolean
+}
+
+export interface ReactionResult {
+  id: string
+  likeCount: number
+  dislikeCount: number
+  score: number
+  myReaction: number
+}
+
 export interface LineupCharacterPreview {
   id: string
   characterId: string
@@ -112,6 +144,13 @@ export interface AdminLineupSummary {
 
 export interface AdminLineupListResult {
   items: AdminLineupSummary[]
+  pagination: PaginationState
+}
+
+export interface UserLineupSummary extends AdminLineupSummary, LineupInteractionFields {}
+
+export interface UserLineupListResult {
+  items: UserLineupSummary[]
   pagination: PaginationState
 }
 
@@ -160,6 +199,8 @@ export interface AdminLineupDetail {
   characters: LineupMemberDetail[]
 }
 
+export interface UserLineupDetail extends AdminLineupDetail, LineupInteractionFields {}
+
 export interface RelationDetail {
   sourceLineup: LineupOption | null
   targetLineupIds: string[]
@@ -174,7 +215,7 @@ export interface PublicLineupReference {
   type: string
 }
 
-export interface PublicLineup {
+export interface PublicLineup extends LineupInteractionFields {
   id: string
   name: string
   type: string
@@ -238,6 +279,26 @@ const extractData = (res: unknown): RawRecord => {
   return (isRecord(res) ? res : {}) as RawRecord
 }
 
+/** 给可选认证接口统一带上游客标识头（登录用户也带，后端以 token 为准忽略）。 */
+const withAnonymousHeader = (config: Record<string, any> = {}) => ({
+  ...config,
+  header: { ...(config.header || {}), 'X-Anonymous-Id': getAnonymousId() },
+})
+
+const normalizeInteraction = (source: unknown): LineupInteractionFields => {
+  const record = isRecord(source) ? source : {}
+  return {
+    source: toText(record.source) || 'admin',
+    createdBy: record.createdBy != null ? toText(record.createdBy) : null,
+    updatedBy: record.updatedBy != null ? toText(record.updatedBy) : null,
+    likeCount: toNumber(record.likeCount),
+    dislikeCount: toNumber(record.dislikeCount),
+    score: toNumber(record.score),
+    myReaction: toNumber(record.myReaction),
+    canEdit: Boolean(record.canEdit),
+  }
+}
+
 const normalizePagination = (source: unknown): PaginationState => {
   const data = isRecord(source) ? source : {}
   return {
@@ -296,6 +357,11 @@ const normalizeLineupSummary = (source: unknown): AdminLineupSummary => {
     sourceLineupsCount: toNumber(record.sourceLineupsCount),
     characters: normalizeLineupCharacters(record.characters),
   }
+}
+
+const normalizeUserLineupSummary = (source: unknown): UserLineupSummary => {
+  const record = isRecord(source) ? source : {}
+  return { ...normalizeLineupSummary(record), ...normalizeInteraction(record) }
 }
 
 const normalizeLineupOption = (source: unknown): LineupOption => {
@@ -360,6 +426,7 @@ const normalizePublicLineup = (source: unknown): PublicLineup => {
       .map(item => toText(item))
       .filter(Boolean),
     incomingLineups: toArray(record.incomingLineups).map(normalizeReference),
+    ...normalizeInteraction(record),
   }
 }
 
@@ -468,11 +535,58 @@ export const saveLineupRelation = async (payload: SaveLineupRelationBody): Promi
   }
 }
 
+// ---- 用户侧接口（统一走 apifox 封装方法） ----
+
+const userLineupDetailFromUnknown = (res: unknown): UserLineupDetail => ({
+  ...fetchAdminLineupDetailFromUnknown(res),
+  ...normalizeInteraction(extractData(res)),
+})
+
+export const fetchUserLineups = async (query: AdminLineupsQuery): Promise<UserLineupListResult> => {
+  const res = await getCompendiumsLineups(sanitizeQuery(query) as any, withAnonymousHeader())
+  const data = extractData(res)
+  return {
+    items: toArray(data.items).map(normalizeUserLineupSummary),
+    pagination: normalizePagination(data.pagination),
+  }
+}
+
+export const fetchUserLineupDetail = async (lineupId: string, query: AdminLineupDetailQuery = {}): Promise<UserLineupDetail> => {
+  const res = await getCompendiumsLineupsLineupId(lineupId, sanitizeQuery(query) as any, withAnonymousHeader())
+  return userLineupDetailFromUnknown(res)
+}
+
+export const createUserLineup = async (payload: CreateAdminLineupBody): Promise<UserLineupDetail> => {
+  const res = await postCompendiumsLineups(payload as any, withAnonymousHeader())
+  return userLineupDetailFromUnknown(res)
+}
+
+export const updateUserLineup = async (lineupId: string, payload: UpdateAdminLineupBody): Promise<UserLineupDetail> => {
+  const res = await patchCompendiumsLineupsLineupId(lineupId, payload as any, withAnonymousHeader())
+  return userLineupDetailFromUnknown(res)
+}
+
+export const deleteUserLineup = async (lineupId: string): Promise<void> => {
+  await deleteCompendiumsLineupsLineupId(lineupId, withAnonymousHeader())
+}
+
+export const reactToLineup = async (lineupId: string, value: ReactionValue): Promise<ReactionResult> => {
+  const res = await postLineupsLineupIdReaction(lineupId, { value, anonymousId: getAnonymousId() } as any, withAnonymousHeader())
+  const data = extractData(res)
+  return {
+    id: toText(data.id) || lineupId,
+    likeCount: toNumber(data.likeCount),
+    dislikeCount: toNumber(data.dislikeCount),
+    score: toNumber(data.score),
+    myReaction: toNumber(data.myReaction),
+  }
+}
+
 export const fetchCharacterLineupUsage = async (
   characterId: string,
   query: CharacterLineupUsageQuery = {},
 ): Promise<CharacterLineupUsage> => {
-  const res = await http.get(`/compendiums/characters/${characterId}/lineups`, query, {})
+  const res = await getCharactersCharacterIdLineups(characterId, sanitizeQuery(query) as any, withAnonymousHeader())
   const data = extractData(res)
 
   return {
