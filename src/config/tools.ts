@@ -63,6 +63,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'wiki',
     isNew: true,
   },
+  'compendium-lineup-mappings': {
+    name: '魔灵召唤阵容映射',
+    desc: '源/目标容器阵容映射，容器内阵容可点赞点踩',
+    icon: 'link',
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
+    category: 'wiki',
+    isNew: true,
+  },
   'summoners-war-coupons': {
     name: '魔灵兑换券',
     desc: '礼包码/账号管理',

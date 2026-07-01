@@ -4,9 +4,7 @@
       <view>
         <text class="hero-title">魔灵召唤阵容映射</text>
         <text class="hero-subtitle">
-          浏览「源阵容 → 目标阵容」的容器化映射，容器内每个阵容可独立点赞/点踩。{{
-            isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。'
-          }}
+          浏览「源阵容 → 目标阵容」的容器化映射，点击查看详情。{{ isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。' }}
         </text>
       </view>
       <text v-if="isAdmin" class="hero-badge">ADMIN</text>
@@ -29,53 +27,25 @@
 
       <StateBlock v-if="!mappings.length" class="empty-block" text="暂无阵容映射，快去创建一个吧" />
 
-      <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card">
-        <view class="mapping-head">
-          <text class="mapping-desc">{{ mapping.description || '未命名映射' }}</text>
-          <view v-if="mapping.canEdit || isAdmin" class="card-actions">
-            <button v-if="mapping.canEdit" class="card-btn primary" size="mini" @click="goEdit(mapping.id)">编辑</button>
-            <button
-              v-if="isAdmin"
-              class="card-btn danger"
-              size="mini"
-              :loading="deletingId === mapping.id"
-              @click="confirmDelete(mapping.id)">
-              删除
-            </button>
+      <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card" @click="goDetail(mapping.id)">
+        <view class="mapping-main">
+          <text class="mapping-name">{{ mapping.name || '未命名映射' }}</text>
+          <text class="mapping-desc">{{ mapping.description || '暂无描述' }}</text>
+          <view class="mapping-meta">
+            <text class="meta-chip">源 {{ mapping.sourceContainer.items.length }}</text>
+            <text class="meta-chip">目标 {{ mapping.targetContainer.items.length }}</text>
           </view>
         </view>
-
-        <view v-for="container in containersOf(mapping)" :key="container.containerId" class="container-block">
-          <view class="container-head">
-            <text class="container-badge" :class="container.kind">{{ container.kind === 'source' ? '源容器' : '目标容器' }}</text>
-            <text class="container-count">{{ container.items.length }} 个阵容</text>
-          </view>
-
-          <StateBlock v-if="!container.items.length" class="empty-block inner" text="该容器暂无阵容" />
-
-          <view v-else class="item-list">
-            <view v-for="item in container.items" :key="item.itemId || item.lineupId" class="item-card">
-              <view class="item-main">
-                <text class="item-name">{{ item.lineup?.name || '未命名阵容' }}</text>
-                <text v-if="item.lineup?.type" class="item-type">{{ getLineupTypeLabel(item.lineup.type) }}</text>
-              </view>
-              <view class="reaction-row">
-                <view
-                  class="reaction-btn"
-                  :class="{ active: item.myReaction === 1 }"
-                  @click="handleReaction(mapping, container.containerId, item, 1)">
-                  <text>👍 {{ item.likeCount }}</text>
-                </view>
-                <view
-                  class="reaction-btn"
-                  :class="{ active: item.myReaction === -1 }"
-                  @click="handleReaction(mapping, container.containerId, item, -1)">
-                  <text>👎 {{ item.dislikeCount }}</text>
-                </view>
-                <text class="reaction-score">热度 {{ item.score }}</text>
-              </view>
-            </view>
-          </view>
+        <view class="mapping-tail">
+          <button
+            v-if="isAdmin"
+            class="card-btn danger"
+            size="mini"
+            :loading="deletingId === mapping.id"
+            @click.stop="confirmDelete(mapping.id)">
+            删除
+          </button>
+          <text class="mapping-arrow">›</text>
         </view>
       </view>
 
@@ -84,9 +54,33 @@
       </view>
     </view>
 
-    <view class="fab" @click="goCreate">
+    <view class="fab" @click="openCreate">
       <text class="fab-icon">+</text>
       <text class="fab-text">{{ isLoggedIn ? '创建映射' : '登录创建' }}</text>
+    </view>
+
+    <view v-if="createVisible" class="modal-mask" @click="closeCreate">
+      <view class="create-panel" @click.stop>
+        <text class="create-title">创建阵容映射</text>
+
+        <text class="field-label">映射名称</text>
+        <input v-model="createName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
+
+        <text class="field-label">映射描述</text>
+        <textarea
+          v-model="createDescription"
+          class="desc-input"
+          placeholder="例如：防守阵容 → 进攻反制（最长 500 字，可选）"
+          maxlength="500"
+          auto-height />
+
+        <view class="create-actions">
+          <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
+          <button class="footer-btn primary" size="mini" :loading="creating" :disabled="!createName.trim()" @click="submitCreate">
+            确认创建
+          </button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -94,18 +88,14 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad, onShow, onReachBottom } from '@dcloudio/uni-app'
-  import { getLineupTypeLabel } from './lineup-meta'
   import StateBlock from './components/state-block.vue'
   import { reportToolVisit } from '@/utils/tracker'
   import {
+    createLineupMapping,
     deleteLineupMapping,
     fetchLineupMappings,
-    reactToContainerLineup,
-    type ContainerKind,
     type LineupMapping,
-    type LineupMappingContainerItem,
     type PaginationState,
-    type ReactionValue,
   } from '@/services/compendium-lineups'
   import { getToken } from '@/utils/storage'
   import { ensureLoginAccess, isAdminUser } from '@/utils/admin'
@@ -121,37 +111,22 @@
   const loadingMore = ref(false)
   const errorMessage = ref('')
   const deletingId = ref('')
-  const reactingKey = ref('')
+
+  const createVisible = ref(false)
+  const createName = ref('')
+  const createDescription = ref('')
+  const creating = ref(false)
 
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
-
-  interface ContainerView {
-    kind: ContainerKind
-    containerId: string
-    items: LineupMappingContainerItem[]
-  }
-
-  const containersOf = (mapping: LineupMapping): ContainerView[] => [
-    { kind: 'source', containerId: mapping.sourceContainer.containerId, items: mapping.sourceContainer.items },
-    { kind: 'target', containerId: mapping.targetContainer.containerId, items: mapping.targetContainer.items },
-  ]
 
   const buildCurrentUrl = (): string =>
     `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`
 
   const loadPage = async (page: number) => {
-    const result = await fetchLineupMappings({
-      compendiumId: COMPENDIUM_CODE,
-      page,
-      limit: PAGE_SIZE,
-    })
+    const result = await fetchLineupMappings({ compendiumId: COMPENDIUM_CODE, page, limit: PAGE_SIZE })
     pagination.value = result.pagination
-    if (page <= 1) {
-      mappings.value = result.items
-    } else {
-      mappings.value = [...mappings.value, ...result.items]
-    }
+    mappings.value = page <= 1 ? result.items : [...mappings.value, ...result.items]
   }
 
   const refreshList = async () => {
@@ -186,35 +161,42 @@
     return typeof error === 'string' ? error : fallback
   }
 
-  const handleReaction = async (mapping: LineupMapping, containerId: string, item: LineupMappingContainerItem, value: ReactionValue) => {
-    const key = `${mapping.id}:${containerId}:${item.lineupId}`
-    if (reactingKey.value) return
-    reactingKey.value = key
+  const goDetail = (mappingId: string) => {
+    uni.navigateTo({
+      url: `/subPackages/tools/compendium/swc/lineup-mapping-detail?mappingId=${encodeURIComponent(mappingId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+    })
+  }
+
+  const openCreate = () => {
+    if (!ensureLoginAccess(buildCurrentUrl())) return
+    createName.value = ''
+    createDescription.value = ''
+    createVisible.value = true
+  }
+
+  const closeCreate = () => {
+    if (creating.value) return
+    createVisible.value = false
+  }
+
+  const submitCreate = async () => {
+    if (creating.value || !createName.value.trim()) return
+    creating.value = true
     try {
-      const result = await reactToContainerLineup(mapping.id, containerId, item.lineupId, value)
-      item.likeCount = result.likeCount
-      item.dislikeCount = result.dislikeCount
-      item.score = result.score
-      item.myReaction = result.myReaction
+      const created = await createLineupMapping({
+        compendiumId: COMPENDIUM_CODE,
+        name: createName.value.trim(),
+        description: createDescription.value.trim() || undefined,
+      })
+      uni.showToast({ title: '创建成功', icon: 'success' })
+      createVisible.value = false
+      await refreshList()
+      if (created.id) goDetail(created.id)
     } catch (error) {
-      uni.showToast({ title: resolveError(error, '操作失败，请稍后重试'), icon: 'none' })
+      uni.showToast({ title: resolveError(error, '创建失败，请稍后重试'), icon: 'none' })
     } finally {
-      reactingKey.value = ''
+      creating.value = false
     }
-  }
-
-  const goCreate = () => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
-    uni.navigateTo({
-      url: `/subPackages/tools/compendium/swc/lineup-mapping-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
-    })
-  }
-
-  const goEdit = (mappingId: string) => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
-    uni.navigateTo({
-      url: `/subPackages/tools/compendium/swc/lineup-mapping-edit?mappingId=${encodeURIComponent(mappingId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
-    })
   }
 
   const confirmDelete = (mappingId: string) => {
@@ -311,14 +293,6 @@
     font-size: 28rpx;
   }
 
-  .empty-block.inner {
-    margin: 0;
-    box-shadow: none;
-    background: #f8fafc;
-    padding: 28rpx;
-    font-size: 24rpx;
-  }
-
   .summary-row {
     margin: 0 24rpx 16rpx;
   }
@@ -331,26 +305,58 @@
 
   .mapping-card {
     padding: 24rpx;
-  }
-
-  .mapping-head {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
     gap: 16rpx;
   }
 
-  .mapping-desc {
+  .mapping-main {
     flex: 1;
+    min-width: 0;
+  }
+
+  .mapping-name {
+    display: block;
     font-size: 30rpx;
     font-weight: 800;
     color: #172033;
-    line-height: 1.5;
   }
 
-  .card-actions {
+  .mapping-desc {
+    display: block;
+    margin-top: 8rpx;
+    color: #667085;
+    font-size: 24rpx;
+    line-height: 1.6;
+  }
+
+  .mapping-meta {
+    margin-top: 14rpx;
     display: flex;
     gap: 12rpx;
+  }
+
+  .meta-chip {
+    font-size: 20rpx;
+    font-weight: 700;
+    color: #0f766e;
+    background: #ccfbf1;
+    border-radius: 999rpx;
+    padding: 4rpx 14rpx;
+  }
+
+  .mapping-tail {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    flex-shrink: 0;
+  }
+
+  .mapping-arrow {
+    font-size: 44rpx;
+    font-weight: 300;
+    color: #cbd5e1;
+    line-height: 1;
   }
 
   .card-btn,
@@ -360,115 +366,8 @@
     font-weight: 700;
   }
 
-  .card-btn.primary {
-    background: #0f766e;
-    color: #fff;
-  }
-
   .card-btn.danger {
     color: #dc2626;
-  }
-
-  .container-block {
-    margin-top: 22rpx;
-  }
-
-  .container-head {
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
-    margin-bottom: 14rpx;
-  }
-
-  .container-badge {
-    font-size: 22rpx;
-    font-weight: 800;
-    border-radius: 999rpx;
-    padding: 6rpx 16rpx;
-  }
-
-  .container-badge.source {
-    background: #ede9fe;
-    color: #6d28d9;
-  }
-
-  .container-badge.target {
-    background: #e0f2fe;
-    color: #0369a1;
-  }
-
-  .container-count {
-    color: #667085;
-    font-size: 22rpx;
-    font-weight: 700;
-  }
-
-  .item-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14rpx;
-  }
-
-  .item-card {
-    padding: 18rpx 20rpx;
-    border-radius: 18rpx;
-    background: #f8fafc;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16rpx;
-    flex-wrap: wrap;
-  }
-
-  .item-main {
-    min-width: 0;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-  }
-
-  .item-name {
-    color: #172033;
-    font-size: 28rpx;
-    font-weight: 700;
-  }
-
-  .item-type {
-    font-size: 22rpx;
-    font-weight: 700;
-    color: #0f766e;
-    background: #ccfbf1;
-    border-radius: 999rpx;
-    padding: 4rpx 12rpx;
-  }
-
-  .reaction-row {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-  }
-
-  .reaction-btn {
-    display: flex;
-    align-items: center;
-    padding: 8rpx 18rpx;
-    border-radius: 999rpx;
-    background: #eef2f7;
-    color: #475467;
-    font-size: 24rpx;
-    font-weight: 700;
-  }
-
-  .reaction-btn.active {
-    background: #0f766e;
-    color: #fff;
-  }
-
-  .reaction-score {
-    color: #667085;
-    font-size: 22rpx;
-    font-weight: 700;
   }
 
   .load-more {
@@ -502,5 +401,81 @@
     margin-top: 4rpx;
     font-size: 20rpx;
     font-weight: 700;
+  }
+
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 40rpx;
+    box-sizing: border-box;
+  }
+
+  .create-panel {
+    width: 100%;
+    background: #fff;
+    border-radius: 28rpx;
+    padding: 32rpx;
+    box-sizing: border-box;
+  }
+
+  .create-title {
+    display: block;
+    font-size: 32rpx;
+    font-weight: 800;
+    color: #172033;
+    margin-bottom: 20rpx;
+  }
+
+  .field-label {
+    display: block;
+    margin: 16rpx 0 12rpx;
+    color: #667085;
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .name-input,
+  .desc-input {
+    width: 100%;
+    padding: 20rpx;
+    border-radius: 18rpx;
+    background: #f8fafc;
+    font-size: 26rpx;
+    color: #172033;
+    box-sizing: border-box;
+  }
+
+  .desc-input {
+    min-height: 140rpx;
+    line-height: 1.6;
+  }
+
+  .create-actions {
+    margin-top: 28rpx;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16rpx;
+  }
+
+  .footer-btn {
+    border-radius: 999rpx;
+    font-size: 26rpx;
+    font-weight: 700;
+    padding: 0 32rpx;
+  }
+
+  .footer-btn.ghost {
+    background: #eef2f7;
+    color: #475467;
+  }
+
+  .footer-btn.primary {
+    background: #0f766e;
+    color: #fff;
   }
 </style>

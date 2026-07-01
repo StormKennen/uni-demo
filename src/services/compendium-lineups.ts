@@ -642,6 +642,7 @@ export interface LineupMappingContainer {
 export interface LineupMapping {
   id: string
   gameId: string
+  name: string
   description: string
   status: string
   sourceContainer: LineupMappingContainer
@@ -667,6 +668,7 @@ export interface LineupMappingListQuery {
 export interface CreateLineupMappingBody {
   compendiumId?: string
   gameId?: string
+  name?: string
   description?: string
   sourceLineupIds?: string[]
   targetLineupIds?: string[]
@@ -678,6 +680,7 @@ export interface LineupMappingContainerChange {
 }
 
 export interface UpdateLineupMappingBody {
+  name?: string
   description?: string
   add?: LineupMappingContainerChange[]
   remove?: LineupMappingContainerChange[]
@@ -726,6 +729,7 @@ const normalizeLineupMapping = (source: unknown): LineupMapping => {
   return {
     id: toText(record.id),
     gameId: toText(record.gameId),
+    name: toText(record.name),
     description: toText(record.description),
     status: toText(record.status) || 'active',
     sourceContainer: normalizeContainer(record.sourceContainer),
