@@ -360,7 +360,13 @@
     background: #f3f5f9;
     padding: 22rpx 24rpx;
     font-size: 28rpx;
+    line-height: 1.5;
     box-sizing: border-box;
+  }
+
+  .field-input {
+    min-height: 88rpx;
+    height: 88rpx;
   }
 
   .field-textarea {
