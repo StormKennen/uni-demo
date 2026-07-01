@@ -272,6 +272,19 @@
           }
         },
         {
+          "path": "compendium/swc/lineup-mappings",
+          "style": {
+            "navigationBarTitleText": "魔灵召唤阵容映射",
+            "onReachBottomDistance": 120
+          }
+        },
+        {
+          "path": "compendium/swc/lineup-mapping-detail",
+          "style": {
+            "navigationBarTitleText": "阵容映射详情"
+          }
+        },
+        {
           "path": "magnet-link/index",
           "style": {
             "navigationBarTitleText": "磁力链接",

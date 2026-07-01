@@ -10,6 +10,14 @@
       <text v-if="isAdmin" class="hero-badge">ADMIN</text>
     </view>
 
+    <view class="mapping-entry" @click="goMappings()">
+      <view class="mapping-entry-main">
+        <text class="mapping-entry-title">阵容映射</text>
+        <text class="mapping-entry-desc">查看「源阵容 → 目标阵容」的容器化映射，支持新增与容器内点赞点踩</text>
+      </view>
+      <text class="mapping-entry-arrow">›</text>
+    </view>
+
     <view class="toolbar-card">
       <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
 
@@ -75,7 +83,7 @@
       </view>
 
       <view v-if="isAdmin" class="action-row">
-        <button class="toolbar-btn" @click="goRelations()">映射关系</button>
+        <button class="toolbar-btn" @click="goRelations()">克制关系</button>
       </view>
     </view>
 
@@ -316,6 +324,12 @@
     })
   }
 
+  const goMappings = () => {
+    uni.navigateTo({
+      url: `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+    })
+  }
+
   const goRelations = (sourceLineupId = '') => {
     const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (sourceLineupId) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId)}`)
@@ -455,6 +469,44 @@
     background: #fff;
     border-radius: 24rpx;
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+  }
+
+  .mapping-entry {
+    margin: 0 24rpx 20rpx;
+    padding: 26rpx 28rpx;
+    border-radius: 24rpx;
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    box-shadow: 0 12rpx 30rpx rgba(15, 118, 110, 0.28);
+  }
+
+  .mapping-entry-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mapping-entry-title {
+    display: block;
+    font-size: 32rpx;
+    font-weight: 800;
+  }
+
+  .mapping-entry-desc {
+    display: block;
+    margin-top: 8rpx;
+    font-size: 22rpx;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .mapping-entry-arrow {
+    font-size: 44rpx;
+    font-weight: 300;
+    line-height: 1;
   }
 
   .toolbar-card {

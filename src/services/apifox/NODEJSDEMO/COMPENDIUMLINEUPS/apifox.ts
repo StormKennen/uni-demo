@@ -48,8 +48,10 @@ import type {
   postCompendiumsLineupMappingsRes,
   postCompendiumsLineupsBody,
   postCompendiumsLineupsRes,
+  postLineupMappingsContainersLineupsReactionBody,
+  postLineupMappingsContainersLineupsReactionPathQuery,
+  postLineupMappingsContainersLineupsReactionRes,
   postLineupsLineupIdReactionBody,
-  postLineupsLineupIdReactionPathQuery,
   postLineupsLineupIdReactionRes,
 } from './interface'
 const baseURL = undefined
@@ -67,7 +69,7 @@ export const getCharactersCharacterIdLineups = async (
 ): Promise<Expand<getCharactersCharacterIdLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    '/compendiums/characters/${characterId}/lineups',
+    `/compendiums/characters/${characterId}/lineups`,
     params,
     _config,
   )
@@ -110,7 +112,7 @@ export const getCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums/lineups/${lineupId}', params, _config)
+  return http.get(`/compendiums/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -124,7 +126,7 @@ export const patchCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/compendiums/lineups/${lineupId}', data, _config)
+  return http.patch(`/compendiums/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -137,7 +139,7 @@ export const deleteCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/compendiums/lineups/${lineupId}', {}, _config)
+  return http.delete(`/compendiums/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -151,7 +153,7 @@ export const postLineupsLineupIdReaction = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postLineupsLineupIdReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/compendiums/lineups/${lineupId}/reaction', data, _config)
+  return http.post(`/compendiums/lineups/${lineupId}/reaction`, data, _config)
 }
 
 /**
@@ -230,7 +232,7 @@ export const getAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/${lineupId}', params, _config)
+  return http.get(`/admin/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -244,7 +246,7 @@ export const patchAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/admin/lineups/${lineupId}', data, _config)
+  return http.patch(`/admin/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -257,7 +259,7 @@ export const deleteAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/admin/lineups/${lineupId}', {}, _config)
+  return http.delete(`/admin/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -271,7 +273,7 @@ export const getAdminLineupRelationsSourceLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupRelationsSourceLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineup-relations/${sourceLineupId}', params, _config)
+  return http.get(`/admin/lineup-relations/${sourceLineupId}`, params, _config)
 }
 
 /**
@@ -323,7 +325,7 @@ export const getAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineup-mappings/${mappingId}', {}, _config)
+  return http.get(`/admin/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -337,7 +339,7 @@ export const patchAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/admin/lineup-mappings/${mappingId}', data, _config)
+  return http.patch(`/admin/lineup-mappings/${mappingId}`, data, _config)
 }
 
 /**
@@ -350,7 +352,7 @@ export const deleteAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/admin/lineup-mappings/${mappingId}', {}, _config)
+  return http.delete(`/admin/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -389,7 +391,7 @@ export const getCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums/lineup-mappings/${mappingId}', {}, _config)
+  return http.get(`/compendiums/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -403,7 +405,7 @@ export const patchCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/compendiums/lineup-mappings/${mappingId}', data, _config)
+  return http.patch(`/compendiums/lineup-mappings/${mappingId}`, data, _config)
 }
 
 /**
@@ -411,14 +413,14 @@ export const patchCompendiumsLineupMappingsMappingId = async (
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  * @host https://app.apifox.com/link/project/7048425/apis/api-480665656
  */
-export const postLineupsLineupIdReaction = async (
-  pathParams: Expand<postLineupsLineupIdReactionPathQuery>,
-  data: Expand<postLineupsLineupIdReactionBody>,
+export const postLineupMappingsContainersLineupsReaction = async (
+  pathParams: Expand<postLineupMappingsContainersLineupsReactionPathQuery>,
+  data: Expand<postLineupMappingsContainersLineupsReactionBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postLineupsLineupIdReactionRes>> => {
+): Promise<Expand<postLineupMappingsContainersLineupsReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
-    '/compendiums/lineup-mappings/${pathParams.mappingId}/containers/${pathParams.containerId}/lineups/${pathParams.lineupId}/reaction',
+    `/compendiums/lineup-mappings/${pathParams.mappingId}/containers/${pathParams.containerId}/lineups/${pathParams.lineupId}/reaction`,
     data,
     _config,
   )
