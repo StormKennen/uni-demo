@@ -74,8 +74,9 @@
         </view>
       </view>
 
-      <view v-if="isAdmin" class="action-row">
-        <button class="toolbar-btn" @click="goRelations()">映射关系</button>
+      <view class="action-row">
+        <button class="toolbar-btn" @click="goMappings()">阵容映射</button>
+        <button v-if="isAdmin" class="toolbar-btn" @click="goRelations()">克制关系</button>
       </view>
     </view>
 
@@ -313,6 +314,12 @@
     if (!ensureLoginAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+    })
+  }
+
+  const goMappings = () => {
+    uni.navigateTo({
+      url: `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 

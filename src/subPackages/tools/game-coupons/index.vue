@@ -178,6 +178,8 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
+  import { getGameCouponConfig } from './config'
+  import type { GameCouponConfig } from './config'
   import {
     deleteGameIdAccountsAccountId,
     getGameCouponsGameIdAccounts,
@@ -200,8 +202,6 @@
     postGameCouponsGameIdRedeemBodyAccountsItem,
     postGameCouponsGameIdRedeemResAccountResults,
   } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
-  import { getGameCouponConfig } from './config'
-  import type { GameCouponConfig } from './config'
   import { checkLoginStatus } from '@/utils/autoLogin'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
@@ -314,13 +314,6 @@
 
   function getStorageKey() {
     return gameConfig.value.storageKey
-  }
-
-  function getStatusText(status?: string) {
-    if (status === 'active') return '已验证'
-    if (status === 'invalid') return '无效'
-    if (status === 'disabled') return '已停用'
-    return '未验证'
   }
 
   /** 账号右侧校验状态徽标文案：active=已校验，invalid=无效，其余=未校验 */
