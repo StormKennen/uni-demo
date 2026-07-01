@@ -279,9 +279,9 @@
           }
         },
         {
-          "path": "compendium/swc/lineup-mapping-edit",
+          "path": "compendium/swc/lineup-mapping-detail",
           "style": {
-            "navigationBarTitleText": "编辑阵容映射"
+            "navigationBarTitleText": "阵容映射详情"
           }
         },
         {
