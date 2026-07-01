@@ -408,6 +408,8 @@ export interface postAdminLineupMappingsBody {
   description?: string
   /** 游戏 code 或 id（与 compendiumId 二选一） */
   gameId?: string
+  /** 映射名称 */
+  name?: string
   /** 放入源容器的阵容 ID 列表（同容器去重）。 */
   sourceLineupIds?: string[]
   /** 放入目标容器的阵容 ID 列表（同容器去重）。 */
@@ -433,6 +435,8 @@ export type getAdminLineupMappingsMappingIdRes = string
 export interface patchAdminLineupMappingsMappingIdBody {
   add?: patchAdminLineupMappingsMappingIdBodyAddItem[]
   description?: string
+  /** 映射名称 */
+  name?: string
   remove?: patchAdminLineupMappingsMappingIdBodyRemoveItem[]
 }
 
@@ -489,6 +493,8 @@ export interface postCompendiumsLineupMappingsBody {
   description?: string
   /** 游戏 code 或 id（与 compendiumId 二选一） */
   gameId?: string
+  /** 映射名称 */
+  name?: string
   /** 放入源容器的阵容 ID 列表（同容器去重）。 */
   sourceLineupIds?: string[]
   /** 放入目标容器的阵容 ID 列表（同容器去重）。 */
@@ -514,6 +520,8 @@ export type getCompendiumsLineupMappingsMappingIdRes = string
 export interface patchCompendiumsLineupMappingsMappingIdBody {
   add?: patchCompendiumsLineupMappingsMappingIdBodyAddItem[]
   description?: string
+  /** 映射名称 */
+  name?: string
   remove?: patchCompendiumsLineupMappingsMappingIdBodyRemoveItem[]
 }
 
