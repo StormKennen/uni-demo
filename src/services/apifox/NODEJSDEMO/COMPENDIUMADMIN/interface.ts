@@ -124,11 +124,17 @@ export interface postAdminCompendiumsCharactersResSkills {
   code?: string
   coefficients?: postAdminCompendiumsCharactersResSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
   /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
   /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
   /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number
@@ -222,11 +228,17 @@ export interface patchAdminCompendiumsCharactersResSkills {
   code?: string
   coefficients?: patchAdminCompendiumsCharactersResSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
   /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
   /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
   /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number
@@ -277,11 +289,17 @@ export interface postCompendiumsCharactersBatchBodyCharactersSkills {
   code?: string
   coefficients?: postCompendiumsCharactersBatchBodyCharactersSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
   /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
   /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
   /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number
@@ -360,11 +378,17 @@ export interface postCompendiumsCharactersBatchResItemSkills {
   code?: string
   coefficients?: postCompendiumsCharactersBatchResItemSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
   /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
   /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
   /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number
@@ -474,11 +498,17 @@ export interface postAdminCompendiumsImportJsonBodyCharactersSkills {
   code?: string
   coefficients?: postAdminCompendiumsImportJsonBodyCharactersSkillsCoefficients[]
   cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
   cost?: string
   /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
   description?: string
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
   /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
   id?: string
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
   /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
   name?: string
   sortOrder?: number

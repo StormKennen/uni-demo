@@ -3,6 +3,7 @@
  * @url GET /compendiums
  */
 export interface getCompendiumsQuery {
+  /** 关键词模糊搜索，命中人物英文主名称、国际化名称、别名、人物编码、简介。 */
   keyword?: string
 
   status?: string
@@ -140,9 +141,9 @@ export interface getCompendiumsConfigResGame {
  */
 export interface getCompendiumsCharactersQuery {
   compendiumId: string
-
+  /** 关键词模糊搜索，命中人物英文主名称、各语言译名（中文名等）、别名、人物编码、简介；名称匹配跨全部语言，不受 locale 限制。 */
   keyword?: string
-  /** 国际化语言参数，例如 en、zh-CN。未提供或未找到翻译时自动回退英文。 */
+  /** 国际化语言参数，例如 en、zh-CN。仅用于结果展示本地化，不影响名称搜索范围；未提供或未找到翻译时自动回退英文。 */
   locale?: string
   /** 已废弃，请改用 categories[element] */
   element?: string
