@@ -24,6 +24,8 @@ import type {
   getCharactersCharacterIdLineupsQuery,
   getCharactersCharacterIdLineupsRes,
   getCompendiumsLineupMappingsMappingIdRes,
+  getCompendiumsLineupMappingsQuery,
+  getCompendiumsLineupMappingsRes,
   getCompendiumsLineupsLineupIdQuery,
   getCompendiumsLineupsLineupIdRes,
   getCompendiumsLineupsQuery,
@@ -32,6 +34,8 @@ import type {
   patchAdminLineupMappingsMappingIdRes,
   patchAdminLineupsLineupIdBody,
   patchAdminLineupsLineupIdRes,
+  patchCompendiumsLineupMappingsMappingIdBody,
+  patchCompendiumsLineupMappingsMappingIdRes,
   patchCompendiumsLineupsLineupIdBody,
   patchCompendiumsLineupsLineupIdRes,
   postAdminLineupMappingsBody,
@@ -40,6 +44,8 @@ import type {
   postAdminLineupRelationsRes,
   postAdminLineupsBody,
   postAdminLineupsRes,
+  postCompendiumsLineupMappingsBody,
+  postCompendiumsLineupMappingsRes,
   postCompendiumsLineupsBody,
   postCompendiumsLineupsRes,
   postLineupsLineupIdReactionBody,
@@ -149,7 +155,7 @@ export const postLineupsLineupIdReaction = async (
 }
 
 /**
- * @description CompendiumLineups/Get lineup list for the admin editor
+ * @description CompendiumLineups/获取阵容列表（管理侧）
  * @url GET /admin/lineups
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105489
  */
@@ -162,7 +168,7 @@ export const getAdminLineups = async (
 }
 
 /**
- * @description CompendiumLineups/Create a lineup
+ * @description CompendiumLineups/创建阵容（管理侧）
  * @url POST /admin/lineups
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064662
  */
@@ -175,7 +181,7 @@ export const postAdminLineups = async (
 }
 
 /**
- * @description CompendiumLineups/Get distinct lineup types for one compendium
+ * @description CompendiumLineups/获取阵容类型列表（管理侧）
  * @url GET /admin/lineups/types
  * @host https://app.apifox.com/link/project/7048425/apis/api-477759054
  */
@@ -188,7 +194,7 @@ export const getAdminLineupsTypes = async (
 }
 
 /**
- * @description CompendiumLineups/Get lineup options for select components
+ * @description CompendiumLineups/获取阵容选项列表（管理侧）
  * @url GET /admin/lineups/options
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105490
  */
@@ -201,7 +207,7 @@ export const getAdminLineupsOptions = async (
 }
 
 /**
- * @description CompendiumLineups/Get character options for the lineup member picker
+ * @description CompendiumLineups/获取人物选项列表（管理侧）
  * @url GET /admin/lineups/character-options
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105491
  */
@@ -214,7 +220,7 @@ export const getAdminLineupsCharacterOptions = async (
 }
 
 /**
- * @description CompendiumLineups/Get lineup detail
+ * @description CompendiumLineups/获取阵容详情（管理侧）
  * @url GET /admin/lineups/{lineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105492
  */
@@ -228,7 +234,7 @@ export const getAdminLineupsLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Update a lineup
+ * @description CompendiumLineups/编辑阵容（管理侧）
  * @url PATCH /admin/lineups/{lineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064663
  */
@@ -242,7 +248,7 @@ export const patchAdminLineupsLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Delete a lineup
+ * @description CompendiumLineups/删除阵容（管理侧）
  * @url DELETE /admin/lineups/{lineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064664
  */
@@ -255,7 +261,7 @@ export const deleteAdminLineupsLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Get lineup relation detail for one source lineup
+ * @description CompendiumLineups/获取阵容映射关系详情（管理侧）
  * @url GET /admin/lineup-relations/{sourceLineupId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-476105493
  */
@@ -269,7 +275,7 @@ export const getAdminLineupRelationsSourceLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/Save relation targets for one source lineup
+ * @description CompendiumLineups/保存阵容映射关系（管理侧）
  * @url POST /admin/lineup-relations
  * @host https://app.apifox.com/link/project/7048425/apis/api-476064665
  */
@@ -348,7 +354,33 @@ export const deleteAdminLineupMappingsMappingId = async (
 }
 
 /**
- * @description CompendiumLineups/阵容映射详情（用户侧只读）
+ * @description CompendiumLineups/阵容映射列表（用户侧）
+ * @url GET /compendiums/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736381
+ */
+export const getCompendiumsLineupMappings = async (
+  params: Expand<getCompendiumsLineupMappingsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsLineupMappingsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get('/compendiums/lineup-mappings', params, _config)
+}
+
+/**
+ * @description CompendiumLineups/创建阵容映射（用户侧）
+ * @url POST /compendiums/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736382
+ */
+export const postCompendiumsLineupMappings = async (
+  data: Expand<postCompendiumsLineupMappingsBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postCompendiumsLineupMappingsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post('/compendiums/lineup-mappings', data, _config)
+}
+
+/**
+ * @description CompendiumLineups/阵容映射详情（用户侧）
  * @url GET /compendiums/lineup-mappings/{mappingId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-480665655
  */
@@ -358,6 +390,20 @@ export const getCompendiumsLineupMappingsMappingId = async (
 ): Promise<Expand<getCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get('/compendiums/lineup-mappings/${mappingId}', {}, _config)
+}
+
+/**
+ * @description CompendiumLineups/编辑阵容映射（用户侧）
+ * @url PATCH /compendiums/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736383
+ */
+export const patchCompendiumsLineupMappingsMappingId = async (
+  mappingId: string,
+  data: Expand<patchCompendiumsLineupMappingsMappingIdBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<patchCompendiumsLineupMappingsMappingIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.patch('/compendiums/lineup-mappings/${mappingId}', data, _config)
 }
 
 /**
