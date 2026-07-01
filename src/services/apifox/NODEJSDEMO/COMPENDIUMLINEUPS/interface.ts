@@ -16,6 +16,148 @@ export interface getCharactersCharacterIdLineupsQuery {
 export type getCharactersCharacterIdLineupsRes = string
 
 /**
+ * @description CompendiumLineups/获取阵容列表（用户侧）--接口请求Query参数
+ * @url GET /compendiums/lineups
+ */
+export interface getCompendiumsLineupsQuery {
+  /** 游戏代码或游戏 ID（如 `swc`）。与 `gameId` 二选一。 */
+  compendiumId: string
+  /** 游戏 ID（与 `compendiumId` 二选一）。 */
+  gameId?: string
+  /** 可选语言代码，用于翻译人物名称。 */
+  locale?: string
+  /** 搜索阵容名称和描述。 */
+  keyword?: string
+  /** 精确筛选包含此人物 ID 的阵容。 */
+  characterId?: string
+  /** 多人物 AND 筛选：阵容必须同时包含所有指定人物。
+接受 JSON 数组字符串 `["id1","id2"]` 或逗号分隔 `id1,id2`。
+ */
+  characterIds?: any
+  /** 按阵容类型筛选。 */
+  type?: string
+  /** 按阵容状态筛选。 */
+  status?: string
+  /** 排序字段。支持按互动数据排序：
+- `likeCount` 按点赞数排序
+- `dislikeCount` 按点踩数排序
+- `score` 按综合评分（= likeCount - dislikeCount）排序
+ */
+  sortBy?: string
+  /** 排序方向。 */
+  sortOrder?: string
+  /** 游客设备标识（备选传参方式，推荐使用 `X-Anonymous-Id` 头）。 */
+  anonymousId?: string
+  /** 页码，从 1 开始。 */
+  page?: number
+  /** 每页条数，最大 100。 */
+  pageSize?: number
+}
+
+/**
+ * @description CompendiumLineups/获取阵容列表（用户侧）--接口返回值
+ * @url GET /compendiums/lineups
+ */
+export type getCompendiumsLineupsRes = string
+
+/**
+ * @description CompendiumLineups/创建阵容（用户侧）--接口请求Body参数
+ * @url POST /compendiums/lineups
+ */
+export interface postCompendiumsLineupsBody {
+  /** Character ids selected by the editor. The backend expands them into lineup members and matching keys. */
+  characterIds: string[]
+  /** Game code or game id. Usually the compendium code such as `swc`. */
+  compendiumId: string
+  /** Optional note shown in the editor or details page. */
+  description?: string
+  /** Lineup display name. */
+  name: string
+  status?: postCompendiumsLineupsBodyStatus
+  type: postCompendiumsLineupsBodyType
+}
+
+/** Whether the lineup is available for public matching and management. */
+export type postCompendiumsLineupsBodyStatus = 'enabled' | 'disabled'
+
+/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
+export type postCompendiumsLineupsBodyType = string
+
+/**
+ * @description CompendiumLineups/创建阵容（用户侧）--接口返回值
+ * @url POST /compendiums/lineups
+ */
+export type postCompendiumsLineupsRes = string
+
+/**
+ * @description CompendiumLineups/获取阵容详情（用户侧）--接口请求Query参数
+ * @url GET /compendiums/lineups/{lineupId}
+ */
+export interface getCompendiumsLineupsLineupIdQuery {
+  /** 可选语言代码。 */
+  locale?: string
+  /** 游客设备标识（备选传参方式）。 */
+  anonymousId?: string
+}
+
+/**
+ * @description CompendiumLineups/获取阵容详情（用户侧）--接口返回值
+ * @url GET /compendiums/lineups/{lineupId}
+ */
+export type getCompendiumsLineupsLineupIdRes = string
+
+/**
+ * @description CompendiumLineups/编辑阵容（用户侧）--接口请求Body参数
+ * @url PATCH /compendiums/lineups/{lineupId}
+ */
+export interface patchCompendiumsLineupsLineupIdBody {
+  /** Optional full replacement of lineup members. Must still contain 2 to 5 characters. */
+  characterIds?: string[]
+  /** Updated lineup description. */
+  description?: string
+  /** Updated lineup name. */
+  name?: string
+  status?: patchCompendiumsLineupsLineupIdBodyStatus
+  type?: patchCompendiumsLineupsLineupIdBodyType
+}
+
+/** Whether the lineup is available for public matching and management. */
+export type patchCompendiumsLineupsLineupIdBodyStatus = 'enabled' | 'disabled'
+
+/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
+export type patchCompendiumsLineupsLineupIdBodyType = string
+
+/**
+ * @description CompendiumLineups/编辑阵容（用户侧）--接口返回值
+ * @url PATCH /compendiums/lineups/{lineupId}
+ */
+export type patchCompendiumsLineupsLineupIdRes = string
+
+/**
+ * @description CompendiumLineups/删除阵容（用户侧）--接口返回值
+ * @url DELETE /compendiums/lineups/{lineupId}
+ */
+export type deleteCompendiumsLineupsLineupIdRes = string
+
+/**
+ * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口请求Body参数
+ * @url POST /compendiums/lineups/{lineupId}/reaction
+ */
+export interface postLineupsLineupIdReactionBody {
+  /** 游客设备标识（前端生成并持久化到 localStorage）。
+未登录时必传；已登录时忽略（以 token 中的 userId 为准）。
+ */
+  anonymousId?: string
+  value: { [key: string]: any }
+}
+
+/**
+ * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口返回值
+ * @url POST /compendiums/lineups/{lineupId}/reaction
+ */
+export type postLineupsLineupIdReactionRes = string
+
+/**
  * @description CompendiumLineups/Get lineup list for the admin editor--接口请求Query参数
  * @url GET /admin/lineups
  */
@@ -34,7 +176,11 @@ export interface getAdminLineupsQuery {
   type?: string
   /** Filter by lineup status. */
   status?: string
-  /** Sort field. */
+  /** Sort field. Supports interaction-based sorting:
+- `likeCount` sort by like count
+- `dislikeCount` sort by dislike count
+- `score` sort by overall score (= likeCount - dislikeCount)
+ */
   sortBy?: string
   /** Sort direction. */
   sortOrder?: string
@@ -153,47 +299,6 @@ export interface getAdminLineupsCharacterOptionsQuery {
 export type getAdminLineupsCharacterOptionsRes = string
 
 /**
- * @description CompendiumLineups/获取阵容列表（用户侧）--接口请求Query参数
- * @url GET /compendiums/lineups
- */
-export interface getCompendiumsLineupsQuery {
-  /** 游戏代码或游戏 ID（如 `swc`）。与 `gameId` 二选一。 */
-  compendiumId: string
-  /** 游戏 ID（与 `compendiumId` 二选一）。 */
-  gameId?: string
-  /** 可选语言代码，用于翻译人物名称。 */
-  locale?: string
-  /** 搜索阵容名称和描述。 */
-  keyword?: string
-  /** 精确筛选包含此人物 ID 的阵容。 */
-  characterId?: string
-  /** 多人物 AND 筛选：阵容必须同时包含所有指定人物。
-接受 JSON 数组字符串 `["id1","id2"]` 或逗号分隔 `id1,id2`。
- */
-  characterIds?: any
-  /** 按阵容类型筛选。 */
-  type?: string
-  /** 按阵容状态筛选。 */
-  status?: string
-  /** 排序字段。 */
-  sortBy?: string
-  /** 排序方向。 */
-  sortOrder?: string
-  /** 游客设备标识（备选传参方式，推荐使用 `X-Anonymous-Id` 头）。 */
-  anonymousId?: string
-  /** 页码，从 1 开始。 */
-  page?: number
-  /** 每页条数，最大 100。 */
-  pageSize?: number
-}
-
-/**
- * @description CompendiumLineups/获取阵容列表（用户侧）--接口返回值
- * @url GET /compendiums/lineups
- */
-export type getCompendiumsLineupsRes = string
-
-/**
  * @description CompendiumLineups/Get lineup detail--接口请求Query参数
  * @url GET /admin/lineups/{lineupId}
  */
@@ -207,52 +312,6 @@ export interface getAdminLineupsLineupIdQuery {
  * @url GET /admin/lineups/{lineupId}
  */
 export type getAdminLineupsLineupIdRes = string
-
-/**
- * @description CompendiumLineups/创建阵容（用户侧）--接口请求Body参数
- * @url POST /compendiums/lineups
- */
-export interface postCompendiumsLineupsBody {
-  /** Character ids selected by the editor. The backend expands them into lineup members and matching keys. */
-  characterIds: string[]
-  /** Game code or game id. Usually the compendium code such as `swc`. */
-  compendiumId: string
-  /** Optional note shown in the editor or details page. */
-  description?: string
-  /** Lineup display name. */
-  name: string
-  status?: postCompendiumsLineupsBodyStatus
-  type: postCompendiumsLineupsBodyType
-}
-
-/** Whether the lineup is available for public matching and management. */
-export type postCompendiumsLineupsBodyStatus = 'enabled' | 'disabled'
-
-/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
-export type postCompendiumsLineupsBodyType = string
-
-/**
- * @description CompendiumLineups/创建阵容（用户侧）--接口返回值
- * @url POST /compendiums/lineups
- */
-export type postCompendiumsLineupsRes = string
-
-/**
- * @description CompendiumLineups/获取阵容详情（用户侧）--接口请求Query参数
- * @url GET /compendiums/lineups/{lineupId}
- */
-export interface getCompendiumsLineupsLineupIdQuery {
-  /** 可选语言代码。 */
-  locale?: string
-  /** 游客设备标识（备选传参方式）。 */
-  anonymousId?: string
-}
-
-/**
- * @description CompendiumLineups/获取阵容详情（用户侧）--接口返回值
- * @url GET /compendiums/lineups/{lineupId}
- */
-export type getCompendiumsLineupsLineupIdRes = string
 
 /**
  * @description CompendiumLineups/Update a lineup--接口请求Body参数
@@ -282,33 +341,6 @@ export type patchAdminLineupsLineupIdBodyType = string
 export type patchAdminLineupsLineupIdRes = string
 
 /**
- * @description CompendiumLineups/编辑阵容（用户侧）--接口请求Body参数
- * @url PATCH /compendiums/lineups/{lineupId}
- */
-export interface patchCompendiumsLineupsLineupIdBody {
-  /** Optional full replacement of lineup members. Must still contain 2 to 5 characters. */
-  characterIds?: string[]
-  /** Updated lineup description. */
-  description?: string
-  /** Updated lineup name. */
-  name?: string
-  status?: patchCompendiumsLineupsLineupIdBodyStatus
-  type?: patchCompendiumsLineupsLineupIdBodyType
-}
-
-/** Whether the lineup is available for public matching and management. */
-export type patchCompendiumsLineupsLineupIdBodyStatus = 'enabled' | 'disabled'
-
-/** Lineup category key stored in the database. It is configurable and not restricted to a fixed enum. */
-export type patchCompendiumsLineupsLineupIdBodyType = string
-
-/**
- * @description CompendiumLineups/编辑阵容（用户侧）--接口返回值
- * @url PATCH /compendiums/lineups/{lineupId}
- */
-export type patchCompendiumsLineupsLineupIdRes = string
-
-/**
  * @description CompendiumLineups/Delete a lineup--接口返回值
  * @url DELETE /admin/lineups/{lineupId}
  */
@@ -330,30 +362,6 @@ export interface getAdminLineupRelationsSourceLineupIdQuery {
 export type getAdminLineupRelationsSourceLineupIdRes = string
 
 /**
- * @description CompendiumLineups/删除阵容（用户侧）--接口返回值
- * @url DELETE /compendiums/lineups/{lineupId}
- */
-export type deleteCompendiumsLineupsLineupIdRes = string
-
-/**
- * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口请求Body参数
- * @url POST /compendiums/lineups/{lineupId}/reaction
- */
-export interface postLineupsLineupIdReactionBody {
-  /** 游客设备标识（前端生成并持久化到 localStorage）。
-未登录时必传；已登录时忽略（以 token 中的 userId 为准）。
- */
-  anonymousId?: string
-  value: { [key: string]: any }
-}
-
-/**
- * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口返回值
- * @url POST /compendiums/lineups/{lineupId}/reaction
- */
-export type postLineupsLineupIdReactionRes = string
-
-/**
  * @description CompendiumLineups/Save relation targets for one source lineup--接口请求Body参数
  * @url POST /admin/lineup-relations
  */
@@ -371,3 +379,116 @@ export interface postAdminLineupRelationsBody {
  * @url POST /admin/lineup-relations
  */
 export type postAdminLineupRelationsRes = string
+
+/**
+ * @description CompendiumLineups/阵容映射列表（管理侧）--接口请求Query参数
+ * @url GET /admin/lineup-mappings
+ */
+export interface getAdminLineupMappingsQuery {
+  compendiumId: string
+
+  page?: number
+
+  limit?: number
+}
+
+/**
+ * @description CompendiumLineups/阵容映射列表（管理侧）--接口返回值
+ * @url GET /admin/lineup-mappings
+ */
+export type getAdminLineupMappingsRes = string
+
+/**
+ * @description CompendiumLineups/创建阵容映射（管理侧）--接口请求Body参数
+ * @url POST /admin/lineup-mappings
+ */
+export interface postAdminLineupMappingsBody {
+  /** 游戏 code 或 id */
+  compendiumId?: string
+  description?: string
+  /** 游戏 code 或 id（与 compendiumId 二选一） */
+  gameId?: string
+  /** 放入源容器的阵容 ID 列表（同容器去重）。 */
+  sourceLineupIds?: string[]
+  /** 放入目标容器的阵容 ID 列表（同容器去重）。 */
+  targetLineupIds?: string[]
+}
+
+/**
+ * @description CompendiumLineups/创建阵容映射（管理侧）--接口返回值
+ * @url POST /admin/lineup-mappings
+ */
+export type postAdminLineupMappingsRes = string
+
+/**
+ * @description CompendiumLineups/阵容映射详情（管理侧）--接口返回值
+ * @url GET /admin/lineup-mappings/{mappingId}
+ */
+export type getAdminLineupMappingsMappingIdRes = string
+
+/**
+ * @description CompendiumLineups/编辑阵容映射（管理侧）--接口请求Body参数
+ * @url PATCH /admin/lineup-mappings/{mappingId}
+ */
+export interface patchAdminLineupMappingsMappingIdBody {
+  add?: patchAdminLineupMappingsMappingIdBodyAddItem[]
+  description?: string
+  remove?: patchAdminLineupMappingsMappingIdBodyRemoveItem[]
+}
+
+/** patchAdminLineupMappingsMappingIdBodyAdd */
+export interface patchAdminLineupMappingsMappingIdBodyAddItem {
+  containerId: string
+  lineupIds: string[]
+}
+
+/** patchAdminLineupMappingsMappingIdBodyRemove */
+export interface patchAdminLineupMappingsMappingIdBodyRemoveItem {
+  containerId: string
+  lineupIds: string[]
+}
+
+/**
+ * @description CompendiumLineups/编辑阵容映射（管理侧）--接口返回值
+ * @url PATCH /admin/lineup-mappings/{mappingId}
+ */
+export type patchAdminLineupMappingsMappingIdRes = string
+
+/**
+ * @description CompendiumLineups/删除阵容映射（软删除，管理侧）--接口返回值
+ * @url DELETE /admin/lineup-mappings/{mappingId}
+ */
+export type deleteAdminLineupMappingsMappingIdRes = object
+
+/**
+ * @description CompendiumLineups/阵容映射详情（用户侧只读）--接口返回值
+ * @url GET /compendiums/lineup-mappings/{mappingId}
+ */
+export type getCompendiumsLineupMappingsMappingIdRes = string
+
+/**
+ * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口路径参数
+ * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
+ */
+export interface postLineupsLineupIdReactionPathQuery {
+  mappingId: string
+
+  containerId: string
+
+  lineupId: string
+}
+
+/**
+ * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口请求Body参数
+ * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
+ */
+export interface postLineupsLineupIdReactionBody {
+  /** 1 点赞，-1 点踩 */
+  value: number
+}
+
+/**
+ * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口返回值
+ * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
+ */
+export type postLineupsLineupIdReactionRes = string
