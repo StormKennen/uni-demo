@@ -7,6 +7,12 @@ import {
   deleteCompendiumsLineupsLineupId,
   postLineupsLineupIdReaction,
   getCharactersCharacterIdLineups,
+  getCompendiumsLineupMappings,
+  postCompendiumsLineupMappings,
+  getCompendiumsLineupMappingsMappingId,
+  patchCompendiumsLineupMappingsMappingId,
+  postLineupMappingsContainersLineupsReaction,
+  deleteAdminLineupMappingsMappingId,
 } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
 import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
 import { getAnonymousId } from '@/utils/anonymous-id'
@@ -601,6 +607,179 @@ export const fetchCharacterLineupUsage = async (
 
   return {
     lineups: toArray(data.lineups).map(normalizePublicLineup),
+  }
+}
+
+// ---- 阵容映射（容器化）用户侧接口 ----
+
+export type ContainerKind = 'source' | 'target'
+
+/** 容器内阵容的基本信息（阵容快照）。 */
+export interface ContainerLineupInfo {
+  id: string
+  name: string
+  type: string
+}
+
+/** 容器内单个阵容（自带独立于全局的互动计数）。 */
+export interface LineupMappingContainerItem {
+  itemId: string
+  lineupId: string
+  order: number
+  lineup: ContainerLineupInfo | null
+  likeCount: number
+  dislikeCount: number
+  score: number
+  myReaction: number
+}
+
+/** 映射容器（源/目标），含唯一 containerId 与容器内阵容列表。 */
+export interface LineupMappingContainer {
+  containerId: string
+  items: LineupMappingContainerItem[]
+}
+
+export interface LineupMapping {
+  id: string
+  gameId: string
+  description: string
+  status: string
+  sourceContainer: LineupMappingContainer
+  targetContainer: LineupMappingContainer
+  createdBy: string | null
+  canEdit: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LineupMappingListResult {
+  items: LineupMapping[]
+  pagination: PaginationState
+}
+
+export interface LineupMappingListQuery {
+  compendiumId: string
+  gameId?: string
+  page?: number
+  limit?: number
+}
+
+export interface CreateLineupMappingBody {
+  compendiumId?: string
+  gameId?: string
+  description?: string
+  sourceLineupIds?: string[]
+  targetLineupIds?: string[]
+}
+
+export interface LineupMappingContainerChange {
+  containerId: string
+  lineupIds: string[]
+}
+
+export interface UpdateLineupMappingBody {
+  description?: string
+  add?: LineupMappingContainerChange[]
+  remove?: LineupMappingContainerChange[]
+}
+
+export interface ContainerReactionResult {
+  likeCount: number
+  dislikeCount: number
+  score: number
+  myReaction: number
+}
+
+const normalizeContainerLineupInfo = (source: unknown): ContainerLineupInfo | null => {
+  if (!isRecord(source)) return null
+  return {
+    id: toText(source.id),
+    name: toText(source.name),
+    type: toText(source.type),
+  }
+}
+
+const normalizeContainerItem = (source: unknown): LineupMappingContainerItem => {
+  const record = isRecord(source) ? source : {}
+  return {
+    itemId: toText(record.itemId),
+    lineupId: toText(record.lineupId),
+    order: toNumber(record.order),
+    lineup: normalizeContainerLineupInfo(record.lineup),
+    likeCount: toNumber(record.likeCount),
+    dislikeCount: toNumber(record.dislikeCount),
+    score: toNumber(record.score),
+    myReaction: toNumber(record.myReaction),
+  }
+}
+
+const normalizeContainer = (source: unknown): LineupMappingContainer => {
+  const record = isRecord(source) ? source : {}
+  return {
+    containerId: toText(record.containerId),
+    items: toArray(record.items).map(normalizeContainerItem),
+  }
+}
+
+const normalizeLineupMapping = (source: unknown): LineupMapping => {
+  const record = isRecord(source) ? source : {}
+  return {
+    id: toText(record.id),
+    gameId: toText(record.gameId),
+    description: toText(record.description),
+    status: toText(record.status) || 'active',
+    sourceContainer: normalizeContainer(record.sourceContainer),
+    targetContainer: normalizeContainer(record.targetContainer),
+    createdBy: record.createdBy != null ? toText(record.createdBy) : null,
+    canEdit: Boolean(record.canEdit),
+    createdAt: toText(record.createdAt),
+    updatedAt: toText(record.updatedAt),
+  }
+}
+
+export const fetchLineupMappings = async (query: LineupMappingListQuery): Promise<LineupMappingListResult> => {
+  const res = await getCompendiumsLineupMappings(sanitizeQuery(query) as any, withAnonymousHeader())
+  const data = extractData(res)
+  return {
+    items: toArray(data.items).map(normalizeLineupMapping),
+    pagination: normalizePagination(data),
+  }
+}
+
+export const createLineupMapping = async (payload: CreateLineupMappingBody): Promise<LineupMapping> => {
+  const res = await postCompendiumsLineupMappings(sanitizeQuery(payload) as any, withAnonymousHeader())
+  return normalizeLineupMapping(extractData(res))
+}
+
+export const fetchLineupMappingDetail = async (mappingId: string): Promise<LineupMapping> => {
+  const res = await getCompendiumsLineupMappingsMappingId(mappingId, withAnonymousHeader())
+  return normalizeLineupMapping(extractData(res))
+}
+
+export const updateLineupMapping = async (mappingId: string, payload: UpdateLineupMappingBody): Promise<LineupMapping> => {
+  const res = await patchCompendiumsLineupMappingsMappingId(mappingId, payload as any, withAnonymousHeader())
+  return normalizeLineupMapping(extractData(res))
+}
+
+/** 删除映射：仅管理员，走管理侧软删除接口。 */
+export const deleteLineupMapping = async (mappingId: string): Promise<void> => {
+  await deleteAdminLineupMappingsMappingId(mappingId, withAnonymousHeader())
+}
+
+/** 容器内阵容点赞/点踩（便捷路由），返回该容器内该阵容的独立计数。 */
+export const reactToContainerLineup = async (
+  mappingId: string,
+  containerId: string,
+  lineupId: string,
+  value: ReactionValue,
+): Promise<ContainerReactionResult> => {
+  const res = await postLineupMappingsContainersLineupsReaction({ mappingId, containerId, lineupId }, { value }, withAnonymousHeader())
+  const data = extractData(res)
+  return {
+    likeCount: toNumber(data.likeCount),
+    dislikeCount: toNumber(data.dislikeCount),
+    score: toNumber(data.score),
+    myReaction: toNumber(data.myReaction),
   }
 }
 
