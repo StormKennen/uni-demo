@@ -13,3 +13,12 @@
 # 项目规范
 
 - 组件命名规范：组件名称为大驼峰命名，例如：GaConfirmPopup.vue
+
+# Harness 核心硬约束（完整规则见 HARNESS.md 与 .cursor/rules/）
+
+1. 双端兼容：所有代码必须同时支持 H5 与微信小程序，平台差异用 // #ifdef WEB / MP-WEIXIN 条件编译；window/document 只允许在 #ifdef WEB 或 src/utilsH5/ 中出现。
+2. 请求必须经 src/services/http.ts 封装，禁止裸 uni.request；后端契约以 express-mongo-docker 的 Swagger 为准，严禁臆测接口。
+3. 工具页一律放分包 src/subPackages/tools/<name>/，并在 src/pages.json 与 src/config/tools.ts 注册；禁止往主包 src/pages/ 加页面。
+4. 修改 src/** 必须同步更新 docs/changelog.md（pre-commit 强制拒绝）。
+5. 禁止：未经授权新增依赖；修改 vite.config.ts / manifest.json / .env.* / 部署脚本；直接推 main/dev；--no-verify；硬编码密钥/域名。
+6. <script setup lang="ts"> Composition API，禁 any；仅用 pnpm；完成前必须跑通 pnpm lint 与 pnpm type-check。
