@@ -1,0 +1,51 @@
+{
+  "generatedAt": "2026-07-01",
+  "phase": "1-scanning-extraction",
+  "techStack": {
+    "framework": "uni-app 3 (@dcloudio 3.0.0-4050720250324001) + Vue 3.5 Composition API",
+    "language": "TypeScript 4.9 (vue-tsc type-check)",
+    "packageManager": "pnpm (pnpm-lock.yaml, pnpm-workspace.yaml)",
+    "state": "pinia 2 + pinia-plugin-persistedstate",
+    "ui": "@dcloudio/uni-ui + 自研 ga-* 组件",
+    "i18n": "vue-i18n 9",
+    "build": "vite 5 + @dcloudio/vite-plugin-uni; 多端 dev:/build: 脚本（h5、mp-weixin 为主，另有 alipay/toutiao 等）",
+    "style": "sass (uni.scss)，条件编译 // #ifdef WEB / MP-WEIXIN",
+    "test": "vitest（仅 src/engine/tomato-cipher/tests）",
+    "lint": "eslint 8 (eslintrc.js: ts+vue3+prettier) + prettier 3 (.prettierrc.js: 无分号、单引号、printWidth 140)"
+  },
+  "architecture": {
+    "pattern": "uni-app 页面式架构：主包 pages/ + 分包 subPackages/（tools 20+ 工具、user、common、services），全局能力下沉 components/utils/services/stores",
+    "layers": {
+      "src/pages": "主包页面（index、mine），注册于 src/pages.json",
+      "src/subPackages": "分包页面：tools/*（memo、calendar、compendium、family-tree、game-coupons、图片/视频工具等）、user/setting、common/webview",
+      "src/components": "全局组件（大驼峰或 ga-* 前缀）",
+      "src/services": "接口层：http.ts 统一封装 uni.request（token/平台头/刷新），*.api.ts/*.service.ts 按域拆分",
+      "src/stores": "pinia stores（global、mall），persistedstate 持久化",
+      "src/utils / src/utilsH5": "通用工具 / H5 专用工具（条件编译隔离）",
+      "src/engine": "纯算法模块（tomato-cipher、simple-scrambler），有 vitest 测试",
+      "src/hooks": "组合式函数",
+      "src/config": "工具配置（tools.ts 首页工具注册）",
+      "docs/": "方案与路线图文档（图鉴 i18n、工具集成等）"
+    },
+    "conventions": [
+      "新页面必须在 src/pages.json 注册（分包页面注册到对应 subPackages 节点）",
+      "跨端兼容：H5 与微信小程序双端可用，平台差异用条件编译注释",
+      "请求一律走 src/services/http.ts 封装，禁止裸 uni.request",
+      "组件大驼峰命名（如 GaConfirmPopup.vue）"
+    ]
+  },
+  "codeStyleConfigs": {
+    "eslintrc.js": "存在（非标准文件名，eslint 8 可用 -c 指定；lint 脚本为 eslint --fix --ext .js,.vue,ts src）",
+    ".prettierrc.js": "存在：semi:false、singleQuote、printWidth:140、trailingComma:all",
+    ".cursorrules": "已有简版项目介绍（15 行）",
+    ".windsurfrules": "已有 PromptLoop MCP 工作流规则",
+    "husky/lint-staged": "缺失，无 git hooks"
+  },
+  "boundaries": {
+    "doNotTouch": [
+      "vite.config.ts、manifest.json、部署脚本（deploy-h5*.sh/ps1）、.env.* 未经授权禁改",
+      "src/pages.json 仅在新增/调整页面时按规范修改"
+    ],
+    "docsAsSourceOfTruth": "README.md + docs/ 目录方案文档"
+  }
+}
