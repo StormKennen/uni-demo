@@ -318,9 +318,19 @@ const normalizePagination = (source: unknown): PaginationState => {
   }
 }
 
+const findCategory = (categories: unknown, key: string): RawRecord => {
+  if (!Array.isArray(categories)) return {}
+  const found = categories.find((item: unknown) => isRecord(item) && item.key === key)
+  return isRecord(found) ? found : {}
+}
+
 const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
   const record = isRecord(source) ? source : {}
   const nestedCharacter = isRecord(record.character) ? record.character : {}
+  const categories = record.categories
+
+  const familyCat = findCategory(categories, 'family')
+  const archetypeCat = findCategory(categories, 'archetype')
 
   return {
     id: toText(record.id || nestedCharacter.id || record.characterId),
@@ -329,20 +339,20 @@ const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
     label: toText(record.label || record.name || nestedCharacter.name),
     avatar: normalizeUrl(toText(record.avatar || nestedCharacter.avatar)),
     element: toText(record.element || nestedCharacter.elementKey || record.elementKey),
-    elementKey: toText(record.elementKey || nestedCharacter.elementKey),
+    elementKey: toText(record.elementKey || nestedCharacter.elementKey || record.element),
     elementName: toText(record.elementName || nestedCharacter.elementName),
     archetype: toText(
       record.archetype ||
         record.archetypeKey ||
         record.speciesType ||
-        record.type ||
         nestedCharacter.archetype ||
         nestedCharacter.archetypeKey ||
         nestedCharacter.speciesType ||
-        nestedCharacter.type,
+        archetypeCat.valueKey ||
+        archetypeCat.value,
     ),
-    familyKey: toText(record.familyKey || nestedCharacter.familyKey),
-    familyName: toText(record.familyName || nestedCharacter.familyName),
+    familyKey: toText(record.familyKey || nestedCharacter.familyKey || familyCat.valueKey),
+    familyName: toText(record.familyName || nestedCharacter.familyName || familyCat.value || familyCat.name),
     awaken: toText(record.awaken || nestedCharacter.awaken),
     awakenName: toText(record.awakenName || nestedCharacter.awakenName),
     stars: toText(record.stars || nestedCharacter.stars),
@@ -485,7 +495,8 @@ export const fetchAdminCharacterOptions = async (query: AdminLineupsCharacterOpt
 }
 
 export const fetchCharacterOptions = async (query: AdminLineupsCharacterOptionsQuery): Promise<CharacterOptionResult> => {
-  const res = await getCompendiumsCharacters(sanitizeQuery(query) as any, {})
+  const { compendiumId, locale, keyword, page, pageSize } = query
+  const res = await getCompendiumsCharacters(sanitizeQuery({ compendiumId, locale, keyword, page, pageSize }) as any, {})
   const data = extractData(res)
   return {
     items: toArray(data.items).map(normalizeCharacterOption),
