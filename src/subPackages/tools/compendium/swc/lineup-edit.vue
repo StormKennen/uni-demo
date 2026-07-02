@@ -63,19 +63,29 @@
         </view>
       </view>
 
-      <CharacterPickerPanel
-        v-model="selectedMembers"
-        :compendium-id="COMPENDIUM_CODE"
-        :locale="selectedLocale"
-        selection-mode="multiple"
-        footer-mode="none"
-        :max-count="5"
-        selected-title="已选成员"
-        search-title="搜索成员"
-        search-tip="远程搜索人物名称或 code"
-        search-placeholder="输入名称或 code"
-        empty-selected-text="还没有选择成员，请从下方搜索结果中添加。"
-        empty-search-text="暂无可选人物" />
+      <view class="section-card">
+        <view class="section-head">
+          <text class="section-title">阵容成员</text>
+          <text class="section-tip">{{ selectedMembers.length }}/5</text>
+        </view>
+
+        <view v-if="selectedMembers.length" class="selected-members-grid">
+          <CharacterAvatarGrid
+            :items="selectedMembers"
+            :columns="5"
+            :show-action="true"
+            action-text="移除"
+            action-theme="danger"
+            :show-order="true"
+            @action="handleRemoveMember" />
+        </view>
+
+        <StateBlock v-else class="empty-block" text="还没有选择成员，请点击下方按钮添加。" />
+
+        <view class="picker-btn-wrap">
+          <button class="picker-btn" @click="navigateToCharacterPicker">精准人物筛选</button>
+        </view>
+      </view>
     </view>
 
     <StickyActionBar>
@@ -88,8 +98,8 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
-  import CharacterPickerPanel from './components/character-picker-panel.vue'
+  import { onLoad, onShow } from '@dcloudio/uni-app'
+  import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
   import {
@@ -102,10 +112,13 @@
     updateUserLineup,
   } from '@/services/compendium-lineups'
   import { ensureLoginAccess } from '@/utils/admin'
+  import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
+  const PICKER_CACHE_KEY = 'compendium:swc:lineup-edit:picker-draft'
+  const PICKER_RESULT_KEY = 'compendium:swc:lineup-edit:picker-result'
 
   interface FormState {
     name: string
@@ -129,6 +142,31 @@
   })
 
   const isEditMode = computed(() => Boolean(lineupId.value))
+
+  const handleRemoveMember = (characterId: string) => {
+    selectedMembers.value = selectedMembers.value.filter(m => m.characterId !== characterId)
+  }
+
+  const navigateToCharacterPicker = () => {
+    setStorageSync(PICKER_CACHE_KEY, selectedMembers.value.map(item => ({ ...item })))
+    removeStorageSync(PICKER_RESULT_KEY)
+    const params = [
+      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+      `cacheKey=${encodeURIComponent(PICKER_CACHE_KEY)}`,
+      `resultKey=${encodeURIComponent(PICKER_RESULT_KEY)}`,
+      'maxCount=5',
+    ]
+    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/character-picker?${params.join('&')}` })
+  }
+
+  const checkPickerResult = () => {
+    const result = getStorageSync(PICKER_RESULT_KEY)
+    if (Array.isArray(result) && result.length) {
+      selectedMembers.value = result.map((item: CharacterOption) => ({ ...item }))
+      removeStorageSync(PICKER_RESULT_KEY)
+    }
+  }
 
   const buildCurrentUrl = (): string => {
     const params: string[] = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
@@ -255,8 +293,13 @@
 
     if (!ensureLoginAccess(buildCurrentUrl())) return
 
+    removeStorageSync(PICKER_RESULT_KEY)
     uni.setNavigationBarTitle({ title: isEditMode.value ? '编辑阵容' : '新建阵容' })
     loadInitialData()
+  })
+
+  onShow(() => {
+    checkPickerResult()
   })
 </script>
 
@@ -398,94 +441,33 @@
     color: #fff;
   }
 
-  .selected-list,
-  .option-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16rpx;
-  }
-
-  .selected-card,
-  .option-card {
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
-    padding: 18rpx;
-    border-radius: 20rpx;
-    background: #f8fafc;
-  }
-
-  .member-order {
-    width: 40rpx;
-    text-align: center;
-    color: #7c3aed;
-    font-size: 24rpx;
-    font-weight: 800;
-  }
-
-  .member-avatar {
-    width: 72rpx;
-    height: 72rpx;
-    border-radius: 18rpx;
-    background: #e5e7eb;
-    flex-shrink: 0;
-  }
-
-  .member-avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #7c3aed;
-    font-weight: 800;
-  }
-
-  .member-info {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .member-name,
-  .member-extra {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .member-name {
-    color: #111827;
-    font-size: 26rpx;
-    font-weight: 700;
-  }
-
-  .member-extra {
-    margin-top: 6rpx;
-    color: #667085;
-    font-size: 22rpx;
-  }
-
-  .search-row {
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
+  .selected-members-grid {
     margin-bottom: 20rpx;
   }
 
-  .action-btn,
-  .mini-btn,
+  .picker-btn-wrap {
+    margin-top: 16rpx;
+  }
+
+  .picker-btn {
+    width: 100%;
+    height: 80rpx;
+    line-height: 80rpx;
+    border-radius: 999rpx;
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    color: #fff;
+    font-size: 28rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+  }
+
   .submit-btn {
+    width: 100%;
     border-radius: 999rpx;
     font-size: 24rpx;
     font-weight: 700;
-  }
-
-  .submit-btn {
     background: #7c3aed;
     color: #fff;
-  }
-
-  .mini-btn.danger {
-    color: #dc2626;
   }
 
   .empty-block,
@@ -494,15 +476,5 @@
     text-align: center;
     color: #667085;
     font-size: 28rpx;
-  }
-
-  .load-more {
-    margin-top: 20rpx;
-    display: flex;
-    justify-content: center;
-  }
-
-  .submit-btn {
-    width: 100%;
   }
 </style>
