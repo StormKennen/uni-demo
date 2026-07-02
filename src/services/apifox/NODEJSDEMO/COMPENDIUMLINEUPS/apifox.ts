@@ -48,10 +48,8 @@ import type {
   postCompendiumsLineupMappingsRes,
   postCompendiumsLineupsBody,
   postCompendiumsLineupsRes,
-  postLineupMappingsContainersLineupsReactionBody,
-  postLineupMappingsContainersLineupsReactionPathQuery,
-  postLineupMappingsContainersLineupsReactionRes,
   postLineupsLineupIdReactionBody,
+  postLineupsLineupIdReactionPathQuery,
   postLineupsLineupIdReactionRes,
 } from './interface'
 const baseURL = undefined
@@ -69,10 +67,52 @@ export const getCharactersCharacterIdLineups = async (
 ): Promise<Expand<getCharactersCharacterIdLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    `/compendiums/characters/${characterId}/lineups`,
+    `/compendiums/characters/$${characterId}/lineups`,
     params,
     _config,
   )
+}
+
+/**
+ * 自定义函数：usegetCharactersCharacterIdLineups
+ * @description CompendiumLineups/获取人物关联阵容
+ * @url GET /compendiums/characters/{characterId}/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476064661
+ */
+
+export const useGetCharactersCharacterIdLineups = (
+  characterId: string,
+  params: Expand<getCharactersCharacterIdLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [
+      `/compendiums/characters/${characterId}/lineups`,
+      params,
+      fetchOptions,
+    ],
+    queryFn: () =>
+      getCharactersCharacterIdLineups(characterId, params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCharactersCharacterIdLineups = (
+  characterId: string,
+  params: Expand<getCharactersCharacterIdLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [
+      `/compendiums/characters/${characterId}/lineups`,
+      params,
+      fetchOptions,
+    ],
+    queryFn: () =>
+      getCharactersCharacterIdLineups(characterId, params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -85,7 +125,37 @@ export const getCompendiumsLineups = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums/lineups', params, _config)
+  return http.get(`/compendiums/lineups`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsLineups
+ * @description CompendiumLineups/获取阵容列表（用户侧）
+ * @url GET /compendiums/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141957
+ */
+
+export const useGetCompendiumsLineups = (
+  params: Expand<getCompendiumsLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineups`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineups(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsLineups = (
+  params: Expand<getCompendiumsLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineups`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineups(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -98,7 +168,18 @@ export const postCompendiumsLineups = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postCompendiumsLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/compendiums/lineups', data, _config)
+  return http.post(`/compendiums/lineups`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostCompendiumsLineups
+ * @description CompendiumLineups/创建阵容（用户侧）
+ * @url POST /compendiums/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141958
+ */
+
+export const usePostCompendiumsLineups = (_queryOptions?: object = {}) => {
+  return useMutation({ mutationFn: postCompendiumsLineups, ..._queryOptions })
 }
 
 /**
@@ -112,7 +193,41 @@ export const getCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/lineups/${lineupId}`, params, _config)
+  return http.get(`/compendiums/lineups/$${lineupId}`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsLineupsLineupId
+ * @description CompendiumLineups/获取阵容详情（用户侧）
+ * @url GET /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141959
+ */
+
+export const useGetCompendiumsLineupsLineupId = (
+  lineupId: string,
+  params: Expand<getCompendiumsLineupsLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
+    queryFn: () =>
+      getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsLineupsLineupId = (
+  lineupId: string,
+  params: Expand<getCompendiumsLineupsLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
+    queryFn: () =>
+      getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -126,7 +241,23 @@ export const patchCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/compendiums/lineups/${lineupId}`, data, _config)
+  return http.patch(`/compendiums/lineups/$${lineupId}`, data, _config)
+}
+
+/**
+ * 自定义函数：usepatchCompendiumsLineupsLineupId
+ * @description CompendiumLineups/编辑阵容（用户侧）
+ * @url PATCH /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141960
+ */
+
+export const usePatchCompendiumsLineupsLineupId = (
+  _queryOptions?: object = {},
+) => {
+  return useMutation({
+    mutationFn: patchCompendiumsLineupsLineupId,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -139,7 +270,37 @@ export const deleteCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/compendiums/lineups/${lineupId}`, {}, _config)
+  return http.delete(`/compendiums/lineups/$${lineupId}`, {}, _config)
+}
+
+/**
+ * 自定义函数：usedeleteCompendiumsLineupsLineupId
+ * @description CompendiumLineups/删除阵容（用户侧）
+ * @url DELETE /compendiums/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141961
+ */
+
+export const useDeleteCompendiumsLineupsLineupId = (
+  lineupId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
+    queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionDeleteCompendiumsLineupsLineupId = (
+  lineupId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
+    queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -153,7 +314,21 @@ export const postLineupsLineupIdReaction = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postLineupsLineupIdReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post(`/compendiums/lineups/${lineupId}/reaction`, data, _config)
+  return http.post(`/compendiums/lineups/$${lineupId}/reaction`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostLineupsLineupIdReaction
+ * @description CompendiumLineups/阵容点赞/点踩（态度切换）
+ * @url POST /compendiums/lineups/{lineupId}/reaction
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480141962
+ */
+
+export const usePostLineupsLineupIdReaction = (_queryOptions?: object = {}) => {
+  return useMutation({
+    mutationFn: postLineupsLineupIdReaction,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -166,7 +341,37 @@ export const getAdminLineups = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups', params, _config)
+  return http.get(`/admin/lineups`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineups
+ * @description CompendiumLineups/获取阵容列表（管理侧）
+ * @url GET /admin/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476105489
+ */
+
+export const useGetAdminLineups = (
+  params: Expand<getAdminLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups`, params, fetchOptions],
+    queryFn: () => getAdminLineups(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineups = (
+  params: Expand<getAdminLineupsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups`, params, fetchOptions],
+    queryFn: () => getAdminLineups(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -179,7 +384,18 @@ export const postAdminLineups = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAdminLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/admin/lineups', data, _config)
+  return http.post(`/admin/lineups`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostAdminLineups
+ * @description CompendiumLineups/创建阵容（管理侧）
+ * @url POST /admin/lineups
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476064662
+ */
+
+export const usePostAdminLineups = (_queryOptions?: object = {}) => {
+  return useMutation({ mutationFn: postAdminLineups, ..._queryOptions })
 }
 
 /**
@@ -192,7 +408,37 @@ export const getAdminLineupsTypes = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsTypesRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/types', params, _config)
+  return http.get(`/admin/lineups/types`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupsTypes
+ * @description CompendiumLineups/获取阵容类型列表（管理侧）
+ * @url GET /admin/lineups/types
+ * @host https://app.apifox.com/link/project/7048425/apis/api-477759054
+ */
+
+export const useGetAdminLineupsTypes = (
+  params: Expand<getAdminLineupsTypesQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups/types`, params, fetchOptions],
+    queryFn: () => getAdminLineupsTypes(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupsTypes = (
+  params: Expand<getAdminLineupsTypesQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups/types`, params, fetchOptions],
+    queryFn: () => getAdminLineupsTypes(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -205,7 +451,37 @@ export const getAdminLineupsOptions = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsOptionsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/options', params, _config)
+  return http.get(`/admin/lineups/options`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupsOptions
+ * @description CompendiumLineups/获取阵容选项列表（管理侧）
+ * @url GET /admin/lineups/options
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476105490
+ */
+
+export const useGetAdminLineupsOptions = (
+  params: Expand<getAdminLineupsOptionsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups/options`, params, fetchOptions],
+    queryFn: () => getAdminLineupsOptions(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupsOptions = (
+  params: Expand<getAdminLineupsOptionsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups/options`, params, fetchOptions],
+    queryFn: () => getAdminLineupsOptions(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -218,7 +494,37 @@ export const getAdminLineupsCharacterOptions = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsCharacterOptionsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineups/character-options', params, _config)
+  return http.get(`/admin/lineups/character-options`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupsCharacterOptions
+ * @description CompendiumLineups/获取人物选项列表（管理侧）
+ * @url GET /admin/lineups/character-options
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476105491
+ */
+
+export const useGetAdminLineupsCharacterOptions = (
+  params: Expand<getAdminLineupsCharacterOptionsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups/character-options`, params, fetchOptions],
+    queryFn: () => getAdminLineupsCharacterOptions(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupsCharacterOptions = (
+  params: Expand<getAdminLineupsCharacterOptionsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups/character-options`, params, fetchOptions],
+    queryFn: () => getAdminLineupsCharacterOptions(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -232,7 +538,39 @@ export const getAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineups/${lineupId}`, params, _config)
+  return http.get(`/admin/lineups/$${lineupId}`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupsLineupId
+ * @description CompendiumLineups/获取阵容详情（管理侧）
+ * @url GET /admin/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476105492
+ */
+
+export const useGetAdminLineupsLineupId = (
+  lineupId: string,
+  params: Expand<getAdminLineupsLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
+    queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupsLineupId = (
+  lineupId: string,
+  params: Expand<getAdminLineupsLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
+    queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -246,7 +584,21 @@ export const patchAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/admin/lineups/${lineupId}`, data, _config)
+  return http.patch(`/admin/lineups/$${lineupId}`, data, _config)
+}
+
+/**
+ * 自定义函数：usepatchAdminLineupsLineupId
+ * @description CompendiumLineups/编辑阵容（管理侧）
+ * @url PATCH /admin/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476064663
+ */
+
+export const usePatchAdminLineupsLineupId = (_queryOptions?: object = {}) => {
+  return useMutation({
+    mutationFn: patchAdminLineupsLineupId,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -259,7 +611,37 @@ export const deleteAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/admin/lineups/${lineupId}`, {}, _config)
+  return http.delete(`/admin/lineups/$${lineupId}`, {}, _config)
+}
+
+/**
+ * 自定义函数：usedeleteAdminLineupsLineupId
+ * @description CompendiumLineups/删除阵容（管理侧）
+ * @url DELETE /admin/lineups/{lineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476064664
+ */
+
+export const useDeleteAdminLineupsLineupId = (
+  lineupId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
+    queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionDeleteAdminLineupsLineupId = (
+  lineupId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
+    queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -273,7 +655,57 @@ export const getAdminLineupRelationsSourceLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupRelationsSourceLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineup-relations/${sourceLineupId}`, params, _config)
+  return http.get(`/admin/lineup-relations/$${sourceLineupId}`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupRelationsSourceLineupId
+ * @description CompendiumLineups/获取阵容映射关系详情（管理侧）
+ * @url GET /admin/lineup-relations/{sourceLineupId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476105493
+ */
+
+export const useGetAdminLineupRelationsSourceLineupId = (
+  sourceLineupId: string,
+  params: Expand<getAdminLineupRelationsSourceLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [
+      `/admin/lineup-relations/${sourceLineupId}`,
+      params,
+      fetchOptions,
+    ],
+    queryFn: () =>
+      getAdminLineupRelationsSourceLineupId(
+        sourceLineupId,
+        params,
+        fetchOptions,
+      ),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupRelationsSourceLineupId = (
+  sourceLineupId: string,
+  params: Expand<getAdminLineupRelationsSourceLineupIdQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [
+      `/admin/lineup-relations/${sourceLineupId}`,
+      params,
+      fetchOptions,
+    ],
+    queryFn: () =>
+      getAdminLineupRelationsSourceLineupId(
+        sourceLineupId,
+        params,
+        fetchOptions,
+      ),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -286,7 +718,18 @@ export const postAdminLineupRelations = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAdminLineupRelationsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/admin/lineup-relations', data, _config)
+  return http.post(`/admin/lineup-relations`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostAdminLineupRelations
+ * @description CompendiumLineups/保存阵容映射关系（管理侧）
+ * @url POST /admin/lineup-relations
+ * @host https://app.apifox.com/link/project/7048425/apis/api-476064665
+ */
+
+export const usePostAdminLineupRelations = (_queryOptions?: object = {}) => {
+  return useMutation({ mutationFn: postAdminLineupRelations, ..._queryOptions })
 }
 
 /**
@@ -299,7 +742,37 @@ export const getAdminLineupMappings = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupMappingsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/admin/lineup-mappings', params, _config)
+  return http.get(`/admin/lineup-mappings`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupMappings
+ * @description CompendiumLineups/阵容映射列表（管理侧）
+ * @url GET /admin/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665650
+ */
+
+export const useGetAdminLineupMappings = (
+  params: Expand<getAdminLineupMappingsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineup-mappings`, params, fetchOptions],
+    queryFn: () => getAdminLineupMappings(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupMappings = (
+  params: Expand<getAdminLineupMappingsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineup-mappings`, params, fetchOptions],
+    queryFn: () => getAdminLineupMappings(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -312,7 +785,18 @@ export const postAdminLineupMappings = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAdminLineupMappingsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/admin/lineup-mappings', data, _config)
+  return http.post(`/admin/lineup-mappings`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostAdminLineupMappings
+ * @description CompendiumLineups/创建阵容映射（管理侧）
+ * @url POST /admin/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665651
+ */
+
+export const usePostAdminLineupMappings = (_queryOptions?: object = {}) => {
+  return useMutation({ mutationFn: postAdminLineupMappings, ..._queryOptions })
 }
 
 /**
@@ -325,7 +809,37 @@ export const getAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineup-mappings/${mappingId}`, {}, _config)
+  return http.get(`/admin/lineup-mappings/$${mappingId}`, {}, _config)
+}
+
+/**
+ * 自定义函数：usegetAdminLineupMappingsMappingId
+ * @description CompendiumLineups/阵容映射详情（管理侧）
+ * @url GET /admin/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665652
+ */
+
+export const useGetAdminLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetAdminLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -339,7 +853,23 @@ export const patchAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/admin/lineup-mappings/${mappingId}`, data, _config)
+  return http.patch(`/admin/lineup-mappings/$${mappingId}`, data, _config)
+}
+
+/**
+ * 自定义函数：usepatchAdminLineupMappingsMappingId
+ * @description CompendiumLineups/编辑阵容映射（管理侧）
+ * @url PATCH /admin/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665653
+ */
+
+export const usePatchAdminLineupMappingsMappingId = (
+  _queryOptions?: object = {},
+) => {
+  return useMutation({
+    mutationFn: patchAdminLineupMappingsMappingId,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -352,7 +882,37 @@ export const deleteAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/admin/lineup-mappings/${mappingId}`, {}, _config)
+  return http.delete(`/admin/lineup-mappings/$${mappingId}`, {}, _config)
+}
+
+/**
+ * 自定义函数：usedeleteAdminLineupMappingsMappingId
+ * @description CompendiumLineups/删除阵容映射（软删除，管理侧）
+ * @url DELETE /admin/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665654
+ */
+
+export const useDeleteAdminLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionDeleteAdminLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -365,7 +925,37 @@ export const getCompendiumsLineupMappings = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupMappingsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/compendiums/lineup-mappings', params, _config)
+  return http.get(`/compendiums/lineup-mappings`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsLineupMappings
+ * @description CompendiumLineups/阵容映射列表（用户侧）
+ * @url GET /compendiums/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736381
+ */
+
+export const useGetCompendiumsLineupMappings = (
+  params: Expand<getCompendiumsLineupMappingsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineup-mappings`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineupMappings(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsLineupMappings = (
+  params: Expand<getCompendiumsLineupMappingsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineup-mappings`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineupMappings(params, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -378,7 +968,23 @@ export const postCompendiumsLineupMappings = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postCompendiumsLineupMappingsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/compendiums/lineup-mappings', data, _config)
+  return http.post(`/compendiums/lineup-mappings`, data, _config)
+}
+
+/**
+ * 自定义函数：usepostCompendiumsLineupMappings
+ * @description CompendiumLineups/创建阵容映射（用户侧）
+ * @url POST /compendiums/lineup-mappings
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736382
+ */
+
+export const usePostCompendiumsLineupMappings = (
+  _queryOptions?: object = {},
+) => {
+  return useMutation({
+    mutationFn: postCompendiumsLineupMappings,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -391,7 +997,39 @@ export const getCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/lineup-mappings/${mappingId}`, {}, _config)
+  return http.get(`/compendiums/lineup-mappings/$${mappingId}`, {}, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsLineupMappingsMappingId
+ * @description CompendiumLineups/阵容映射详情（用户侧）
+ * @url GET /compendiums/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665655
+ */
+
+export const useGetCompendiumsLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () =>
+      getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsLineupMappingsMappingId = (
+  mappingId: string,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
+    queryFn: () =>
+      getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -405,7 +1043,23 @@ export const patchCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/compendiums/lineup-mappings/${mappingId}`, data, _config)
+  return http.patch(`/compendiums/lineup-mappings/$${mappingId}`, data, _config)
+}
+
+/**
+ * 自定义函数：usepatchCompendiumsLineupMappingsMappingId
+ * @description CompendiumLineups/编辑阵容映射（用户侧）
+ * @url PATCH /compendiums/lineup-mappings/{mappingId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480736383
+ */
+
+export const usePatchCompendiumsLineupMappingsMappingId = (
+  _queryOptions?: object = {},
+) => {
+  return useMutation({
+    mutationFn: patchCompendiumsLineupMappingsMappingId,
+    ..._queryOptions,
+  })
 }
 
 /**
@@ -413,15 +1067,29 @@ export const patchCompendiumsLineupMappingsMappingId = async (
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  * @host https://app.apifox.com/link/project/7048425/apis/api-480665656
  */
-export const postLineupMappingsContainersLineupsReaction = async (
-  pathParams: Expand<postLineupMappingsContainersLineupsReactionPathQuery>,
-  data: Expand<postLineupMappingsContainersLineupsReactionBody>,
+export const postLineupsLineupIdReaction = async (
+  pathParams: Expand<postLineupsLineupIdReactionPathQuery>,
+  data: Expand<postLineupsLineupIdReactionBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postLineupMappingsContainersLineupsReactionRes>> => {
+): Promise<Expand<postLineupsLineupIdReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
     `/compendiums/lineup-mappings/${pathParams.mappingId}/containers/${pathParams.containerId}/lineups/${pathParams.lineupId}/reaction`,
     data,
     _config,
   )
+}
+
+/**
+ * 自定义函数：usepostLineupsLineupIdReaction
+ * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）
+ * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
+ * @host https://app.apifox.com/link/project/7048425/apis/api-480665656
+ */
+
+export const usePostLineupsLineupIdReaction = (_queryOptions?: object = {}) => {
+  return useMutation({
+    mutationFn: postLineupsLineupIdReaction,
+    ..._queryOptions,
+  })
 }

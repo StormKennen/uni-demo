@@ -547,7 +547,7 @@ export type patchCompendiumsLineupMappingsMappingIdRes = string
  * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口路径参数
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
-export interface postLineupMappingsContainersLineupsReactionPathQuery {
+export interface postLineupsLineupIdReactionPathQuery {
   mappingId: string
 
   containerId: string
@@ -559,7 +559,7 @@ export interface postLineupMappingsContainersLineupsReactionPathQuery {
  * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口请求Body参数
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
-export interface postLineupMappingsContainersLineupsReactionBody {
+export interface postLineupsLineupIdReactionBody {
   /** 1 点赞，-1 点踩 */
   value: number
 }
@@ -568,4 +568,4 @@ export interface postLineupMappingsContainersLineupsReactionBody {
  * @description CompendiumLineups/容器内阵容点赞/点踩（用户侧便捷路由）--接口返回值
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
-export type postLineupMappingsContainersLineupsReactionRes = string
+export type postLineupsLineupIdReactionRes = string
