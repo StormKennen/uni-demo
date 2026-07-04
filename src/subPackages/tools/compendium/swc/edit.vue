@@ -207,27 +207,29 @@
     return toText(attribute.displayValue || attribute.value || attribute.rawValue || attribute.text)
   }
 
-  const mergeAttributeText = (attributes: Record<string, unknown>[], key: string, value: string): Record<string, unknown>[] => {
-    const next = attributes.map(item => ({ ...item }))
-    const trimmed = value.trim()
-    if (!trimmed) return next
+  type AttributePayload = { key: string; value: number | string }
 
-    const index = next.findIndex(item => toText(item.key) === key || toText(item.name) === key)
-    const payload = index >= 0 ? next[index] : {}
-    const nextAttribute = {
-      ...payload,
-      key,
-      value: trimmed,
-      displayValue: trimmed,
+  const buildAttributesPayload = (attributes: Record<string, unknown>[], starsText: string): AttributePayload[] => {
+    const list = attributes
+      .map(item => {
+        const key = toText(item.key) || toText(item.name)
+        const rawValue = item.value ?? item.rawValue ?? item.displayValue ?? item.text
+        return { key, value: normalizeNumberLike(toText(rawValue)) }
+      })
+      .filter((item): item is AttributePayload => Boolean(item.key) && item.value !== undefined)
+
+    const trimmedStars = starsText.trim()
+    if (trimmedStars) {
+      const starsValue = normalizeNumberLike(trimmedStars) ?? trimmedStars
+      const index = list.findIndex(item => item.key === 'stars')
+      if (index >= 0) {
+        list[index] = { key: 'stars', value: starsValue }
+      } else {
+        list.push({ key: 'stars', value: starsValue })
+      }
     }
 
-    if (index >= 0) {
-      next[index] = nextAttribute
-    } else {
-      next.push(nextAttribute)
-    }
-
-    return next
+    return list
   }
 
   const resetForm = () => {
@@ -345,7 +347,7 @@
         locale: selectedLocale.value,
         name: form.name || undefined,
         skills: form.skills.map(buildSkillPayload),
-        attributes: mergeAttributeText(originalAttributes.value, 'stars', originalStarsText.value),
+        attributes: buildAttributesPayload(originalAttributes.value, originalStarsText.value),
       }
 
       await patchAdminCompendiumsCharacters(body as never)
