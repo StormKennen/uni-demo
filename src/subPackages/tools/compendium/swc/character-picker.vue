@@ -134,10 +134,6 @@
         <text class="load-more-text">加载更多中...</text>
       </view>
 
-      <view v-else-if="canLoadMore" class="load-more">
-        <button class="load-more-btn" @click="loadMore">加载更多</button>
-      </view>
-
       <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
         <text class="load-more-text muted">没有更多了</text>
       </view>
@@ -234,7 +230,6 @@
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
   const avatarCacheRevision = ref(0)
   const pageSize = 50
-  const autoLoading = ref(false)
   let requestSequence = 0
 
   const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
@@ -333,9 +328,7 @@
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(
-    () => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value && !autoLoading.value,
-  )
+  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value)
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -376,33 +369,11 @@
     })
   }
 
-  const loadRemainingPages = async (token: number) => {
-    if (autoLoading.value) return
-    autoLoading.value = true
-    loadingMore.value = true
-
-    try {
-      while (token === requestSequence && pagination.value.hasNext) {
-        const result = await loadCharacterPage(pagination.value.page + 1)
-        if (token !== requestSequence) return
-        pagination.value = result.pagination
-        characterOptions.value = [...characterOptions.value, ...result.items]
-        preloadCharacterBatch(result.items)
-      }
-    } finally {
-      if (token === requestSequence) {
-        loadingMore.value = false
-      }
-      autoLoading.value = false
-    }
-  }
-
   const fetchOptions = async (reset = true) => {
     if (reset) {
       const token = ++requestSequence
       loading.value = true
       loadingMore.value = false
-      autoLoading.value = false
       errorMessage.value = ''
       pagination.value = getPaginationOrDefault()
       characterOptions.value = []
@@ -415,9 +386,6 @@
         characterOptions.value = result.items
         initialized.value = true
         preloadCharacterBatch(result.items)
-        if (pagination.value.hasNext) {
-          await loadRemainingPages(token)
-        }
       } catch (error) {
         uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
       } finally {
@@ -428,7 +396,7 @@
       return
     }
 
-    if (loading.value || loadingMore.value || autoLoading.value || !pagination.value.hasNext) return
+    if (loading.value || loadingMore.value || !pagination.value.hasNext) return
 
     const token = ++requestSequence
     loadingMore.value = true

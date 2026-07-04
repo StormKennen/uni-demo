@@ -270,7 +270,7 @@
 
   const COMPENDIUM_CODE = 'swc'
   const ALL_VALUE = 'all'
-  const PAGE_SIZE = 40
+  const PAGE_SIZE = 50
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'
