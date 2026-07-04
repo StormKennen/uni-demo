@@ -72,7 +72,7 @@ export interface postCompendiumsLineupsBody {
   /** Optional note shown in the editor or details page. */
   description?: string
   /** Lineup display name. */
-  name: string
+  name?: string
   status?: postCompendiumsLineupsBodyStatus
   type: postCompendiumsLineupsBodyType
 }
@@ -208,7 +208,7 @@ export interface postAdminLineupsBody {
   /** Optional note shown in the editor or details page. */
   description?: string
   /** Lineup display name. */
-  name: string
+  name?: string
   status?: postAdminLineupsBodyStatus
   type: postAdminLineupsBodyType
 }
@@ -390,6 +390,12 @@ export interface getAdminLineupMappingsQuery {
   page?: number
 
   limit?: number
+  /** 标签搜索，可传多个（中文或英文逗号分隔，且的关系），精确匹配单个标签。 */
+  tag?: string
+  /** 源容器人物筛选，多个人物 ID 逗号分隔（且的关系）。 */
+  sourceCharacterIds?: string
+  /** 目标容器人物筛选，多个人物 ID 逗号分隔（且的关系）。 */
+  targetCharacterIds?: string
 }
 
 /**
@@ -412,6 +418,8 @@ export interface postAdminLineupMappingsBody {
   name?: string
   /** 放入源容器的阵容 ID 列表（同容器去重）。 */
   sourceLineupIds?: string[]
+  /** 标签字符串，多个标签以中文或英文逗号连接，如 `PVP，防守 */
+  tags?: string
   /** 放入目标容器的阵容 ID 列表（同容器去重）。 */
   targetLineupIds?: string[]
 }
@@ -438,6 +446,8 @@ export interface patchAdminLineupMappingsMappingIdBody {
   /** 映射名称 */
   name?: string
   remove?: patchAdminLineupMappingsMappingIdBodyRemoveItem[]
+  /** 标签字符串，多个标签以中文或英文逗号连接；传空字符串可清空标签 */
+  tags?: string
 }
 
 /** patchAdminLineupMappingsMappingIdBodyAdd */
@@ -475,6 +485,16 @@ export interface getCompendiumsLineupMappingsQuery {
   page?: number
 
   limit?: number
+  /** 标签搜索，可传多个（中文或英文逗号分隔，且的关系），精确匹配单个标签。 */
+  tag?: string
+  /** 源容器人物筛选，多个人物 ID 逗号分隔（且的关系）。
+每个人物都必须出现在该映射源容器的至少一个阵容中，否则不匹配。
+ */
+  sourceCharacterIds?: string
+  /** 目标容器人物筛选，多个人物 ID 逗号分隔（且的关系）。
+可与 sourceCharacterIds 同时使用，此时两侧条件需同时满足。
+ */
+  targetCharacterIds?: string
 }
 
 /**
@@ -497,6 +517,8 @@ export interface postCompendiumsLineupMappingsBody {
   name?: string
   /** 放入源容器的阵容 ID 列表（同容器去重）。 */
   sourceLineupIds?: string[]
+  /** 标签字符串，多个标签以中文或英文逗号连接，如 `PVP，防守 */
+  tags?: string
   /** 放入目标容器的阵容 ID 列表（同容器去重）。 */
   targetLineupIds?: string[]
 }
@@ -523,6 +545,8 @@ export interface patchCompendiumsLineupMappingsMappingIdBody {
   /** 映射名称 */
   name?: string
   remove?: patchCompendiumsLineupMappingsMappingIdBodyRemoveItem[]
+  /** 标签字符串，多个标签以中文或英文逗号连接；传空字符串可清空标签 */
+  tags?: string
 }
 
 /** patchCompendiumsLineupMappingsMappingIdBodyAdd */

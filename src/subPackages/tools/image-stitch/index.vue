@@ -871,7 +871,7 @@ const encodeBase64 = (str: string) => {
     // 微信小程序使用uni.arrayBufferToBase64
     const utf8 = []
     for (let i = 0; i < str.length; i++) {
-      const charcode = str.charCodeAt(i)
+      let charcode = str.charCodeAt(i)
       if (charcode < 0x80) utf8.push(charcode)
       else if (charcode < 0x800) {
         utf8.push(0xc0 | (charcode >> 6), 

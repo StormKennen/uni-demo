@@ -286,6 +286,9 @@ export type getCompendiumsRankingsRes = getCompendiumsRankingsResItem[]
 /** getCompendiumsRankingsResItem */
 export interface getCompendiumsRankingsResItem {
   avatar?: string
+  avatarOriginal?: string
+  avatarSource?: 'remote' | 'oss'
+  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
   characterId?: string
   displayValue?: string
   name?: string
@@ -391,7 +394,11 @@ export interface getCompendiumsCompareResItemSkins {
 export interface getCompendiumsCompareResItem {
   aliases?: string[]
   attributes?: getCompendiumsCompareResItemAttributes[]
+  /** 优先返回镜像后的 OSS/CDN 缩略图；未镜像时回退原始第三方头像地址 */
   avatar?: string
+  avatarOriginal?: string
+  avatarSource?: 'remote' | 'oss'
+  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
   categories?: getCompendiumsCompareResItemCategories[]
   code?: string
   /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
