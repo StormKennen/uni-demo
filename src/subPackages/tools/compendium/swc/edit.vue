@@ -160,6 +160,9 @@
   })
   const originalStarsText = ref('')
   const originalAttributes = ref<Record<string, unknown>[]>([])
+  const originalCategories = ref<Record<string, unknown>[]>([])
+  const originalSkins = ref<unknown[]>([])
+  const originalAliases = ref<string[]>([])
 
   const selectedLocaleLabel = computed(
     () => localeOptions.find(option => option.value === selectedLocale.value)?.label || selectedLocale.value,
@@ -232,11 +235,26 @@
     return list
   }
 
+  const buildCategoriesPayload = (categories: Record<string, unknown>[]): Record<string, string> => {
+    const result: Record<string, string> = {}
+    categories.forEach(item => {
+      const key = toText(item.key) || toText(item.name)
+      const value = toText(item.valueKey) || toText(item.value)
+      if (key && value) {
+        result[key] = value
+      }
+    })
+    return result
+  }
+
   const resetForm = () => {
     form.name = ''
     form.skills = []
     originalStarsText.value = ''
     originalAttributes.value = []
+    originalCategories.value = []
+    originalSkins.value = []
+    originalAliases.value = []
   }
 
   const normalizeSkillCoefficient = (source: unknown): SkillCoefficientForm => {
@@ -298,6 +316,9 @@
       avatar.value = toText(data.avatar)
       form.skills = skills.map(normalizeSkill)
       originalAttributes.value = attributes
+      originalCategories.value = toArray(data.categories).map(cloneAttribute)
+      originalSkins.value = toArray(data.skins)
+      originalAliases.value = toArray(data.aliases).map(toText).filter(Boolean)
       originalStarsText.value = readAttributeText(attributes, 'stars')
       uni.setNavigationBarTitle({ title: `编辑 - ${displayName.value}` })
     } catch (error) {
@@ -348,6 +369,9 @@
         name: form.name || undefined,
         skills: form.skills.map(buildSkillPayload),
         attributes: buildAttributesPayload(originalAttributes.value, originalStarsText.value),
+        categories: buildCategoriesPayload(originalCategories.value),
+        skins: originalSkins.value,
+        aliases: originalAliases.value,
       }
 
       await patchAdminCompendiumsCharacters(body as never)
