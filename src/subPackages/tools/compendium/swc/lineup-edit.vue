@@ -2,7 +2,7 @@
   <view class="lineup-edit-page">
     <view class="hero-card">
       <text class="hero-title">{{ isEditMode ? form.name || '编辑阵容' : '创建新阵容' }}</text>
-      <text class="hero-subtitle">成员数量需保持 2 到 5 个，提交时会保留你当前的成员顺序。</text>
+      <text class="hero-subtitle">可自由增删成员，提交时会保留你当前的成员顺序。</text>
     </view>
 
     <StateBlock v-if="loading" class="state-block" text="加载数据中..." />
@@ -66,7 +66,7 @@
       <view class="section-card">
         <view class="section-head">
           <text class="section-title">阵容成员</text>
-          <text class="section-tip">{{ selectedMembers.length }}/5</text>
+          <text class="section-tip">{{ selectedMembers.length }}</text>
         </view>
 
         <view v-if="selectedMembers.length" class="selected-members-grid">
@@ -148,14 +148,17 @@
   }
 
   const navigateToCharacterPicker = () => {
-    setStorageSync(PICKER_CACHE_KEY, selectedMembers.value.map(item => ({ ...item })))
+    setStorageSync(
+      PICKER_CACHE_KEY,
+      selectedMembers.value.map(item => ({ ...item })),
+    )
     removeStorageSync(PICKER_RESULT_KEY)
     const params = [
       `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
       `cacheKey=${encodeURIComponent(PICKER_CACHE_KEY)}`,
       `resultKey=${encodeURIComponent(PICKER_RESULT_KEY)}`,
-      'maxCount=5',
+      'maxCount=0',
     ]
     uni.navigateTo({ url: `/subPackages/tools/compendium/swc/character-picker?${params.join('&')}` })
   }
@@ -218,25 +221,9 @@
   }
 
   const validateForm = (): boolean => {
-    if (!form.name.trim()) {
-      uni.showToast({
-        title: '请输入阵容名称',
-        icon: 'none',
-      })
-      return false
-    }
-
     if (!form.type.trim()) {
       uni.showToast({
         title: '请输入阵容类型',
-        icon: 'none',
-      })
-      return false
-    }
-
-    if (selectedMembers.value.length < 2 || selectedMembers.value.length > 5) {
-      uni.showToast({
-        title: '成员数量需在 2 到 5 个之间',
         icon: 'none',
       })
       return false
@@ -251,11 +238,11 @@
     submitting.value = true
 
     const basePayload = {
-      name: form.name.trim(),
       type: form.type.trim(),
       description: form.description.trim(),
       status: form.status,
       characterIds: selectedMembers.value.map(member => member.characterId),
+      ...(form.name.trim() ? { name: form.name.trim() } : {}),
     }
 
     try {

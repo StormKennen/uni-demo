@@ -117,7 +117,7 @@
           :class="{ selected: isSelected(item.characterId) }"
           @click="toggleSelect(item)">
           <view class="avatar-wrap">
-            <image v-if="item.avatar" class="avatar-image" :src="item.avatar" mode="aspectFill" />
+            <image v-if="item.avatar" class="avatar-image" :src="getAvatarSrc(item.avatar)" mode="aspectFill" lazy-load />
             <view v-else class="avatar-image avatar-placeholder">
               <text>{{ (item.name || '?').slice(0, 1) }}</text>
             </view>
@@ -145,7 +145,7 @@
 
     <view class="footer-bar">
       <view class="footer-selected-info">
-        <text class="footer-count">已选 {{ draftSelected.length }}/{{ maxCount }}</text>
+        <text class="footer-count">{{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}</text>
       </view>
       <button class="footer-cancel-btn" @click="handleCancel">取消</button>
       <button class="footer-confirm-btn" @click="handleConfirm">确认选择</button>
@@ -167,6 +167,7 @@
     type CharacterOptionResult,
     type PaginationState,
   } from '@/services/compendium-lineups'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
   import { isAdminUser } from '@/utils/admin'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
 
@@ -215,7 +216,7 @@
 
   const compendiumId = ref(DEFAULT_COMPENDIUM_ID)
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const maxCount = ref(5)
+  const maxCount = ref(0)
   const keyword = ref('')
   const loading = ref(false)
   const loadingMore = ref(false)
@@ -226,11 +227,15 @@
   const showQuickFilters = ref(true)
   const filterExpanded = ref(true)
   const selectedElement = ref(ALL_VALUE)
-  const selectedAwaken = ref(ALL_VALUE)
+  const selectedAwaken = ref('awakened')
   const selectedType = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const cacheKey = ref('compendium:swc:lineup-edit:picker-draft')
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
+  const avatarCacheRevision = ref(0)
+  const pageSize = 50
+  const autoLoading = ref(false)
+  let requestSequence = 0
 
   const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
 
@@ -256,6 +261,16 @@
     const text = typeof value === 'string' ? value : ''
     const matched = text.match(/\d+/)
     return matched ? matched[0] : ''
+  }
+
+  const normalizeStarsValue = (value?: string): number => {
+    const stars = Number(normalizeStars(value))
+    return Number.isFinite(stars) ? stars : 0
+  }
+
+  const getAvatarSrc = (url: string): string => {
+    avatarCacheRevision.value
+    return resolveAvatar(url)
   }
 
   const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
@@ -290,18 +305,26 @@
   })
 
   const filteredCharacterOptions = computed(() =>
-    characterOptions.value.filter(option => {
-      const elementKey = normalizeText(option.elementKey || option.element)
-      const awaken = normalizeAwaken(option.awaken || option.awakenName)
-      const archetype = normalizeArchetype(option.archetype)
-      const stars = normalizeStars(option.stars)
+    characterOptions.value
+      .filter(option => {
+        const elementKey = normalizeText(option.elementKey || option.element)
+        const awaken = normalizeAwaken(option.awaken || option.awakenName)
+        const archetype = normalizeArchetype(option.archetype)
+        const stars = normalizeStars(option.stars)
 
-      if (selectedElement.value !== ALL_VALUE && elementKey !== selectedElement.value) return false
-      if (selectedAwaken.value !== ALL_VALUE && awaken !== selectedAwaken.value) return false
-      if (selectedType.value !== ALL_VALUE && archetype !== selectedType.value) return false
-      if (selectedStar.value !== ALL_VALUE && stars !== selectedStar.value) return false
-      return true
-    }),
+        if (selectedElement.value !== ALL_VALUE && elementKey !== selectedElement.value) return false
+        if (selectedAwaken.value !== ALL_VALUE && awaken !== selectedAwaken.value) return false
+        if (selectedType.value !== ALL_VALUE && archetype !== selectedType.value) return false
+        if (selectedStar.value !== ALL_VALUE && stars !== selectedStar.value) return false
+        return true
+      })
+      .map((item, index) => ({ item, index }))
+      .sort((left, right) => {
+        const starDiff = normalizeStarsValue(right.item.stars) - normalizeStarsValue(left.item.stars)
+        if (starDiff !== 0) return starDiff
+        return left.index - right.index
+      })
+      .map(entry => entry.item),
   )
 
   const filteredEmptyText = computed(() => {
@@ -310,7 +333,9 @@
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value)
+  const canLoadMore = computed(
+    () => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value && !autoLoading.value,
+  )
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -324,46 +349,112 @@
       draftSelected.value = draftSelected.value.filter(item => item.characterId !== option.characterId)
       return
     }
-    if (draftSelected.value.length >= maxCount.value) {
+    if (maxCount.value > 0 && draftSelected.value.length >= maxCount.value) {
       uni.showToast({ title: `最多选择 ${maxCount.value} 个魔灵`, icon: 'none' })
       return
     }
     draftSelected.value = [...draftSelected.value, { ...option }]
   }
 
-  const fetchOptions = async (reset = true) => {
-    if (loading.value || loadingMore.value) return
-    if (reset) {
-      loading.value = true
-    } else {
-      if (!pagination.value.hasNext) return
-      loadingMore.value = true
-    }
+  const loadCharacterPage = async (page: number): Promise<CharacterOptionResult> => {
+    const loadFn = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
+    return loadFn({
+      compendiumId: compendiumId.value,
+      locale: selectedLocale.value,
+      keyword: keyword.value.trim() || undefined,
+      status: 'enabled',
+      page,
+      pageSize,
+    })
+  }
+
+  const preloadCharacterBatch = (items: CharacterOption[]) => {
+    const urls = items.map(item => item.avatar).filter((url): url is string => Boolean(url))
+    if (!urls.length) return
+    void preloadAvatars(urls).finally(() => {
+      avatarCacheRevision.value += 1
+    })
+  }
+
+  const loadRemainingPages = async (token: number) => {
+    if (autoLoading.value) return
+    autoLoading.value = true
+    loadingMore.value = true
 
     try {
-      const nextPage = reset ? 1 : pagination.value.page + 1
-      const loadFn = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
-      const result: CharacterOptionResult = await loadFn({
-        compendiumId: compendiumId.value,
-        locale: selectedLocale.value,
-        keyword: keyword.value.trim() || undefined,
-        status: 'enabled',
-        page: nextPage,
-        pageSize: 20,
-      })
-      pagination.value = result.pagination
-      characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]
-      initialized.value = true
-    } catch (error) {
-      uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
+      while (token === requestSequence && pagination.value.hasNext) {
+        const result = await loadCharacterPage(pagination.value.page + 1)
+        if (token !== requestSequence) return
+        pagination.value = result.pagination
+        characterOptions.value = [...characterOptions.value, ...result.items]
+        preloadCharacterBatch(result.items)
+      }
     } finally {
-      loading.value = false
-      loadingMore.value = false
+      if (token === requestSequence) {
+        loadingMore.value = false
+      }
+      autoLoading.value = false
     }
   }
 
-  const refreshCharacterOptions = () => fetchOptions(true)
-  const loadMore = () => fetchOptions(false)
+  const fetchOptions = async (reset = true) => {
+    if (reset) {
+      const token = ++requestSequence
+      loading.value = true
+      loadingMore.value = false
+      autoLoading.value = false
+      errorMessage.value = ''
+      pagination.value = getPaginationOrDefault()
+      characterOptions.value = []
+      initialized.value = false
+
+      try {
+        const result = await loadCharacterPage(1)
+        if (token !== requestSequence) return
+        pagination.value = result.pagination
+        characterOptions.value = result.items
+        initialized.value = true
+        preloadCharacterBatch(result.items)
+        if (pagination.value.hasNext) {
+          await loadRemainingPages(token)
+        }
+      } catch (error) {
+        uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
+      } finally {
+        if (token === requestSequence) {
+          loading.value = false
+        }
+      }
+      return
+    }
+
+    if (loading.value || loadingMore.value || autoLoading.value || !pagination.value.hasNext) return
+
+    const token = ++requestSequence
+    loadingMore.value = true
+    try {
+      const result = await loadCharacterPage(pagination.value.page + 1)
+      if (token !== requestSequence) return
+      pagination.value = result.pagination
+      characterOptions.value = [...characterOptions.value, ...result.items]
+      initialized.value = true
+      preloadCharacterBatch(result.items)
+    } catch (error) {
+      uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
+    } finally {
+      if (token === requestSequence) {
+        loadingMore.value = false
+      }
+    }
+  }
+
+  const refreshCharacterOptions = () => {
+    void fetchOptions(true)
+  }
+
+  const loadMore = () => {
+    void fetchOptions(false)
+  }
 
   const handleScrollToLower = () => {
     if (canLoadMore.value) loadMore()
@@ -378,7 +469,7 @@
 
   const resetQuickFilters = () => {
     selectedElement.value = ALL_VALUE
-    selectedAwaken.value = ALL_VALUE
+    selectedAwaken.value = 'awakened'
     selectedType.value = ALL_VALUE
     selectedStar.value = ALL_VALUE
   }
@@ -388,14 +479,18 @@
   }
 
   const handleConfirm = () => {
-    setStorageSync(resultKey.value, draftSelected.value.map(item => ({ ...item })))
+    setStorageSync(
+      resultKey.value,
+      draftSelected.value.map(item => ({ ...item })),
+    )
     uni.navigateBack()
   }
 
   onLoad((options: Record<string, string | undefined>) => {
     compendiumId.value = options.compendiumId || DEFAULT_COMPENDIUM_ID
     selectedLocale.value = options.locale || DEFAULT_LOCALE
-    maxCount.value = options.maxCount ? Number(options.maxCount) || 5 : 5
+    const parsedMaxCount = Number(options.maxCount)
+    maxCount.value = Number.isFinite(parsedMaxCount) && parsedMaxCount > 0 ? parsedMaxCount : 0
     cacheKey.value = options.cacheKey ? decodeURIComponent(options.cacheKey) : cacheKey.value
     resultKey.value = options.resultKey ? decodeURIComponent(options.resultKey) : resultKey.value
     uni.setNavigationBarTitle({ title: '精准人物筛选' })
