@@ -148,6 +148,41 @@
 3. 验证 mp-weixin 冷启动秒开、流量下降、静默加载与头像缓存协同。
 4. 视 §3.4 评估结果推进阶段二（`list.vue` 全量共享）。
 
+## 8. 选人组件优先落地方案（1000+ 条 / 每页 50 / 静默懒加载）
+
+> 依据补充需求：优先处理**选人组件** `character-picker.vue`（被「编辑阵容」`lineup-edit.vue`、「编辑阵容映射」`lineup-mappings.vue` 以及筛选共用）。数据量 1000+，C 端页面，要求**每次请求 50 条 + 静默懒加载**。
+
+### 8.1 关键矛盾与结论
+
+- 现状（PR #1 后）：选人页 `pageSize=50`，但会**一次性静默拉全部分页**（`loadRemainingPages` 循环到 `hasNext=false`）。1000+ 条 ≈ 20+ 次连续请求，C 端/小程序首屏压力大、浪费流量——**与「每次 50 条即可」相悖**。
+- 且「默认已觉醒 + 星级倒序」当前是**客户端**过滤/排序，只对已加载子集生效；若改为按需懒加载，就必须保证服务端已按条件过滤与排序，否则顺序错乱。
+- **重要发现**：`GET /compendiums/characters` **已支持服务端过滤+排序+分页**（`list.vue` 实际在用：`categories[awaken]`、`categories[element]`、`categories[archetype]`、`sortBy`、`sortOrder`、`page`、`pageSize`）。因此选人页无需后端新增即可实现「服务端过滤/排序 + 50/页懒加载」。
+
+### 8.2 目标行为
+
+1. 首次打开：请求**第 1 页 50 条**（带 `categories[awaken]=awakened`、`sortBy=stars`、`sortOrder=desc` 及已选筛选），立即渲染。
+2. **静默懒加载**：改「拉全部」为**滚动触发**（列表滚动接近底部时）静默加载下一页 50 条，直至 `hasNext=false`。不再一次性并发全部分页。
+3. 切换筛选/排序/关键字：重置到第 1 页、清空、重新按新条件请求（服务端过滤/排序）。
+4. 已选中项独立保存，不受分页/筛选影响。
+
+### 8.3 前端改造点（character-picker.vue + 服务层）
+
+- `fetchCharacterOptions`（用户端）与查询类型：新增透传 `categories[awaken]`/`categories[element]`/`categories[archetype]`、`sortBy`/`sortOrder`（对齐 `list.vue` 的参数构造）。
+- 选人页：把默认「已觉醒 + 星级倒序」从客户端改为**服务端查询参数**；移除/收敛客户端过滤排序（保留关键字本地兜底可选）。
+- 加载逻辑：用 `loadRemainingPages` 全量循环 → **单页 `loadMore` + 滚动/触底触发**（组件内滚动容器监听 `scrolltolower`，或页面 `onReachBottom`，取决于选人 UI 是弹层还是整页——需按实际容器接线）。
+- 头像缓存：沿用 `avatar-cache.ts`，按每页 50 条批量预热。
+
+### 8.4 缓存（小程序为主，见 §3.2）
+
+- 选人是「服务端过滤/分页」后，缓存粒度改为**按 query 的分页响应缓存**（key 含 compendium+locale+筛选+排序+page），SWR/TTL 失效；小程序持久化，H5 依赖 HTTP 缓存。
+- 说明：因入参多样，跨「不同筛选组合」的命中率有限；真正高命中的是「重复以相同条件进出」。若要与图鉴列表共享同一份缓存，仍需 §4.5 接口对齐或走全量客户端方案（阶段二）。
+
+### 8.5 待确认（选人组件相关）
+
+- **P1**：选人页默认查询是否固定 `awakened + stars desc`？其余筛选项（元素/形态/类型/胎星级）是否都走服务端参数？
+- **P2**：管理员选人接口 `/admin/lineups/character-options` 是否支持同样的 `categories[*]`/`sortBy`/`sortOrder`？若不支持，C 端选人是否统一改走 `/compendiums/characters`（推荐，见 §4.5）？
+- **P3**：懒加载触发用组件内滚动容器 `scrolltolower` 还是整页 `onReachBottom`？（取决于选人是弹层还是整页，需你确认交互形态）
+
 ## 7. 待你确认的决策点
 
 - **D1**：是否采纳「全量拉取 + 客户端过滤」为目标态？（影响 `list.vue` 是否阶段二改造）
