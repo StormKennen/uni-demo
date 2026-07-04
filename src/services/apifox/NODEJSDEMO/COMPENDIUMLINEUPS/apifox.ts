@@ -88,7 +88,7 @@ export const useGetCharactersCharacterIdLineups = (
 ) => {
   return useQuery({
     queryKey: [
-      `/compendiums/characters/${characterId}/lineups`,
+      `/compendiums/characters/$${characterId}/lineups`,
       params,
       fetchOptions,
     ],
@@ -105,7 +105,7 @@ export const useOptionGetCharactersCharacterIdLineups = (
 ) => {
   return queryOptions({
     queryKey: [
-      `/compendiums/characters/${characterId}/lineups`,
+      `/compendiums/characters/$${characterId}/lineups`,
       params,
       fetchOptions,
     ],
@@ -210,7 +210,7 @@ export const useGetCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
+    queryKey: [`/compendiums/lineups/$${lineupId}`, params, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
@@ -223,7 +223,7 @@ export const useOptionGetCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
+    queryKey: [`/compendiums/lineups/$${lineupId}`, params, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
@@ -286,7 +286,7 @@ export const useDeleteCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
+    queryKey: [`/compendiums/lineups/$${lineupId}`, fetchOptions],
     queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -297,7 +297,7 @@ export const useOptionDeleteCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
+    queryKey: [`/compendiums/lineups/$${lineupId}`, fetchOptions],
     queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -555,7 +555,7 @@ export const useGetAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
+    queryKey: [`/admin/lineups/$${lineupId}`, params, fetchOptions],
     queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
   })
@@ -567,7 +567,7 @@ export const useOptionGetAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
+    queryKey: [`/admin/lineups/$${lineupId}`, params, fetchOptions],
     queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
   })
@@ -627,7 +627,7 @@ export const useDeleteAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
+    queryKey: [`/admin/lineups/$${lineupId}`, fetchOptions],
     queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -638,7 +638,7 @@ export const useOptionDeleteAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
+    queryKey: [`/admin/lineups/$${lineupId}`, fetchOptions],
     queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -673,7 +673,7 @@ export const useGetAdminLineupRelationsSourceLineupId = (
 ) => {
   return useQuery({
     queryKey: [
-      `/admin/lineup-relations/${sourceLineupId}`,
+      `/admin/lineup-relations/$${sourceLineupId}`,
       params,
       fetchOptions,
     ],
@@ -694,7 +694,7 @@ export const useOptionGetAdminLineupRelationsSourceLineupId = (
 ) => {
   return queryOptions({
     queryKey: [
-      `/admin/lineup-relations/${sourceLineupId}`,
+      `/admin/lineup-relations/$${sourceLineupId}`,
       params,
       fetchOptions,
     ],
@@ -825,7 +825,7 @@ export const useGetAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -836,7 +836,7 @@ export const useOptionGetAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -898,7 +898,7 @@ export const useDeleteAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -909,7 +909,7 @@ export const useOptionDeleteAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -1013,7 +1013,7 @@ export const useGetCompendiumsLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/compendiums/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
@@ -1025,7 +1025,7 @@ export const useOptionGetCompendiumsLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
+    queryKey: [`/compendiums/lineup-mappings/$${mappingId}`, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
@@ -1067,7 +1067,7 @@ export const usePatchCompendiumsLineupMappingsMappingId = (
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  * @host https://app.apifox.com/link/project/7048425/apis/api-480665656
  */
-export const postLineupsLineupIdReaction = async (
+export const postLineupMappingsContainersLineupsReaction = async (
   pathParams: Expand<postLineupsLineupIdReactionPathQuery>,
   data: Expand<postLineupsLineupIdReactionBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
@@ -1087,9 +1087,11 @@ export const postLineupsLineupIdReaction = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-480665656
  */
 
-export const usePostLineupsLineupIdReaction = (_queryOptions?: object = {}) => {
+export const usePostLineupMappingsContainersLineupsReaction = (
+  _queryOptions?: object = {},
+) => {
   return useMutation({
-    mutationFn: postLineupsLineupIdReaction,
+    mutationFn: postLineupMappingsContainersLineupsReaction,
     ..._queryOptions,
   })
 }

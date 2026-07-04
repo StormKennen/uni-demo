@@ -424,21 +424,6 @@ class AppDsBridge {
     this.#triggerNativeMethod('disableFullScreenGestureSyn', tag)
   }
 
-  // 键盘高度变化事件的监听函数 height 键盘高度，0为收起，非0为弹起
-  public onKeyboardHeightChanged(cb: (height: number) => void) {
-    this.#registerNativeMethod('onKeyboardHeightChanged', (res: { height: string } | string) => {
-      if (typeof res === 'string') {
-        cb(Number.parseInt(res))
-      } else {
-        cb(Number.parseInt(res.height))
-      }
-    })
-  }
-
-  // 移除键盘高度变化事件的监听函数
-  public offKeyboardHeightChange(cb: (height: number) => void)  {
-    this.#unRegisterNativeMethod('onKeyboardHeightChanged', cb)
-  }
 }
 
 const appDsBridge = new AppDsBridge()
