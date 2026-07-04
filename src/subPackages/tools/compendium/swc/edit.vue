@@ -160,6 +160,9 @@
   })
   const originalStarsText = ref('')
   const originalAttributes = ref<Record<string, unknown>[]>([])
+  const originalCategories = ref<Record<string, unknown>[]>([])
+  const originalSkins = ref<unknown[]>([])
+  const originalAliases = ref<string[]>([])
 
   const selectedLocaleLabel = computed(
     () => localeOptions.find(option => option.value === selectedLocale.value)?.label || selectedLocale.value,
@@ -207,27 +210,41 @@
     return toText(attribute.displayValue || attribute.value || attribute.rawValue || attribute.text)
   }
 
-  const mergeAttributeText = (attributes: Record<string, unknown>[], key: string, value: string): Record<string, unknown>[] => {
-    const next = attributes.map(item => ({ ...item }))
-    const trimmed = value.trim()
-    if (!trimmed) return next
+  type AttributePayload = { key: string; value: number | string }
 
-    const index = next.findIndex(item => toText(item.key) === key || toText(item.name) === key)
-    const payload = index >= 0 ? next[index] : {}
-    const nextAttribute = {
-      ...payload,
-      key,
-      value: trimmed,
-      displayValue: trimmed,
+  const buildAttributesPayload = (attributes: Record<string, unknown>[], starsText: string): AttributePayload[] => {
+    const list = attributes
+      .map(item => {
+        const key = toText(item.key) || toText(item.name)
+        const rawValue = item.value ?? item.rawValue ?? item.displayValue ?? item.text
+        return { key, value: normalizeNumberLike(toText(rawValue)) }
+      })
+      .filter((item): item is AttributePayload => Boolean(item.key) && item.value !== undefined)
+
+    const trimmedStars = starsText.trim()
+    if (trimmedStars) {
+      const starsValue = normalizeNumberLike(trimmedStars) ?? trimmedStars
+      const index = list.findIndex(item => item.key === 'stars')
+      if (index >= 0) {
+        list[index] = { key: 'stars', value: starsValue }
+      } else {
+        list.push({ key: 'stars', value: starsValue })
+      }
     }
 
-    if (index >= 0) {
-      next[index] = nextAttribute
-    } else {
-      next.push(nextAttribute)
-    }
+    return list
+  }
 
-    return next
+  const buildCategoriesPayload = (categories: Record<string, unknown>[]): Record<string, string> => {
+    const result: Record<string, string> = {}
+    categories.forEach(item => {
+      const key = toText(item.key) || toText(item.name)
+      const value = toText(item.valueKey) || toText(item.value)
+      if (key && value) {
+        result[key] = value
+      }
+    })
+    return result
   }
 
   const resetForm = () => {
@@ -235,6 +252,9 @@
     form.skills = []
     originalStarsText.value = ''
     originalAttributes.value = []
+    originalCategories.value = []
+    originalSkins.value = []
+    originalAliases.value = []
   }
 
   const normalizeSkillCoefficient = (source: unknown): SkillCoefficientForm => {
@@ -296,6 +316,9 @@
       avatar.value = toText(data.avatar)
       form.skills = skills.map(normalizeSkill)
       originalAttributes.value = attributes
+      originalCategories.value = toArray(data.categories).map(cloneAttribute)
+      originalSkins.value = toArray(data.skins)
+      originalAliases.value = toArray(data.aliases).map(toText).filter(Boolean)
       originalStarsText.value = readAttributeText(attributes, 'stars')
       uni.setNavigationBarTitle({ title: `编辑 - ${displayName.value}` })
     } catch (error) {
@@ -345,7 +368,10 @@
         locale: selectedLocale.value,
         name: form.name || undefined,
         skills: form.skills.map(buildSkillPayload),
-        attributes: mergeAttributeText(originalAttributes.value, 'stars', originalStarsText.value),
+        attributes: buildAttributesPayload(originalAttributes.value, originalStarsText.value),
+        categories: buildCategoriesPayload(originalCategories.value),
+        skins: originalSkins.value,
+        aliases: originalAliases.value,
       }
 
       await patchAdminCompendiumsCharacters(body as never)
