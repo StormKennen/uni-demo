@@ -78,7 +78,7 @@ export interface CreateAdminLineupBody {
   characterIds: string[]
   compendiumId: string
   description?: string
-  name: string
+  name?: string
   status?: LineupStatus
   type: LineupType
 }
@@ -324,13 +324,23 @@ const findCategory = (categories: unknown, key: string): RawRecord => {
   return isRecord(found) ? found : {}
 }
 
+const findAttribute = (attributes: unknown, key: string): RawRecord => {
+  if (!Array.isArray(attributes)) return {}
+  const found = attributes.find((item: unknown) => isRecord(item) && (item.key === key || item.name === key))
+  return isRecord(found) ? found : {}
+}
+
 const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
   const record = isRecord(source) ? source : {}
   const nestedCharacter = isRecord(record.character) ? record.character : {}
-  const categories = record.categories
+  const categories = [...toArray(record.categories), ...toArray(nestedCharacter.categories)]
+  const attributes = [...toArray(record.attributes), ...toArray(nestedCharacter.attributes)]
 
   const familyCat = findCategory(categories, 'family')
   const archetypeCat = findCategory(categories, 'archetype')
+  const elementCat = findCategory(categories, 'element')
+  const awakenCat = findCategory(categories, 'awaken')
+  const starsAttr = findAttribute(attributes, 'stars')
 
   return {
     id: toText(record.id || nestedCharacter.id || record.characterId),
@@ -338,9 +348,17 @@ const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
     name: toText(record.name || nestedCharacter.name),
     label: toText(record.label || record.name || nestedCharacter.name),
     avatar: normalizeUrl(toText(record.avatar || nestedCharacter.avatar)),
-    element: toText(record.element || nestedCharacter.elementKey || record.elementKey),
-    elementKey: toText(record.elementKey || nestedCharacter.elementKey || record.element),
-    elementName: toText(record.elementName || nestedCharacter.elementName),
+    element: toText(
+      record.element ||
+        nestedCharacter.elementKey ||
+        record.elementKey ||
+        elementCat.valueKey ||
+        elementCat.value ||
+        nestedCharacter.element ||
+        nestedCharacter.elementName,
+    ),
+    elementKey: toText(record.elementKey || nestedCharacter.elementKey || record.element || elementCat.valueKey || elementCat.value),
+    elementName: toText(record.elementName || nestedCharacter.elementName || elementCat.value || elementCat.valueKey),
     archetype: toText(
       record.archetype ||
         record.archetypeKey ||
@@ -353,9 +371,9 @@ const normalizeCharacterPreview = (source: unknown): LineupCharacterPreview => {
     ),
     familyKey: toText(record.familyKey || nestedCharacter.familyKey || familyCat.valueKey),
     familyName: toText(record.familyName || nestedCharacter.familyName || familyCat.value || familyCat.name),
-    awaken: toText(record.awaken || nestedCharacter.awaken),
-    awakenName: toText(record.awakenName || nestedCharacter.awakenName),
-    stars: toText(record.stars || nestedCharacter.stars),
+    awaken: toText(record.awaken || nestedCharacter.awaken || awakenCat.value || awakenCat.valueKey),
+    awakenName: toText(record.awakenName || nestedCharacter.awakenName || awakenCat.valueKey || awakenCat.value),
+    stars: toText(record.stars || nestedCharacter.stars || starsAttr.displayValue || starsAttr.value),
   }
 }
 

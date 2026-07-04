@@ -12,14 +12,16 @@
 
     <view v-else class="item-list">
       <view v-for="item in container.items" :key="item.itemId" class="item-card">
-        <LineupAvatarCard
+        <SwcLineup
+          :characters="charactersOf(item.lineupId)"
           :name="item.lineup?.name"
           :type="item.lineup?.type"
-          :characters="charactersOf(item.lineupId)"
           show-name
           show-type
-          show-attributes
-          show-stars
+          :show-description="false"
+          :show-member-name="true"
+          :show-stars="true"
+          :show-element="true"
           :columns="6"
           :avatar-size="80" />
 
@@ -59,8 +61,9 @@
 
 <script setup lang="ts">
   import StateBlock from './state-block.vue'
-  import LineupAvatarCard from './lineup-avatar-card.vue'
+  import SwcLineup from './swc-lineup.vue'
   import type { LineupCharacterPreview, LineupMappingContainer, ReactionValue } from '@/services/compendium-lineups'
+  import { toSwcCharacterView } from '../utils'
 
   const props = withDefaults(
     defineProps<{
@@ -85,7 +88,7 @@
     (event: 'remove', payload: { containerId: string; itemId: string; lineupId: string }): void
   }>()
 
-  const charactersOf = (lineupId: string): LineupCharacterPreview[] => props.characterMap[lineupId] || []
+  const charactersOf = (lineupId: string) => (props.characterMap[lineupId] || []).map(character => toSwcCharacterView(character))
 </script>
 
 <style scoped lang="scss">

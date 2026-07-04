@@ -9,15 +9,19 @@
 
         <StateBlock v-if="!draftSelected.length" class="empty-block" :text="emptySelectedText" />
 
-        <CharacterAvatarGrid
+        <SwcLineup
           v-else
           class="selected-list"
-          :items="draftSelected"
+          :characters="draftSelectedViews"
           :columns="selectedGridColumns"
+          editable
+          :show-member-name="false"
+          :show-stars="false"
+          :show-element="true"
           :show-order="selectionMode === 'multiple'"
-          action-text="移除"
-          action-theme="danger"
-          @action="removeMember" />
+          :avatar-size="92"
+          :empty-text="emptySelectedText"
+          @remove="removeMember" />
       </view>
 
       <view class="section-head">
@@ -189,9 +193,9 @@
 
 <script setup lang="ts">
   import { computed, getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue'
-  import CharacterAvatarGrid from './character-avatar-grid.vue'
   import SearchActionRow from './search-action-row.vue'
   import SwcElementBadge from './swc-element-badge.vue'
+  import SwcLineup from './swc-lineup.vue'
   import StateBlock from './state-block.vue'
   import StickyActionBar from './sticky-action-bar.vue'
   import {
@@ -203,6 +207,7 @@
     type PaginationState,
   } from '@/services/compendium-lineups'
   import { isAdminUser } from '@/utils/admin'
+  import { toSwcCharacterView } from '../utils'
 
   type SelectionMode = 'single' | 'multiple'
   type FooterMode = 'manual' | 'none'
@@ -351,6 +356,7 @@
   })
 
   const selectedGridColumns = computed(() => (props.selectionMode === 'single' ? 1 : Math.min(Math.max(props.maxCount, 1), 5)))
+  const draftSelectedViews = computed(() => draftSelected.value.map(item => toSwcCharacterView(item)))
 
   const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
 

@@ -109,33 +109,28 @@
     <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
 
     <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
-      <view v-if="filteredCharacterOptions.length" class="grid-wrap">
-        <view
-          v-for="item in filteredCharacterOptions"
-          :key="item.characterId || item.id"
+      <view v-if="filteredCharacterCards.length" class="grid-wrap">
+        <SwcCharacterCard
+          v-for="item in filteredCharacterCards"
+          :key="item.option.characterId || item.option.id"
           class="grid-item"
-          :class="{ selected: isSelected(item.characterId) }"
-          @click="toggleSelect(item)">
-          <view class="avatar-wrap">
-            <image v-if="item.avatar" class="avatar-image" :src="item.avatar" mode="aspectFill" />
-            <view v-else class="avatar-image avatar-placeholder">
-              <text>{{ (item.name || '?').slice(0, 1) }}</text>
-            </view>
-            <view v-if="isSelected(item.characterId)" class="selected-badge">
-              <text class="selected-badge-text">{{ getSelectedIndex(item.characterId) }}</text>
-            </view>
-          </view>
-        </view>
+          :character="item.view"
+          :show-name="false"
+          :show-family="false"
+          :show-element="false"
+          :show-stars="false"
+          :show-original-stars="false"
+          selectable
+          :selected="isSelected(item.option.characterId)"
+          :selected-index="getSelectedIndex(item.option.characterId)"
+          :avatar-size="176"
+          @click="toggleSelect(item.option)" />
       </view>
 
       <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
 
       <view v-if="loadingMore" class="load-more">
         <text class="load-more-text">加载更多中...</text>
-      </view>
-
-      <view v-else-if="canLoadMore" class="load-more">
-        <button class="load-more-btn" @click="loadMore">加载更多</button>
       </view>
 
       <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
@@ -145,7 +140,7 @@
 
     <view class="footer-bar">
       <view class="footer-selected-info">
-        <text class="footer-count">已选 {{ draftSelected.length }}/{{ maxCount }}</text>
+        <text class="footer-count">{{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}</text>
       </view>
       <button class="footer-cancel-btn" @click="handleCancel">取消</button>
       <button class="footer-confirm-btn" @click="handleConfirm">确认选择</button>
@@ -158,7 +153,9 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
+  import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import {
     fetchAdminCharacterOptions,
     fetchCharacterOptions as fetchUserCharacterOptions,
@@ -167,6 +164,7 @@
     type CharacterOptionResult,
     type PaginationState,
   } from '@/services/compendium-lineups'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
   import { isAdminUser } from '@/utils/admin'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
 
@@ -215,7 +213,7 @@
 
   const compendiumId = ref(DEFAULT_COMPENDIUM_ID)
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const maxCount = ref(5)
+  const maxCount = ref(0)
   const keyword = ref('')
   const loading = ref(false)
   const loadingMore = ref(false)
@@ -226,11 +224,14 @@
   const showQuickFilters = ref(true)
   const filterExpanded = ref(true)
   const selectedElement = ref(ALL_VALUE)
-  const selectedAwaken = ref(ALL_VALUE)
+  const selectedAwaken = ref('awakened')
   const selectedType = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const cacheKey = ref('compendium:swc:lineup-edit:picker-draft')
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
+  const avatarCacheRevision = ref(0)
+  const pageSize = 50
+  let requestSequence = 0
 
   const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
 
@@ -256,6 +257,16 @@
     const text = typeof value === 'string' ? value : ''
     const matched = text.match(/\d+/)
     return matched ? matched[0] : ''
+  }
+
+  const normalizeStarsValue = (value?: string): number => {
+    const stars = Number(normalizeStars(value))
+    return Number.isFinite(stars) ? stars : 0
+  }
+
+  const getAvatarSrc = (url: string): string => {
+    avatarCacheRevision.value
+    return resolveAvatar(url)
   }
 
   const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
@@ -290,18 +301,41 @@
   })
 
   const filteredCharacterOptions = computed(() =>
-    characterOptions.value.filter(option => {
-      const elementKey = normalizeText(option.elementKey || option.element)
-      const awaken = normalizeAwaken(option.awaken || option.awakenName)
-      const archetype = normalizeArchetype(option.archetype)
-      const stars = normalizeStars(option.stars)
+    characterOptions.value
+      .filter(option => {
+        const elementKey = normalizeText(option.elementKey || option.element)
+        const awaken = normalizeAwaken(option.awaken || option.awakenName)
+        const archetype = normalizeArchetype(option.archetype)
+        const stars = normalizeStars(option.stars)
 
-      if (selectedElement.value !== ALL_VALUE && elementKey !== selectedElement.value) return false
-      if (selectedAwaken.value !== ALL_VALUE && awaken !== selectedAwaken.value) return false
-      if (selectedType.value !== ALL_VALUE && archetype !== selectedType.value) return false
-      if (selectedStar.value !== ALL_VALUE && stars !== selectedStar.value) return false
-      return true
-    }),
+        if (selectedElement.value !== ALL_VALUE && elementKey !== selectedElement.value) return false
+        if (selectedAwaken.value !== ALL_VALUE && awaken !== selectedAwaken.value) return false
+        if (selectedType.value !== ALL_VALUE && archetype !== selectedType.value) return false
+        if (selectedStar.value !== ALL_VALUE && stars !== selectedStar.value) return false
+        return true
+      })
+      .map((item, index) => ({ item, index }))
+      .sort((left, right) => {
+        const starDiff = normalizeStarsValue(right.item.stars) - normalizeStarsValue(left.item.stars)
+        if (starDiff !== 0) return starDiff
+        return left.index - right.index
+      })
+      .map(entry => entry.item),
+  )
+
+  const filteredCharacterCards = computed<
+    Array<{
+      option: CharacterOption
+      view: SwcCharacterView
+    }>
+  >(() =>
+    filteredCharacterOptions.value.map(option => ({
+      option,
+      view: toSwcCharacterView({
+        ...option,
+        avatar: getAvatarSrc(option.avatar),
+      }),
+    })),
   )
 
   const filteredEmptyText = computed(() => {
@@ -310,7 +344,7 @@
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value)
+  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value)
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -324,46 +358,87 @@
       draftSelected.value = draftSelected.value.filter(item => item.characterId !== option.characterId)
       return
     }
-    if (draftSelected.value.length >= maxCount.value) {
+    if (maxCount.value > 0 && draftSelected.value.length >= maxCount.value) {
       uni.showToast({ title: `最多选择 ${maxCount.value} 个魔灵`, icon: 'none' })
       return
     }
     draftSelected.value = [...draftSelected.value, { ...option }]
   }
 
+  const loadCharacterPage = async (page: number): Promise<CharacterOptionResult> => {
+    const loadFn = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
+    return loadFn({
+      compendiumId: compendiumId.value,
+      locale: selectedLocale.value,
+      keyword: keyword.value.trim() || undefined,
+      status: 'enabled',
+      page,
+      pageSize,
+    })
+  }
+
+  const preloadCharacterBatch = (items: CharacterOption[]) => {
+    const urls = items.map(item => item.avatar).filter((url): url is string => Boolean(url))
+    if (!urls.length) return
+    void preloadAvatars(urls).finally(() => {
+      avatarCacheRevision.value += 1
+    })
+  }
+
   const fetchOptions = async (reset = true) => {
-    if (loading.value || loadingMore.value) return
     if (reset) {
+      const token = ++requestSequence
       loading.value = true
-    } else {
-      if (!pagination.value.hasNext) return
-      loadingMore.value = true
+      loadingMore.value = false
+      errorMessage.value = ''
+      pagination.value = getPaginationOrDefault()
+      characterOptions.value = []
+      initialized.value = false
+
+      try {
+        const result = await loadCharacterPage(1)
+        if (token !== requestSequence) return
+        pagination.value = result.pagination
+        characterOptions.value = result.items
+        initialized.value = true
+        preloadCharacterBatch(result.items)
+      } catch (error) {
+        uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
+      } finally {
+        if (token === requestSequence) {
+          loading.value = false
+        }
+      }
+      return
     }
 
+    if (loading.value || loadingMore.value || !pagination.value.hasNext) return
+
+    const token = ++requestSequence
+    loadingMore.value = true
     try {
-      const nextPage = reset ? 1 : pagination.value.page + 1
-      const loadFn = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
-      const result: CharacterOptionResult = await loadFn({
-        compendiumId: compendiumId.value,
-        locale: selectedLocale.value,
-        keyword: keyword.value.trim() || undefined,
-        status: 'enabled',
-        page: nextPage,
-        pageSize: 20,
-      })
+      const result = await loadCharacterPage(pagination.value.page + 1)
+      if (token !== requestSequence) return
       pagination.value = result.pagination
-      characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]
+      characterOptions.value = [...characterOptions.value, ...result.items]
       initialized.value = true
+      preloadCharacterBatch(result.items)
     } catch (error) {
       uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
     } finally {
-      loading.value = false
-      loadingMore.value = false
+      if (token === requestSequence) {
+        loadingMore.value = false
+      }
     }
   }
 
-  const refreshCharacterOptions = () => fetchOptions(true)
-  const loadMore = () => fetchOptions(false)
+  const refreshCharacterOptions = () => {
+    void fetchOptions(true)
+  }
+
+  const loadMore = () => {
+    void fetchOptions(false)
+  }
 
   const handleScrollToLower = () => {
     if (canLoadMore.value) loadMore()
@@ -378,7 +453,7 @@
 
   const resetQuickFilters = () => {
     selectedElement.value = ALL_VALUE
-    selectedAwaken.value = ALL_VALUE
+    selectedAwaken.value = 'awakened'
     selectedType.value = ALL_VALUE
     selectedStar.value = ALL_VALUE
   }
@@ -388,14 +463,18 @@
   }
 
   const handleConfirm = () => {
-    setStorageSync(resultKey.value, draftSelected.value.map(item => ({ ...item })))
+    setStorageSync(
+      resultKey.value,
+      draftSelected.value.map(item => ({ ...item })),
+    )
     uni.navigateBack()
   }
 
   onLoad((options: Record<string, string | undefined>) => {
     compendiumId.value = options.compendiumId || DEFAULT_COMPENDIUM_ID
     selectedLocale.value = options.locale || DEFAULT_LOCALE
-    maxCount.value = options.maxCount ? Number(options.maxCount) || 5 : 5
+    const parsedMaxCount = Number(options.maxCount)
+    maxCount.value = Number.isFinite(parsedMaxCount) && parsedMaxCount > 0 ? parsedMaxCount : 0
     cacheKey.value = options.cacheKey ? decodeURIComponent(options.cacheKey) : cacheKey.value
     resultKey.value = options.resultKey ? decodeURIComponent(options.resultKey) : resultKey.value
     uni.setNavigationBarTitle({ title: '精准人物筛选' })

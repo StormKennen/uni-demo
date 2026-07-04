@@ -2,7 +2,7 @@
   <view class="lineup-edit-page">
     <view class="hero-card">
       <text class="hero-title">{{ isEditMode ? form.name || '编辑阵容' : '创建新阵容' }}</text>
-      <text class="hero-subtitle">成员数量需保持 2 到 5 个，提交时会保留你当前的成员顺序。</text>
+      <text class="hero-subtitle">可自由增删成员，提交时会保留你当前的成员顺序。</text>
     </view>
 
     <StateBlock v-if="loading" class="state-block" text="加载数据中..." />
@@ -66,19 +66,22 @@
       <view class="section-card">
         <view class="section-head">
           <text class="section-title">阵容成员</text>
-          <text class="section-tip">{{ selectedMembers.length }}/5</text>
+          <text class="section-tip">{{ selectedMembers.length }}</text>
         </view>
 
-        <view v-if="selectedMembers.length" class="selected-members-grid">
-          <CharacterAvatarGrid
-            :items="selectedMembers"
-            :columns="5"
-            :show-action="true"
-            action-text="移除"
-            action-theme="danger"
-            :show-order="true"
-            @action="handleRemoveMember" />
-        </view>
+        <SwcLineup
+          v-if="selectedMembers.length"
+          class="selected-members-grid"
+          :characters="selectedMemberViews"
+          :columns="5"
+          editable
+          :show-member-name="false"
+          :show-stars="false"
+          :show-element="true"
+          :show-order="true"
+          :avatar-size="92"
+          empty-text="还没有选择成员，请点击下方按钮添加。"
+          @remove="handleRemoveMember" />
 
         <StateBlock v-else class="empty-block" text="还没有选择成员，请点击下方按钮添加。" />
 
@@ -99,9 +102,9 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
-  import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
+  import SwcLineup from './components/swc-lineup.vue'
   import {
     createUserLineup,
     fetchUserLineupDetail,
@@ -114,6 +117,7 @@
   import { ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
+  import { toSwcCharacterView } from './utils'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -142,20 +146,24 @@
   })
 
   const isEditMode = computed(() => Boolean(lineupId.value))
+  const selectedMemberViews = computed(() => selectedMembers.value.map(item => toSwcCharacterView(item)))
 
   const handleRemoveMember = (characterId: string) => {
     selectedMembers.value = selectedMembers.value.filter(m => m.characterId !== characterId)
   }
 
   const navigateToCharacterPicker = () => {
-    setStorageSync(PICKER_CACHE_KEY, selectedMembers.value.map(item => ({ ...item })))
+    setStorageSync(
+      PICKER_CACHE_KEY,
+      selectedMembers.value.map(item => ({ ...item })),
+    )
     removeStorageSync(PICKER_RESULT_KEY)
     const params = [
       `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
       `cacheKey=${encodeURIComponent(PICKER_CACHE_KEY)}`,
       `resultKey=${encodeURIComponent(PICKER_RESULT_KEY)}`,
-      'maxCount=5',
+      'maxCount=0',
     ]
     uni.navigateTo({ url: `/subPackages/tools/compendium/swc/character-picker?${params.join('&')}` })
   }
@@ -218,25 +226,9 @@
   }
 
   const validateForm = (): boolean => {
-    if (!form.name.trim()) {
-      uni.showToast({
-        title: '请输入阵容名称',
-        icon: 'none',
-      })
-      return false
-    }
-
     if (!form.type.trim()) {
       uni.showToast({
         title: '请输入阵容类型',
-        icon: 'none',
-      })
-      return false
-    }
-
-    if (selectedMembers.value.length < 2 || selectedMembers.value.length > 5) {
-      uni.showToast({
-        title: '成员数量需在 2 到 5 个之间',
         icon: 'none',
       })
       return false
@@ -251,11 +243,11 @@
     submitting.value = true
 
     const basePayload = {
-      name: form.name.trim(),
       type: form.type.trim(),
       description: form.description.trim(),
       status: form.status,
       characterIds: selectedMembers.value.map(member => member.characterId),
+      ...(form.name.trim() ? { name: form.name.trim() } : {}),
     }
 
     try {

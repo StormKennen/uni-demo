@@ -76,9 +76,7 @@
 
         <view class="create-actions">
           <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
-          <button class="footer-btn primary" size="mini" :loading="creating" :disabled="!createName.trim()" @click="submitCreate">
-            确认创建
-          </button>
+          <button class="footer-btn primary" size="mini" :loading="creating" @click="submitCreate"> 确认创建 </button>
         </view>
       </view>
     </view>
@@ -180,12 +178,12 @@
   }
 
   const submitCreate = async () => {
-    if (creating.value || !createName.value.trim()) return
+    if (creating.value) return
     creating.value = true
     try {
       const created = await createLineupMapping({
         compendiumId: COMPENDIUM_CODE,
-        name: createName.value.trim(),
+        name: createName.value.trim() || undefined,
         description: createDescription.value.trim() || undefined,
       })
       uni.showToast({ title: '创建成功', icon: 'success' })
