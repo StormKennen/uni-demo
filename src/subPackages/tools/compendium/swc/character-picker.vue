@@ -109,33 +109,28 @@
     <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
 
     <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
-      <view v-if="filteredCharacterOptions.length" class="grid-wrap">
-        <view
-          v-for="item in filteredCharacterOptions"
-          :key="item.characterId || item.id"
+      <view v-if="filteredCharacterCards.length" class="grid-wrap">
+        <SwcCharacterCard
+          v-for="item in filteredCharacterCards"
+          :key="item.option.characterId || item.option.id"
           class="grid-item"
-          :class="{ selected: isSelected(item.characterId) }"
-          @click="toggleSelect(item)">
-          <view class="avatar-wrap">
-            <image v-if="item.avatar" class="avatar-image" :src="getAvatarSrc(item.avatar)" mode="aspectFill" lazy-load />
-            <view v-else class="avatar-image avatar-placeholder">
-              <text>{{ (item.name || '?').slice(0, 1) }}</text>
-            </view>
-            <view v-if="isSelected(item.characterId)" class="selected-badge">
-              <text class="selected-badge-text">{{ getSelectedIndex(item.characterId) }}</text>
-            </view>
-          </view>
-        </view>
+          :character="item.view"
+          :show-name="false"
+          :show-family="false"
+          :show-element="false"
+          :show-stars="false"
+          :show-original-stars="false"
+          selectable
+          :selected="isSelected(item.option.characterId)"
+          :selected-index="getSelectedIndex(item.option.characterId)"
+          :avatar-size="176"
+          @click="toggleSelect(item.option)" />
       </view>
 
       <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
 
       <view v-if="loadingMore" class="load-more">
         <text class="load-more-text">加载更多中...</text>
-      </view>
-
-      <view v-else-if="canLoadMore" class="load-more">
-        <button class="load-more-btn" @click="loadMore">加载更多</button>
       </view>
 
       <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
@@ -158,7 +153,9 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
+  import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import {
     fetchAdminCharacterOptions,
     fetchCharacterOptions as fetchUserCharacterOptions,
@@ -234,7 +231,6 @@
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
   const avatarCacheRevision = ref(0)
   const pageSize = 50
-  const autoLoading = ref(false)
   let requestSequence = 0
 
   const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
@@ -327,15 +323,28 @@
       .map(entry => entry.item),
   )
 
+  const filteredCharacterCards = computed<
+    Array<{
+      option: CharacterOption
+      view: SwcCharacterView
+    }>
+  >(() =>
+    filteredCharacterOptions.value.map(option => ({
+      option,
+      view: toSwcCharacterView({
+        ...option,
+        avatar: getAvatarSrc(option.avatar),
+      }),
+    })),
+  )
+
   const filteredEmptyText = computed(() => {
     if (!hasActiveFilters.value) return '暂无可选人物'
     if (pagination.value.hasNext) return '当前已加载人物中暂无符合条件项，可继续下拉加载更多'
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(
-    () => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value && !autoLoading.value,
-  )
+  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value)
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -376,33 +385,11 @@
     })
   }
 
-  const loadRemainingPages = async (token: number) => {
-    if (autoLoading.value) return
-    autoLoading.value = true
-    loadingMore.value = true
-
-    try {
-      while (token === requestSequence && pagination.value.hasNext) {
-        const result = await loadCharacterPage(pagination.value.page + 1)
-        if (token !== requestSequence) return
-        pagination.value = result.pagination
-        characterOptions.value = [...characterOptions.value, ...result.items]
-        preloadCharacterBatch(result.items)
-      }
-    } finally {
-      if (token === requestSequence) {
-        loadingMore.value = false
-      }
-      autoLoading.value = false
-    }
-  }
-
   const fetchOptions = async (reset = true) => {
     if (reset) {
       const token = ++requestSequence
       loading.value = true
       loadingMore.value = false
-      autoLoading.value = false
       errorMessage.value = ''
       pagination.value = getPaginationOrDefault()
       characterOptions.value = []
@@ -415,9 +402,6 @@
         characterOptions.value = result.items
         initialized.value = true
         preloadCharacterBatch(result.items)
-        if (pagination.value.hasNext) {
-          await loadRemainingPages(token)
-        }
       } catch (error) {
         uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
       } finally {
@@ -428,7 +412,7 @@
       return
     }
 
-    if (loading.value || loadingMore.value || autoLoading.value || !pagination.value.hasNext) return
+    if (loading.value || loadingMore.value || !pagination.value.hasNext) return
 
     const token = ++requestSequence
     loadingMore.value = true

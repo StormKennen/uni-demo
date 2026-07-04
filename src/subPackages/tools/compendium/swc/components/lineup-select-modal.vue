@@ -31,7 +31,17 @@
                 <text class="option-name">{{ option.name || '未命名阵容' }}</text>
                 <text v-if="option.type" class="option-type">{{ getLineupTypeLabel(option.type) }}</text>
               </view>
-              <LineupAvatarCard :characters="charactersOf(option)" :columns="6" :avatar-size="72" empty-text="暂无角色" />
+              <SwcLineup
+                :characters="charactersOf(option)"
+                :columns="6"
+                :show-name="false"
+                :show-description="false"
+                :show-type="false"
+                :show-member-name="true"
+                :show-stars="true"
+                :show-element="true"
+                :avatar-size="72"
+                empty-text="暂无角色" />
             </view>
             <view class="option-check" :class="{ checked: isSelected(option.id) }">
               <text v-if="isSelected(option.id)">✓</text>
@@ -59,14 +69,10 @@
   import { computed, ref, watch } from 'vue'
   import SearchActionRow from './search-action-row.vue'
   import StateBlock from './state-block.vue'
-  import LineupAvatarCard from './lineup-avatar-card.vue'
+  import SwcLineup from './swc-lineup.vue'
   import { getLineupTypeLabel } from '../lineup-meta'
-  import {
-    fetchUserLineups,
-    type LineupCharacterPreview,
-    type PaginationState,
-    type UserLineupSummary,
-  } from '@/services/compendium-lineups'
+  import { fetchUserLineups, type PaginationState, type UserLineupSummary } from '@/services/compendium-lineups'
+  import { toSwcCharacterView } from '../utils'
 
   const PAGE_SIZE = 20
 
@@ -103,7 +109,7 @@
 
   const excludeSet = computed(() => new Set(props.excludeIds))
 
-  const charactersOf = (option: UserLineupSummary): LineupCharacterPreview[] => option.characters || []
+  const charactersOf = (option: UserLineupSummary) => (option.characters || []).map(character => toSwcCharacterView(character))
 
   const isSelected = (id: string): boolean => selected.value.some(item => item.id === id)
 
