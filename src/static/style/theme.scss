@@ -1,0 +1,39 @@
+/* #ifdef WEB */
+:root {
+  --theme-bg: #f8f9fb;
+  --theme-surface: #ffffff;
+  --theme-surface-2: #f5f6f8;
+  --theme-text: #121a26;
+  --theme-text-secondary: #435163;
+  --theme-text-tertiary: #8993a2;
+  --theme-border: #e9ecf0;
+  --theme-brand: #0046b4;
+  --theme-mask: rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme='dark'] {
+  --theme-bg: #0f141a;
+  --theme-surface: #1a222d;
+  --theme-surface-2: #232d3a;
+  --theme-text: #e9ecf0;
+  --theme-text-secondary: #b9c1cc;
+  --theme-text-tertiary: #8993a2;
+  --theme-border: #2b3644;
+  --theme-brand: #4a86e8;
+  --theme-mask: rgba(0, 0, 0, 0.6);
+}
+/* #endif */
+
+/* #ifndef WEB */
+page {
+  --theme-bg: #f8f9fb;
+  --theme-surface: #ffffff;
+  --theme-surface-2: #f5f6f8;
+  --theme-text: #121a26;
+  --theme-text-secondary: #435163;
+  --theme-text-tertiary: #8993a2;
+  --theme-border: #e9ecf0;
+  --theme-brand: #0046b4;
+  --theme-mask: rgba(0, 0, 0, 0.4);
+}
+/* #endif */

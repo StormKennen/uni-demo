@@ -1,11 +1,13 @@
 <script setup lang="ts">
   import { onLaunch, onShow, onHide, onTabItemTap, onNavigationBarButtonTap, onShareAppMessage, onError } from '@dcloudio/uni-app'
-  import { storeToRefs } from 'pinia'
-  import { watchRouter} from '@/utilsH5/router'
+  import { watchRouter } from '@/utilsH5/router'
   import { updateHttpHeaders } from '@/utils/httpHeaders'
+  import { useThemeStore } from '@/stores/theme'
 
   watchRouter()
-  onLaunch(()=>{
+  const themeStore = useThemeStore()
+  onLaunch(() => {
+    themeStore.init()
     // 应用启动时初始化HTTP headers，如果已有token则设置Authorization header
     updateHttpHeaders().catch(error => {
       console.error('Failed to initialize HTTP headers on app launch:', error)
@@ -15,7 +17,6 @@
       invoke(e) {
         console.log('navigateTo', e)
         watchRouter()
-
       },
     })
     uni.addInterceptor('redirectTo', {
@@ -23,7 +24,6 @@
       invoke(e) {
         console.log('redirectTo', e)
         watchRouter()
-
       },
     })
     uni.addInterceptor('switchTab', {
@@ -31,7 +31,6 @@
       invoke(e) {
         console.log('switchTab', e)
         watchRouter()
-
       },
     })
     uni.addInterceptor('navigateBack', {
@@ -39,7 +38,6 @@
       invoke(e) {
         console.log('navigateBack', e)
         watchRouter()
-
       },
     })
   })
@@ -51,8 +49,7 @@
   if (import.meta.env.VITE_APP_ENV === 'production') {
     appDsBridge.loadDsBridgeFile().catch(() => {})
   }
-  
-  
+
   // onLaunch(() => {
   //   console.log('App Launch')
   //   // onLaunch 在web中不管用？？？
@@ -93,7 +90,6 @@
   // #ifdef MP-WEIXIN
   // import { wxCode2Session } from '@/utils/wxLogin'
 
-
   // wxCode2Session()
   // #endif
 
@@ -130,9 +126,8 @@
   onShareAppMessage(() => {
     return {}
   })
-  onError((err)=>{
-    console.log("🚀 ~ onError ~ err:", err)
-
+  onError(err => {
+    console.log('🚀 ~ onError ~ err:', err)
   })
 </script>
 <style lang="scss">
@@ -141,8 +136,8 @@
   // 设置页面高度为100%
   page {
     height: 100%;
-    background-color: $ga-gray-1;
-    font-family: "PingFang SC";
+    background-color: var(--theme-bg);
+    font-family: 'PingFang SC';
   }
   /* #ifdef H5 */
   /* 隐藏H5默认头部，避免覆盖自定义导航栏 */
