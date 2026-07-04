@@ -69,16 +69,19 @@
           <text class="section-tip">{{ selectedMembers.length }}</text>
         </view>
 
-        <view v-if="selectedMembers.length" class="selected-members-grid">
-          <CharacterAvatarGrid
-            :items="selectedMembers"
-            :columns="5"
-            :show-action="true"
-            action-text="移除"
-            action-theme="danger"
-            :show-order="true"
-            @action="handleRemoveMember" />
-        </view>
+        <SwcLineup
+          v-if="selectedMembers.length"
+          class="selected-members-grid"
+          :characters="selectedMemberViews"
+          :columns="5"
+          editable
+          :show-member-name="false"
+          :show-stars="false"
+          :show-element="true"
+          :show-order="true"
+          :avatar-size="92"
+          empty-text="还没有选择成员，请点击下方按钮添加。"
+          @remove="handleRemoveMember" />
 
         <StateBlock v-else class="empty-block" text="还没有选择成员，请点击下方按钮添加。" />
 
@@ -99,9 +102,9 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
-  import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
+  import SwcLineup from './components/swc-lineup.vue'
   import {
     createUserLineup,
     fetchUserLineupDetail,
@@ -114,6 +117,7 @@
   import { ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
+  import { toSwcCharacterView } from './utils'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -142,6 +146,7 @@
   })
 
   const isEditMode = computed(() => Boolean(lineupId.value))
+  const selectedMemberViews = computed(() => selectedMembers.value.map(item => toSwcCharacterView(item)))
 
   const handleRemoveMember = (characterId: string) => {
     selectedMembers.value = selectedMembers.value.filter(m => m.characterId !== characterId)

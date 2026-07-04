@@ -67,14 +67,17 @@
             <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
           </view>
 
-          <CharacterAvatarGrid
+          <SwcLineup
             v-if="selectedCharacterFilters.length"
             class="selected-avatar-list"
-            :items="selectedCharacterFilters"
+            :characters="selectedCharacterViews"
             :columns="5"
-            action-text="移除"
-            action-theme="danger"
-            @action="removeCharacterFilter" />
+            editable
+            :show-member-name="false"
+            :show-stars="false"
+            :show-element="true"
+            :avatar-size="92"
+            @remove="removeCharacterFilter" />
 
           <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
             <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
@@ -200,9 +203,9 @@
     type UserLineupSummary,
   } from '@/services/compendium-lineups'
   import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
-  import CharacterAvatarGrid from './components/character-avatar-grid.vue'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
+  import SwcLineup from './components/swc-lineup.vue'
   import { canManageLineup, ensureLoginAccess, isAdminUser } from '@/utils/admin'
   import {
     ALL_VALUE,
@@ -213,6 +216,7 @@
     LINEUP_TYPE_PRESET_OPTIONS,
   } from './lineup-meta'
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
+  import { toSwcCharacterView } from './utils'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -250,6 +254,7 @@
   const characterFilterExpanded = ref(false)
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
+  const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
 
   const toggleCharacterFilter = () => {
     characterFilterExpanded.value = !characterFilterExpanded.value

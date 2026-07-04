@@ -134,61 +134,64 @@
     </view>
 
     <view v-else class="character-grid" :class="{ 'family-grid': isFamilyMode }">
-      <view
+      <template v-if="isFamilyMode">
+        <view
+          v-for="character in characters"
+          :key="character.characterId"
+          class="character-card"
+          :class="['card-element-' + character.elementKey, { 'family-card': isFamilyMode }]"
+          @click="goToDetail(character)">
+          <view class="avatar-wrap">
+            <image v-if="character.avatar" class="avatar" :src="character.avatar" mode="aspectFill" lazy-load />
+            <view v-else class="avatar-placeholder">
+              <text>{{ character.name.slice(0, 1) || '?' }}</text>
+            </view>
+            <view v-if="character.stars" class="stars">
+              <text v-for="i in Number(character.displayStars)" :key="i" class="star-icon">★</text>
+            </view>
+            <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
+          </view>
+          <view class="character-info">
+            <view class="character-name-row">
+              <SwcElementBadge
+                v-if="character.elementName"
+                :element-key="character.elementKey"
+                :label="character.elementName"
+                :size="20"
+                :font-size="20"
+                :icon-only="true" />
+              <text class="character-name">
+                {{ character.familyName }}
+              </text>
+            </view>
+            <view class="representative-row">
+              <text class="representative-label">代表魔灵</text>
+              <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
+            </view>
+            <view class="meta-row family-meta-row">
+              <view v-if="character.archetype" class="meta-chip">
+                <text>{{ character.archetype }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </template>
+
+      <SwcCharacterCard
+        v-else
         v-for="character in characters"
-        :key="character.id"
+        :key="character.characterId"
         class="character-card"
-        :class="['card-element-' + character.elementKey, { 'family-card': isFamilyMode }]"
-        @click="goToDetail(character)">
-        <view class="avatar-wrap">
-          <image v-if="character.avatar" class="avatar" :src="character.avatar" mode="aspectFill" lazy-load />
-          <view v-else class="avatar-placeholder">
-            <text>{{ character.name.slice(0, 1) || '?' }}</text>
-          </view>
-          <!-- <view v-if="character.elementName" class="avatar-element-badge">
-            <SwcElementBadge
-              :element-key="character.elementKey"
-              :label="character.elementName"
-              :size="20"
-              :font-size="20"
-              :icon-only="true" />
-          </view> -->
-          <view v-if="character.stars" class="stars">
-            <text v-for="i in Number(character.birthStars)" :key="i" class="star-icon">★</text>
-          </view>
-          <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
-        </view>
-        <view class="character-info">
-          <view class="character-name-row">
-            <SwcElementBadge
-              v-if="character.elementName"
-              :element-key="character.elementKey"
-              :label="character.elementName"
-              :size="20"
-              :font-size="20"
-              :icon-only="true" />
-            <text class="character-name">
-              {{ character.family }}
-              <!-- {{ isFamilyMode ? character.family || character.name || '未知物种' : character.name || '未知魔灵' }} -->
-            </text>
-          </view>
-          <view v-if="isFamilyMode" class="representative-row">
-            <text class="representative-label">代表魔灵</text>
-            <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
-          </view>
-          <view v-if="isFamilyMode" class="meta-row family-meta-row">
-            <view v-if="character.archetype" class="meta-chip">
-              <text>{{ character.archetype }}</text>
-            </view>
-          </view>
-          <!-- <view class="stat-row">
-            <view v-for="stat in character.stats" :key="stat.key" class="mini-stat">
-              <text class="mini-stat-label">{{ stat.label }}</text>
-              <text class="mini-stat-value">{{ stat.value }}</text>
-            </view>
-          </view> -->
-        </view>
-      </view>
+        :character="character"
+        :show-name="false"
+        :show-family="true"
+        :show-element="true"
+        :show-stars="true"
+        :show-original-stars="false"
+        :show-edit="isAdmin"
+        :avatar-size="260"
+        @click="goToDetail"
+        @edit="goToEdit" />
     </view>
 
     <view v-if="loading && characters.length > 0" class="load-more">继续加载...</view>
@@ -200,6 +203,8 @@
   import { computed, ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcCharacterCard from './components/swc-character-card.vue'
+  import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
@@ -220,28 +225,6 @@
   }
 
   interface LocaleOption {
-    label: string
-    value: string
-  }
-
-  interface CharacterCard {
-    id: string
-    name: string
-    code: string
-    avatar: string
-    elementKey: string
-    elementName: string
-    level: string
-    stars: string
-    birthStars: number
-    archetype: string
-    family: string
-    stats: CharacterStat[]
-    isFavorite: boolean
-  }
-
-  interface CharacterStat {
-    key: string
     label: string
     value: string
   }
@@ -335,7 +318,7 @@
   const selectedAwaken = ref('awakened')
   const selectedSort = ref(DEFAULT_SORT_FIELD)
   const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
-  const characters = ref<CharacterCard[]>([])
+  const characters = ref<SwcCharacterView[]>([])
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
   const hasNext = ref(true)
@@ -465,17 +448,7 @@
     return value ? `${value}${attribute.unit || ''}` : ''
   }
 
-  const parseBirthStars = (starsText: string, awakenText: string): number => {
-    const matched = starsText.match(/\d+/)
-    const stars = matched ? Number(matched[0]) : 0
-    if (!stars) return 0
-
-    const awaken = awakenText.trim().toLowerCase()
-    const isAwakened = ['awakened', '觉醒', '已觉醒', 'true', '1'].includes(awaken)
-    return Math.max(1, stars - (isAwakened ? 1 : 0))
-  }
-
-  const normalizeCharacter = (source: unknown): CharacterCard | null => {
+  const normalizeCharacter = (source: unknown): SwcCharacterView | null => {
     if (!isRecord(source)) return null
 
     const nestedCharacter = ['representative', 'representativeCharacter', 'character', 'item'].map(key => source[key]).find(isRecord)
@@ -501,26 +474,17 @@
       readString(source, ['groupValue', 'groupName', 'familyName']) ||
       (groupSource ? readString(groupSource, ['value', 'name', 'label', 'key']) : '')
 
-    return {
-      id,
+    return toSwcCharacterView({
+      characterId: id,
       name: readString(characterSource, ['name', 'title']),
-      code: readString(characterSource, ['code']),
       avatar: normalizeUrl(avatar),
       elementKey,
       elementName,
-      level: readString(characterSource, ['level']),
-      stars: stars.replace(/星$/, ''),
-      birthStars: parseBirthStars(stars, awaken),
+      familyName: getCategoryValue(categories, 'family') || groupFamily,
       archetype: getCategoryValue(categories, 'archetype') || readString(characterSource, ['speciesType', 'type']),
-      family: getCategoryValue(categories, 'family') || groupFamily,
-      stats: [
-        { key: 'hp', label: 'HP', value: formatAttribute(attributes, 'hp') },
-        { key: 'attack', label: '攻', value: formatAttribute(attributes, 'attack') },
-        { key: 'defense', label: '防', value: formatAttribute(attributes, 'defense') },
-        { key: 'speed', label: '速', value: formatAttribute(attributes, 'speed') },
-      ].filter(stat => Boolean(stat.value)),
-      isFavorite: favoriteIds.value.includes(id),
-    }
+      stars: stars.replace(/星$/, ''),
+      awaken,
+    })
   }
 
   const normalizeUrl = (url: string): string => {
@@ -625,7 +589,7 @@
 
       const items = extractItems(res)
         .map(normalizeCharacter)
-        .filter((item): item is CharacterCard => Boolean(item))
+        .filter((item): item is SwcCharacterView => Boolean(item))
 
       characters.value = reset ? items : [...characters.value, ...items]
 
@@ -690,9 +654,9 @@
 
   const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
-  const goToDetail = (character: CharacterCard) => {
+  const goToDetail = (character: SwcCharacterView) => {
     const params = [
-      `characterId=${encodeURIComponent(character.id)}`,
+      `characterId=${encodeURIComponent(character.characterId)}`,
       `name=${encodeURIComponent(character.name)}`,
       `avatar=${encodeURIComponent(character.avatar)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
@@ -700,9 +664,9 @@
     uni.navigateTo({ url: `/subPackages/tools/compendium/swc/detail?${params}` })
   }
 
-  const goToEdit = (character: CharacterCard) => {
+  const goToEdit = (character: SwcCharacterView) => {
     const params = [
-      `characterId=${encodeURIComponent(character.id)}`,
+      `characterId=${encodeURIComponent(character.characterId)}`,
       `name=${encodeURIComponent(character.name)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
     ].join('&')

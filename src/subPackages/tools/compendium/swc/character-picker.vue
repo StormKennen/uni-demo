@@ -109,23 +109,22 @@
     <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
 
     <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
-      <view v-if="filteredCharacterOptions.length" class="grid-wrap">
-        <view
-          v-for="item in filteredCharacterOptions"
-          :key="item.characterId || item.id"
+      <view v-if="filteredCharacterCards.length" class="grid-wrap">
+        <SwcCharacterCard
+          v-for="item in filteredCharacterCards"
+          :key="item.option.characterId || item.option.id"
           class="grid-item"
-          :class="{ selected: isSelected(item.characterId) }"
-          @click="toggleSelect(item)">
-          <view class="avatar-wrap">
-            <image v-if="item.avatar" class="avatar-image" :src="getAvatarSrc(item.avatar)" mode="aspectFill" lazy-load />
-            <view v-else class="avatar-image avatar-placeholder">
-              <text>{{ (item.name || '?').slice(0, 1) }}</text>
-            </view>
-            <view v-if="isSelected(item.characterId)" class="selected-badge">
-              <text class="selected-badge-text">{{ getSelectedIndex(item.characterId) }}</text>
-            </view>
-          </view>
-        </view>
+          :character="item.view"
+          :show-name="false"
+          :show-family="false"
+          :show-element="false"
+          :show-stars="false"
+          :show-original-stars="false"
+          selectable
+          :selected="isSelected(item.option.characterId)"
+          :selected-index="getSelectedIndex(item.option.characterId)"
+          :avatar-size="176"
+          @click="toggleSelect(item.option)" />
       </view>
 
       <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
@@ -154,7 +153,9 @@
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
+  import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import {
     fetchAdminCharacterOptions,
     fetchCharacterOptions as fetchUserCharacterOptions,
@@ -320,6 +321,21 @@
         return left.index - right.index
       })
       .map(entry => entry.item),
+  )
+
+  const filteredCharacterCards = computed<
+    Array<{
+      option: CharacterOption
+      view: SwcCharacterView
+    }>
+  >(() =>
+    filteredCharacterOptions.value.map(option => ({
+      option,
+      view: toSwcCharacterView({
+        ...option,
+        avatar: getAvatarSrc(option.avatar),
+      }),
+    })),
   )
 
   const filteredEmptyText = computed(() => {

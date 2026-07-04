@@ -45,6 +45,10 @@
           <text class="field-label">人物名称</text>
           <input v-model="form.name" class="field-input" placeholder="请输入人物名称" />
         </view>
+        <view class="field">
+          <text class="field-label">原始星级</text>
+          <input v-model="originalStarsText" class="field-input" type="number" placeholder="请输入原始星级" />
+        </view>
         <text class="field-tip">攻击、生命、防御等数值属性暂不开放编辑。</text>
       </view>
 
@@ -65,20 +69,12 @@
 
           <view class="field">
             <text class="field-label">技能描述</text>
-            <textarea
-              v-model="skill.description"
-              class="field-textarea"
-              placeholder="请输入技能描述"
-              :maxlength="2000" />
+            <textarea v-model="skill.description" class="field-textarea" placeholder="请输入技能描述" :maxlength="2000" />
           </view>
 
           <view class="field">
             <text class="field-label">技能次数</text>
-            <input
-              v-model="skill.hitCountText"
-              class="field-input"
-              type="number"
-              placeholder="请输入命中次数 / 攻击次数" />
+            <input v-model="skill.hitCountText" class="field-input" type="number" placeholder="请输入命中次数 / 攻击次数" />
           </view>
 
           <view v-if="skill.coefficients.length" class="coefficient-section">
@@ -89,11 +85,7 @@
               class="coefficient-item">
               <view class="field">
                 <text class="field-label">{{ coefficient.name || `系数 ${coefficientIndex + 1}` }}</text>
-                <input
-                  v-model="coefficient.valueText"
-                  class="field-input"
-                  type="digit"
-                  placeholder="请输入技能系数" />
+                <input v-model="coefficient.valueText" class="field-input" type="digit" placeholder="请输入技能系数" />
               </view>
             </view>
           </view>
@@ -166,8 +158,12 @@
     name: '',
     skills: [] as SkillForm[],
   })
+  const originalStarsText = ref('')
+  const originalAttributes = ref<Record<string, unknown>[]>([])
 
-  const selectedLocaleLabel = computed(() => localeOptions.find(option => option.value === selectedLocale.value)?.label || selectedLocale.value)
+  const selectedLocaleLabel = computed(
+    () => localeOptions.find(option => option.value === selectedLocale.value)?.label || selectedLocale.value,
+  )
   const displayName = computed(() => form.name || seedName.value || '未命名人物')
   const heroAvatar = computed(() => normalizeUrl(avatar.value))
   const heroInitial = computed(() => displayName.value.slice(0, 1) || '?')
@@ -201,9 +197,44 @@
     return Number.isNaN(parsed) ? trimmed : parsed
   }
 
+  const cloneAttribute = (source: unknown): Record<string, unknown> => (isRecord(source) ? { ...source } : {})
+
+  const toArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+
+  const readAttributeText = (attributes: Record<string, unknown>[], key: string): string => {
+    const attribute = attributes.find(item => toText(item.key) === key || toText(item.name) === key)
+    if (!attribute) return ''
+    return toText(attribute.displayValue || attribute.value || attribute.rawValue || attribute.text)
+  }
+
+  const mergeAttributeText = (attributes: Record<string, unknown>[], key: string, value: string): Record<string, unknown>[] => {
+    const next = attributes.map(item => ({ ...item }))
+    const trimmed = value.trim()
+    if (!trimmed) return next
+
+    const index = next.findIndex(item => toText(item.key) === key || toText(item.name) === key)
+    const payload = index >= 0 ? next[index] : {}
+    const nextAttribute = {
+      ...payload,
+      key,
+      value: trimmed,
+      displayValue: trimmed,
+    }
+
+    if (index >= 0) {
+      next[index] = nextAttribute
+    } else {
+      next.push(nextAttribute)
+    }
+
+    return next
+  }
+
   const resetForm = () => {
     form.name = ''
     form.skills = []
+    originalStarsText.value = ''
+    originalAttributes.value = []
   }
 
   const normalizeSkillCoefficient = (source: unknown): SkillCoefficientForm => {
@@ -259,10 +290,13 @@
       const rawRes = await getCompendiumsCharacter(query)
       const data = extractData(rawRes)
       const skills = Array.isArray(data.skills) ? data.skills : []
+      const attributes = toArray(data.attributes).map(cloneAttribute)
 
       form.name = toText(data.name) || seedName.value
       avatar.value = toText(data.avatar)
       form.skills = skills.map(normalizeSkill)
+      originalAttributes.value = attributes
+      originalStarsText.value = readAttributeText(attributes, 'stars')
       uni.setNavigationBarTitle({ title: `编辑 - ${displayName.value}` })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '加载失败，请稍后重试'
@@ -311,6 +345,7 @@
         locale: selectedLocale.value,
         name: form.name || undefined,
         skills: form.skills.map(buildSkillPayload),
+        attributes: mergeAttributeText(originalAttributes.value, 'stars', originalStarsText.value),
       }
 
       await patchAdminCompendiumsCharacters(body as never)
