@@ -319,6 +319,7 @@
   const selectedSort = ref(DEFAULT_SORT_FIELD)
   const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
   const characters = ref<SwcCharacterView[]>([])
+  const refreshOnReturnFromEdit = ref(false)
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
   const hasNext = ref(true)
@@ -665,6 +666,7 @@
   }
 
   const goToEdit = (character: SwcCharacterView) => {
+    refreshOnReturnFromEdit.value = true
     const params = [
       `characterId=${encodeURIComponent(character.characterId)}`,
       `name=${encodeURIComponent(character.name)}`,
@@ -675,6 +677,10 @@
 
   onShow(() => {
     reportToolVisit('compendium-swc')
+    if (refreshOnReturnFromEdit.value) {
+      refreshOnReturnFromEdit.value = false
+      refreshCharacters()
+    }
   })
 
   onLoad((options: Record<string, string | undefined>) => {
