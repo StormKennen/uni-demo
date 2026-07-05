@@ -204,15 +204,25 @@
 
   const toArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
 
-  const readAttributeText = (attributes: Record<string, unknown>[], key: string): string => {
-    const attribute = attributes.find(item => toText(item.key) === key || toText(item.name) === key)
+  const findAttribute = (attributes: Record<string, unknown>[], key: string): Record<string, unknown> | undefined =>
+    attributes.find(item => toText(item.key) === key || toText(item.name) === key)
+
+  const readStarsAttributeText = (attributes: Record<string, unknown>[]): string => {
+    const attribute = findAttribute(attributes, 'stars')
     if (!attribute) return ''
-    return toText(attribute.displayValue || attribute.value || attribute.rawValue || attribute.text)
+    return toText(attribute.value ?? attribute.rawValue ?? attribute.total ?? attribute.displayValue ?? attribute.text)
+  }
+
+  const toNumberValue = (value: string): number | undefined => {
+    const trimmed = value.trim()
+    if (!trimmed) return undefined
+    const parsed = Number(trimmed)
+    return Number.isFinite(parsed) ? parsed : undefined
   }
 
   type AttributePayload = { key: string; value: number | string }
 
-  const buildAttributesPayload = (attributes: Record<string, unknown>[], starsText: string): AttributePayload[] => {
+  const buildAttributesPayload = (attributes: Record<string, unknown>[], starsValue?: number): AttributePayload[] => {
     const list = attributes
       .map(item => {
         const key = toText(item.key) || toText(item.name)
@@ -221,9 +231,7 @@
       })
       .filter((item): item is AttributePayload => Boolean(item.key) && item.value !== undefined)
 
-    const trimmedStars = starsText.trim()
-    if (trimmedStars) {
-      const starsValue = normalizeNumberLike(trimmedStars) ?? trimmedStars
+    if (typeof starsValue === 'number' && Number.isFinite(starsValue)) {
       const index = list.findIndex(item => item.key === 'stars')
       if (index >= 0) {
         list[index] = { key: 'stars', value: starsValue }
@@ -319,7 +327,7 @@
       originalCategories.value = toArray(data.categories).map(cloneAttribute)
       originalSkins.value = toArray(data.skins)
       originalAliases.value = toArray(data.aliases).map(toText).filter(Boolean)
-      originalStarsText.value = readAttributeText(attributes, 'stars')
+      originalStarsText.value = readStarsAttributeText(attributes)
       uni.setNavigationBarTitle({ title: `编辑 - ${displayName.value}` })
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '加载失败，请稍后重试'
@@ -362,21 +370,72 @@
     submitting.value = true
 
     try {
+      const submittedStarsText = originalStarsText.value.trim()
+      const submittedStarsValue = toNumberValue(submittedStarsText)
+      const shouldVerifyStars = Boolean(submittedStarsText)
+      if (shouldVerifyStars && submittedStarsValue === undefined) {
+        uni.showToast({ title: '原始星级请输入数字', icon: 'none' })
+        return
+      }
+
       const body: Record<string, unknown> = {
         compendiumId: COMPENDIUM_CODE,
         characterId: characterId.value,
         locale: selectedLocale.value,
         name: form.name || undefined,
         skills: form.skills.map(buildSkillPayload),
-        attributes: buildAttributesPayload(originalAttributes.value, originalStarsText.value),
+        attributes: buildAttributesPayload(originalAttributes.value, submittedStarsValue),
         categories: buildCategoriesPayload(originalCategories.value),
         skins: originalSkins.value,
         aliases: originalAliases.value,
       }
 
-      await patchAdminCompendiumsCharacters(body as never)
-      uni.showToast({ title: '保存成功', icon: 'success' })
-      setTimeout(() => uni.navigateBack(), 700)
+      const patchResult = await patchAdminCompendiumsCharacters(body as never)
+      const patchData = extractData(patchResult)
+
+      if (!shouldVerifyStars) {
+        uni.showToast({ title: '保存成功', icon: 'success' })
+        setTimeout(() => uni.navigateBack(), 700)
+        return
+      }
+
+      const responseStarsText = readStarsAttributeText(toArray(patchData.attributes).map(cloneAttribute))
+      let actualStarsValue = toNumberValue(responseStarsText)
+
+      if (actualStarsValue === undefined) {
+        try {
+          const query: getCompendiumsCharacterQuery = {
+            compendiumId: COMPENDIUM_CODE,
+            characterId: characterId.value,
+            locale: selectedLocale.value,
+          }
+          const confirmResult = await getCompendiumsCharacter(query)
+          const confirmData = extractData(confirmResult)
+          actualStarsValue = toNumberValue(readStarsAttributeText(toArray(confirmData.attributes).map(cloneAttribute)))
+        } catch (verifyError) {
+          console.warn('[swc/edit] 保存后星级复核失败', {
+            submittedStars: submittedStarsValue,
+            actualStars: actualStarsValue,
+            body,
+            error: verifyError,
+          })
+          uni.showToast({ title: '已提交，暂时无法确认星级是否生效，请稍后查看', icon: 'none' })
+          return
+        }
+      }
+
+      if (actualStarsValue !== undefined && submittedStarsValue !== undefined && Number(actualStarsValue) === Number(submittedStarsValue)) {
+        uni.showToast({ title: '保存成功', icon: 'success' })
+        setTimeout(() => uni.navigateBack(), 700)
+        return
+      }
+
+      console.warn('[swc/edit] 保存后星级未确认或未落库', {
+        submittedStars: submittedStarsValue,
+        actualStars: actualStarsValue,
+        body,
+      })
+      uni.showToast({ title: '已提交，但服务端未更新星级，请联系后端', icon: 'none' })
     } catch (error) {
       const message = typeof error === 'string' ? error : '保存失败，请稍后重试'
       uni.showToast({ title: message, icon: 'none' })
