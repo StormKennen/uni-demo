@@ -8,6 +8,7 @@
   import { onShow } from '@dcloudio/uni-app'
   import { useShare } from '@/utils/share'
   import H5TabBar from '@/components/h5-tab-bar.vue'
+  import ThemeRoot from '@/components/ThemeRoot.vue'
   import { useThemeStore } from '@/stores/theme'
 
   const themeStore = useThemeStore()
@@ -105,9 +106,7 @@
 </script>
 
 <template>
-  <!-- #ifdef MP-WEIXIN -->
-  <page-meta :page-style="themeStore.pageStyle" />
-  <!-- #endif -->
+  <ThemeRoot />
   <view class="mine">
     <view class="bg" />
     <view class="mine-top" hover-class="none" hover-stop-propagation="false">
