@@ -30,16 +30,15 @@
   }
   const props = defineProps<Props>()
   const emit = defineEmits(['click'])
-  
+
   const onClick = () => {
     const { data } = props
-    
+
     // 如果有自定义action，触发父组件的点击事件
     if (data.action) {
       emit('click', data)
       return
     }
-    
 
     if (data.to) {
       if (data.needToken) {
@@ -72,7 +71,7 @@
       flex: 1;
       .center-text {
         font-size: 30rpx;
-        color: $ga-gray-8;
+        color: var(--theme-text);
       }
     }
     .right {

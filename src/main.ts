@@ -1,12 +1,12 @@
-import { createSSRApp } from "vue";
-import App from "./App.vue";
-import * as Pinia from 'pinia';
+import { createSSRApp } from 'vue'
+import App from './App.vue'
+import * as Pinia from 'pinia'
 import './static/font/dinfont.css'
-import '@/static/style/global.scss';
-import '@/components/form/style.scss';
+import '@/static/style/global.scss'
+import '@/static/style/theme.scss'
+import '@/components/form/style.scss'
 import '@/static/style/iconfont.scss'
 // import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-
 
 // #ifdef WEB
 // #endif
@@ -14,15 +14,15 @@ import '@/static/style/iconfont.scss'
 // // #endif
 
 export function createApp() {
-  const app = createSSRApp(App);
+  const app = createSSRApp(App)
   const pinia = Pinia.createPinia()
   // pinia.use(piniaPluginPersistedstate)
 
-  app.use(pinia);
-  
+  app.use(pinia)
+
   // #ifdef MP-WEIXIN
   // #endif
-  
+
   // #ifdef WEB
   if (import.meta.env.VITE_APP_ENV === 'development' || import.meta.env.VITE_APP_ENV === 'test') {
     import('vconsole').then(({ default: VConsole }) => {
@@ -33,6 +33,6 @@ export function createApp() {
   // #endif
   return {
     app,
-    Pinia
-  };
+    Pinia,
+  }
 }

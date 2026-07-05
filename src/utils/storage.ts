@@ -1,36 +1,38 @@
+import type { ThemeMode } from '@/utils/theme'
+import { THEME_STORAGE_KEY } from '@/utils/theme'
+
 const TokenKey = 'token'
 const WxUserInfo = 'WxUserInfo'
 const WxSession = 'WxSession'
 const IsGoChatCoze = 'IsGoChatCoze'
 const WxEncryptedData = 'WxEncryptedData'
 
-
-export const getStorageSync = (key: string)=>{
+export const getStorageSync = (key: string) => {
   try {
-    const value = uni.getStorageSync(key);
+    const value = uni.getStorageSync(key)
     return value
   } catch (e) {
-    console.log("🚀 ~ getStorageSync ~ e:",key, e)
+    console.log('🚀 ~ getStorageSync ~ e:', key, e)
   }
 }
 
-export const setStorageSync = (key: string, value: any)=>{
+export const setStorageSync = (key: string, value: any) => {
   try {
-    uni.setStorageSync(key, value);
+    uni.setStorageSync(key, value)
   } catch (e) {
-    console.log("🚀 ~ setStorageSync ~ e:",key,value, e)
+    console.log('🚀 ~ setStorageSync ~ e:', key, value, e)
   }
 }
 
-export const removeStorageSync = (key: string)=>{
+export const removeStorageSync = (key: string) => {
   try {
-    uni.removeStorageSync(key);
+    uni.removeStorageSync(key)
   } catch (e) {
-    console.log("🚀 ~ removeStorageSync ~ e:",key, e)
+    console.log('🚀 ~ removeStorageSync ~ e:', key, e)
   }
 }
 
-export const setToken = (token: string)=>{
+export const setToken = (token: string) => {
   setStorageSync(TokenKey, token)
   // 设置token后立即更新HTTP headers
   setTimeout(async () => {
@@ -43,44 +45,52 @@ export const setToken = (token: string)=>{
   }, 0)
 }
 
-export const getToken = ()=>{
+export const getToken = () => {
   return getStorageSync(TokenKey)
 }
 
-export const removeToken = ()=>{
+export const setThemeMode = (mode: ThemeMode) => {
+  setStorageSync(THEME_STORAGE_KEY, mode)
+}
+
+export const getThemeMode = (): ThemeMode | undefined => {
+  const value = getStorageSync(THEME_STORAGE_KEY)
+  return value === 'light' || value === 'dark' ? value : undefined
+}
+
+export const removeToken = () => {
   return removeStorageSync(TokenKey)
 }
 
-export const setWxUserInfo = (userInfo: any)=>{
+export const setWxUserInfo = (userInfo: any) => {
   setStorageSync(WxUserInfo, userInfo)
 }
 
-export const getWxUserInfo = ()=>{
+export const getWxUserInfo = () => {
   return getStorageSync(WxUserInfo)
 }
 
-export const removeWxUserInfo = ()=>{
+export const removeWxUserInfo = () => {
   return removeStorageSync(WxUserInfo)
 }
 
-export const setWxSession = (wxSession: any)=>{
+export const setWxSession = (wxSession: any) => {
   setStorageSync(WxSession, wxSession)
 }
 
-export const getWxSession = ()=>{
+export const getWxSession = () => {
   return getStorageSync(WxSession)
 }
 
-export const removeWxSession = ()=>{
+export const removeWxSession = () => {
   return removeStorageSync(WxSession)
 }
 
-export const setIsGoChatCoze = (val: boolean)=>{
+export const setIsGoChatCoze = (val: boolean) => {
   setStorageSync(IsGoChatCoze, val)
-
 }
 
-export const getIsGoChatCoze = ()=>{
+export const getIsGoChatCoze = () => {
   return getStorageSync(IsGoChatCoze)
 }
 
@@ -94,15 +104,15 @@ export interface WxEncryptedDataType {
   userInfo?: any
 }
 
-export const setWxEncryptedData = (data: WxEncryptedDataType)=>{
+export const setWxEncryptedData = (data: WxEncryptedDataType) => {
   setStorageSync(WxEncryptedData, data)
 }
 
-export const getWxEncryptedData = (): WxEncryptedDataType | null =>{
+export const getWxEncryptedData = (): WxEncryptedDataType | null => {
   return getStorageSync(WxEncryptedData)
 }
 
-export const removeWxEncryptedData = ()=>{
+export const removeWxEncryptedData = () => {
   return removeStorageSync(WxEncryptedData)
 }
 
@@ -155,15 +165,15 @@ export const removeRefreshTokenExpiresAt = () => {
  */
 export const isTokenExpired = (bufferMinutes: number = 5): boolean => {
   const expires = getTokenExpiresAt()
-  console.log('expires', expires);
-  
+  console.log('expires', expires)
+
   if (!expires) {
     return true // 没有过期时间信息，认为已过期
   }
-  
+
   const now = Date.now()
   const bufferMs = bufferMinutes * 60 * 1000
-  return now >= (expires - bufferMs)
+  return now >= expires - bufferMs
 }
 
 /**
@@ -174,7 +184,7 @@ export const isRefreshTokenExpired = (): boolean => {
   if (!expires) {
     return true // 没有过期时间信息，认为已过期
   }
-  
+
   const now = Date.now()
   return now >= expires
 }
@@ -222,4 +232,3 @@ export const clearLoginData = () => {
     }
   }, 0)
 }
-
