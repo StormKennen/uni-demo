@@ -247,6 +247,13 @@
           }
         },
         {
+          "path": "compendium/swc/admin-list",
+          "style": {
+            "navigationBarTitleText": "魔灵召唤·图鉴管理",
+            "onReachBottomDistance": 120
+          }
+        },
+        {
           "path": "compendium/swc/lineups",
           "style": {
             "navigationBarTitleText": "魔灵召唤阵容"

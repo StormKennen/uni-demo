@@ -106,6 +106,18 @@
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { patchAdminCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox'
+  import {
+    buildAttributesPayload,
+    buildCategoriesPayload,
+    cloneAttribute,
+    extractData,
+    isRecord,
+    normalizeNumberLike,
+    readStarsAttributeText,
+    toArray,
+    toNumberValue,
+    toText,
+  } from './character-payload'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -171,88 +183,10 @@
   const heroAvatar = computed(() => normalizeUrl(avatar.value))
   const heroInitial = computed(() => displayName.value.slice(0, 1) || '?')
 
-  const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null && !Array.isArray(value)
-
-  const extractData = (res: unknown): Record<string, unknown> => {
-    if (isRecord(res) && isRecord(res.data)) return res.data as Record<string, unknown>
-    if (isRecord(res)) return res
-    return {}
-  }
-
-  const toText = (value: unknown): string => {
-    if (typeof value === 'string') return value
-    if (typeof value === 'number') return String(value)
-    if (typeof value === 'boolean') return value ? 'true' : 'false'
-    return ''
-  }
-
   const normalizeUrl = (url: string): string => {
     if (!url) return ''
     if (url.startsWith('http://')) return url.replace(/^http:/, 'https:')
     return url
-  }
-
-  const normalizeNumberLike = (value: string): number | string | undefined => {
-    const trimmed = value.trim()
-    if (!trimmed) return undefined
-    const parsed = Number(trimmed)
-    return Number.isNaN(parsed) ? trimmed : parsed
-  }
-
-  const cloneAttribute = (source: unknown): Record<string, unknown> => (isRecord(source) ? { ...source } : {})
-
-  const toArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
-
-  const findAttribute = (attributes: Record<string, unknown>[], key: string): Record<string, unknown> | undefined =>
-    attributes.find(item => toText(item.key) === key || toText(item.name) === key)
-
-  const readStarsAttributeText = (attributes: Record<string, unknown>[]): string => {
-    const attribute = findAttribute(attributes, 'stars')
-    if (!attribute) return ''
-    return toText(attribute.value ?? attribute.rawValue ?? attribute.total ?? attribute.displayValue ?? attribute.text)
-  }
-
-  const toNumberValue = (value: string): number | undefined => {
-    const trimmed = value.trim()
-    if (!trimmed) return undefined
-    const parsed = Number(trimmed)
-    return Number.isFinite(parsed) ? parsed : undefined
-  }
-
-  type AttributePayload = { key: string; value: number | string }
-
-  const buildAttributesPayload = (attributes: Record<string, unknown>[], starsValue?: number): AttributePayload[] => {
-    const list = attributes
-      .map(item => {
-        const key = toText(item.key) || toText(item.name)
-        const rawValue = item.value ?? item.rawValue ?? item.displayValue ?? item.text
-        return { key, value: normalizeNumberLike(toText(rawValue)) }
-      })
-      .filter((item): item is AttributePayload => Boolean(item.key) && item.value !== undefined)
-
-    if (typeof starsValue === 'number' && Number.isFinite(starsValue)) {
-      const index = list.findIndex(item => item.key === 'stars')
-      if (index >= 0) {
-        list[index] = { key: 'stars', value: starsValue }
-      } else {
-        list.push({ key: 'stars', value: starsValue })
-      }
-    }
-
-    return list
-  }
-
-  const buildCategoriesPayload = (categories: Record<string, unknown>[]): Record<string, string> => {
-    const result: Record<string, string> = {}
-    categories.forEach(item => {
-      const key = toText(item.key) || toText(item.name)
-      const value = toText(item.valueKey) || toText(item.value)
-      if (key && value) {
-        result[key] = value
-      }
-    })
-    return result
   }
 
   const resetForm = () => {

@@ -54,6 +54,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'wiki',
     isNew: true,
   },
+  'compendium-swc-admin': {
+    name: '魔灵召唤·图鉴管理',
+    desc: '管理员内联编辑图鉴',
+    icon: 'compose',
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #38bdf8 100%)',
+    path: '/subPackages/tools/compendium/swc/admin-list',
+    category: 'wiki',
+    adminOnly: true,
+  },
   'compendium-lineups': {
     name: '魔灵召唤阵容',
     desc: '阵容分享/点赞，登录后可发布',
