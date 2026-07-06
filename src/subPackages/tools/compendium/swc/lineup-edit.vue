@@ -309,7 +309,7 @@
   .state-block {
     margin: 24rpx;
     border-radius: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
   }
 

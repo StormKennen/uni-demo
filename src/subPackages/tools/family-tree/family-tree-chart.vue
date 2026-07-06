@@ -1485,8 +1485,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 20rpx 24rpx;
-    background-color: #f8f9fa;
-    border-bottom: 1rpx solid #eee;
+    background-color: var(--theme-surface-2);
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .edit-toggle {
@@ -1717,8 +1717,8 @@
   }
 
   .gender-tag.unknown {
-    color: #666;
-    background-color: #f5f5f5;
+    color: var(--theme-text-secondary);
+    background-color: var(--theme-surface-2);
   }
 
   .generation-tag {
@@ -1938,7 +1938,7 @@
     padding: 32rpx;
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
     border-left: 8rpx solid #007aff;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
     position: relative;
   }
 

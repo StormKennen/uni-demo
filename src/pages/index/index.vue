@@ -1,7 +1,7 @@
 <template>
   <PageLayout title="工具箱" :show-nav="false" :nav-back="false">
     <view class="home-page">
-      <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: '#667eea' }">
+      <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: navbarBg }">
         <template #title>
           <view class="home-navbar-content">
             <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
@@ -100,9 +100,11 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
+  import { storeToRefs } from 'pinia'
   import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
   import { useShare } from '@/utils/share'
   import { getUserInfo } from '@/utils/storage'
+  import { useThemeStore } from '@/stores/theme'
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import PrivacyPopup from '@/components/privacy-popup.vue'
@@ -110,6 +112,9 @@
   import type { ToolItem } from '@/config/tools'
 
   declare const uni: any
+
+  const { isDark } = storeToRefs(useThemeStore())
+  const navbarBg = computed(() => (isDark.value ? 'var(--theme-surface)' : '#667eea'))
 
   /** 带 key 的工具项（模板渲染用） */
   interface KeyedToolItem {

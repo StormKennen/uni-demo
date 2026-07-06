@@ -1172,7 +1172,7 @@
   .code-text {
     padding: 4rpx 14rpx;
     border-radius: 999rpx;
-    background: #fff;
+    background: var(--theme-surface);
     color: #667085;
     font-size: 24rpx;
     font-weight: 800;
@@ -1334,7 +1334,7 @@
   .stat-row {
     padding: 20rpx 24rpx;
     border-radius: 16rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
   }
 
@@ -1418,7 +1418,7 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     height: 78rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border-bottom: 1rpx solid #e8edf5;
   }
 
@@ -1474,7 +1474,7 @@
     margin-bottom: 18rpx;
     padding: 22rpx;
     border-radius: 18rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 2rpx 12rpx rgba(34, 48, 76, 0.05);
   }
 
@@ -1609,7 +1609,7 @@
   .lineup-group-card,
   .lineup-item-card {
     border-radius: 18rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
   }
 
@@ -1736,7 +1736,7 @@
     width: 160rpx;
     padding: 12rpx;
     border-radius: 16rpx;
-    background: #fff;
+    background: var(--theme-surface);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1800,7 +1800,7 @@
   .category-chip {
     padding: 14rpx 18rpx;
     border-radius: 14rpx;
-    background: #fff;
+    background: var(--theme-surface);
     color: #5b6677;
     font-size: 26rpx;
     display: flex;

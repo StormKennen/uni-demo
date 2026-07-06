@@ -595,7 +595,7 @@
     }
 
     :deep(code) {
-      background: #f0f0f0;
+      background: var(--theme-surface-2);
       padding: 4rpx 12rpx;
       border-radius: 8rpx;
       font-family: monospace;
@@ -626,13 +626,13 @@
 
     :deep(th),
     :deep(td) {
-      border: 1rpx solid #e0e0e0;
+      border: 1rpx solid var(--theme-border);
       padding: 16rpx;
       text-align: left;
     }
 
     :deep(th) {
-      background: #f5f5f5;
+      background: var(--theme-surface-2);
       font-weight: 600;
     }
 
@@ -754,7 +754,7 @@
     text {
       margin-top: 24rpx;
       font-size: 28rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
     }
   }
 

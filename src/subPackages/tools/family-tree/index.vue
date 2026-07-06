@@ -151,7 +151,7 @@
     align-items: center;
     gap: 8rpx;
     padding: 12rpx 24rpx;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     border: 1rpx solid #667eea;
     border-radius: 32rpx;
     cursor: pointer;

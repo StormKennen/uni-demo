@@ -1993,8 +1993,8 @@
     closeBtn.style.cssText = `
     margin-top: 20px;
     padding: 12px 40px;
-    background: #fff;
-    color: #333;
+    background: var(--theme-surface);
+    color: var(--theme-text);
     border: none;
     border-radius: 24px;
     font-size: 16px;
@@ -2425,7 +2425,7 @@
 
   .meta-item {
     font-size: 24rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
   }
 
   .memo-tags {
@@ -2518,7 +2518,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f5f5;
+    background: var(--theme-surface-2);
   }
 
   .swiper-image {
@@ -2570,7 +2570,7 @@
 
     // 默认状态（纯白底时）- 实心浅灰背景
     // th {
-    //   background-color: #f8f9fa;
+    //   background-color: var(--theme-surface-2);
     // }
 
     td {
@@ -2578,11 +2578,11 @@
     }
 
     code {
-      background-color: #f1f3f4;
+      background-color: var(--theme-surface-2);
     }
 
     pre {
-      background-color: #f8f9fa;
+      background-color: var(--theme-surface-2);
     }
 
     blockquote {
@@ -2662,14 +2662,14 @@
   }
 
   .image-preview {
-    background: #f8f9fa;
+    background: var(--theme-surface-2);
     border-radius: 12rpx;
     overflow: hidden;
     display: inline-block;
 
     .image-container {
       min-height: 100rpx;
-      background: #fff;
+      background: var(--theme-surface);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2774,7 +2774,7 @@
     width: 20rpx;
     height: 20rpx;
     border-radius: 50%;
-    background: #fff;
+    background: var(--theme-surface);
     border: 4rpx solid #999;
     z-index: 2;
     flex-shrink: 0;
@@ -2846,7 +2846,7 @@
     display: block;
     font-size: 32rpx;
     font-weight: 600;
-    color: #333;
+    color: var(--theme-text);
     line-height: 1.4;
   }
 
@@ -2869,7 +2869,7 @@
 
     .tag-divider {
       font-size: 24rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
     }
 
     .tag-icon {
@@ -2881,7 +2881,7 @@
     display: block;
     margin-top: 8rpx;
     font-size: 26rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
     line-height: 1.5;
   }
 
@@ -2922,7 +2922,7 @@
     /* 强制固定宽高，确保正圆 */
     width: 96rpx;
     height: 96rpx;
-    background-color: #ffffff;
+    background-color: var(--theme-surface);
     border-radius: 50%;
     /* 增加阴影提升悬浮感 */
     box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
@@ -2937,7 +2937,7 @@
 
     &:active {
       transform: scale(0.9);
-      background-color: #f0f2ff;
+      background-color: var(--theme-surface-2);
     }
 
     .icon {
@@ -3029,7 +3029,7 @@
         display: block;
         font-size: 30rpx;
         font-weight: 500;
-        color: #333;
+        color: var(--theme-text);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -3038,14 +3038,14 @@
       .capsule-hint {
         display: block;
         font-size: 24rpx;
-        color: #999;
+        color: var(--theme-text-tertiary);
         margin-top: 4rpx;
       }
     }
 
     .capsule-arrow {
       font-size: 36rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
       margin-left: 16rpx;
       flex-shrink: 0;
     }
@@ -3074,7 +3074,7 @@
         display: block;
         font-size: 28rpx;
         font-weight: 500;
-        color: #333;
+        color: var(--theme-text);
         margin-bottom: 12rpx;
       }
 
@@ -3100,7 +3100,7 @@
 
         .audio-name {
           font-size: 28rpx;
-          color: #333;
+          color: var(--theme-text);
           font-weight: 500;
         }
       }
@@ -3346,7 +3346,7 @@
   .anchor-popup-content {
     width: 90%;
     max-height: 80vh;
-    background: white;
+    background: var(--theme-surface);
     border-radius: 24rpx;
     overflow: hidden;
     box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.2);
@@ -3369,7 +3369,7 @@
   .anchor-popup-title {
     font-size: 32rpx;
     font-weight: 600;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .anchor-popup-close {
@@ -3381,7 +3381,7 @@
     background: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
     font-size: 28rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
   }
 
   .anchor-popup-body {
@@ -3411,7 +3411,7 @@
       .media-title {
         font-size: 28rpx;
         font-weight: 500;
-        color: #333;
+        color: var(--theme-text);
         margin-bottom: 12rpx;
         display: block;
       }

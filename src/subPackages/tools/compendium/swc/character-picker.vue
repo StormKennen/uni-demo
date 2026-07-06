@@ -646,7 +646,7 @@
     padding: 0 20rpx;
     border: 1rpx solid #e7ebf2;
     border-radius: 999rpx;
-    background: #fff;
+    background: var(--theme-surface);
     color: #465164;
     font-size: 24rpx;
     font-weight: 700;
@@ -810,7 +810,7 @@
 
   .footer-cancel-btn {
     color: #667085;
-    background: #fff;
+    background: var(--theme-surface);
     border: 1rpx solid #e5e7eb;
   }
 

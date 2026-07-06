@@ -962,7 +962,7 @@
     .preset-description {
       display: flex;
       align-items: flex-start;
-      background: #f8f9fb;
+      background: var(--theme-surface-2);
       border-radius: 16rpx;
       padding: 20rpx 24rpx;
       margin-bottom: 32rpx;
@@ -1067,7 +1067,7 @@
 
       .info-card {
         flex: 1;
-        background: #f8f9fb;
+        background: var(--theme-surface-2);
         border-radius: 16rpx;
         padding: 24rpx;
 
@@ -1169,7 +1169,7 @@
   // H5引导弹窗
   .h5-guide-modal {
     width: 600rpx;
-    background: white;
+    background: var(--theme-surface);
     border-radius: $radius-md;
     padding: 48rpx;
     text-align: center;

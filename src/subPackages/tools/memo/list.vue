@@ -697,7 +697,7 @@
     }
 
     .add-btn {
-      background: #fff;
+      background: var(--theme-surface);
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 
       .icon {
@@ -1005,7 +1005,7 @@
         transition: all 0.2s;
 
         &:active {
-          background: #f8f9fa;
+          background: var(--theme-surface-2);
         }
 
         .memo-header {
@@ -1137,7 +1137,7 @@
         width: 100%;
         height: 80rpx;
         padding: 0 24rpx;
-        background: #f8f9fa;
+        background: var(--theme-surface-2);
         border-radius: 12rpx;
         font-size: 28rpx;
         margin-bottom: 32rpx;

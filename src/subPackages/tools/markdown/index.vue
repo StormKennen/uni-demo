@@ -272,7 +272,7 @@
   }
 
   .tab-item.active {
-    background: #fff;
+    background: var(--theme-surface);
     color: #7c3aed;
     box-shadow: 0 8rpx 18rpx rgba(124, 58, 237, 0.12);
   }

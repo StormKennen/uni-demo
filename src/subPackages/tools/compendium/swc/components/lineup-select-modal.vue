@@ -245,7 +245,7 @@
     padding: 20rpx;
     margin-bottom: 16rpx;
     border-radius: 20rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border: 2rpx solid transparent;
   }
 

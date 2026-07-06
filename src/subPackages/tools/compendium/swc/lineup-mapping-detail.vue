@@ -321,7 +321,7 @@
     text-align: center;
     color: #667085;
     font-size: 28rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 24rpx;
   }
 
@@ -339,7 +339,7 @@
 
   .edit-panel {
     width: 100%;
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 28rpx;
     padding: 32rpx;
     box-sizing: border-box;
