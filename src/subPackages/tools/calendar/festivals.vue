@@ -159,7 +159,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 32rpx;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .section-title {
@@ -168,7 +168,7 @@
     gap: 16rpx;
     font-size: 32rpx;
     font-weight: 500;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .icon {
@@ -194,7 +194,7 @@
 
   .arrow {
     font-size: 28rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
     transition: transform 0.3s;
 
     &.expanded {
@@ -226,18 +226,18 @@
 
   .festival-name {
     font-size: 30rpx;
-    color: #333;
+    color: var(--theme-text);
     font-weight: 500;
   }
 
   .festival-date {
     font-size: 24rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
   }
 
   .festival-countdown {
     font-size: 28rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
 
     &.today {
       color: $primary-red;

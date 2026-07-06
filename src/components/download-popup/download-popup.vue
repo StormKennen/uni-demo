@@ -279,7 +279,7 @@
   .email-item {
     // margin: 40rpx 0;
     margin-top: 40rpx;
-    // background-color: #f8f9fb;
+    // background-color: var(--theme-surface-2);
   }
   .download-popup {
     .button-group {

@@ -6,11 +6,7 @@
     </view>
 
     <view v-if="selectedItems.length" class="selected-list">
-      <view
-        v-for="item in selectedItems"
-        :key="item.id"
-        class="selected-card"
-        :class="{ highlight: selectedHighlight }">
+      <view v-for="item in selectedItems" :key="item.id" class="selected-card" :class="{ highlight: selectedHighlight }">
         <view class="option-main">
           <text class="option-name">{{ item.name || '未命名阵容' }}</text>
           <text class="option-desc">{{ item.description || '暂无描述' }}</text>
@@ -56,40 +52,43 @@
 
   type SelectionMode = 'single' | 'multiple'
 
-  const props = withDefaults(defineProps<{
-    title: string
-    tip?: string
-    keyword?: string
-    options?: LineupOption[]
-    selectedIds?: string[]
-    selectedItems?: LineupOption[]
-    selectionMode?: SelectionMode
-    selectedEmptyText?: string
-    selectedActionText?: string
-    selectedHighlight?: boolean
-    searchPlaceholder?: string
-    searchButtonText?: string
-    loadingText?: string
-    emptyText?: string
-    loading?: boolean
-    disabled?: boolean
-  }>(), {
-    tip: '',
-    keyword: '',
-    options: () => [],
-    selectedIds: () => [],
-    selectedItems: () => [],
-    selectionMode: 'single',
-    selectedEmptyText: '',
-    selectedActionText: '移除',
-    selectedHighlight: false,
-    searchPlaceholder: '请输入关键词',
-    searchButtonText: '搜索',
-    loadingText: '加载中...',
-    emptyText: '暂无可选项',
-    loading: false,
-    disabled: false,
-  })
+  const props = withDefaults(
+    defineProps<{
+      title: string
+      tip?: string
+      keyword?: string
+      options?: LineupOption[]
+      selectedIds?: string[]
+      selectedItems?: LineupOption[]
+      selectionMode?: SelectionMode
+      selectedEmptyText?: string
+      selectedActionText?: string
+      selectedHighlight?: boolean
+      searchPlaceholder?: string
+      searchButtonText?: string
+      loadingText?: string
+      emptyText?: string
+      loading?: boolean
+      disabled?: boolean
+    }>(),
+    {
+      tip: '',
+      keyword: '',
+      options: () => [],
+      selectedIds: () => [],
+      selectedItems: () => [],
+      selectionMode: 'single',
+      selectedEmptyText: '',
+      selectedActionText: '移除',
+      selectedHighlight: false,
+      searchPlaceholder: '请输入关键词',
+      searchButtonText: '搜索',
+      loadingText: '加载中...',
+      emptyText: '暂无可选项',
+      loading: false,
+      disabled: false,
+    },
+  )
 
   const emit = defineEmits<{
     (event: 'update:keyword', value: string): void
@@ -100,8 +99,7 @@
 
   const draftKeyword = ref(props.keyword)
 
-  const isSelected = (lineupId: string): boolean =>
-    props.selectedIds.includes(lineupId)
+  const isSelected = (lineupId: string): boolean => props.selectedIds.includes(lineupId)
 
   const getActionText = (lineupId: string): string => {
     if (props.selectionMode === 'single') {
@@ -128,7 +126,7 @@
     margin: 24rpx;
     padding: 24rpx;
     border-radius: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
   }
 

@@ -1895,7 +1895,7 @@
   .selector-title {
     font-size: 32rpx;
     font-weight: 600;
-    color: #333;
+    color: var(--theme-text);
   }
 
   /* 成员选择器样式 */
@@ -1904,7 +1904,7 @@
     align-items: center;
     margin-bottom: 20rpx;
     padding: 20rpx;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     border-radius: 12rpx;
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
     gap: 20rpx;
@@ -1912,22 +1912,22 @@
 
   .selector-label {
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
     white-space: nowrap;
   }
 
   .member-picker {
     flex: 1;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     width: 100%;
   }
 
   .picker-text {
     padding: 20rpx;
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
     text-align: left;
   }
 
@@ -1945,7 +1945,7 @@
 
   .chart-container {
     position: relative;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     border-radius: 12rpx;
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
     overflow: visible;
@@ -1976,7 +1976,7 @@
     width: 80rpx;
     height: 80rpx;
     background-color: rgba(255, 255, 255, 0.95);
-    border: 1rpx solid #e0e0e0;
+    border: 1rpx solid var(--theme-border);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1987,7 +1987,7 @@
   }
 
   .zoom-btn:hover {
-    background-color: #f5f5f5;
+    background-color: var(--theme-surface-2);
     transform: scale(1.05);
     box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.2);
   }
@@ -2019,8 +2019,8 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: #fff;
-    border-top: 1rpx solid #eee;
+    background-color: var(--theme-surface);
+    border-top: 1rpx solid var(--theme-border);
     box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.1);
     z-index: 1000;
     transition: transform 0.3s ease;
@@ -2037,7 +2037,7 @@
     height: 100rpx;
     padding: 0 32rpx;
     background-color: #f8f8f8;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
     cursor: pointer;
     transition: all 0.3s ease;
   }
@@ -2059,7 +2059,7 @@
 
   .toggle-text {
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
     display: flex;
     align-items: center;
     gap: 8rpx;
@@ -2072,7 +2072,7 @@
 
   .toggle-icon {
     font-size: 32rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     transition: transform 0.3s ease;
   }
 
@@ -2099,14 +2099,14 @@
 
   .tip-text {
     font-size: 32rpx;
-    color: #333;
+    color: var(--theme-text);
     font-weight: bold;
     margin-bottom: 16rpx;
   }
 
   .tip-desc {
     font-size: 24rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     line-height: 1.5;
   }
 
@@ -2114,14 +2114,14 @@
   .manual-select {
     margin-top: 30rpx;
     padding: 20rpx;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     border-radius: 12rpx;
-    border: 1rpx solid #e0e0e0;
+    border: 1rpx solid var(--theme-border);
   }
 
   .manual-select-text {
     font-size: 24rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     display: block;
     margin-bottom: 16rpx;
   }
@@ -2142,7 +2142,7 @@
     padding: 32rpx;
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
     border-left: 8rpx solid #007aff;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
     position: relative;
   }
 
@@ -2205,16 +2205,16 @@
 
   .node-name {
     font-size: 30rpx;
-    color: #333;
+    color: var(--theme-text);
     font-weight: 600;
     text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.1);
   }
 
   .node-id {
     font-size: 24rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     font-family: monospace;
-    background-color: #f5f5f5;
+    background-color: var(--theme-surface-2);
     padding: 4rpx 8rpx;
     border-radius: 4rpx;
     display: inline-block;
@@ -2224,7 +2224,7 @@
   .operation-tabs {
     display: flex;
     background-color: #f8f8f8;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .tab-item {
@@ -2232,7 +2232,7 @@
     padding: 24rpx;
     text-align: center;
     font-size: 28rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     cursor: pointer;
     transition: all 0.3s ease;
     border-bottom: 2rpx solid transparent;
@@ -2270,7 +2270,7 @@
   .label {
     display: block;
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
     margin-bottom: 16rpx;
   }
 
@@ -2279,11 +2279,11 @@
     height: 64rpx;
     line-height: 64rpx;
     box-sizing: border-box;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
     font-size: 28rpx;
     box-sizing: border-box;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     transition: border-color 0.3s ease;
   }
 
@@ -2294,15 +2294,15 @@
 
   .picker {
     width: 100%;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
-    background-color: #fff;
+    background-color: var(--theme-surface);
   }
 
   .picker-text {
     padding: 20rpx;
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .form-actions {
@@ -2323,8 +2323,8 @@
   }
 
   .cancel-btn {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--theme-surface-2);
+    color: var(--theme-text);
   }
 
   .confirm-btn {

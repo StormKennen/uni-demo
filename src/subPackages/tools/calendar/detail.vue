@@ -401,7 +401,7 @@
 
   .loading-text {
     font-size: 28rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
     animation: pulse 1.5s ease-in-out infinite;
   }
 
@@ -427,13 +427,13 @@
 
     .lunar-month {
       font-size: 36rpx;
-      color: #666;
+      color: var(--theme-text-secondary);
     }
 
     .lunar-day {
       font-size: 72rpx;
       font-weight: 600;
-      color: #333;
+      color: var(--theme-text);
       margin-left: 16rpx;
     }
   }
@@ -458,7 +458,7 @@
 
     text {
       font-size: 26rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
     }
   }
 
@@ -549,13 +549,13 @@
     .info-label {
       display: block;
       font-size: 24rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
       margin-bottom: 8rpx;
     }
 
     .info-value {
       font-size: 28rpx;
-      color: #333;
+      color: var(--theme-text);
       font-weight: 500;
     }
   }
@@ -573,7 +573,7 @@
     margin-bottom: 20rpx;
     font-size: 30rpx;
     font-weight: 500;
-    color: #333;
+    color: var(--theme-text);
 
     .title-icon {
       font-size: 32rpx;
@@ -594,7 +594,7 @@
     flex-direction: column;
     align-items: center;
     padding: 16rpx 24rpx;
-    background-color: #f5f5f5;
+    background-color: var(--theme-surface-2);
     border-radius: 12rpx;
     min-width: 120rpx;
 
@@ -618,18 +618,18 @@
   .time-name {
     font-size: 28rpx;
     font-weight: 500;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .time-range {
     font-size: 20rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
     margin: 4rpx 0;
   }
 
   .time-ganzhi {
     font-size: 24rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
   }
 
   .time-luck {
@@ -656,7 +656,7 @@
     margin-bottom: 16rpx;
     font-size: 28rpx;
     font-weight: 500;
-    color: #333;
+    color: var(--theme-text);
 
     .god-icon {
       font-size: 32rpx;
@@ -692,7 +692,7 @@
 
   .god-text {
     font-size: 26rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
 
     &.gold {
       color: $gold;
@@ -706,13 +706,13 @@
 
     .pos-label {
       font-size: 24rpx;
-      color: #999;
+      color: var(--theme-text-tertiary);
       width: 80rpx;
     }
 
     .pos-value {
       font-size: 26rpx;
-      color: #333;
+      color: var(--theme-text);
     }
   }
 </style>

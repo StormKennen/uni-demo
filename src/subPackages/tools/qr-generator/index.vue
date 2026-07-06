@@ -672,7 +672,7 @@
     max-width: 100%;
     height: auto;
     display: block;
-    background: white;
+    background: var(--theme-surface);
     box-sizing: content-box;
   }
 

@@ -280,7 +280,7 @@
   .empty-block,
   .state-block {
     margin: 0 24rpx 20rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 24rpx;
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
   }
@@ -417,7 +417,7 @@
 
   .create-panel {
     width: 100%;
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 28rpx;
     padding: 32rpx;
     box-sizing: border-box;

@@ -458,9 +458,9 @@
 
   // 择吉日标签栏
   .lucky-tags {
-    background-color: #fff;
+    background-color: var(--theme-surface);
     padding: 16rpx 0;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .tags-scroll {
@@ -480,9 +480,9 @@
     padding: 8rpx 24rpx;
     border-radius: 24rpx;
     font-size: 24rpx;
-    color: #666;
-    background-color: #f5f5f5;
-    border: 2rpx solid #e0e0e0;
+    color: var(--theme-text-secondary);
+    background-color: var(--theme-surface-2);
+    border: 2rpx solid var(--theme-border);
 
     &.active {
       color: #fff;
@@ -574,7 +574,7 @@
       border-radius: 8rpx;
 
       &.active {
-        background-color: #fff;
+        background-color: var(--theme-surface);
       }
     }
 
@@ -583,7 +583,7 @@
     }
 
     &.festivals-btn {
-      background-color: #fff;
+      background-color: var(--theme-surface);
       color: $primary-red;
       font-weight: 500;
     }
@@ -591,16 +591,16 @@
 
   .week-header {
     display: flex;
-    background-color: #fff;
+    background-color: var(--theme-surface);
     padding: 20rpx 0;
-    border-bottom: 1rpx solid #eee;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .week-day {
     flex: 1;
     text-align: center;
     font-size: 28rpx;
-    color: #333;
+    color: var(--theme-text);
 
     &.weekend {
       color: $primary-red;
@@ -610,7 +610,7 @@
   .calendar-grid {
     display: flex;
     flex-wrap: wrap;
-    background-color: #fff;
+    background-color: var(--theme-surface);
   }
 
   .calendar-cell {
@@ -670,13 +670,13 @@
 
   .solar-day {
     font-size: 32rpx;
-    color: #333;
+    color: var(--theme-text);
     margin-bottom: 4rpx;
   }
 
   .lunar-day {
     font-size: 20rpx;
-    color: #999;
+    color: var(--theme-text-tertiary);
     max-width: 90rpx;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -734,12 +734,12 @@
 
       .month-text {
         font-size: 28rpx;
-        color: #333;
+        color: var(--theme-text);
       }
 
       .week-text {
         font-size: 24rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
       }
     }
   }
@@ -753,13 +753,13 @@
       .lunar-date {
         font-size: 32rpx;
         font-weight: 500;
-        color: #333;
+        color: var(--theme-text);
         margin-right: 16rpx;
       }
 
       .gan-zhi {
         font-size: 26rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
       }
     }
 
@@ -770,7 +770,7 @@
 
       text {
         font-size: 24rpx;
-        color: #999;
+        color: var(--theme-text-tertiary);
       }
     }
   }
@@ -833,7 +833,7 @@
     justify-content: center;
     align-items: center;
     padding-top: 20rpx;
-    border-top: 1rpx solid #eee;
+    border-top: 1rpx solid var(--theme-border);
     margin-top: 16rpx;
 
     .view-more {

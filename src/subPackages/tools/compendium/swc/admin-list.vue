@@ -1092,7 +1092,7 @@
     margin-bottom: 20rpx;
     padding: 20rpx;
     border-radius: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06);
   }
 
@@ -1246,7 +1246,7 @@
   .skill-block {
     padding: 16rpx;
     border-radius: 18rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border: 1rpx solid #e2e8f0;
   }
 

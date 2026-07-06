@@ -95,7 +95,7 @@
   .container-section {
     margin: 0 24rpx 20rpx;
     padding: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 24rpx;
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
   }
@@ -172,7 +172,7 @@
     border-radius: 999rpx;
     font-size: 24rpx;
     font-weight: 700;
-    background: #fff;
+    background: var(--theme-surface);
     color: #475467;
     border: 2rpx solid #e5e7eb;
   }
