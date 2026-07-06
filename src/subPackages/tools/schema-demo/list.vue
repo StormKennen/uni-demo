@@ -101,15 +101,15 @@
     justify-content: space-between;
     align-items: center;
     padding: 16rpx 24rpx;
-    background: #fff;
-    border-bottom: 1rpx solid #eee;
+    background: var(--theme-surface);
+    border-bottom: 1rpx solid var(--theme-border);
 
     .action-bar-left {
       flex: 1;
 
       .info-text {
         font-size: 26rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
       }
     }
 
@@ -152,7 +152,7 @@
   }
 
   .feature-list {
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 16rpx;
     overflow: hidden;
     margin-bottom: 24rpx;
@@ -161,7 +161,7 @@
       display: flex;
       gap: 24rpx;
       padding: 32rpx 24rpx;
-      border-bottom: 1rpx solid #eee;
+      border-bottom: 1rpx solid var(--theme-border);
 
       &:last-child {
         border-bottom: none;
@@ -181,12 +181,12 @@
         .feature-title {
           font-size: 30rpx;
           font-weight: 600;
-          color: #333;
+          color: var(--theme-text);
         }
 
         .feature-desc {
           font-size: 26rpx;
-          color: #666;
+          color: var(--theme-text-secondary);
           line-height: 1.5;
         }
 
@@ -200,14 +200,14 @@
   }
 
   .test-guide {
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 16rpx;
     padding: 32rpx 24rpx;
 
     .guide-title {
       font-size: 32rpx;
       font-weight: 600;
-      color: #333;
+      color: var(--theme-text);
       display: block;
       margin-bottom: 24rpx;
     }
@@ -219,7 +219,7 @@
 
       .guide-step {
         font-size: 28rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
         line-height: 1.6;
         padding-left: 32rpx;
         position: relative;

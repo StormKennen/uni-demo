@@ -1729,7 +1729,7 @@
 
   .cue-dot {
     border: 2rpx solid #65736d;
-    background: #fff;
+    background: var(--theme-surface);
   }
 
   .target-dot {
@@ -1865,7 +1865,7 @@
 
   .cue-legend {
     border: 2rpx dashed #71827a;
-    background: #fff;
+    background: var(--theme-surface);
   }
 
   .target-legend {

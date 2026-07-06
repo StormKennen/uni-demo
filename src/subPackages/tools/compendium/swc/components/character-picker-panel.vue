@@ -664,7 +664,7 @@
   .section-card {
     margin: 24rpx;
     border-radius: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
     overflow: hidden;
     flex-shrink: 0;
@@ -838,7 +838,7 @@
     padding: 0 20rpx;
     border: 1rpx solid #e7ebf2;
     border-radius: 999rpx;
-    background: #fff;
+    background: var(--theme-surface);
     color: #465164;
     font-size: 24rpx;
     font-weight: 700;

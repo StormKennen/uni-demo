@@ -433,7 +433,7 @@
     width: 120rpx;
     height: 120rpx;
     border-radius: 24rpx;
-    background: #fff;
+    background: var(--theme-surface);
     flex: none;
   }
 
@@ -516,7 +516,7 @@
     margin-bottom: 28rpx;
     padding: 24rpx;
     border-radius: 16rpx;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   }
 
@@ -574,7 +574,7 @@
   .empty-block {
     padding: 24rpx;
     border-radius: 12rpx;
-    background: #f8f9fb;
+    background: var(--theme-surface-2);
     color: #8a94a6;
     font-size: 26rpx;
     text-align: center;
@@ -635,7 +635,7 @@
     bottom: 0;
     padding: 20rpx 32rpx;
     padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
   }
 

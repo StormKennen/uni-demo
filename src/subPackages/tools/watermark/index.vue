@@ -277,7 +277,7 @@
   }
 
   .card {
-    background: #fff;
+    background: var(--theme-surface);
     border-radius: 24rpx;
     padding: 24rpx;
     box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.05);
@@ -313,7 +313,7 @@
 
   .btn.ghost {
     background: #f2f2f2;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .tips-row {
@@ -357,7 +357,7 @@
     font-size: 28rpx;
     font-weight: 600;
     margin-bottom: 16rpx;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .share-btn {
@@ -365,7 +365,7 @@
     height: 96rpx;
     border-radius: 999rpx;
     border: 2rpx dashed #12d28c;
-    background: #fff;
+    background: var(--theme-surface);
     color: #07c160;
     font-size: 30rpx;
     font-weight: 600;

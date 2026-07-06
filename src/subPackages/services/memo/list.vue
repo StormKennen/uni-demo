@@ -690,7 +690,7 @@
     }
 
     .add-btn {
-      background: #fff;
+      background: var(--theme-surface);
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
 
       .icon {
@@ -706,8 +706,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 16rpx 24rpx;
-    background: #fff;
-    border-bottom: 1rpx solid #eee;
+    background: var(--theme-surface);
+    border-bottom: 1rpx solid var(--theme-border);
 
     .action-bar-left,
     .action-bar-right {
@@ -721,16 +721,16 @@
       gap: 8rpx;
       padding: 12rpx 24rpx;
       border-radius: 8rpx;
-      background: #f5f5f5;
+      background: var(--theme-surface-2);
 
       .icon {
         font-size: 28rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
       }
 
       .btn-text {
         font-size: 26rpx;
-        color: #666;
+        color: var(--theme-text-secondary);
       }
 
       &.folder-toggle.active {
@@ -765,8 +765,8 @@
 
   .folder-panel {
     width: 300rpx;
-    background: #fff;
-    border-right: 1rpx solid #eee;
+    background: var(--theme-surface);
+    border-right: 1rpx solid var(--theme-border);
     display: flex;
     flex-direction: column;
     transition: all 0.3s;
@@ -781,12 +781,12 @@
       justify-content: space-between;
       align-items: center;
       padding: 24rpx;
-      border-bottom: 1rpx solid #eee;
+      border-bottom: 1rpx solid var(--theme-border);
 
       .panel-title {
         font-size: 28rpx;
         font-weight: 600;
-        color: #333;
+        color: var(--theme-text);
       }
 
       .panel-actions {
@@ -799,10 +799,10 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #f0f0f0;
+          background: var(--theme-surface-2);
           border-radius: 8rpx;
           font-size: 28rpx;
-          color: #666;
+          color: var(--theme-text-secondary);
 
           &.collapse-btn {
             font-size: 24rpx;
@@ -823,7 +823,7 @@
 
         &.all-memos {
           font-weight: 600;
-          background: #f8f9fa;
+          background: var(--theme-surface-2);
         }
 
         &.active {
@@ -832,12 +832,12 @@
         }
 
         &:active {
-          background: #f0f0f0;
+          background: var(--theme-surface-2);
         }
 
         .folder-toggle {
           font-size: 20rpx;
-          color: #999;
+          color: var(--theme-text-tertiary);
           width: 32rpx;
         }
 
@@ -848,7 +848,7 @@
         .folder-name {
           flex: 1;
           font-size: 28rpx;
-          color: #333;
+          color: var(--theme-text);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -856,8 +856,8 @@
 
         .folder-count {
           font-size: 24rpx;
-          color: #999;
-          background: #f0f0f0;
+          color: var(--theme-text-tertiary);
+          background: var(--theme-surface-2);
           padding: 4rpx 12rpx;
           border-radius: 12rpx;
         }
@@ -869,20 +869,20 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--theme-surface);
 
     .search-bar {
       display: flex;
       align-items: center;
       gap: 16rpx;
       padding: 24rpx;
-      border-bottom: 1rpx solid #eee;
+      border-bottom: 1rpx solid var(--theme-border);
 
       .search-input {
         flex: 1;
         height: 64rpx;
         padding: 0 24rpx;
-        background: #f8f9fa;
+        background: var(--theme-surface-2);
         border-radius: 32rpx;
         font-size: 28rpx;
       }
@@ -897,7 +897,7 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #f8f9fa;
+          background: var(--theme-surface-2);
           border-radius: 50%;
           font-size: 32rpx;
           transition: all 0.2s;
@@ -912,8 +912,8 @@
 
     .tag-filter-panel {
       padding: 16rpx 24rpx;
-      background: #f8f9fa;
-      border-bottom: 1rpx solid #eee;
+      background: var(--theme-surface-2);
+      border-bottom: 1rpx solid var(--theme-border);
 
       .tag-filter-header {
         display: flex;
@@ -923,7 +923,7 @@
 
         .tag-filter-title {
           font-size: 26rpx;
-          color: #666;
+          color: var(--theme-text-secondary);
         }
 
         .tag-filter-clear {
@@ -939,11 +939,11 @@
 
         .tag-filter-item {
           padding: 8rpx 20rpx;
-          background: #fff;
-          border: 1rpx solid #ddd;
+          background: var(--theme-surface);
+          border: 1rpx solid var(--theme-border);
           border-radius: 24rpx;
           font-size: 24rpx;
-          color: #666;
+          color: var(--theme-text-secondary);
           transition: all 0.2s;
 
           &.active {
@@ -955,7 +955,7 @@
 
         .tag-filter-empty {
           font-size: 24rpx;
-          color: #999;
+          color: var(--theme-text-tertiary);
           padding: 8rpx 0;
         }
       }
@@ -971,7 +971,7 @@
         align-items: center;
         justify-content: center;
         padding: 120rpx 0;
-        color: #999;
+        color: var(--theme-text-tertiary);
 
         .empty-icon {
           font-size: 120rpx;
@@ -994,11 +994,11 @@
 
       .memo-item {
         padding: 24rpx;
-        border-bottom: 1rpx solid #eee;
+        border-bottom: 1rpx solid var(--theme-border);
         transition: all 0.2s;
 
         &:active {
-          background: #f8f9fa;
+          background: var(--theme-surface-2);
         }
 
         .memo-header {
@@ -1022,7 +1022,7 @@
               flex: 1;
               font-size: 32rpx;
               font-weight: 600;
-              color: #333;
+              color: var(--theme-text);
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
@@ -1049,7 +1049,7 @@
 
         .memo-name {
           font-size: 28rpx;
-          color: #666;
+          color: var(--theme-text-secondary);
           margin-bottom: 12rpx;
           display: block;
         }
@@ -1074,7 +1074,7 @@
           justify-content: space-between;
           .memo-time {
             font-size: 24rpx;
-            color: #999;
+            color: var(--theme-text-tertiary);
           }
         }
       }
@@ -1083,7 +1083,7 @@
       .loading-more {
         text-align: center;
         padding: 32rpx;
-        color: #999;
+        color: var(--theme-text-tertiary);
         font-size: 28rpx;
       }
     }
@@ -1103,7 +1103,7 @@
 
     .modal-content {
       width: 600rpx;
-      background: #fff;
+      background: var(--theme-surface);
       border-radius: 24rpx;
       padding: 32rpx;
 
@@ -1116,12 +1116,12 @@
         .modal-title {
           font-size: 32rpx;
           font-weight: 600;
-          color: #333;
+          color: var(--theme-text);
         }
 
         .modal-close {
           font-size: 48rpx;
-          color: #999;
+          color: var(--theme-text-tertiary);
           line-height: 1;
         }
       }
@@ -1130,7 +1130,7 @@
         width: 100%;
         height: 80rpx;
         padding: 0 24rpx;
-        background: #f8f9fa;
+        background: var(--theme-surface-2);
         border-radius: 12rpx;
         font-size: 28rpx;
         margin-bottom: 32rpx;
@@ -1150,8 +1150,8 @@
           font-size: 28rpx;
 
           &.cancel {
-            background: #f0f0f0;
-            color: #666;
+            background: var(--theme-surface-2);
+            color: var(--theme-text-secondary);
           }
 
           &.confirm {

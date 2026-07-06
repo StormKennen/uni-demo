@@ -1510,13 +1510,13 @@
 
   .padding-label {
     font-size: 26rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     min-width: 48rpx;
   }
 
   .padding-input {
     flex: 1;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
     padding: 12rpx 16rpx;
     font-size: 26rpx;
@@ -1539,13 +1539,13 @@
 
   .border-label {
     font-size: 26rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     min-width: 80rpx;
   }
 
   .border-input {
     flex: 1;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
     padding: 12rpx 16rpx;
     font-size: 26rpx;
@@ -1560,13 +1560,13 @@
 
   .border-color-label {
     font-size: 26rpx;
-    color: #666;
+    color: var(--theme-text-secondary);
     min-width: 120rpx;
   }
 
   .border-color-input {
     flex: 1;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     border-radius: 8rpx;
     padding: 12rpx 16rpx;
     font-size: 26rpx;
@@ -1739,7 +1739,7 @@
     border-radius: 8rpx;
     background-size: cover;
     background-position: center;
-    border: 1rpx solid #ddd;
+    border: 1rpx solid var(--theme-border);
     flex-shrink: 0;
   }
 
@@ -1760,7 +1760,7 @@
 
   .bg-clear-btn {
     padding: 10rpx 24rpx;
-    background: #f5f5f5;
+    background: var(--theme-surface-2);
     color: #e53935;
     border-radius: 8rpx;
     font-size: 24rpx;

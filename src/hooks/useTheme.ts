@@ -17,14 +17,12 @@ export function useTheme() {
       animation: { duration: 200, timingFunc: 'easeIn' },
     })
 
-    // #ifdef MP-WEIXIN
     uni.setTabBarStyle({
       color: isDark.value ? '#8993a2' : '#8993a2',
       selectedColor: isDark.value ? '#e9ecf0' : '#121A26',
       backgroundColor: isDark.value ? DARK_TOKENS['--theme-surface'] : LIGHT_TOKENS['--theme-surface'],
       borderStyle: isDark.value ? 'black' : 'white',
     })
-    // #endif
   }
 
   const pickAsset = (light: string, dark: string): string => (isDark.value ? dark : light)

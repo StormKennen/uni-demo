@@ -579,7 +579,7 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background: linear-gradient(180deg, #d5dfff 0.06%, #eff3ff 26%, #fff 49%, #fff 100%);
+    background: linear-gradient(180deg, #d5dfff 0.06%, #eff3ff 26%, var(--theme-surface) 49%, var(--theme-surface) 100%);
     padding-bottom: env(safe-area-inset-bottom);
 
     .btn {
@@ -635,7 +635,7 @@
     }
 
     .auth-tab.active {
-      background: #fff;
+      background: var(--theme-surface);
       color: $ga-brand-4;
       box-shadow: 0 8rpx 20rpx rgba(0, 70, 180, 0.12);
     }
@@ -674,7 +674,7 @@
         padding: 0 24rpx;
         border: 2rpx solid rgba(0, 70, 180, 0.08);
         border-radius: 24rpx;
-        background: #f7f9ff;
+        background: var(--theme-surface-2);
         font-size: 28rpx;
       }
 
@@ -684,7 +684,7 @@
         padding: 0 24rpx;
         border: 2rpx solid rgba(0, 70, 180, 0.08);
         border-radius: 24rpx;
-        background: #f7f9ff;
+        background: var(--theme-surface-2);
         font-size: 28rpx;
       }
 
@@ -693,7 +693,7 @@
         padding: 0 24rpx;
         border: 2rpx solid rgba(0, 70, 180, 0.08);
         border-radius: 24rpx;
-        background: #f7f9ff;
+        background: var(--theme-surface-2);
         font-size: 28rpx;
       }
 
