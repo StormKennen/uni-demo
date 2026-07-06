@@ -1,89 +1,85 @@
 <template>
-  <view class="gif-page">
-    <nav-bar
-      always-title
-      title="视频转GIF"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)' }" />
-
-    <view class="content">
-      <view class="section">
-        <view class="section-title">选择视频</view>
-        <view class="upload-area" @click="chooseVideo">
-          <view v-if="!videoSrc" class="upload-placeholder">
-            <text class="upload-icon">🎬</text>
-            <text class="upload-text">点击选择视频文件</text>
-            <text class="upload-hint">支持 MP4/MOV 等常见格式</text>
-          </view>
-          <view v-else class="video-preview">
-            <video :src="videoSrc" class="preview-video" :controls="false" :autoplay="false" :show-center-play-btn="false" />
-            <view class="video-info">
-              <text>时长：{{ formatDuration(videoDuration) }}</text>
-              <text class="reselect" @click.stop="chooseVideo">重新选择</text>
+  <PageLayout title="视频转GIF" nav-gradient="linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)">
+    <view class="gif-page">
+      <view class="content">
+        <view class="section">
+          <view class="section-title">选择视频</view>
+          <view class="upload-area" @click="chooseVideo">
+            <view v-if="!videoSrc" class="upload-placeholder">
+              <text class="upload-icon">🎬</text>
+              <text class="upload-text">点击选择视频文件</text>
+              <text class="upload-hint">支持 MP4/MOV 等常见格式</text>
+            </view>
+            <view v-else class="video-preview">
+              <video :src="videoSrc" class="preview-video" :controls="false" :autoplay="false" :show-center-play-btn="false" />
+              <view class="video-info">
+                <text>时长：{{ formatDuration(videoDuration) }}</text>
+                <text class="reselect" @click.stop="chooseVideo">重新选择</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <view v-if="videoSrc" class="section">
-        <view class="section-title">参数设置</view>
-        <view class="param-row">
-          <text class="param-label">帧率 (FPS)</text>
-          <view class="param-control">
-            <text class="param-btn" @click="fps = Math.max(2, fps - 1)">−</text>
-            <text class="param-value">{{ fps }}</text>
-            <text class="param-btn" @click="fps = Math.min(15, fps + 1)">+</text>
+        <view v-if="videoSrc" class="section">
+          <view class="section-title">参数设置</view>
+          <view class="param-row">
+            <text class="param-label">帧率 (FPS)</text>
+            <view class="param-control">
+              <text class="param-btn" @click="fps = Math.max(2, fps - 1)">−</text>
+              <text class="param-value">{{ fps }}</text>
+              <text class="param-btn" @click="fps = Math.min(15, fps + 1)">+</text>
+            </view>
+          </view>
+          <view class="param-row">
+            <text class="param-label">宽度 (px)</text>
+            <view class="param-control">
+              <text class="param-btn" @click="outputWidth = Math.max(100, outputWidth - 50)">−</text>
+              <text class="param-value">{{ outputWidth }}</text>
+              <text class="param-btn" @click="outputWidth = Math.min(800, outputWidth + 50)">+</text>
+            </view>
+          </view>
+          <view class="param-row">
+            <text class="param-label">起止时间 (秒)</text>
+            <view class="time-inputs">
+              <input v-model="startTime" class="time-input" type="digit" placeholder="起始" />
+              <text class="time-sep">~</text>
+              <input v-model="endTime" class="time-input" type="digit" placeholder="结束" />
+            </view>
+          </view>
+          <view class="param-hint"> 预计帧数：{{ estimatedFrames }}，建议不超过 100 帧 </view>
+        </view>
+
+        <button v-if="videoSrc" class="convert-btn" :disabled="converting" @click="startConvert">
+          {{ converting ? `转换中 ${progress}%` : '开始转换 GIF' }}
+        </button>
+
+        <view v-if="converting" class="progress-section">
+          <view class="progress-bar">
+            <view class="progress-inner" :style="{ width: progress + '%' }" />
+          </view>
+          <text class="progress-text">{{ statusText }}</text>
+        </view>
+
+        <view v-if="gifResult" class="section result-section">
+          <view class="section-title">转换结果</view>
+          <image :src="gifResult" class="gif-preview" mode="widthFix" />
+          <view class="result-info">
+            <text>尺寸：{{ resultSize }}</text>
+          </view>
+          <view class="result-actions">
+            <button class="action-btn primary" @click="saveGif">保存到相册</button>
+            <button class="action-btn" @click="shareGif">分享</button>
           </view>
         </view>
-        <view class="param-row">
-          <text class="param-label">宽度 (px)</text>
-          <view class="param-control">
-            <text class="param-btn" @click="outputWidth = Math.max(100, outputWidth - 50)">−</text>
-            <text class="param-value">{{ outputWidth }}</text>
-            <text class="param-btn" @click="outputWidth = Math.min(800, outputWidth + 50)">+</text>
-          </view>
-        </view>
-        <view class="param-row">
-          <text class="param-label">起止时间 (秒)</text>
-          <view class="time-inputs">
-            <input v-model="startTime" class="time-input" type="digit" placeholder="起始" />
-            <text class="time-sep">~</text>
-            <input v-model="endTime" class="time-input" type="digit" placeholder="结束" />
-          </view>
-        </view>
-        <view class="param-hint"> 预计帧数：{{ estimatedFrames }}，建议不超过 100 帧 </view>
+
+        <!-- H5 hidden elements -->
+        <!-- #ifdef H5 -->
+        <video ref="hiddenVideoRef" :src="videoSrc" class="hidden-video" muted preload="auto" />
+        <canvas ref="frameCanvasRef" class="hidden-canvas" :width="canvasWidth" :height="canvasHeight" />
+        <!-- #endif -->
       </view>
-
-      <button v-if="videoSrc" class="convert-btn" :disabled="converting" @click="startConvert">
-        {{ converting ? `转换中 ${progress}%` : '开始转换 GIF' }}
-      </button>
-
-      <view v-if="converting" class="progress-section">
-        <view class="progress-bar">
-          <view class="progress-inner" :style="{ width: progress + '%' }" />
-        </view>
-        <text class="progress-text">{{ statusText }}</text>
-      </view>
-
-      <view v-if="gifResult" class="section result-section">
-        <view class="section-title">转换结果</view>
-        <image :src="gifResult" class="gif-preview" mode="widthFix" />
-        <view class="result-info">
-          <text>尺寸：{{ resultSize }}</text>
-        </view>
-        <view class="result-actions">
-          <button class="action-btn primary" @click="saveGif">保存到相册</button>
-          <button class="action-btn" @click="shareGif">分享</button>
-        </view>
-      </view>
-
-      <!-- H5 hidden elements -->
-      <!-- #ifdef H5 -->
-      <video ref="hiddenVideoRef" :src="videoSrc" class="hidden-video" muted preload="auto" />
-      <canvas ref="frameCanvasRef" class="hidden-canvas" :width="canvasWidth" :height="canvasHeight" />
-      <!-- #endif -->
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

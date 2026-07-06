@@ -1,59 +1,62 @@
 <template>
-  <view class="magnet-page">
-    <PageLayout title="磁力链接" nav-gradient="linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" />
-
-    <view class="content">
-      <view class="section">
-        <view class="section-title">输入磁力链接</view>
-        <textarea v-model="rawInput" class="input-area" placeholder="粘贴磁力链接，每行一个（支持不完整链接自动补全）" :maxlength="5000" />
-        <view class="input-footer">
-          <text class="paste-btn" @click="readClipboard">粘贴</text>
-          <text class="input-counter">{{ rawInput.length }}/5000</text>
+  <PageLayout title="磁力链接" nav-gradient="linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)">
+    <view class="magnet-page">
+      <view class="content">
+        <view class="section">
+          <view class="section-title">输入磁力链接</view>
+          <textarea
+            v-model="rawInput"
+            class="input-area"
+            placeholder="粘贴磁力链接，每行一个（支持不完整链接自动补全）"
+            :maxlength="5000" />
+          <view class="input-footer">
+            <text class="paste-btn" @click="readClipboard">粘贴</text>
+            <text class="input-counter">{{ rawInput.length }}/5000</text>
+          </view>
         </view>
-      </view>
 
-      <view class="section">
-        <view class="section-title">批量替换</view>
-        <view class="replace-row">
-          <input v-model="findText" class="replace-input" placeholder="查找内容" />
-          <text class="replace-arrow">→</text>
-          <input v-model="replaceText" class="replace-input" placeholder="替换为" />
+        <view class="section">
+          <view class="section-title">批量替换</view>
+          <view class="replace-row">
+            <input v-model="findText" class="replace-input" placeholder="查找内容" />
+            <text class="replace-arrow">→</text>
+            <input v-model="replaceText" class="replace-input" placeholder="替换为" />
+          </view>
         </view>
-      </view>
 
-      <view class="action-row">
-        <button class="action-btn primary" :disabled="!rawInput.trim()" @click="processLinks">处理链接</button>
-        <button class="action-btn" :disabled="!processedLinks.length" @click="copyAll">复制全部</button>
-        <button class="action-btn" :disabled="!processedLinks.length" @click="clearAll">清空</button>
-      </view>
+        <view class="action-row">
+          <button class="action-btn primary" :disabled="!rawInput.trim()" @click="processLinks">处理链接</button>
+          <button class="action-btn" :disabled="!processedLinks.length" @click="copyAll">复制全部</button>
+          <button class="action-btn" :disabled="!processedLinks.length" @click="clearAll">清空</button>
+        </view>
 
-      <view v-if="stats.total > 0" class="stats-bar">
-        <text>共 {{ stats.total }} 条</text>
-        <text v-if="stats.completed > 0" class="stat-good">补全 {{ stats.completed }} 条</text>
-        <text v-if="stats.removed > 0" class="stat-bad">过滤 {{ stats.removed }} 条</text>
-        <text>有效 {{ processedLinks.length }} 条</text>
-      </view>
+        <view v-if="stats.total > 0" class="stats-bar">
+          <text>共 {{ stats.total }} 条</text>
+          <text v-if="stats.completed > 0" class="stat-good">补全 {{ stats.completed }} 条</text>
+          <text v-if="stats.removed > 0" class="stat-bad">过滤 {{ stats.removed }} 条</text>
+          <text>有效 {{ processedLinks.length }} 条</text>
+        </view>
 
-      <view v-if="processedLinks.length" class="section result-section">
-        <view class="section-title">处理结果</view>
-        <view v-for="(link, index) in processedLinks" :key="index" class="link-item">
-          <text class="link-index">{{ index + 1 }}</text>
-          <text class="link-text" selectable>{{ link }}</text>
-          <view class="link-actions">
-            <text class="link-action" @click="copyOne(link)">复制</text>
-            <text class="link-action" @click="generateQr(link)">二维码</text>
+        <view v-if="processedLinks.length" class="section result-section">
+          <view class="section-title">处理结果</view>
+          <view v-for="(link, index) in processedLinks" :key="index" class="link-item">
+            <text class="link-index">{{ index + 1 }}</text>
+            <text class="link-text" selectable>{{ link }}</text>
+            <view class="link-actions">
+              <text class="link-action" @click="copyOne(link)">复制</text>
+              <text class="link-action" @click="generateQr(link)">二维码</text>
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { ref, reactive } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import PageLayout from '@/components/PageLayout.vue'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/

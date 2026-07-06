@@ -1,51 +1,46 @@
 <template>
-  <view class="family-tree-page">
-    <!-- 顶部导航栏 -->
-    <nav-bar
-      always-title
-      title="家族族谱"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 操作栏 -->
-    <view class="action-bar">
-      <!-- 模式切换 -->
-      <view class="mode-switch">
-        <view class="mode-btn" :class="{ active: viewMode === 'tree' }" @click="viewMode = 'tree'">
-          <uni-icons type="staff" size="16" :color="viewMode === 'tree' ? '#fff' : '#667eea'" />
-          <text class="mode-text">树形图</text>
+  <PageLayout title="家族族谱" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="family-tree-page">
+      <!-- 顶部导航栏 -->
+      <!-- 操作栏 -->
+      <view class="action-bar">
+        <!-- 模式切换 -->
+        <view class="mode-switch">
+          <view class="mode-btn" :class="{ active: viewMode === 'tree' }" @click="viewMode = 'tree'">
+            <uni-icons type="staff" size="16" :color="viewMode === 'tree' ? '#fff' : '#667eea'" />
+            <text class="mode-text">树形图</text>
+          </view>
+          <view class="mode-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
+            <uni-icons type="bars" size="16" :color="viewMode === 'list' ? '#fff' : '#667eea'" />
+            <text class="mode-text">列表</text>
+          </view>
         </view>
-        <view class="mode-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
-          <uni-icons type="bars" size="16" :color="viewMode === 'list' ? '#fff' : '#667eea'" />
-          <text class="mode-text">列表</text>
-        </view>
-      </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-btns">
-        <view class="refresh-btn" @click="onRefresh">
-          <uni-icons type="refreshempty" size="16" color="#667eea" />
-          <text class="refresh-text">刷新</text>
+        <!-- 操作按钮 -->
+        <view class="action-btns">
+          <view class="refresh-btn" @click="onRefresh">
+            <uni-icons type="refreshempty" size="16" color="#667eea" />
+            <text class="refresh-text">刷新</text>
+          </view>
         </view>
       </view>
-    </view>
-    <!-- 列表模式 -->
-    <view class="content-wrapper" v-if="viewMode === 'list'">
-      <FamilyTreeList ref="listRef" />
-    </view>
+      <!-- 列表模式 -->
+      <view class="content-wrapper" v-if="viewMode === 'list'">
+        <FamilyTreeList ref="listRef" />
+      </view>
 
-    <!-- 树形图模式 -->
-    <view class="content-wrapper" v-if="viewMode === 'tree'">
-      <FamilyTreeChart ref="chartRef" />
+      <!-- 树形图模式 -->
+      <view class="content-wrapper" v-if="viewMode === 'tree'">
+        <FamilyTreeChart ref="chartRef" />
+      </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup>
   import { ref, watch, onMounted, nextTick } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
   import FamilyTreeList from './family-tree-list.vue'
   import FamilyTreeChart from './family-tree-chart.vue'
   import { useShare } from '@/utils/share'

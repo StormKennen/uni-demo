@@ -1,224 +1,228 @@
 <template>
-  <view class="swc-admin-page">
-    <PageLayout title="魔灵召唤·图鉴管理" nav-gradient="linear-gradient(135deg, #0f766e 0%, #38bdf8 100%)" />
+  <PageLayout title="魔灵召唤·图鉴管理" nav-gradient="linear-gradient(135deg, #0f766e 0%, #38bdf8 100%)">
+    <view class="swc-admin-page">
+      <view v-if="!canManage" class="state-block">
+        <text>{{ blockedText }}</text>
+      </view>
 
-    <view v-if="!canManage" class="state-block">
-      <text>{{ blockedText }}</text>
+      <template v-else>
+        <view class="filter-bar">
+          <view class="filter-group">
+            <text class="filter-label">五行</text>
+            <view class="chip-row">
+              <view
+                v-for="option in elementOptions"
+                :key="option.value"
+                class="chip"
+                :class="{ selected: option.value === selectedElement }"
+                @click="changeElement(option.value)">
+                {{ option.label }}
+              </view>
+            </view>
+          </view>
+
+          <view class="filter-group">
+            <text class="filter-label">星级排序</text>
+            <view class="chip-row">
+              <view class="chip" @click="toggleStarSortOrder">
+                {{ starSortLabel }}
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="loading && rows.length === 0" class="state-block">
+          <text>加载魔灵中...</text>
+        </view>
+
+        <view v-else-if="errorMessage" class="state-block">
+          <text>{{ errorMessage }}</text>
+          <button class="retry-btn" @click="refreshRows">重试</button>
+        </view>
+
+        <view v-else-if="rows.length === 0" class="state-block">
+          <text>暂无符合条件的魔灵</text>
+        </view>
+
+        <view v-else class="row-list">
+          <view v-for="row in rows" :key="row.characterId" class="row-card">
+            <view v-if="!row.editing" class="row-readonly">
+              <view class="row-head">
+                <image v-if="row.avatar" class="avatar" :src="row.avatar" mode="aspectFill" lazy-load />
+                <view v-else class="avatar avatar-placeholder">
+                  <text>{{ row.zhName.slice(0, 1) || '?' }}</text>
+                </view>
+
+                <view class="head-main">
+                  <text class="title">{{ row.zhName || '未命名魔灵' }}</text>
+                  <text class="sub-title">EN：{{ row.enName || '—' }}</text>
+                  <text class="sub-title">五行：{{ row.elementName || elementLabel(row.elementKey) || '—' }}</text>
+                  <text class="sub-title">星级：{{ row.starsText || '—' }}</text>
+                  <text class="sub-title aliases">别名：{{ row.aliasesPreview || '—' }}</text>
+                </view>
+
+                <button class="action-btn" @click="beginEdit(row)">编辑</button>
+              </view>
+            </view>
+
+            <view v-else class="row-edit">
+              <view class="row-head">
+                <image v-if="row.avatar" class="avatar" :src="row.avatar" mode="aspectFill" lazy-load />
+                <view v-else class="avatar avatar-placeholder">
+                  <text>{{ row.draft.zhName.slice(0, 1) || '?' }}</text>
+                </view>
+
+                <view class="head-main">
+                  <text class="title">{{ row.draft.zhName || row.zhName || '未命名魔灵' }}</text>
+                  <text class="sub-title">EN：{{ row.draft.enName || row.enName || '—' }}</text>
+                  <text class="sub-title">五行：{{ elementLabel(row.draft.elementKey) || '—' }}</text>
+                  <text class="sub-title">星级：{{ row.draft.starsText || '—' }}</text>
+                </view>
+
+                <button class="action-btn ghost" :disabled="row.detailsLoading || row.submitting" @click="cancelEdit(row)">取消</button>
+              </view>
+
+              <view class="edit-form">
+                <view class="field-grid">
+                  <view class="field wide">
+                    <text class="field-label">五行</text>
+                    <picker
+                      :range="elementOptions"
+                      range-key="label"
+                      :value="elementPickerIndex(row.draft.elementKey)"
+                      @change="changeElementDraft(row, $event)">
+                      <view class="picker-box">
+                        <text>{{ elementLabel(row.draft.elementKey) || '请选择五行' }}</text>
+                      </view>
+                    </picker>
+                  </view>
+
+                  <view class="field narrow">
+                    <text class="field-label">星级</text>
+                    <input v-model="row.draft.starsText" class="field-input" type="number" placeholder="请输入星级" />
+                  </view>
+                </view>
+
+                <view class="locale-section">
+                  <text class="locale-title">中文</text>
+                  <view class="field-grid single-col">
+                    <view class="field">
+                      <text class="field-label">名称</text>
+                      <input v-model="row.draft.zhName" class="field-input" placeholder="请输入中文名" />
+                    </view>
+
+                    <view class="field">
+                      <text class="field-label">别名</text>
+                      <input v-model="row.draft.zhAliasesText" class="field-input" placeholder="用「、」或「/」分隔" />
+                    </view>
+
+                    <view class="field">
+                      <text class="field-label">描述</text>
+                      <textarea v-model="row.draft.zhDescription" class="field-textarea" placeholder="请输入中文描述" :maxlength="2000" />
+                    </view>
+                  </view>
+                </view>
+
+                <view class="locale-section">
+                  <text class="locale-title">English</text>
+                  <view class="field-grid single-col">
+                    <view class="field">
+                      <text class="field-label">Name</text>
+                      <input v-model="row.draft.enName" class="field-input" placeholder="Enter English name" />
+                    </view>
+
+                    <view class="field">
+                      <text class="field-label">Aliases</text>
+                      <input v-model="row.draft.enAliasesText" class="field-input" placeholder="Use 、 or / to separate" />
+                    </view>
+
+                    <view class="field">
+                      <text class="field-label">Description</text>
+                      <textarea
+                        v-model="row.draft.enDescription"
+                        class="field-textarea"
+                        placeholder="Enter English description"
+                        :maxlength="2000" />
+                    </view>
+                  </view>
+                </view>
+
+                <view class="skills-panel">
+                  <view class="skills-head">
+                    <text class="locale-title">技能</text>
+                    <text class="skills-hint">中文 / English 双语编辑，未改动字段会按原记录回传</text>
+                  </view>
+
+                  <view v-if="row.detailsLoading" class="skills-state">加载人物详情中...</view>
+                  <view v-else-if="row.draft.skills.length === 0" class="skills-state">当前人物暂无技能数据</view>
+                  <view v-else>
+                    <view v-for="(skill, skillIndex) in row.draft.skills" :key="skill.key" class="skill-block">
+                      <view class="skill-head-row">
+                        <text class="skill-index">技能 {{ skillIndex + 1 }}</text>
+                        <text class="skill-key" v-if="skill.key">{{ skill.key }}</text>
+                      </view>
+
+                      <view class="skill-locale-grid">
+                        <view class="skill-locale-card">
+                          <text class="skill-locale-title">中文</text>
+                          <view class="field">
+                            <text class="field-label">技能名称</text>
+                            <input v-model="skill.zh.name" class="field-input" placeholder="请输入中文技能名" />
+                          </view>
+                          <view class="field">
+                            <text class="field-label">技能描述</text>
+                            <textarea
+                              v-model="skill.zh.description"
+                              class="field-textarea"
+                              placeholder="请输入中文技能描述"
+                              :maxlength="2000" />
+                          </view>
+                        </view>
+
+                        <view class="skill-locale-card">
+                          <text class="skill-locale-title">English</text>
+                          <view class="field">
+                            <text class="field-label">Skill Name</text>
+                            <input v-model="skill.en.name" class="field-input" placeholder="Enter English skill name" />
+                          </view>
+                          <view class="field">
+                            <text class="field-label">Skill Description</text>
+                            <textarea
+                              v-model="skill.en.description"
+                              class="field-textarea"
+                              placeholder="Enter English skill description"
+                              :maxlength="2000" />
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+
+                <view class="action-row">
+                  <button class="action-btn ghost" :loading="row.submitting" :disabled="row.submitting" @click="cancelEdit(row)"
+                    >取消</button
+                  >
+                  <button class="action-btn primary" :loading="row.submitting" :disabled="row.submitting" @click="saveRow(row)"
+                    >保存</button
+                  >
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view v-if="loading && rows.length > 0" class="load-more">继续加载...</view>
+        <view v-else-if="!hasNext && rows.length > 0" class="load-more muted">没有更多了</view>
+      </template>
     </view>
-
-    <template v-else>
-      <view class="filter-bar">
-        <view class="filter-group">
-          <text class="filter-label">五行</text>
-          <view class="chip-row">
-            <view
-              v-for="option in elementOptions"
-              :key="option.value"
-              class="chip"
-              :class="{ selected: option.value === selectedElement }"
-              @click="changeElement(option.value)">
-              {{ option.label }}
-            </view>
-          </view>
-        </view>
-
-        <view class="filter-group">
-          <text class="filter-label">星级排序</text>
-          <view class="chip-row">
-            <view class="chip" @click="toggleStarSortOrder">
-              {{ starSortLabel }}
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="loading && rows.length === 0" class="state-block">
-        <text>加载魔灵中...</text>
-      </view>
-
-      <view v-else-if="errorMessage" class="state-block">
-        <text>{{ errorMessage }}</text>
-        <button class="retry-btn" @click="refreshRows">重试</button>
-      </view>
-
-      <view v-else-if="rows.length === 0" class="state-block">
-        <text>暂无符合条件的魔灵</text>
-      </view>
-
-      <view v-else class="row-list">
-        <view v-for="row in rows" :key="row.characterId" class="row-card">
-          <view v-if="!row.editing" class="row-readonly">
-            <view class="row-head">
-              <image v-if="row.avatar" class="avatar" :src="row.avatar" mode="aspectFill" lazy-load />
-              <view v-else class="avatar avatar-placeholder">
-                <text>{{ row.zhName.slice(0, 1) || '?' }}</text>
-              </view>
-
-              <view class="head-main">
-                <text class="title">{{ row.zhName || '未命名魔灵' }}</text>
-                <text class="sub-title">EN：{{ row.enName || '—' }}</text>
-                <text class="sub-title">五行：{{ row.elementName || elementLabel(row.elementKey) || '—' }}</text>
-                <text class="sub-title">星级：{{ row.starsText || '—' }}</text>
-                <text class="sub-title aliases">别名：{{ row.aliasesPreview || '—' }}</text>
-              </view>
-
-              <button class="action-btn" @click="beginEdit(row)">编辑</button>
-            </view>
-          </view>
-
-          <view v-else class="row-edit">
-            <view class="row-head">
-              <image v-if="row.avatar" class="avatar" :src="row.avatar" mode="aspectFill" lazy-load />
-              <view v-else class="avatar avatar-placeholder">
-                <text>{{ row.draft.zhName.slice(0, 1) || '?' }}</text>
-              </view>
-
-              <view class="head-main">
-                <text class="title">{{ row.draft.zhName || row.zhName || '未命名魔灵' }}</text>
-                <text class="sub-title">EN：{{ row.draft.enName || row.enName || '—' }}</text>
-                <text class="sub-title">五行：{{ elementLabel(row.draft.elementKey) || '—' }}</text>
-                <text class="sub-title">星级：{{ row.draft.starsText || '—' }}</text>
-              </view>
-
-              <button class="action-btn ghost" :disabled="row.detailsLoading || row.submitting" @click="cancelEdit(row)">取消</button>
-            </view>
-
-            <view class="edit-form">
-              <view class="field-grid">
-                <view class="field wide">
-                  <text class="field-label">五行</text>
-                  <picker
-                    :range="elementOptions"
-                    range-key="label"
-                    :value="elementPickerIndex(row.draft.elementKey)"
-                    @change="changeElementDraft(row, $event)">
-                    <view class="picker-box">
-                      <text>{{ elementLabel(row.draft.elementKey) || '请选择五行' }}</text>
-                    </view>
-                  </picker>
-                </view>
-
-                <view class="field narrow">
-                  <text class="field-label">星级</text>
-                  <input v-model="row.draft.starsText" class="field-input" type="number" placeholder="请输入星级" />
-                </view>
-              </view>
-
-              <view class="locale-section">
-                <text class="locale-title">中文</text>
-                <view class="field-grid single-col">
-                  <view class="field">
-                    <text class="field-label">名称</text>
-                    <input v-model="row.draft.zhName" class="field-input" placeholder="请输入中文名" />
-                  </view>
-
-                  <view class="field">
-                    <text class="field-label">别名</text>
-                    <input v-model="row.draft.zhAliasesText" class="field-input" placeholder="用「、」或「/」分隔" />
-                  </view>
-
-                  <view class="field">
-                    <text class="field-label">描述</text>
-                    <textarea v-model="row.draft.zhDescription" class="field-textarea" placeholder="请输入中文描述" :maxlength="2000" />
-                  </view>
-                </view>
-              </view>
-
-              <view class="locale-section">
-                <text class="locale-title">English</text>
-                <view class="field-grid single-col">
-                  <view class="field">
-                    <text class="field-label">Name</text>
-                    <input v-model="row.draft.enName" class="field-input" placeholder="Enter English name" />
-                  </view>
-
-                  <view class="field">
-                    <text class="field-label">Aliases</text>
-                    <input v-model="row.draft.enAliasesText" class="field-input" placeholder="Use 、 or / to separate" />
-                  </view>
-
-                  <view class="field">
-                    <text class="field-label">Description</text>
-                    <textarea
-                      v-model="row.draft.enDescription"
-                      class="field-textarea"
-                      placeholder="Enter English description"
-                      :maxlength="2000" />
-                  </view>
-                </view>
-              </view>
-
-              <view class="skills-panel">
-                <view class="skills-head">
-                  <text class="locale-title">技能</text>
-                  <text class="skills-hint">中文 / English 双语编辑，未改动字段会按原记录回传</text>
-                </view>
-
-                <view v-if="row.detailsLoading" class="skills-state">加载人物详情中...</view>
-                <view v-else-if="row.draft.skills.length === 0" class="skills-state">当前人物暂无技能数据</view>
-                <view v-else>
-                  <view v-for="(skill, skillIndex) in row.draft.skills" :key="skill.key" class="skill-block">
-                    <view class="skill-head-row">
-                      <text class="skill-index">技能 {{ skillIndex + 1 }}</text>
-                      <text class="skill-key" v-if="skill.key">{{ skill.key }}</text>
-                    </view>
-
-                    <view class="skill-locale-grid">
-                      <view class="skill-locale-card">
-                        <text class="skill-locale-title">中文</text>
-                        <view class="field">
-                          <text class="field-label">技能名称</text>
-                          <input v-model="skill.zh.name" class="field-input" placeholder="请输入中文技能名" />
-                        </view>
-                        <view class="field">
-                          <text class="field-label">技能描述</text>
-                          <textarea
-                            v-model="skill.zh.description"
-                            class="field-textarea"
-                            placeholder="请输入中文技能描述"
-                            :maxlength="2000" />
-                        </view>
-                      </view>
-
-                      <view class="skill-locale-card">
-                        <text class="skill-locale-title">English</text>
-                        <view class="field">
-                          <text class="field-label">Skill Name</text>
-                          <input v-model="skill.en.name" class="field-input" placeholder="Enter English skill name" />
-                        </view>
-                        <view class="field">
-                          <text class="field-label">Skill Description</text>
-                          <textarea
-                            v-model="skill.en.description"
-                            class="field-textarea"
-                            placeholder="Enter English skill description"
-                            :maxlength="2000" />
-                        </view>
-                      </view>
-                    </view>
-                  </view>
-                </view>
-              </view>
-
-              <view class="action-row">
-                <button class="action-btn ghost" :loading="row.submitting" :disabled="row.submitting" @click="cancelEdit(row)">取消</button>
-                <button class="action-btn primary" :loading="row.submitting" :disabled="row.submitting" @click="saveRow(row)">保存</button>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="loading && rows.length > 0" class="load-more">继续加载...</view>
-      <view v-else-if="!hasNext && rows.length > 0" class="load-more muted">没有更多了</view>
-    </template>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
-  import PageLayout from '@/components/PageLayout.vue'
+
   import { getCompendiumsCharacter, getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type {
     getCompendiumsCharacterQuery,

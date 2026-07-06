@@ -1,182 +1,178 @@
 <template>
-  <view class="memo-list-page">
-    <!-- 导航栏 -->
-    <nav-bar
-      always-title
-      title="我的备忘录"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 操作栏（导航栏下方独立一行） -->
-    <view class="action-bar">
-      <view class="action-bar-left">
-        <view class="action-btn folder-toggle" :class="{ active: !folderPanelCollapsed }" @click="toggleFolderPanel">
-          <text class="icon">{{ folderPanelCollapsed ? '☰' : '✕' }}</text>
-          <text class="btn-text">分类</text>
+  <PageLayout title="我的备忘录" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="memo-list-page">
+      <!-- 导航栏 -->
+      <!-- 操作栏（导航栏下方独立一行） -->
+      <view class="action-bar">
+        <view class="action-bar-left">
+          <view class="action-btn folder-toggle" :class="{ active: !folderPanelCollapsed }" @click="toggleFolderPanel">
+            <text class="icon">{{ folderPanelCollapsed ? '☰' : '✕' }}</text>
+            <text class="btn-text">分类</text>
+          </view>
+        </view>
+        <view class="action-bar-right">
+          <view class="action-btn add-btn" @click="createNewMemo">
+            <text class="icon">+</text>
+            <text class="btn-text">新建</text>
+          </view>
         </view>
       </view>
-      <view class="action-bar-right">
-        <view class="action-btn add-btn" @click="createNewMemo">
-          <text class="icon">+</text>
-          <text class="btn-text">新建</text>
-        </view>
-      </view>
-    </view>
 
-    <view class="content-wrapper">
-      <!-- 左侧文件夹树（可折叠） -->
-      <view class="folder-panel" :class="{ collapsed: folderPanelCollapsed }">
-        <view class="panel-header">
-          <text class="panel-title">分类</text>
-          <view class="panel-actions">
-            <text class="action-icon" @click="createFolder">+</text>
-            <text class="action-icon collapse-btn" @click="toggleFolderPanel">
-              {{ folderPanelCollapsed ? '→' : '←' }}
-            </text>
-          </view>
-        </view>
-
-        <scroll-view class="folder-tree" scroll-y>
-          <!-- 全部备忘录 -->
-          <view class="folder-item all-memos" :class="{ active: !selectedFolderId }" @click="selectFolder(null)">
-            <text class="folder-icon">📋</text>
-            <text class="folder-name">全部</text>
-            <text class="folder-count">{{ totalCount }}</text>
-          </view>
-
-          <!-- 文件夹树 -->
-          <view
-            v-for="folder in folderTree"
-            :key="folder.id"
-            class="folder-item"
-            :class="{ active: selectedFolderId === folder.id }"
-            :style="{ paddingLeft: folder.level * 32 + 24 + 'rpx' }"
-            @click="selectFolder(folder.id)">
-            <text class="folder-toggle" v-if="folder.children && folder.children.length > 0" @click.stop="toggleFolder(folder.id)">
-              {{ expandedFolders.includes(folder.id) ? '▼' : '▶' }}
-            </text>
-            <text class="folder-icon">{{ folder.icon || '📁' }}</text>
-            <text class="folder-name">{{ folder.name }}</text>
-            <text class="folder-count">{{ folderStats[folder.id] || 0 }}</text>
-          </view>
-        </scroll-view>
-      </view>
-
-      <!-- 右侧备忘录列表 -->
-      <view class="memo-list-panel">
-        <!-- 搜索和筛选 -->
-        <view class="search-bar">
-          <input class="search-input" v-model="searchKeyword" placeholder="搜索备忘录..." @confirm="searchMemos" @input="onSearchInput" />
-          <view class="filter-actions">
-            <view class="filter-btn" :class="{ active: filterPinned }" @click="toggleFilter('pinned')"> 📌 </view>
-            <view class="filter-btn" :class="{ active: filterFavorite }" @click="toggleFilter('favorite')"> ⭐ </view>
-            <view class="filter-btn" :class="{ active: showTagFilter }" @click="toggleTagFilter"> 🏷️ </view>
-          </view>
-        </view>
-
-        <!-- 标签筛选面板 -->
-        <view class="tag-filter-panel" v-if="showTagFilter">
-          <view class="tag-filter-header">
-            <text class="tag-filter-title">按标签筛选</text>
-            <text class="tag-filter-clear" @click="clearTagFilter">清除</text>
-          </view>
-          <view class="tag-filter-list">
-            <view
-              v-for="tag in allTags"
-              :key="tag"
-              class="tag-filter-item"
-              :class="{ active: selectedTags.includes(tag) }"
-              @click="toggleTagSelection(tag)">
-              {{ tag }}
-            </view>
-            <view v-if="allTags.length === 0" class="tag-filter-empty"> 暂无标签 </view>
-          </view>
-        </view>
-
-        <!-- 备忘录列表 -->
-        <scroll-view class="memo-list" scroll-y @scrolltolower="loadMore">
-          <view v-if="loading && memos.length === 0" class="loading-state">
-            <text>加载中...</text>
-          </view>
-
-          <view v-else-if="memos.length === 0" class="empty-state">
-            <text class="empty-icon">📝</text>
-            <text class="empty-text">暂无备忘录</text>
-            <view class="empty-action" @click="createNewMemo">
-              <text>创建第一个备忘录</text>
-            </view>
-          </view>
-
-          <view v-for="memo in memos" :key="memo.id" class="memo-item" @click="editMemo(memo.id)">
-            <!-- <view class="memo-title">{{ memo.name || '-' }}</view> -->
-            <view class="memo-header">
-              <view class="memo-title-row">
-                <text class="memo-name">{{ memo.name }}</text>
-                <!-- <text class="memo-pin" v-if="memo.is_pinned">📌</text> -->
-                <text class="action-icon" @click.stop.prevent="togglePin(memo.id, memo.is_pinned)">
-                  {{ memo.is_pinned ? '📌' : '📍' }}
-                </text>
-                <!-- <text class="memo-favorite" v-if="memo.is_favorite">⭐</text> -->
-                <text class="action-icon" @click.stop.prevent="toggleFavorite(memo.id, memo.is_favorite)">
-                  {{ memo.is_favorite ? '⭐' : '☆' }}
-                </text>
-                <!-- <text class="memo-title">{{ memo.name || '-' }}</text> -->
-              </view>
-              <view class="memo-actions" @click.stop>
-                <!-- <text class="action-icon" @click="togglePin(memo.id, memo.is_pinned)">
-                  {{ memo.is_pinned ? '📌' : '📍' }}
-                </text> -->
-                <!-- <text class="action-icon" @click="toggleFavorite(memo.id, memo.is_favorite)">
-                  {{ memo.is_favorite ? '⭐' : '☆' }}
-                </text> -->
-                <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text>
-                <text class="action-icon" @click="deleteMemo(memo.id)">🗑️</text> -->
-              </view>
-            </view>
-
-            <!-- <text class="memo-name">{{ memo.name }}</text> -->
-
-            <view class="memo-tags" v-if="memo.tags && memo.tags.length > 0">
-              <text v-for="(tag, index) in memo.tags" :key="index" class="tag">
-                {{ tag }}
+      <view class="content-wrapper">
+        <!-- 左侧文件夹树（可折叠） -->
+        <view class="folder-panel" :class="{ collapsed: folderPanelCollapsed }">
+          <view class="panel-header">
+            <text class="panel-title">分类</text>
+            <view class="panel-actions">
+              <text class="action-icon" @click="createFolder">+</text>
+              <text class="action-icon collapse-btn" @click="toggleFolderPanel">
+                {{ folderPanelCollapsed ? '→' : '←' }}
               </text>
             </view>
+          </view>
 
-            <view class="memo-meta">
-              <text class="memo-time">{{ formatTime(memo.updatedAt) }}</text>
-              <view class="memo-actions">
-                <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text> -->
-                <text class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
-              </view>
+          <scroll-view class="folder-tree" scroll-y>
+            <!-- 全部备忘录 -->
+            <view class="folder-item all-memos" :class="{ active: !selectedFolderId }" @click="selectFolder(null)">
+              <text class="folder-icon">📋</text>
+              <text class="folder-name">全部</text>
+              <text class="folder-count">{{ totalCount }}</text>
+            </view>
+
+            <!-- 文件夹树 -->
+            <view
+              v-for="folder in folderTree"
+              :key="folder.id"
+              class="folder-item"
+              :class="{ active: selectedFolderId === folder.id }"
+              :style="{ paddingLeft: folder.level * 32 + 24 + 'rpx' }"
+              @click="selectFolder(folder.id)">
+              <text class="folder-toggle" v-if="folder.children && folder.children.length > 0" @click.stop="toggleFolder(folder.id)">
+                {{ expandedFolders.includes(folder.id) ? '▼' : '▶' }}
+              </text>
+              <text class="folder-icon">{{ folder.icon || '📁' }}</text>
+              <text class="folder-name">{{ folder.name }}</text>
+              <text class="folder-count">{{ folderStats[folder.id] || 0 }}</text>
+            </view>
+          </scroll-view>
+        </view>
+
+        <!-- 右侧备忘录列表 -->
+        <view class="memo-list-panel">
+          <!-- 搜索和筛选 -->
+          <view class="search-bar">
+            <input class="search-input" v-model="searchKeyword" placeholder="搜索备忘录..." @confirm="searchMemos" @input="onSearchInput" />
+            <view class="filter-actions">
+              <view class="filter-btn" :class="{ active: filterPinned }" @click="toggleFilter('pinned')"> 📌 </view>
+              <view class="filter-btn" :class="{ active: filterFavorite }" @click="toggleFilter('favorite')"> ⭐ </view>
+              <view class="filter-btn" :class="{ active: showTagFilter }" @click="toggleTagFilter"> 🏷️ </view>
             </view>
           </view>
 
-          <view v-if="hasMore && !loading" class="load-more" @click="loadMore">
-            <text>加载更多</text>
+          <!-- 标签筛选面板 -->
+          <view class="tag-filter-panel" v-if="showTagFilter">
+            <view class="tag-filter-header">
+              <text class="tag-filter-title">按标签筛选</text>
+              <text class="tag-filter-clear" @click="clearTagFilter">清除</text>
+            </view>
+            <view class="tag-filter-list">
+              <view
+                v-for="tag in allTags"
+                :key="tag"
+                class="tag-filter-item"
+                :class="{ active: selectedTags.includes(tag) }"
+                @click="toggleTagSelection(tag)">
+                {{ tag }}
+              </view>
+              <view v-if="allTags.length === 0" class="tag-filter-empty"> 暂无标签 </view>
+            </view>
           </view>
 
-          <view v-if="loading && memos.length > 0" class="loading-more">
-            <text>加载中...</text>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
+          <!-- 备忘录列表 -->
+          <scroll-view class="memo-list" scroll-y @scrolltolower="loadMore">
+            <view v-if="loading && memos.length === 0" class="loading-state">
+              <text>加载中...</text>
+            </view>
 
-    <!-- 新建文件夹弹窗 -->
-    <view class="modal" v-if="showFolderModal" @click="showFolderModal = false">
-      <view class="modal-content" @click.stop>
-        <view class="modal-header">
-          <text class="modal-title">新建文件夹</text>
-          <text class="modal-close" @click="showFolderModal = false">×</text>
+            <view v-else-if="memos.length === 0" class="empty-state">
+              <text class="empty-icon">📝</text>
+              <text class="empty-text">暂无备忘录</text>
+              <view class="empty-action" @click="createNewMemo">
+                <text>创建第一个备忘录</text>
+              </view>
+            </view>
+
+            <view v-for="memo in memos" :key="memo.id" class="memo-item" @click="editMemo(memo.id)">
+              <!-- <view class="memo-title">{{ memo.name || '-' }}</view> -->
+              <view class="memo-header">
+                <view class="memo-title-row">
+                  <text class="memo-name">{{ memo.name }}</text>
+                  <!-- <text class="memo-pin" v-if="memo.is_pinned">📌</text> -->
+                  <text class="action-icon" @click.stop.prevent="togglePin(memo.id, memo.is_pinned)">
+                    {{ memo.is_pinned ? '📌' : '📍' }}
+                  </text>
+                  <!-- <text class="memo-favorite" v-if="memo.is_favorite">⭐</text> -->
+                  <text class="action-icon" @click.stop.prevent="toggleFavorite(memo.id, memo.is_favorite)">
+                    {{ memo.is_favorite ? '⭐' : '☆' }}
+                  </text>
+                  <!-- <text class="memo-title">{{ memo.name || '-' }}</text> -->
+                </view>
+                <view class="memo-actions" @click.stop>
+                  <!-- <text class="action-icon" @click="togglePin(memo.id, memo.is_pinned)">
+                  {{ memo.is_pinned ? '📌' : '📍' }}
+                </text> -->
+                  <!-- <text class="action-icon" @click="toggleFavorite(memo.id, memo.is_favorite)">
+                  {{ memo.is_favorite ? '⭐' : '☆' }}
+                </text> -->
+                  <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text>
+                <text class="action-icon" @click="deleteMemo(memo.id)">🗑️</text> -->
+                </view>
+              </view>
+
+              <!-- <text class="memo-name">{{ memo.name }}</text> -->
+
+              <view class="memo-tags" v-if="memo.tags && memo.tags.length > 0">
+                <text v-for="(tag, index) in memo.tags" :key="index" class="tag">
+                  {{ tag }}
+                </text>
+              </view>
+
+              <view class="memo-meta">
+                <text class="memo-time">{{ formatTime(memo.updatedAt) }}</text>
+                <view class="memo-actions">
+                  <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text> -->
+                  <text class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
+                </view>
+              </view>
+            </view>
+
+            <view v-if="hasMore && !loading" class="load-more" @click="loadMore">
+              <text>加载更多</text>
+            </view>
+
+            <view v-if="loading && memos.length > 0" class="loading-more">
+              <text>加载中...</text>
+            </view>
+          </scroll-view>
         </view>
-        <input class="modal-input" v-model="newFolderName" placeholder="请输入文件夹名称" />
-        <view class="modal-actions">
-          <view class="modal-btn cancel" @click="showFolderModal = false">取消</view>
-          <view class="modal-btn confirm" @click="confirmCreateFolder">确定</view>
+      </view>
+
+      <!-- 新建文件夹弹窗 -->
+      <view class="modal" v-if="showFolderModal" @click="showFolderModal = false">
+        <view class="modal-content" @click.stop>
+          <view class="modal-header">
+            <text class="modal-title">新建文件夹</text>
+            <text class="modal-close" @click="showFolderModal = false">×</text>
+          </view>
+          <input class="modal-input" v-model="newFolderName" placeholder="请输入文件夹名称" />
+          <view class="modal-actions">
+            <view class="modal-btn cancel" @click="showFolderModal = false">取消</view>
+            <view class="modal-btn confirm" @click="confirmCreateFolder">确定</view>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -194,7 +190,6 @@
   import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
 
   onShow(() => {
     reportToolVisit('memo')

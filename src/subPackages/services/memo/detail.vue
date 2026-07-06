@@ -1,53 +1,48 @@
 <template>
-  <view class="memo-detail-page" :style="pageStyle">
-    <!-- 背景图层 -->
-    <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
+  <PageLayout :title="memoTitle" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" :bg-color="undefined">
+    <view class="memo-detail-page" :style="pageStyle">
+      <!-- 背景图层 -->
+      <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
 
-    <!-- 动态光斑效果 -->
-    <view v-if="settings.appearance.enableBlob" class="blob-container">
-      <view class="blob-circle blob-1" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
-      <view class="blob-circle blob-2" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
-    </view>
-
-    <!-- 科技感网格背景 -->
-    <view v-if="settings.appearance.enableCyberGrid" class="cyber-grid"></view>
-
-    <nav-bar
-      always-title
-      :title="memoTitle"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <view class="nav-actions" v-if="!settings.hideNavActions">
-      <!-- 导出图片按钮 -->
-      <view class="action-btn" @click="exportImage" v-if="memoData">
-        <text class="icon">导出</text>
+      <!-- 动态光斑效果 -->
+      <view v-if="settings.appearance.enableBlob" class="blob-container">
+        <view class="blob-circle blob-1" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
+        <view class="blob-circle blob-2" :style="{ filter: `blur(${settings.appearance.blobBlur}px)` }"></view>
       </view>
-      <!-- 分享按钮 -->
-      <view class="action-btn" @click="shareMemo" v-if="memoData">
-        <text class="icon">分享</text>
+
+      <!-- 科技感网格背景 -->
+      <view v-if="settings.appearance.enableCyberGrid" class="cyber-grid"></view>
+
+      <view class="nav-actions" v-if="!settings.hideNavActions">
+        <!-- 导出图片按钮 -->
+        <view class="action-btn" @click="exportImage" v-if="memoData">
+          <text class="icon">导出</text>
+        </view>
+        <!-- 分享按钮 -->
+        <view class="action-btn" @click="shareMemo" v-if="memoData">
+          <text class="icon">分享</text>
+        </view>
+        <!-- 编辑按钮（仅登录用户） -->
+        <view class="action-btn" @click="goToEdit" v-if="isLoggedIn && memoData">
+          <text class="icon">编辑</text>
+        </view>
       </view>
-      <!-- 编辑按钮（仅登录用户） -->
-      <view class="action-btn" @click="goToEdit" v-if="isLoggedIn && memoData">
-        <text class="icon">编辑</text>
+
+      <!-- 加载中 -->
+      <view v-if="loading" class="loading-container">
+        <text>加载中...</text>
       </view>
-    </view>
 
-    <!-- 加载中 -->
-    <view v-if="loading" class="loading-container">
-      <text>加载中...</text>
-    </view>
+      <!-- 未登录提示 -->
+      <view v-if="!settings.hideNavActions && !loading && !isLoggedIn" class="login-tip">
+        <text class="tip-text">👀 您正在以访客模式查看</text>
+        <button class="login-btn" @click="goToLogin">登录后可编辑</button>
+      </view>
 
-    <!-- 未登录提示 -->
-    <view v-if="!settings.hideNavActions && !loading && !isLoggedIn" class="login-tip">
-      <text class="tip-text">👀 您正在以访客模式查看</text>
-      <button class="login-btn" @click="goToLogin">登录后可编辑</button>
-    </view>
-
-    <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
-    <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }" :style="memoBodyStyle">
-      <!-- 标题 -->
-      <!-- <view class="memo-header">
+      <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
+      <view v-if="!loading && memoData" id="poster-wrapper" class="memo-content" :class="{ 'is-ready': isRendered }" :style="memoBodyStyle">
+        <!-- 标题 -->
+        <!-- <view class="memo-header">
         <text class="memo-title">{{ memoData.name || '未命名备忘录' }}</text>
         <view class="memo-meta">
           <text class="meta-item">📅 {{ formatTime(memoData.created_at) }}</text>
@@ -57,408 +52,409 @@
         </view>
       </view> -->
 
-      <!-- 标签 -->
-      <view class="memo-tags" v-if="memoData.tags && memoData.tags.length > 0">
-        <view class="tag" v-for="tag in memoData.tags" :key="tag">
-          <text>{{ tag }}</text>
+        <!-- 标签 -->
+        <view class="memo-tags" v-if="memoData.tags && memoData.tags.length > 0">
+          <view class="tag" v-for="tag in memoData.tags" :key="tag">
+            <text>{{ tag }}</text>
+          </view>
         </view>
-      </view>
 
-      <!-- 内容块 - 与editor.vue预览模式一致 -->
-      <view class="content-blocks" :style="textStyle">
-        <view
-          v-for="(block, blockIndex) in parsedContent"
-          :key="blockIndex"
-          :id="block.anchor || 'L' + (blockIndex + 1)"
-          class="content-block"
-          :class="{ 'is-popup-source': isBlockPopupTarget(block) }"
-          v-show="!isBlockPopupTarget(block)">
-          <!-- 扑克牌翻转容器 -->
-          <view v-if="block.style?.enablePokerCard" class="poker-card-container" @click="handlePokerFlip(Number(blockIndex))">
-            <view class="poker-card-inner" :class="{ 'is-flipped': isBlockFlipped(Number(blockIndex)) }">
-              <!-- 扑克牌背面 - 黑金高级感设计 -->
-              <view class="card-back">
-                <view class="card-back-logo">
-                  <text class="logo-icon">✦</text>
-                </view>
-                <text class="card-corner-suits">♠ ♥ ♣ ♦</text>
-                <view class="card-shine"></view>
-              </view>
-              <!-- 扑克牌正面（内容） -->
-              <view class="card-front">
-                <!-- 文本块 -->
-                <view
-                  v-if="block.type === 'text'"
-                  class="text-block"
-                  :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
-                  :style="getBlockStyle(block.style)">
-                  <view
-                    v-for="(item, itemIndex) in block.children"
-                    :key="itemIndex"
-                    class="text-item"
-                    :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
-                    @click.stop="handleTextItemClick(item)">
-                    <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
-                    <text class="text-preview" :class="{ 'link-text': item.linkInfo }" :style="getTextStyle(item.style)">{{
-                      item.value || ''
-                    }}</text>
+        <!-- 内容块 - 与editor.vue预览模式一致 -->
+        <view class="content-blocks" :style="textStyle">
+          <view
+            v-for="(block, blockIndex) in parsedContent"
+            :key="blockIndex"
+            :id="block.anchor || 'L' + (blockIndex + 1)"
+            class="content-block"
+            :class="{ 'is-popup-source': isBlockPopupTarget(block) }"
+            v-show="!isBlockPopupTarget(block)">
+            <!-- 扑克牌翻转容器 -->
+            <view v-if="block.style?.enablePokerCard" class="poker-card-container" @click="handlePokerFlip(Number(blockIndex))">
+              <view class="poker-card-inner" :class="{ 'is-flipped': isBlockFlipped(Number(blockIndex)) }">
+                <!-- 扑克牌背面 - 黑金高级感设计 -->
+                <view class="card-back">
+                  <view class="card-back-logo">
+                    <text class="logo-icon">✦</text>
                   </view>
+                  <text class="card-corner-suits">♠ ♥ ♣ ♦</text>
+                  <view class="card-shine"></view>
                 </view>
-                <!-- 图片块 -->
-                <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
-                  <!-- grid 布局 -->
+                <!-- 扑克牌正面（内容） -->
+                <view class="card-front">
+                  <!-- 文本块 -->
                   <view
-                    v-if="!block.layout || block.layout.type === 'grid'"
-                    class="image-grid"
-                    :style="{
-                      display: 'grid',
-                      gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
-                      gap: `${block.layout?.gap || 12}rpx`,
-                    }">
-                    <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
-                      <view
-                        class="image-preview"
-                        v-if="item.url || (item.value && item.value.url)"
-                        @click.stop="previewImage(item.url || item.value.url)">
-                        <view class="image-container">
-                          <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
-                        </view>
-                      </view>
-                    </view>
-                  </view>
-
-                  <!-- carousel 布局 -->
-                  <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
-                    <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
-                      <view class="swiper-item-content" @click.stop="previewImage(item.url || item.value.url)">
-                        <image
-                          v-if="item.url || (item.value && item.value.url)"
-                          :src="item.url || item.value.url"
-                          class="swiper-image"
-                          mode="aspectFill" />
-                      </view>
-                    </swiper-item>
-                  </swiper>
-
-                  <!-- free 布局：垂直堆叠 -->
-                  <view v-else class="image-free">
+                    v-if="block.type === 'text'"
+                    class="text-block"
+                    :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
+                    :style="getBlockStyle(block.style)">
                     <view
                       v-for="(item, itemIndex) in block.children"
                       :key="itemIndex"
-                      class="image-free-item"
-                      @click.stop="previewImage(item.url || item.value.url)">
-                      <image
-                        v-if="item.url || (item.value && item.value.url)"
-                        :src="item.url || item.value.url"
-                        class="free-image"
-                        mode="widthFix" />
+                      class="text-item"
+                      :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
+                      @click.stop="handleTextItemClick(item)">
+                      <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
+                      <text class="text-preview" :class="{ 'link-text': item.linkInfo }" :style="getTextStyle(item.style)">{{
+                        item.value || ''
+                      }}</text>
+                    </view>
+                  </view>
+                  <!-- 图片块 -->
+                  <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
+                    <!-- grid 布局 -->
+                    <view
+                      v-if="!block.layout || block.layout.type === 'grid'"
+                      class="image-grid"
+                      :style="{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
+                        gap: `${block.layout?.gap || 12}rpx`,
+                      }">
+                      <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
+                        <view
+                          class="image-preview"
+                          v-if="item.url || (item.value && item.value.url)"
+                          @click.stop="previewImage(item.url || item.value.url)">
+                          <view class="image-container">
+                            <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
+                          </view>
+                        </view>
+                      </view>
+                    </view>
+
+                    <!-- carousel 布局 -->
+                    <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
+                      <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
+                        <view class="swiper-item-content" @click.stop="previewImage(item.url || item.value.url)">
+                          <image
+                            v-if="item.url || (item.value && item.value.url)"
+                            :src="item.url || item.value.url"
+                            class="swiper-image"
+                            mode="aspectFill" />
+                        </view>
+                      </swiper-item>
+                    </swiper>
+
+                    <!-- free 布局：垂直堆叠 -->
+                    <view v-else class="image-free">
+                      <view
+                        v-for="(item, itemIndex) in block.children"
+                        :key="itemIndex"
+                        class="image-free-item"
+                        @click.stop="previewImage(item.url || item.value.url)">
+                        <image
+                          v-if="item.url || (item.value && item.value.url)"
+                          :src="item.url || item.value.url"
+                          class="free-image"
+                          mode="widthFix" />
+                      </view>
                     </view>
                   </view>
                 </view>
               </view>
             </view>
-          </view>
 
-          <!-- 普通内容块（无扑克牌效果） -->
-          <template v-else>
-            <!-- 锚点标签显示 -->
-            <!-- <text class="anchor-tag">#L{{ blockIndex + 1 }}</text> -->
-            <!-- 文本块 -->
-            <view
-              v-if="block.type === 'text'"
-              class="text-block"
-              :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
-              :style="getBlockStyle(block.style)">
+            <!-- 普通内容块（无扑克牌效果） -->
+            <template v-else>
+              <!-- 锚点标签显示 -->
+              <!-- <text class="anchor-tag">#L{{ blockIndex + 1 }}</text> -->
+              <!-- 文本块 -->
               <view
-                v-for="(item, itemIndex) in block.children"
-                :key="itemIndex"
-                class="text-item"
-                :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
-                @click="handleTextItemClick(item)">
-                <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
-                <!-- Markdown 模式 -->
-                <view
-                  v-if="block.isMarkdown"
-                  class="markdown-body"
-                  :class="{ 'link-text': item.linkInfo, 'glass-mode': hasCustomBackground }"
-                  :style="getTextStyleWithVars(item.style)"
-                  @click="handleMarkdownClick">
-                  <!-- #ifdef H5 -->
-                  <rich-text
-                    :nodes="renderMarkdown(item.value, item.style, undefined, false)"
-                    @click="handleMarkdownClick"
-                    :user-select="true"
-                    :selectable="true"></rich-text>
-                  <!-- #endif -->
-                  <!-- #ifdef MP-WEIXIN -->
-                  <rich-text
-                    :nodes="renderMarkdown(item.value, item.style, undefined, false)"
-                    @tap="handleMarkdownClick"
-                    @touchend="handleMarkdownClick"
-                    :data-text="item.value"
-                    :user-select="true"
-                    :selectable="true"></rich-text>
-                  <!-- #endif -->
-                  <!-- #ifndef H5 -->
-                  <!-- #ifndef MP-WEIXIN -->
-                  <rich-text
-                    :nodes="renderMarkdown(item.value, item.style, undefined, false)"
-                    @click="handleMarkdownClick"
-                    :user-select="true"
-                    :selectable="true"></rich-text>
-                  <!-- #endif -->
-                  <!-- #endif -->
-                </view>
-                <!-- 普通文本模式 -->
-                <text v-else class="text-preview" :class="{ 'link-text': item.linkInfo }" :style="getTextStyle(item.style)">{{
-                  item.value || ''
-                }}</text>
-              </view>
-            </view>
-
-            <!-- 图片块 - 与editor.vue结构一致 -->
-            <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
-              <!-- grid 布局 -->
-              <view
-                v-if="!block.layout || block.layout.type === 'grid'"
-                class="image-grid"
-                :style="{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
-                  gap: `${block.layout?.gap || 12}rpx`,
-                }">
-                <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
-                  <view
-                    class="image-preview"
-                    v-if="item.url || (item.value && item.value.url)"
-                    @click="previewImage(item.url || item.value.url)">
-                    <view class="image-container">
-                      <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
-                    </view>
-                  </view>
-                </view>
-              </view>
-
-              <!-- carousel 布局 -->
-              <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
-                <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
-                  <view class="swiper-item-content" @click="previewImage(item.url || item.value.url)">
-                    <image
-                      v-if="item.url || (item.value && item.value.url)"
-                      :src="item.url || item.value.url"
-                      class="swiper-image"
-                      mode="aspectFill" />
-                  </view>
-                </swiper-item>
-              </swiper>
-
-              <!-- free 布局：垂直堆叠 -->
-              <view v-else class="image-free">
+                v-if="block.type === 'text'"
+                class="text-block"
+                :class="{ 'is-markdown': block.isMarkdown, 'card-3d': block.style?.enable3DMode }"
+                :style="getBlockStyle(block.style)">
                 <view
                   v-for="(item, itemIndex) in block.children"
                   :key="itemIndex"
-                  class="image-free-item"
-                  @click="previewImage(item.url || item.value.url)">
-                  <image
-                    v-if="item.url || (item.value && item.value.url)"
-                    :src="item.url || item.value.url"
-                    class="free-image"
-                    mode="widthFix" />
+                  class="text-item"
+                  :class="{ 'has-link': item.linkInfo, 'no-select': item.interactionType === 'popup' }"
+                  @click="handleTextItemClick(item)">
+                  <text v-if="item.linkIcon" class="link-indicator">{{ item.linkIcon }}</text>
+                  <!-- Markdown 模式 -->
+                  <view
+                    v-if="block.isMarkdown"
+                    class="markdown-body"
+                    :class="{ 'link-text': item.linkInfo, 'glass-mode': hasCustomBackground }"
+                    :style="getTextStyleWithVars(item.style)"
+                    @click="handleMarkdownClick">
+                    <!-- #ifdef H5 -->
+                    <rich-text
+                      :nodes="renderMarkdown(item.value, item.style, undefined, false)"
+                      @click="handleMarkdownClick"
+                      :user-select="true"
+                      :selectable="true"></rich-text>
+                    <!-- #endif -->
+                    <!-- #ifdef MP-WEIXIN -->
+                    <rich-text
+                      :nodes="renderMarkdown(item.value, item.style, undefined, false)"
+                      @tap="handleMarkdownClick"
+                      @touchend="handleMarkdownClick"
+                      :data-text="item.value"
+                      :user-select="true"
+                      :selectable="true"></rich-text>
+                    <!-- #endif -->
+                    <!-- #ifndef H5 -->
+                    <!-- #ifndef MP-WEIXIN -->
+                    <rich-text
+                      :nodes="renderMarkdown(item.value, item.style, undefined, false)"
+                      @click="handleMarkdownClick"
+                      :user-select="true"
+                      :selectable="true"></rich-text>
+                    <!-- #endif -->
+                    <!-- #endif -->
+                  </view>
+                  <!-- 普通文本模式 -->
+                  <text v-else class="text-preview" :class="{ 'link-text': item.linkInfo }" :style="getTextStyle(item.style)">{{
+                    item.value || ''
+                  }}</text>
                 </view>
               </view>
-            </view>
 
-            <!-- 路径块 - 垂直时间轴 -->
-            <view v-if="block.type === 'route'" class="route-container" :style="getBlockStyle(block.style)">
-              <view
-                v-for="(node, nodeIndex) in block.content"
-                :key="nodeIndex"
-                class="route-node"
-                :class="{
-                  'is-start': nodeIndex === 0,
-                  'is-end': node.isEnd,
-                  'is-transfer': node.type === 'transfer',
-                }">
-                <!-- 左侧轴线 -->
-                <view class="route-axis">
-                  <!-- 圆点/徽章 -->
-                  <view
-                    class="route-dot"
-                    :class="{
-                      'dot-large': nodeIndex === 0 || node.isEnd,
-                      'dot-badge': node.type === 'transfer' && !node.isEnd,
-                    }"></view>
-                  <!-- 连线（非终点显示） -->
-                  <view
-                    v-if="!node.isEnd"
-                    class="route-line"
-                    :class="{
-                      'line-pipe': node.type === 'transfer',
-                      'line-dashed': node.type !== 'transfer',
-                    }"></view>
+              <!-- 图片块 - 与editor.vue结构一致 -->
+              <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
+                <!-- grid 布局 -->
+                <view
+                  v-if="!block.layout || block.layout.type === 'grid'"
+                  class="image-grid"
+                  :style="{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
+                    gap: `${block.layout?.gap || 12}rpx`,
+                  }">
+                  <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
+                    <view
+                      class="image-preview"
+                      v-if="item.url || (item.value && item.value.url)"
+                      @click="previewImage(item.url || item.value.url)">
+                      <view class="image-container">
+                        <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
+                      </view>
+                    </view>
+                  </view>
                 </view>
 
-                <!-- 右侧内容 -->
-                <view class="route-content">
-                  <!-- 站点名称 -->
-                  <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                <!-- carousel 布局 -->
+                <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
+                  <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
+                    <view class="swiper-item-content" @click="previewImage(item.url || item.value.url)">
+                      <image
+                        v-if="item.url || (item.value && item.value.url)"
+                        :src="item.url || item.value.url"
+                        class="swiper-image"
+                        mode="aspectFill" />
+                    </view>
+                  </swiper-item>
+                </swiper>
 
-                  <!-- 信息胶囊（非终点显示） -->
-                  <view v-if="!node.isEnd && (node.time || node.icon)" class="route-info-tag">
-                    <text v-if="node.time" class="tag-time">🕒 {{ node.time }}</text>
-                    <text v-if="node.time && node.icon" class="tag-divider">·</text>
-                    <text v-if="node.icon" class="tag-icon">{{ node.icon }}</text>
+                <!-- free 布局：垂直堆叠 -->
+                <view v-else class="image-free">
+                  <view
+                    v-for="(item, itemIndex) in block.children"
+                    :key="itemIndex"
+                    class="image-free-item"
+                    @click="previewImage(item.url || item.value.url)">
+                    <image
+                      v-if="item.url || (item.value && item.value.url)"
+                      :src="item.url || item.value.url"
+                      class="free-image"
+                      mode="widthFix" />
+                  </view>
+                </view>
+              </view>
+
+              <!-- 路径块 - 垂直时间轴 -->
+              <view v-if="block.type === 'route'" class="route-container" :style="getBlockStyle(block.style)">
+                <view
+                  v-for="(node, nodeIndex) in block.content"
+                  :key="nodeIndex"
+                  class="route-node"
+                  :class="{
+                    'is-start': nodeIndex === 0,
+                    'is-end': node.isEnd,
+                    'is-transfer': node.type === 'transfer',
+                  }">
+                  <!-- 左侧轴线 -->
+                  <view class="route-axis">
+                    <!-- 圆点/徽章 -->
+                    <view
+                      class="route-dot"
+                      :class="{
+                        'dot-large': nodeIndex === 0 || node.isEnd,
+                        'dot-badge': node.type === 'transfer' && !node.isEnd,
+                      }"></view>
+                    <!-- 连线（非终点显示） -->
+                    <view
+                      v-if="!node.isEnd"
+                      class="route-line"
+                      :class="{
+                        'line-pipe': node.type === 'transfer',
+                        'line-dashed': node.type !== 'transfer',
+                      }"></view>
                   </view>
 
-                  <!-- 描述（非终点显示） -->
-                  <text v-if="!node.isEnd && node.desc" class="route-desc">{{ node.desc }}</text>
+                  <!-- 右侧内容 -->
+                  <view class="route-content">
+                    <!-- 站点名称 -->
+                    <text class="route-name">{{ node.name || '未命名站点' }}</text>
+
+                    <!-- 信息胶囊（非终点显示） -->
+                    <view v-if="!node.isEnd && (node.time || node.icon)" class="route-info-tag">
+                      <text v-if="node.time" class="tag-time">🕒 {{ node.time }}</text>
+                      <text v-if="node.time && node.icon" class="tag-divider">·</text>
+                      <text v-if="node.icon" class="tag-icon">{{ node.icon }}</text>
+                    </view>
+
+                    <!-- 描述（非终点显示） -->
+                    <text v-if="!node.isEnd && node.desc" class="route-desc">{{ node.desc }}</text>
+                  </view>
                 </view>
+              </view>
+
+              <!-- 附件块 -->
+              <view v-if="block.type === 'attachment'" class="attachment-container" :style="getBlockStyle(block.style)">
+                <view
+                  v-for="(item, itemIndex) in block.children"
+                  :key="itemIndex"
+                  class="attachment-capsule"
+                  :class="{ 'is-tencent-doc': isTencentDocUrl(item.url) }"
+                  hover-class="capsule-hover"
+                  :hover-stay-time="100"
+                  @click="openAttachment(item)">
+                  <view class="capsule-icon" :class="{ 'tencent-icon': isTencentDocUrl(item.url) }">📄</view>
+                  <view class="capsule-content">
+                    <text class="capsule-title">{{ item.title || '未命名附件' }}</text>
+                    <text class="capsule-hint">{{ isTencentDocUrl(item.url) ? '点击打开腾讯文档' : '点击查看文档' }}</text>
+                  </view>
+                  <view class="capsule-arrow">›</view>
+                </view>
+              </view>
+
+              <!-- 多媒体块 -->
+              <view v-if="block.type === 'media'" class="media-container" :style="getBlockStyle(block.style)">
+                <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="media-item">
+                  <text v-if="item.title" class="media-title">{{ item.title }}</text>
+                  <video
+                    v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov') || item.url.includes('.avi'))"
+                    :src="item.url"
+                    class="media-video"
+                    :controls="item.controls !== false"
+                    :autoplay="item.autoplay === true"
+                    :loop="item.loop === true"
+                    :show-center-play-btn="true"
+                    :show-play-btn="true"></video>
+                  <view
+                    v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a') || item.url.includes('.wav'))"
+                    class="media-audio-wrapper"
+                    :class="{ 'has-controls': item.controls !== false }">
+                    <view class="audio-icon">🎵</view>
+                    <text class="audio-name">{{ item.title || '音频文件' }}</text>
+                    <text v-if="item.loop" class="audio-loop-tag">循环</text>
+                  </view>
+                </view>
+              </view>
+            </template>
+          </view>
+        </view>
+
+        <!-- 水印 -->
+        <view v-if="settings.features.showWatermark" class="watermark">
+          <text class="watermark-text">Powered by Memo</text>
+        </view>
+      </view>
+
+      <!-- 全局文档关联底部栏 -->
+      <view
+        v-if="settings.globalAttachment.enabled && settings.globalAttachment.url"
+        class="global-attachment-bar"
+        @click="openGlobalAttachment">
+        <view class="bar-content">
+          <text class="bar-icon">📄</text>
+          <text class="bar-title">{{ settings.globalAttachment.title || '查看原始文档' }}</text>
+        </view>
+        <text class="bar-arrow">›</text>
+      </view>
+
+      <!-- 错误提示 -->
+      <view v-if="!loading && error" class="error-container">
+        <text class="error-text">{{ error }}</text>
+        <button class="retry-btn" @click="loadMemoData">重试</button>
+      </view>
+
+      <!-- 回到顶部按钮 -->
+      <view class="back-to-top-btn" v-if="showBackToTopBtn" @click="backToTop">
+        <!-- <text class="back-to-top-icon">↑</text> -->
+        <text class="icon">↑</text>
+        <text class="btn-text">顶部</text>
+      </view>
+
+      <!-- 浪漫毛玻璃弹窗 -->
+      <view v-if="glassModalVisible" class="glass-modal" @click="closeGlassModal">
+        <view
+          class="glass-content"
+          :class="[
+            glassModalAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
+            settings.romanticEffects.enableGlassBlur ? 'popup-glass' : '',
+            'romantic-content',
+          ]"
+          @click.stop>
+          <view class="glass-close" @click="closeGlassModal">✕</view>
+          <view class="glass-text">{{ glassModalContent }}</view>
+        </view>
+      </view>
+
+      <!-- 锚点弹窗 - 渲染隐藏的block内容 -->
+      <view
+        v-if="popupBlockVisible && popupBlockData"
+        class="anchor-popup-overlay"
+        :class="{ 'glass-blur': settings.romanticEffects.enableGlassBlur }"
+        @click="closePopupBlock">
+        <view
+          class="anchor-popup-content"
+          :class="[
+            settings.romanticEffects.popupAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
+            settings.romanticEffects.enableGlassBlur ? 'popup-glass' : '',
+          ]"
+          @click.stop>
+          <view class="anchor-popup-header">
+            <text class="anchor-popup-title">💫 详细内容</text>
+            <view class="anchor-popup-close" @click="closePopupBlock">✕</view>
+          </view>
+          <scroll-view class="anchor-popup-body" scroll-y>
+            <!-- 文本块渲染 -->
+            <view v-if="popupBlockData.type === 'text'" class="popup-text-block">
+              <view v-for="(item, idx) in popupBlockData.children" :key="idx" class="popup-text-item">
+                <text :style="getTextStyle(item.style)">{{ item.value }}</text>
               </view>
             </view>
 
-            <!-- 附件块 -->
-            <view v-if="block.type === 'attachment'" class="attachment-container" :style="getBlockStyle(block.style)">
-              <view
-                v-for="(item, itemIndex) in block.children"
-                :key="itemIndex"
-                class="attachment-capsule"
-                :class="{ 'is-tencent-doc': isTencentDocUrl(item.url) }"
-                hover-class="capsule-hover"
-                :hover-stay-time="100"
-                @click="openAttachment(item)">
-                <view class="capsule-icon" :class="{ 'tencent-icon': isTencentDocUrl(item.url) }">📄</view>
-                <view class="capsule-content">
-                  <text class="capsule-title">{{ item.title || '未命名附件' }}</text>
-                  <text class="capsule-hint">{{ isTencentDocUrl(item.url) ? '点击打开腾讯文档' : '点击查看文档' }}</text>
-                </view>
-                <view class="capsule-arrow">›</view>
-              </view>
+            <!-- 图片块渲染 -->
+            <view v-if="popupBlockData.type === 'image'" class="popup-image-block">
+              <image
+                v-for="(item, idx) in popupBlockData.children"
+                :key="idx"
+                :src="item.value?.url || item.value"
+                mode="widthFix"
+                class="popup-image"
+                @click="previewImage(item.value?.url || item.value)" />
             </view>
 
-            <!-- 多媒体块 -->
-            <view v-if="block.type === 'media'" class="media-container" :style="getBlockStyle(block.style)">
-              <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="media-item">
+            <!-- 多媒体块渲染 -->
+            <view v-if="popupBlockData.type === 'media'" class="popup-media-block">
+              <view v-for="(item, idx) in popupBlockData.children" :key="idx" class="popup-media-item">
                 <text v-if="item.title" class="media-title">{{ item.title }}</text>
                 <video
-                  v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov') || item.url.includes('.avi'))"
+                  v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov'))"
                   :src="item.url"
-                  class="media-video"
-                  :controls="item.controls !== false"
-                  :autoplay="item.autoplay === true"
-                  :loop="item.loop === true"
-                  :show-center-play-btn="true"
-                  :show-play-btn="true"></video>
-                <view
-                  v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a') || item.url.includes('.wav'))"
-                  class="media-audio-wrapper"
-                  :class="{ 'has-controls': item.controls !== false }">
-                  <view class="audio-icon">🎵</view>
-                  <text class="audio-name">{{ item.title || '音频文件' }}</text>
-                  <text v-if="item.loop" class="audio-loop-tag">循环</text>
-                </view>
+                  class="popup-video"
+                  controls />
               </view>
             </view>
-          </template>
+          </scroll-view>
         </view>
       </view>
-
-      <!-- 水印 -->
-      <view v-if="settings.features.showWatermark" class="watermark">
-        <text class="watermark-text">Powered by Memo</text>
-      </view>
     </view>
-
-    <!-- 全局文档关联底部栏 -->
-    <view
-      v-if="settings.globalAttachment.enabled && settings.globalAttachment.url"
-      class="global-attachment-bar"
-      @click="openGlobalAttachment">
-      <view class="bar-content">
-        <text class="bar-icon">📄</text>
-        <text class="bar-title">{{ settings.globalAttachment.title || '查看原始文档' }}</text>
-      </view>
-      <text class="bar-arrow">›</text>
-    </view>
-
-    <!-- 错误提示 -->
-    <view v-if="!loading && error" class="error-container">
-      <text class="error-text">{{ error }}</text>
-      <button class="retry-btn" @click="loadMemoData">重试</button>
-    </view>
-
-    <!-- 回到顶部按钮 -->
-    <view class="back-to-top-btn" v-if="showBackToTopBtn" @click="backToTop">
-      <!-- <text class="back-to-top-icon">↑</text> -->
-      <text class="icon">↑</text>
-      <text class="btn-text">顶部</text>
-    </view>
-
-    <!-- 浪漫毛玻璃弹窗 -->
-    <view v-if="glassModalVisible" class="glass-modal" @click="closeGlassModal">
-      <view
-        class="glass-content"
-        :class="[
-          glassModalAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
-          settings.romanticEffects.enableGlassBlur ? 'popup-glass' : '',
-          'romantic-content',
-        ]"
-        @click.stop>
-        <view class="glass-close" @click="closeGlassModal">✕</view>
-        <view class="glass-text">{{ glassModalContent }}</view>
-      </view>
-    </view>
-
-    <!-- 锚点弹窗 - 渲染隐藏的block内容 -->
-    <view
-      v-if="popupBlockVisible && popupBlockData"
-      class="anchor-popup-overlay"
-      :class="{ 'glass-blur': settings.romanticEffects.enableGlassBlur }"
-      @click="closePopupBlock">
-      <view
-        class="anchor-popup-content"
-        :class="[
-          settings.romanticEffects.popupAnimation === 'zoom-in' ? 'zoom-in-enter-active' : 'slide-up-enter-active',
-          settings.romanticEffects.enableGlassBlur ? 'popup-glass' : '',
-        ]"
-        @click.stop>
-        <view class="anchor-popup-header">
-          <text class="anchor-popup-title">💫 详细内容</text>
-          <view class="anchor-popup-close" @click="closePopupBlock">✕</view>
-        </view>
-        <scroll-view class="anchor-popup-body" scroll-y>
-          <!-- 文本块渲染 -->
-          <view v-if="popupBlockData.type === 'text'" class="popup-text-block">
-            <view v-for="(item, idx) in popupBlockData.children" :key="idx" class="popup-text-item">
-              <text :style="getTextStyle(item.style)">{{ item.value }}</text>
-            </view>
-          </view>
-
-          <!-- 图片块渲染 -->
-          <view v-if="popupBlockData.type === 'image'" class="popup-image-block">
-            <image
-              v-for="(item, idx) in popupBlockData.children"
-              :key="idx"
-              :src="item.value?.url || item.value"
-              mode="widthFix"
-              class="popup-image"
-              @click="previewImage(item.value?.url || item.value)" />
-          </view>
-
-          <!-- 多媒体块渲染 -->
-          <view v-if="popupBlockData.type === 'media'" class="popup-media-block">
-            <view v-for="(item, idx) in popupBlockData.children" :key="idx" class="popup-media-item">
-              <text v-if="item.title" class="media-title">{{ item.title }}</text>
-              <video
-                v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov'))"
-                :src="item.url"
-                class="popup-video"
-                controls />
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -467,7 +463,6 @@
   import { ref, reactive, computed, nextTick, getCurrentInstance } from 'vue'
   import { marked } from 'marked'
   import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import NavBar from '@/components/nav-bar.vue'
   import { getToken } from '@/utils/storage'
   import { getMemosPublicDetail, getMemosMemoIdPublic } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { openMapNavigation, openExternalLink } from '@/utils/map'

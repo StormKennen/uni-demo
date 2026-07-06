@@ -1,184 +1,186 @@
 <template>
-  <view class="coupon-page">
-    <!-- 头部 -->
-    <view class="page-head">
-      <text class="page-title">{{ gameConfig.title }}</text>
-      <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
-      <view class="login-tip" :class="{ guest: !isLoggedIn }">
-        <text class="login-tip-text">
-          {{
-            isLoggedIn
-              ? '已登录：账号已云端托管，换设备或清缓存都不会丢失。'
-              : '未登录：账号仅保存在本机，清理缓存或换设备会丢失。登录后自动同步到云端，永不丢失。'
-          }}
-        </text>
-        <text v-if="!isLoggedIn" class="login-link" @click="goLogin">登录同步 ›</text>
-      </view>
-    </view>
-
-    <!-- 账号卡片 -->
-    <view class="card">
-      <view class="card-head">
-        <text class="card-title">我的账号</text>
-        <text class="card-tag">{{ isLoggedIn ? '云端托管' : '本机保存' }}</text>
-      </view>
-
-      <view v-if="!accounts.length" class="empty-tip">还没有账号，先在下方添加一个吧</view>
-
-      <view v-for="(account, index) in accounts" :key="account.id" class="account-row">
-        <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
-          <view class="server-chip">{{ getServerShortLabel(account.server) }}</view>
-        </picker>
-
-        <view class="account-main">
-          <view class="account-line">
-            <text class="account-name">{{
-              account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText
-            }}</text>
-            <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
-            <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
-          </view>
-          <view class="account-sub">
-            <text class="server-name">{{ getServerFullLabel(account.server) }}</text>
-            <text v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-id-sub">
-              {{ account.accountIdMasked || account.accountId }}
-            </text>
-          </view>
-        </view>
-
-        <view class="account-actions">
-          <view
-            v-if="isLoggedIn && !account.managed"
-            class="mini-btn primary"
-            :class="{ loading: account.syncing }"
-            @click="syncLocalAccount(index)">
-            {{ account.syncing ? '同步中' : '同步云端' }}
-          </view>
-          <view class="mini-btn" :class="{ loading: account.verifying }" @click="verifyAccount(index)">
-            {{ account.verifying ? '验证中' : '验证' }}
-          </view>
-          <view class="mini-btn danger" @click="removeAccount(index)">删除</view>
+  <PageLayout title="游戏兑换券">
+    <view class="coupon-page">
+      <!-- 头部 -->
+      <view class="page-head">
+        <text class="page-title">{{ gameConfig.title }}</text>
+        <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
+        <view class="login-tip" :class="{ guest: !isLoggedIn }">
+          <text class="login-tip-text">
+            {{
+              isLoggedIn
+                ? '已登录：账号已云端托管，换设备或清缓存都不会丢失。'
+                : '未登录：账号仅保存在本机，清理缓存或换设备会丢失。登录后自动同步到云端，永不丢失。'
+            }}
+          </text>
+          <text v-if="!isLoggedIn" class="login-link" @click="goLogin">登录同步 ›</text>
         </view>
       </view>
 
-      <!-- 添加账号表单 -->
-      <view class="add-form">
-        <picker class="server-picker" :range="serverLabels" :value="getServerIndex(newAccount.server)" @change="changeNewServer($event)">
-          <view class="server-chip">{{ getServerShortLabel(newAccount.server) }}</view>
-        </picker>
-        <input
-          class="add-input"
-          type="text"
-          :placeholder="gameConfig.accountIdPlaceholder"
-          :value="newAccount.accountId"
-          @input="newAccount.accountId = String($event.detail.value || '').trim()" />
-        <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
-          {{ addingAccount ? '...' : '添加' }}
+      <!-- 账号卡片 -->
+      <view class="card">
+        <view class="card-head">
+          <text class="card-title">我的账号</text>
+          <text class="card-tag">{{ isLoggedIn ? '云端托管' : '本机保存' }}</text>
         </view>
-      </view>
-    </view>
 
-    <!-- 自动兑换 -->
-    <view class="auto-card">
-      <view class="auto-text">
-        <text class="auto-title">自动兑换托管</text>
-        <text class="auto-hint">{{ isLoggedIn ? '新码出来时自动帮你兑换' : '登录后开启，新码自动到账' }}</text>
-      </view>
-      <switch v-if="!isLoggedIn" class="auto-switch" :checked="false" @click="goLogin" />
-      <text v-else class="auto-link" @click="toggleAllAuto">{{ allAutoOn ? '全部关闭' : '全部开启' }}</text>
-    </view>
+        <view v-if="!accounts.length" class="empty-tip">还没有账号，先在下方添加一个吧</view>
 
-    <!-- 主按钮 -->
-    <button class="redeem-btn" :disabled="redeemDisabled" @click="startRedeem">
-      {{ redeeming ? '兑换中…' : '一键兑换全部券码' }}
-    </button>
-    <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
+        <view v-for="(account, index) in accounts" :key="account.id" class="account-row">
+          <picker class="server-picker" :range="serverLabels" :value="getServerIndex(account.server)" @change="changeServer(index, $event)">
+            <view class="server-chip">{{ getServerShortLabel(account.server) }}</view>
+          </picker>
 
-    <!-- 券码区 -->
-    <view class="card codes-card">
-      <view class="card-head" @click="showCodes = !showCodes">
-        <text class="card-title">可用券码 {{ combinedCodes.length }}</text>
-        <text class="card-toggle">{{ showCodes ? '收起' : '展开' }}</text>
-      </view>
-
-      <view v-if="showCodes" class="codes-body">
-        <view class="manual-row">
-          <input
-            class="manual-input"
-            type="text"
-            placeholder="手动输入券码"
-            :value="manualCode"
-            @input="manualCode = String($event.detail.value || '').toUpperCase()" />
-          <view class="manual-add" @click="addManualCode">添加</view>
-          <view class="manual-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
-            {{ loadingCodes ? '…' : '刷新' }}
-          </view>
-        </view>
-        <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
-        <view v-if="combinedCodes.length" class="code-list">
-          <view v-for="item in combinedCodes" :key="item.code" class="code-item">
-            <view class="code-info">
-              <text class="code-text">{{ item.code }}</text>
-              <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
+          <view class="account-main">
+            <view class="account-line">
+              <text class="account-name">{{
+                account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText
+              }}</text>
+              <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
+              <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
             </view>
-            <text class="code-source">{{ getSourceLabel(item.source) }}</text>
+            <view class="account-sub">
+              <text class="server-name">{{ getServerFullLabel(account.server) }}</text>
+              <text v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-id-sub">
+                {{ account.accountIdMasked || account.accountId }}
+              </text>
+            </view>
+          </view>
+
+          <view class="account-actions">
+            <view
+              v-if="isLoggedIn && !account.managed"
+              class="mini-btn primary"
+              :class="{ loading: account.syncing }"
+              @click="syncLocalAccount(index)">
+              {{ account.syncing ? '同步中' : '同步云端' }}
+            </view>
+            <view class="mini-btn" :class="{ loading: account.verifying }" @click="verifyAccount(index)">
+              {{ account.verifying ? '验证中' : '验证' }}
+            </view>
+            <view class="mini-btn danger" @click="removeAccount(index)">删除</view>
           </view>
         </view>
-        <view v-else class="empty-tip">暂无券码，可点击刷新或手动添加</view>
-      </view>
-    </view>
 
-    <!-- 统计（仅登录态展示，游客模式不触发统计接口） -->
-    <view v-if="isLoggedIn && stats" class="stats-row">
-      <view class="stat success">
-        <text class="stat-num">{{ stats.success }}</text>
-        <text class="stat-label">成功</text>
-      </view>
-      <view class="stat used">
-        <text class="stat-num">{{ stats.alreadyUsed }}</text>
-        <text class="stat-label">已使用</text>
-      </view>
-      <view class="stat failed">
-        <text class="stat-num">{{ stats.failed }}</text>
-        <text class="stat-label">失败</text>
-      </view>
-    </view>
-
-    <!-- 本次兑换结果分组 -->
-    <view v-if="resultGroups.length" class="result-list">
-      <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
-        <view class="result-head">
-          <text class="result-account">{{ groupTitle(group) }}</text>
-          <text class="result-count">{{ group.success }} 成功</text>
-        </view>
-        <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
-          <view class="result-main">
-            <text class="result-code">{{ item.code }}</text>
-            <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
+        <!-- 添加账号表单 -->
+        <view class="add-form">
+          <picker class="server-picker" :range="serverLabels" :value="getServerIndex(newAccount.server)" @change="changeNewServer($event)">
+            <view class="server-chip">{{ getServerShortLabel(newAccount.server) }}</view>
+          </picker>
+          <input
+            class="add-input"
+            type="text"
+            :placeholder="gameConfig.accountIdPlaceholder"
+            :value="newAccount.accountId"
+            @input="newAccount.accountId = String($event.detail.value || '').trim()" />
+          <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
+            {{ addingAccount ? '...' : '添加' }}
           </view>
-          <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 兑换记录（登录态） -->
-    <view v-if="isLoggedIn" class="card">
-      <view class="card-head" @click="toggleRecords">
-        <text class="card-title">兑换记录</text>
-        <text class="card-toggle">{{ showRecords ? '收起' : '查看' }}</text>
+      <!-- 自动兑换 -->
+      <view class="auto-card">
+        <view class="auto-text">
+          <text class="auto-title">自动兑换托管</text>
+          <text class="auto-hint">{{ isLoggedIn ? '新码出来时自动帮你兑换' : '登录后开启，新码自动到账' }}</text>
+        </view>
+        <switch v-if="!isLoggedIn" class="auto-switch" :checked="false" @click="goLogin" />
+        <text v-else class="auto-link" @click="toggleAllAuto">{{ allAutoOn ? '全部关闭' : '全部开启' }}</text>
       </view>
-      <view v-if="showRecords" class="record-body">
-        <view v-if="!records.length" class="empty-tip">暂无兑换记录</view>
-        <view v-for="record in records" :key="record.id" class="record-row">
-          <view class="record-main">
-            <text class="record-code">{{ record.couponCode }}</text>
-            <text class="record-sub">{{ record.accountIdMasked }} · {{ getServerShortLabel(record.server || '') }}</text>
+
+      <!-- 主按钮 -->
+      <button class="redeem-btn" :disabled="redeemDisabled" @click="startRedeem">
+        {{ redeeming ? '兑换中…' : '一键兑换全部券码' }}
+      </button>
+      <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
+
+      <!-- 券码区 -->
+      <view class="card codes-card">
+        <view class="card-head" @click="showCodes = !showCodes">
+          <text class="card-title">可用券码 {{ combinedCodes.length }}</text>
+          <text class="card-toggle">{{ showCodes ? '收起' : '展开' }}</text>
+        </view>
+
+        <view v-if="showCodes" class="codes-body">
+          <view class="manual-row">
+            <input
+              class="manual-input"
+              type="text"
+              placeholder="手动输入券码"
+              :value="manualCode"
+              @input="manualCode = String($event.detail.value || '').toUpperCase()" />
+            <view class="manual-add" @click="addManualCode">添加</view>
+            <view class="manual-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
+              {{ loadingCodes ? '…' : '刷新' }}
+            </view>
           </view>
-          <text class="result-status" :class="record.resultStatus">{{ getStatusLabel(record.resultStatus) }}</text>
+          <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
+          <view v-if="combinedCodes.length" class="code-list">
+            <view v-for="item in combinedCodes" :key="item.code" class="code-item">
+              <view class="code-info">
+                <text class="code-text">{{ item.code }}</text>
+                <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
+              </view>
+              <text class="code-source">{{ getSourceLabel(item.source) }}</text>
+            </view>
+          </view>
+          <view v-else class="empty-tip">暂无券码，可点击刷新或手动添加</view>
+        </view>
+      </view>
+
+      <!-- 统计（仅登录态展示，游客模式不触发统计接口） -->
+      <view v-if="isLoggedIn && stats" class="stats-row">
+        <view class="stat success">
+          <text class="stat-num">{{ stats.success }}</text>
+          <text class="stat-label">成功</text>
+        </view>
+        <view class="stat used">
+          <text class="stat-num">{{ stats.alreadyUsed }}</text>
+          <text class="stat-label">已使用</text>
+        </view>
+        <view class="stat failed">
+          <text class="stat-num">{{ stats.failed }}</text>
+          <text class="stat-label">失败</text>
+        </view>
+      </view>
+
+      <!-- 本次兑换结果分组 -->
+      <view v-if="resultGroups.length" class="result-list">
+        <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
+          <view class="result-head">
+            <text class="result-account">{{ groupTitle(group) }}</text>
+            <text class="result-count">{{ group.success }} 成功</text>
+          </view>
+          <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
+            <view class="result-main">
+              <text class="result-code">{{ item.code }}</text>
+              <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
+            </view>
+            <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 兑换记录（登录态） -->
+      <view v-if="isLoggedIn" class="card">
+        <view class="card-head" @click="toggleRecords">
+          <text class="card-title">兑换记录</text>
+          <text class="card-toggle">{{ showRecords ? '收起' : '查看' }}</text>
+        </view>
+        <view v-if="showRecords" class="record-body">
+          <view v-if="!records.length" class="empty-tip">暂无兑换记录</view>
+          <view v-for="record in records" :key="record.id" class="record-row">
+            <view class="record-main">
+              <text class="record-code">{{ record.couponCode }}</text>
+              <text class="record-sub">{{ record.accountIdMasked }} · {{ getServerShortLabel(record.server || '') }}</text>
+            </view>
+            <text class="result-status" :class="record.resultStatus">{{ getStatusLabel(record.resultStatus) }}</text>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

@@ -1,72 +1,74 @@
 <template>
-  <view class="mapping-detail-page">
-    <StateBlock v-if="loading && !mapping" class="state-block" text="加载映射详情中..." />
+  <PageLayout title="阵容映射详情">
+    <view class="mapping-detail-page">
+      <StateBlock v-if="loading && !mapping" class="state-block" text="加载映射详情中..." />
 
-    <StateBlock
-      v-else-if="errorMessage && !mapping"
-      class="state-block"
-      :text="errorMessage"
-      action-text="重新加载"
-      theme="teal"
-      @action="loadDetail" />
+      <StateBlock
+        v-else-if="errorMessage && !mapping"
+        class="state-block"
+        :text="errorMessage"
+        action-text="重新加载"
+        theme="teal"
+        @action="loadDetail" />
 
-    <template v-else-if="mapping">
-      <view class="hero-card">
-        <view class="hero-main">
-          <text class="hero-title">{{ mapping.name || '未命名映射' }}</text>
-          <text class="hero-desc">{{ mapping.description || '暂无描述' }}</text>
+      <template v-else-if="mapping">
+        <view class="hero-card">
+          <view class="hero-main">
+            <text class="hero-title">{{ mapping.name || '未命名映射' }}</text>
+            <text class="hero-desc">{{ mapping.description || '暂无描述' }}</text>
+          </view>
+          <button v-if="mapping.canEdit" class="edit-btn" size="mini" @click="openEdit">编辑</button>
         </view>
-        <button v-if="mapping.canEdit" class="edit-btn" size="mini" @click="openEdit">编辑</button>
+
+        <ContainerSection
+          title="源容器阵容"
+          :container="mapping.sourceContainer"
+          :can-edit="mapping.canEdit"
+          :character-map="characterMap"
+          :reacting-id="reactingItemId"
+          :removing-id="removingItemId"
+          @add="openPicker('source')"
+          @react="handleReact"
+          @remove="handleRemove" />
+
+        <ContainerSection
+          title="目标容器阵容"
+          :container="mapping.targetContainer"
+          :can-edit="mapping.canEdit"
+          :character-map="characterMap"
+          :reacting-id="reactingItemId"
+          :removing-id="removingItemId"
+          @add="openPicker('target')"
+          @react="handleReact"
+          @remove="handleRemove" />
+      </template>
+
+      <view v-if="editVisible" class="modal-mask" @click="closeEdit">
+        <view class="edit-panel" @click.stop>
+          <text class="edit-title">编辑阵容映射</text>
+
+          <text class="field-label">映射名称</text>
+          <input v-model="editName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
+
+          <text class="field-label">映射描述</text>
+          <textarea v-model="editDescription" class="desc-input" placeholder="最长 500 字，可选" maxlength="500" auto-height />
+
+          <view class="edit-actions">
+            <button class="footer-btn ghost" size="mini" @click="closeEdit">取消</button>
+            <button class="footer-btn primary" size="mini" :loading="saving" :disabled="!editName.trim()" @click="submitEdit">保存</button>
+          </view>
+        </view>
       </view>
 
-      <ContainerSection
-        title="源容器阵容"
-        :container="mapping.sourceContainer"
-        :can-edit="mapping.canEdit"
-        :character-map="characterMap"
-        :reacting-id="reactingItemId"
-        :removing-id="removingItemId"
-        @add="openPicker('source')"
-        @react="handleReact"
-        @remove="handleRemove" />
-
-      <ContainerSection
-        title="目标容器阵容"
-        :container="mapping.targetContainer"
-        :can-edit="mapping.canEdit"
-        :character-map="characterMap"
-        :reacting-id="reactingItemId"
-        :removing-id="removingItemId"
-        @add="openPicker('target')"
-        @react="handleReact"
-        @remove="handleRemove" />
-    </template>
-
-    <view v-if="editVisible" class="modal-mask" @click="closeEdit">
-      <view class="edit-panel" @click.stop>
-        <text class="edit-title">编辑阵容映射</text>
-
-        <text class="field-label">映射名称</text>
-        <input v-model="editName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
-
-        <text class="field-label">映射描述</text>
-        <textarea v-model="editDescription" class="desc-input" placeholder="最长 500 字，可选" maxlength="500" auto-height />
-
-        <view class="edit-actions">
-          <button class="footer-btn ghost" size="mini" @click="closeEdit">取消</button>
-          <button class="footer-btn primary" size="mini" :loading="saving" :disabled="!editName.trim()" @click="submitEdit">保存</button>
-        </view>
-      </view>
+      <LineupSelectModal
+        v-model:visible="pickerVisible"
+        :compendium-id="COMPENDIUM_CODE"
+        :locale="selectedLocale"
+        :title="pickerTarget === 'source' ? '添加到源容器' : '添加到目标容器'"
+        :exclude-ids="pickerExcludeIds"
+        @confirm="handlePickerConfirm" />
     </view>
-
-    <LineupSelectModal
-      v-model:visible="pickerVisible"
-      :compendium-id="COMPENDIUM_CODE"
-      :locale="selectedLocale"
-      :title="pickerTarget === 'source' ? '添加到源容器' : '添加到目标容器'"
-      :exclude-ids="pickerExcludeIds"
-      @confirm="handlePickerConfirm" />
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

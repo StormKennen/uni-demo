@@ -1,200 +1,200 @@
 <template>
-  <view class="detail-page">
-    <nav-bar always-title title="黄历" custom-class="light" :custom-style="{ backgroundColor: '#C83C3C' }" />
-
-    <!-- 顶部导航 -->
-    <view class="nav-header">
-      <!-- <view class="nav-back" @click="goBack">
+  <PageLayout title="黄历" nav-bg-color="#C83C3C" nav-title-color="#fff">
+    <view class="detail-page">
+      <!-- 顶部导航 -->
+      <view class="nav-header">
+        <!-- <view class="nav-back" @click="goBack">
         <text>‹</text>
       </view> -->
-      <view class="nav-center">
-        <view class="nav-arrow" @click="prevDay">
-          <text>‹</text>
-        </view>
-        <picker mode="date" :value="currentDate" @change="onDateChange">
-          <view class="nav-date">
-            <text>{{ solarDateStr }}</text>
-            <text class="arrow">▼</text>
+        <view class="nav-center">
+          <view class="nav-arrow" @click="prevDay">
+            <text>‹</text>
           </view>
-        </picker>
-        <view class="nav-arrow" @click="nextDay">
-          <text>›</text>
-        </view>
-      </view>
-      <view class="nav-today" @click="goToday">
-        <text>今</text>
-      </view>
-    </view>
-
-    <!-- 加载中 -->
-    <view v-if="loading" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text class="loading-text">加载中...</text>
-    </view>
-
-    <!-- 核心信息区 -->
-    <view class="main-section">
-      <view class="lunar-big">
-        <text class="lunar-month">{{ data?.lunar.monthName }}月</text>
-        <text class="lunar-day">{{ data?.lunar.dayName }}</text>
-      </view>
-      <view class="gan-zhi-row">
-        <text class="gan-zhi">{{ data?.ganZhi.year }}年</text>
-        <text class="gan-zhi">{{ data?.ganZhi.month }}月</text>
-        <text class="gan-zhi">{{ data?.ganZhi.day }}日</text>
-      </view>
-      <view class="extra-row">
-        <text>{{ data?.shengXiao }}年</text>
-        <text>第{{ data?.week.weekOfYear }}周</text>
-        <text>{{ data?.xingZuo }}座</text>
-      </view>
-    </view>
-
-    <!-- 宜忌板块 -->
-    <view class="yi-ji-section">
-      <view class="yi-card">
-        <view class="card-title yi-title">
-          <text class="title-icon">宜</text>
-          <text class="title-text">今日宜</text>
-        </view>
-        <view class="card-content">
-          <text v-for="(item, idx) in data?.yi" :key="idx" class="yi-item">{{ item }}</text>
-        </view>
-      </view>
-      <view class="ji-card">
-        <view class="card-title ji-title">
-          <text class="title-icon">忌</text>
-          <text class="title-text">今日忌</text>
-        </view>
-        <view class="card-content">
-          <text v-for="(item, idx) in data?.ji" :key="idx" class="ji-item">{{ item }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 五行/冲煞/值神 -->
-    <view class="info-row">
-      <view class="info-item">
-        <text class="info-label">五行</text>
-        <text class="info-value">{{ data?.wuXing.riNaYin }}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">冲煞</text>
-        <text class="info-value">冲{{ data?.chongSha.chongShengXiao }} 煞{{ data?.chongSha.sha }}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">值神</text>
-        <text class="info-value">{{ data?.zhiShen }}</text>
-      </view>
-    </view>
-
-    <!-- 时辰吉凶 -->
-    <view class="time-section">
-      <view class="section-title">
-        <text class="title-icon">⏰</text>
-        <text>时辰吉凶</text>
-      </view>
-      <scroll-view scroll-x class="time-scroll">
-        <view class="time-list">
-          <view
-            v-for="(time, idx) in data?.timeList"
-            :key="idx"
-            class="time-item"
-            :class="{ 'is-ji': time.luck === '吉', 'is-xiong': time.luck === '凶' }">
-            <text class="time-name">{{ time.name }}时</text>
-            <text class="time-range">{{ time.range }}</text>
-            <text class="time-ganzhi">{{ time.ganZhi }}</text>
-            <text class="time-luck">{{ time.luck }}</text>
+          <picker mode="date" :value="currentDate" @change="onDateChange">
+            <view class="nav-date">
+              <text>{{ solarDateStr }}</text>
+              <text class="arrow">▼</text>
+            </view>
+          </picker>
+          <view class="nav-arrow" @click="nextDay">
+            <text>›</text>
           </view>
         </view>
-      </scroll-view>
-    </view>
-
-    <!-- 神位信息 -->
-    <view class="god-section">
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">🔮</text>
-          <text>吉神宜趋</text>
-        </view>
-        <view class="god-content">
-          <text v-for="(item, idx) in data?.jiShen" :key="idx" class="god-tag ji-tag">{{ item }}</text>
+        <view class="nav-today" @click="goToday">
+          <text>今</text>
         </view>
       </view>
 
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">👶</text>
-          <text>今日胎神</text>
+      <!-- 加载中 -->
+      <view v-if="loading" class="loading-container">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- 核心信息区 -->
+      <view class="main-section">
+        <view class="lunar-big">
+          <text class="lunar-month">{{ data?.lunar.monthName }}月</text>
+          <text class="lunar-day">{{ data?.lunar.dayName }}</text>
         </view>
-        <view class="god-content">
-          <text class="god-text">{{ data?.taiShen }}</text>
+        <view class="gan-zhi-row">
+          <text class="gan-zhi">{{ data?.ganZhi.year }}年</text>
+          <text class="gan-zhi">{{ data?.ganZhi.month }}月</text>
+          <text class="gan-zhi">{{ data?.ganZhi.day }}日</text>
+        </view>
+        <view class="extra-row">
+          <text>{{ data?.shengXiao }}年</text>
+          <text>第{{ data?.week.weekOfYear }}周</text>
+          <text>{{ data?.xingZuo }}座</text>
         </view>
       </view>
 
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">⚠️</text>
-          <text>凶神宜忌</text>
-        </view>
-        <view class="god-content">
-          <text v-for="(item, idx) in data?.xiongSha" :key="idx" class="god-tag xiong-tag">{{ item }}</text>
-        </view>
-      </view>
-
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">⭐</text>
-          <text>二十八星宿</text>
-        </view>
-        <view class="god-content">
-          <text class="god-text gold">{{ data?.xiu.name }}宿 - {{ data?.xiu.luck }}</text>
-        </view>
-      </view>
-
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">📅</text>
-          <text>建除十二神</text>
-        </view>
-        <view class="god-content">
-          <text class="god-text">{{ data?.jianChu }}</text>
-        </view>
-      </view>
-
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">📜</text>
-          <text>彭祖百忌</text>
-        </view>
-        <view class="god-content">
-          <text class="god-text">{{ data?.pengZu.gan }}</text>
-          <text class="god-text">{{ data?.pengZu.zhi }}</text>
-        </view>
-      </view>
-
-      <view class="god-item">
-        <view class="god-title">
-          <text class="god-icon">🧭</text>
-          <text>神位方向</text>
-        </view>
-        <view class="god-content positions">
-          <view class="position-item">
-            <text class="pos-label">喜神</text>
-            <text class="pos-value">{{ data?.positions.xiDesc }}</text>
+      <!-- 宜忌板块 -->
+      <view class="yi-ji-section">
+        <view class="yi-card">
+          <view class="card-title yi-title">
+            <text class="title-icon">宜</text>
+            <text class="title-text">今日宜</text>
           </view>
-          <view class="position-item">
-            <text class="pos-label">福神</text>
-            <text class="pos-value">{{ data?.positions.fuDesc }}</text>
+          <view class="card-content">
+            <text v-for="(item, idx) in data?.yi" :key="idx" class="yi-item">{{ item }}</text>
           </view>
-          <view class="position-item">
-            <text class="pos-label">财神</text>
-            <text class="pos-value">{{ data?.positions.caiDesc }}</text>
+        </view>
+        <view class="ji-card">
+          <view class="card-title ji-title">
+            <text class="title-icon">忌</text>
+            <text class="title-text">今日忌</text>
+          </view>
+          <view class="card-content">
+            <text v-for="(item, idx) in data?.ji" :key="idx" class="ji-item">{{ item }}</text>
           </view>
         </view>
       </view>
+
+      <!-- 五行/冲煞/值神 -->
+      <view class="info-row">
+        <view class="info-item">
+          <text class="info-label">五行</text>
+          <text class="info-value">{{ data?.wuXing.riNaYin }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">冲煞</text>
+          <text class="info-value">冲{{ data?.chongSha.chongShengXiao }} 煞{{ data?.chongSha.sha }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">值神</text>
+          <text class="info-value">{{ data?.zhiShen }}</text>
+        </view>
+      </view>
+
+      <!-- 时辰吉凶 -->
+      <view class="time-section">
+        <view class="section-title">
+          <text class="title-icon">⏰</text>
+          <text>时辰吉凶</text>
+        </view>
+        <scroll-view scroll-x class="time-scroll">
+          <view class="time-list">
+            <view
+              v-for="(time, idx) in data?.timeList"
+              :key="idx"
+              class="time-item"
+              :class="{ 'is-ji': time.luck === '吉', 'is-xiong': time.luck === '凶' }">
+              <text class="time-name">{{ time.name }}时</text>
+              <text class="time-range">{{ time.range }}</text>
+              <text class="time-ganzhi">{{ time.ganZhi }}</text>
+              <text class="time-luck">{{ time.luck }}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 神位信息 -->
+      <view class="god-section">
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">🔮</text>
+            <text>吉神宜趋</text>
+          </view>
+          <view class="god-content">
+            <text v-for="(item, idx) in data?.jiShen" :key="idx" class="god-tag ji-tag">{{ item }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">👶</text>
+            <text>今日胎神</text>
+          </view>
+          <view class="god-content">
+            <text class="god-text">{{ data?.taiShen }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">⚠️</text>
+            <text>凶神宜忌</text>
+          </view>
+          <view class="god-content">
+            <text v-for="(item, idx) in data?.xiongSha" :key="idx" class="god-tag xiong-tag">{{ item }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">⭐</text>
+            <text>二十八星宿</text>
+          </view>
+          <view class="god-content">
+            <text class="god-text gold">{{ data?.xiu.name }}宿 - {{ data?.xiu.luck }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">📅</text>
+            <text>建除十二神</text>
+          </view>
+          <view class="god-content">
+            <text class="god-text">{{ data?.jianChu }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">📜</text>
+            <text>彭祖百忌</text>
+          </view>
+          <view class="god-content">
+            <text class="god-text">{{ data?.pengZu.gan }}</text>
+            <text class="god-text">{{ data?.pengZu.zhi }}</text>
+          </view>
+        </view>
+
+        <view class="god-item">
+          <view class="god-title">
+            <text class="god-icon">🧭</text>
+            <text>神位方向</text>
+          </view>
+          <view class="god-content positions">
+            <view class="position-item">
+              <text class="pos-label">喜神</text>
+              <text class="pos-value">{{ data?.positions.xiDesc }}</text>
+            </view>
+            <view class="position-item">
+              <text class="pos-label">福神</text>
+              <text class="pos-value">{{ data?.positions.fuDesc }}</text>
+            </view>
+            <view class="position-item">
+              <text class="pos-label">财神</text>
+              <text class="pos-value">{{ data?.positions.caiDesc }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -202,7 +202,6 @@
   import { ref, computed } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getTodayStr, formatDate } from '@/utils/lunar'
-  import NavBar from '@/components/nav-bar.vue'
 
   const currentDate = ref(getTodayStr())
   const data = ref<any>(null)

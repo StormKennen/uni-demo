@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox';
-import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface';
-import PrivacyPopup from '@/components/privacy-popup.vue'
+  import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox'
+  import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface'
+  import PrivacyPopup from '@/components/privacy-popup.vue'
 
   import { ref } from 'vue'
   import LoginHeaderText from '../components/login-header-text.vue'
   import ReadDialog from '../components/read-dialog.vue'
-  import { setIsGoChatCoze, setToken, setRefreshToken, setWxUserInfo, setWxEncryptedData, setUserInfo, setTokenExpiresAt, setRefreshTokenExpiresAt } from '@/utils/storage'
+  import {
+    setIsGoChatCoze,
+    setToken,
+    setRefreshToken,
+    setWxUserInfo,
+    setWxEncryptedData,
+    setUserInfo,
+    setTokenExpiresAt,
+    setRefreshTokenExpiresAt,
+  } from '@/utils/storage'
   import { wxGetUserInfo } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
@@ -41,41 +50,35 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
   onLoad(async (option: any) => {
     console.log('🚀 ~ onLoad ~ option:', option)
     redirectUrl.value = option.redirectUrl
-    
+
     // 尝试自动登录
     await checkAutoLogin()
   })
-  
+
   /** 检查自动登录 */
   const checkAutoLogin = async () => {
     try {
       uni.showLoading({ title: '检查登录状态...', mask: true })
-      
+
       // 设置超时保护，避免一直loading
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Auto login timeout')), 5000)
       })
-      
+
       const autoLoginPromise = autoLogin()
-      
-      const { isLoggedIn, user, needManualLogin } = await Promise.race([
-        autoLoginPromise,
-        timeoutPromise
-      ]) as any
-      
+
+      const { isLoggedIn, user, needManualLogin } = (await Promise.race([autoLoginPromise, timeoutPromise])) as any
+
       uni.hideLoading()
-      
+
       if (isLoggedIn && user) {
         console.log('🚀 ~ checkAutoLogin ~ 自动登录成功:', user)
-        
+
         if (redirectUrl.value) {
           const targetUrl = decodeURIComponent(redirectUrl.value)
           const url = { url: targetUrl }
           console.log('Auto login redirect url:', url)
-          if (
-            targetUrl === '/pages/index/index' ||
-            targetUrl === '/pages/mine/mine'
-          ) {
+          if (targetUrl === '/pages/index/index' || targetUrl === '/pages/mine/mine') {
             return uni.switchTab(url)
           } else {
             return uni.redirectTo(url)
@@ -94,8 +97,6 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     }
   }
 
-
-
   const loginSuccess = async (data: any) => {
     console.log('🚀 ~ loginSuccess ~ data:', data)
     // 处理token - 支持新旧两种数据结构
@@ -103,7 +104,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       // 新的token结构：{ tokens: { access: { token: "...", expires: "..." }, refresh: { token: "...", expires: "..." } } }
       setToken(data.tokens.access.token)
       setRefreshToken(data.tokens.refresh.token)
-      
+
       // 保存token过期时间（转换为时间戳毫秒数）
       if (data.tokens.access.expires) {
         // 后端返回的是 ISO 日期字符串，需要转换为时间戳
@@ -111,39 +112,36 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
         setTokenExpiresAt(expiresMs)
       } else if (data.tokens.access.expiresIn) {
         // 如果返回的是相对时间（秒），转换为绝对时间
-        const expires = Date.now() + (data.tokens.access.expiresIn * 1000)
+        const expires = Date.now() + data.tokens.access.expiresIn * 1000
         setTokenExpiresAt(expires)
       }
-      
+
       if (data.tokens.refresh.expires) {
         // 后端返回的是 ISO 日期字符串，需要转换为时间戳
         const expiresMs = new Date(data.tokens.refresh.expires).getTime()
         setRefreshTokenExpiresAt(expiresMs)
       } else if (data.tokens.refresh.expiresIn) {
         // 如果返回的是相对时间（秒），转换为绝对时间
-        const expires = Date.now() + (data.tokens.refresh.expiresIn * 1000)
+        const expires = Date.now() + data.tokens.refresh.expiresIn * 1000
         setRefreshTokenExpiresAt(expires)
       }
     }
-    
+
     // 处理用户信息
     if (data.user) {
       setUserInfo(data.user)
       setWxUserInfo(data.user) // 保持兼容性
     }
-    
+
     uni.showToast({
       title: '登录成功',
-      icon: 'success'
+      icon: 'success',
     })
-    
+
     setTimeout(() => {
       if (redirectUrl.value) {
         const targetUrl = decodeURIComponent(redirectUrl.value)
-        if (
-          targetUrl === '/pages/index/index' ||
-          targetUrl === '/pages/mine/mine'
-        ) {
+        if (targetUrl === '/pages/index/index' || targetUrl === '/pages/mine/mine') {
           uni.switchTab({
             url: targetUrl,
           })
@@ -158,13 +156,13 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
 
       // #ifdef MP-WEIXIN
       uni.switchTab({
-        url: '/pages/index/index'
+        url: '/pages/index/index',
       })
       // #endif
-      
+
       // #ifdef H5
       uni.redirectTo({
-        url: '/pages/index/index'
+        url: '/pages/index/index',
       })
       // #endif
     }, 1000)
@@ -208,7 +206,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     }
     try {
       uni.showLoading()
-      
+
       // #ifdef MP-WEIXIN
       // 尝试获取微信用户信息，但不阻塞登录流程
       try {
@@ -218,7 +216,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
         console.log('获取微信用户信息失败，继续登录流程')
       }
       // #endif
-      
+
       const loginParams = {
         phone: mobileNumber.value,
         password: password.value,
@@ -231,10 +229,10 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     } catch (error) {
       console.warn('🚀 ~ mobileLogin ~ error:', error)
       uni.hideLoading()
-      
+
       // 处理不同类型的错误
       let errorMessage = '登录失败，请稍后重试'
-      
+
       if (error?.code === 401) {
         errorMessage = '手机号或密码错误'
       } else if (error?.message) {
@@ -242,7 +240,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       } else if (typeof error === 'string') {
         errorMessage = error
       }
-      
+
       uni.showToast({
         title: errorMessage,
         icon: 'none',
@@ -254,14 +252,14 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     return new Promise((resolve, reject) => {
       uni.login({
         provider: 'weixin',
-        success: (res) => {
+        success: res => {
           if (res.code) {
             resolve(res.code)
             return
           }
           reject(new Error('未获取到微信登录凭证'))
         },
-        fail: (error) => {
+        fail: error => {
           reject(error)
         },
       })
@@ -338,14 +336,14 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
     }
     try {
       uni.showLoading()
-      
+
       let userName = '用户'
-      
+
       // #ifdef MP-WEIXIN
       // 获取微信用户信息
       const wxUserInfo = await wxGetUserInfo()
       console.log('🚀 ~ userRegister ~ wxUserInfo:', wxUserInfo)
-      
+
       // 存储微信加密数据到本地，便于后续使用
       if (wxUserInfo.iv) {
         setWxEncryptedData({
@@ -359,33 +357,33 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       }
       userName = wxUserInfo.userInfo?.nickName || '用户'
       // #endif
-      
+
       // 使用标准注册API
       const registerParams = {
         phone: mobileNumber.value,
         name: userName,
         password: password.value,
       }
-      
+
       const registerRes = await postAuthRegister(registerParams)
       console.log('🚀 ~ userRegister ~ registerRes:', registerRes)
-      
+
       // 注册成功后，调用登录API获取完整的用户信息和token
       const loginParams = {
         phone: mobileNumber.value,
         password: password.value,
       }
-      
+
       const loginRes = await postAuthLogin(loginParams)
       loginSuccess(loginRes)
       uni.hideLoading()
     } catch (error) {
       console.warn('🚀 ~ userRegister ~ error:', error)
       uni.hideLoading()
-      
+
       // 处理不同类型的错误
       let errorMessage = '注册失败，请稍后重试'
-      
+
       if (error?.code === 401) {
         errorMessage = '注册信息验证失败'
       } else if (error?.data?.message) {
@@ -395,7 +393,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       } else if (typeof error === 'string') {
         errorMessage = error
       }
-      
+
       uni.showToast({
         title: errorMessage,
         icon: 'none',
@@ -430,7 +428,7 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
   const onRead = () => {
     isRead.value = true
   }
-  const onBack = ()=>{
+  const onBack = () => {
     uni.navigateBack()
   }
 
@@ -444,148 +442,133 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
 </script>
 
 <template>
-  <view class="login">
-    <uni-nav-bar
-      @clickLeft="onBack"
-      left-icon="left"
-      backgroundColor="transparent"
-      title=""
-      statusBar
-      :border="false" />
-    <view class="login-body">
-      <LoginHeaderText />
-      <view class="auth-card">
-        <view class="auth-card__content">
-          <view v-if="!isMpWeixin || authMode === 'account'" class="auth-tabs">
-            <view
-              class="auth-tab"
-              :class="{ active: loginType === 'mobile' }"
-              @click="changeLoginType('mobile')">
-              登录
-            </view>
-            <view
-              class="auth-tab"
-              :class="{ active: loginType === 'register' }"
-              @click="changeLoginType('register')">
-              注册
-            </view>
-          </view>
-
-          <!-- #ifdef MP-WEIXIN -->
-          <view v-if="authMode === 'wechat'" class="wechat-auth">
-            <button class="btn btn-wechat wechat-auth__btn" :loading="wechatLoginLoading" @click="wechatQuickLogin">
-              微信快捷登录
-            </button>
-            <view class="wechat-auth__footer">
-              <text class="wechat-auth__switch" @click="switchAuthMode('account')">使用账号密码登录</text>
-            </view>
-          </view>
-          <!-- #endif -->
-
-          <!-- 登录界面 -->
-          <view v-if="(!isMpWeixin || authMode === 'account') && loginType === 'mobile'" class="mobile">
-            <view class="mobile-number">
-              <uni-easyinput
-                :clearable="false"
-                type="number"
-                :inputBorder="false"
-                :styles="inputStyles"
-                v-model="mobileNumber"
-                placeholder="请输入手机号"
-                @input="inputMobile"></uni-easyinput>
-            </view>
-            <view class="mobile-password">
-              <uni-easyinput
-                :clearable="false"
-                type="password"
-                :inputBorder="false"
-                :styles="inputStyles"
-                v-model="password"
-                placeholder="请输入密码"
-                confirm-type="done"
-                @input="inputPassword"
-                @confirm="handleLoginPasswordConfirm">
-              </uni-easyinput>
-            </view>
-            <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
-            <view class="login-btns">
-              <button class="btn btn-login" @click="mobileLogin">登录</button>
+  <PageLayout title="登录" :show-nav="false">
+    <view class="login">
+      <uni-nav-bar @clickLeft="onBack" left-icon="left" backgroundColor="transparent" title="" statusBar :border="false" />
+      <view class="login-body">
+        <LoginHeaderText />
+        <view class="auth-card">
+          <view class="auth-card__content">
+            <view v-if="!isMpWeixin || authMode === 'account'" class="auth-tabs">
+              <view class="auth-tab" :class="{ active: loginType === 'mobile' }" @click="changeLoginType('mobile')"> 登录 </view>
+              <view class="auth-tab" :class="{ active: loginType === 'register' }" @click="changeLoginType('register')"> 注册 </view>
             </view>
 
             <!-- #ifdef MP-WEIXIN -->
-            <view class="quick-login quick-login--switch-only">
-              <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+            <view v-if="authMode === 'wechat'" class="wechat-auth">
+              <button class="btn btn-wechat wechat-auth__btn" :loading="wechatLoginLoading" @click="wechatQuickLogin">
+                微信快捷登录
+              </button>
+              <view class="wechat-auth__footer">
+                <text class="wechat-auth__switch" @click="switchAuthMode('account')">使用账号密码登录</text>
+              </view>
             </view>
             <!-- #endif -->
-          </view>
 
-          <!-- 注册界面 -->
-          <view v-else-if="(!isMpWeixin || authMode === 'account') && loginType === 'register'" class="mobile">
-            <view class="mobile-number">
-              <uni-easyinput
-                :clearable="false"
-                type="number"
-                :inputBorder="false"
-                :styles="inputStyles"
-                v-model="mobileNumber"
-                placeholder="请输入手机号"
-                @input="inputMobile"></uni-easyinput>
-            </view>
-            <view class="mobile-password">
-              <uni-easyinput
-                :clearable="false"
-                type="password"
-                :inputBorder="false"
-                :styles="inputStyles"
-                v-model="password"
-                placeholder="请输入密码"
-                @input="inputPassword">
-              </uni-easyinput>
-            </view>
-            <view class="mobile-confirm-password">
-              <uni-easyinput
-                :clearable="false"
-                type="password"
-                :inputBorder="false"
-                :styles="inputStyles"
-                v-model="confirmPassword"
-                placeholder="请确认密码"
-                confirm-type="done"
-                @input="inputConfirmPassword"
-                @confirm="handleRegisterPasswordConfirm">
-              </uni-easyinput>
-            </view>
-            <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
-            <view class="login-btns">
-              <button class="btn btn-register" @click="userRegister">注册</button>
+            <!-- 登录界面 -->
+            <view v-if="(!isMpWeixin || authMode === 'account') && loginType === 'mobile'" class="mobile">
+              <view class="mobile-number">
+                <uni-easyinput
+                  :clearable="false"
+                  type="number"
+                  :inputBorder="false"
+                  :styles="inputStyles"
+                  v-model="mobileNumber"
+                  placeholder="请输入手机号"
+                  @input="inputMobile"></uni-easyinput>
+              </view>
+              <view class="mobile-password">
+                <uni-easyinput
+                  :clearable="false"
+                  type="password"
+                  :inputBorder="false"
+                  :styles="inputStyles"
+                  v-model="password"
+                  placeholder="请输入密码"
+                  confirm-type="done"
+                  @input="inputPassword"
+                  @confirm="handleLoginPasswordConfirm">
+                </uni-easyinput>
+              </view>
+              <view class="change-register" @click="changeLoginType('register')">没有账号，前往注册</view>
+              <view class="login-btns">
+                <button class="btn btn-login" @click="mobileLogin">登录</button>
+              </view>
+
+              <!-- #ifdef MP-WEIXIN -->
+              <view class="quick-login quick-login--switch-only">
+                <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+              </view>
+              <!-- #endif -->
             </view>
 
-            <!-- #ifdef MP-WEIXIN -->
-            <view class="quick-login quick-login--switch-only quick-login--register">
-              <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+            <!-- 注册界面 -->
+            <view v-else-if="(!isMpWeixin || authMode === 'account') && loginType === 'register'" class="mobile">
+              <view class="mobile-number">
+                <uni-easyinput
+                  :clearable="false"
+                  type="number"
+                  :inputBorder="false"
+                  :styles="inputStyles"
+                  v-model="mobileNumber"
+                  placeholder="请输入手机号"
+                  @input="inputMobile"></uni-easyinput>
+              </view>
+              <view class="mobile-password">
+                <uni-easyinput
+                  :clearable="false"
+                  type="password"
+                  :inputBorder="false"
+                  :styles="inputStyles"
+                  v-model="password"
+                  placeholder="请输入密码"
+                  @input="inputPassword">
+                </uni-easyinput>
+              </view>
+              <view class="mobile-confirm-password">
+                <uni-easyinput
+                  :clearable="false"
+                  type="password"
+                  :inputBorder="false"
+                  :styles="inputStyles"
+                  v-model="confirmPassword"
+                  placeholder="请确认密码"
+                  confirm-type="done"
+                  @input="inputConfirmPassword"
+                  @confirm="handleRegisterPasswordConfirm">
+                </uni-easyinput>
+              </view>
+              <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
+              <view class="login-btns">
+                <button class="btn btn-register" @click="userRegister">注册</button>
+              </view>
+
+              <!-- #ifdef MP-WEIXIN -->
+              <view class="quick-login quick-login--switch-only quick-login--register">
+                <text class="quick-login-link" @click="switchAuthMode('wechat')">使用微信快捷登录</text>
+              </view>
+              <!-- #endif -->
             </view>
-            <!-- #endif -->
           </view>
         </view>
-
       </view>
-    </view>
-    <view class="login-footer">
-      <view class="read-protocol">
-        <label class="radio" @click="onConfirmRead">
-          <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
-          <text class="radio-text">我已阅读并同意</text>
-        </label>
-        <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+      <view class="login-footer">
+        <view class="read-protocol">
+          <label class="radio" @click="onConfirmRead">
+            <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
+            <text class="radio-text">我已阅读并同意</text>
+          </label>
+          <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+        </view>
       </view>
+      <view class="">
+        <ReadDialog ref="readDialogRef" :confirm="onConfirmRead" />
+      </view>
+      <!-- #ifdef MP-WEIXIN -->
+      <PrivacyPopup />
+      <!-- #endif -->
     </view>
-    <view class="">
-      <ReadDialog ref="readDialogRef" :confirm="onConfirmRead" />
-    </view>
-    <!-- #ifdef MP-WEIXIN -->
-    <PrivacyPopup />
-    <!-- #endif -->
-  </view>
+  </PageLayout>
 </template>
 
 <style lang="scss" scoped>
@@ -821,7 +804,6 @@ import PrivacyPopup from '@/components/privacy-popup.vue'
       font-size: 26rpx;
       font-weight: 500;
     }
-
   }
 
   .login-footer {

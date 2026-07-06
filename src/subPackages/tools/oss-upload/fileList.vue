@@ -4,7 +4,6 @@
 
   import { ref } from 'vue'
   import { onLoad, onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
-  import NavBar from '@/components/nav-bar.vue'
   import FolderPicker from '@/components/FolderPicker.vue'
   import dayjs from 'dayjs'
 
@@ -355,100 +354,96 @@
 </script>
 
 <template>
-  <view class="page">
-    <NavBar
-      :title="title"
-      :alwaysTitle="true"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 搜索栏 -->
-    <view class="search-bar">
-      <view class="search-input-wrap">
-        <uni-icons type="search" size="18" color="#999" />
-        <input class="search-input" v-model="searchKeyword" placeholder="搜索文件名" confirm-type="search" @confirm="onSearch" />
-        <view v-if="searchKeyword" class="search-clear" @click="clearSearch">
-          <uni-icons type="clear" size="16" color="#999" />
-        </view>
-      </view>
-      <view class="folder-toggle" @click="toggleFolderPanel">
-        <uni-icons :type="showFolderPanel ? 'folder' : 'folder'" size="20" color="#667eea" />
-      </view>
-      <view class="folder-manage" @click="showFolderPicker = true">
-        <uni-icons type="gear" size="20" color="#667eea" />
-      </view>
-    </view>
-
-    <!-- 当前位置 -->
-    <view class="current-path" v-if="!isSearching">
-      <uni-icons type="folder" size="16" color="#667eea" />
-      <text class="path-text">{{ getCurrentFolderName() }}</text>
-      <text class="file-count" v-if="total !== undefined">({{ total }}个文件)</text>
-    </view>
-    <view class="current-path" v-else>
-      <uni-icons type="search" size="16" color="#667eea" />
-      <text class="path-text">搜索: {{ searchKeyword }}</text>
-      <text class="file-count" v-if="total !== undefined">({{ total }}个结果)</text>
-    </view>
-
-    <view class="main-content">
-      <!-- 文件夹面板（平铺模式展示分级目录） -->
-      <view class="folder-panel" v-if="showFolderPanel">
-        <scroll-view class="folder-scroll" scroll-y>
-          <view
-            v-for="folder in getFlatFolders()"
-            :key="folder.path"
-            class="folder-item"
-            :class="{ active: currentFolder === folder.path && !isSearching }"
-            :style="{ paddingLeft: 16 + folder.level * 24 + 'rpx' }"
-            @click="selectFolder(folder.path)">
-            <uni-icons type="folder" size="18" color="#667eea" />
-            <text class="folder-name">{{ folder.displayName }}</text>
-            <text class="folder-count">{{ folder.totalCount }}</text>
-          </view>
-        </scroll-view>
-      </view>
-
-      <!-- 文件列表 -->
-      <view class="file-list-wrap">
-        <view v-if="!list.length && !loading" class="empty">暂无文件</view>
-        <view v-for="(item, idx) in list" :key="idx" class="card">
-          <view class="thumb-wrap">
-            <image
-              v-if="isImageExt(getExtFromItem(item))"
-              class="thumb"
-              :src="(item.file_url || '').replace(/^http:/, 'https:')"
-              mode="aspectFill" />
-            <view v-else :class="['thumb', 'thumb-icon', getTypeClass(getExtFromItem(item))]">
-              <text class="thumb-label">{{ getExtLabel(getExtFromItem(item)) }}</text>
-            </view>
-          </view>
-          <view class="info">
-            <view class="name-row">
-              <text class="name fs-36">{{ item.file_name }}</text>
-            </view>
-            <view class="sub-row">
-              <text class="sub">{{ formatSize(item.file_size) }}</text>
-              <text class="sub">{{ formatTime(item.created_time || item.created_at) }}</text>
-            </view>
-            <view class="icon-actions">
-              <view class="icon-btn" @click="onPreview(item)"><uni-icons type="eye" size="22" color="#1F2A37" /></view>
-              <view class="icon-btn" @click="onCopyLink(item)"><uni-icons type="link" size="22" color="#1F2A37" /></view>
-              <view class="icon-btn" @click="onDownload(item)"><uni-icons type="download" size="22" color="#1F2A37" /></view>
-              <view class="icon-btn delete-btn" @click="onDelete(item)"><uni-icons type="trash" size="22" color="#ef4444" /></view>
-            </view>
+  <PageLayout :title="title" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="page">
+      <!-- 搜索栏 -->
+      <view class="search-bar">
+        <view class="search-input-wrap">
+          <uni-icons type="search" size="18" color="#999" />
+          <input class="search-input" v-model="searchKeyword" placeholder="搜索文件名" confirm-type="search" @confirm="onSearch" />
+          <view v-if="searchKeyword" class="search-clear" @click="clearSearch">
+            <uni-icons type="clear" size="16" color="#999" />
           </view>
         </view>
-        <view class="footer">
-          <view v-if="loading" class="loading">加载中...</view>
-          <view v-else-if="!hasMore" class="no-more">没有更多了</view>
+        <view class="folder-toggle" @click="toggleFolderPanel">
+          <uni-icons :type="showFolderPanel ? 'folder' : 'folder'" size="20" color="#667eea" />
+        </view>
+        <view class="folder-manage" @click="showFolderPicker = true">
+          <uni-icons type="gear" size="20" color="#667eea" />
         </view>
       </view>
-    </view>
 
-    <!-- 文件夹管理弹窗 -->
-    <FolderPicker v-model="currentFolder" v-model:visible="showFolderPicker" @change="onFolderChange" />
-  </view>
+      <!-- 当前位置 -->
+      <view class="current-path" v-if="!isSearching">
+        <uni-icons type="folder" size="16" color="#667eea" />
+        <text class="path-text">{{ getCurrentFolderName() }}</text>
+        <text class="file-count" v-if="total !== undefined">({{ total }}个文件)</text>
+      </view>
+      <view class="current-path" v-else>
+        <uni-icons type="search" size="16" color="#667eea" />
+        <text class="path-text">搜索: {{ searchKeyword }}</text>
+        <text class="file-count" v-if="total !== undefined">({{ total }}个结果)</text>
+      </view>
+
+      <view class="main-content">
+        <!-- 文件夹面板（平铺模式展示分级目录） -->
+        <view class="folder-panel" v-if="showFolderPanel">
+          <scroll-view class="folder-scroll" scroll-y>
+            <view
+              v-for="folder in getFlatFolders()"
+              :key="folder.path"
+              class="folder-item"
+              :class="{ active: currentFolder === folder.path && !isSearching }"
+              :style="{ paddingLeft: 16 + folder.level * 24 + 'rpx' }"
+              @click="selectFolder(folder.path)">
+              <uni-icons type="folder" size="18" color="#667eea" />
+              <text class="folder-name">{{ folder.displayName }}</text>
+              <text class="folder-count">{{ folder.totalCount }}</text>
+            </view>
+          </scroll-view>
+        </view>
+
+        <!-- 文件列表 -->
+        <view class="file-list-wrap">
+          <view v-if="!list.length && !loading" class="empty">暂无文件</view>
+          <view v-for="(item, idx) in list" :key="idx" class="card">
+            <view class="thumb-wrap">
+              <image
+                v-if="isImageExt(getExtFromItem(item))"
+                class="thumb"
+                :src="(item.file_url || '').replace(/^http:/, 'https:')"
+                mode="aspectFill" />
+              <view v-else :class="['thumb', 'thumb-icon', getTypeClass(getExtFromItem(item))]">
+                <text class="thumb-label">{{ getExtLabel(getExtFromItem(item)) }}</text>
+              </view>
+            </view>
+            <view class="info">
+              <view class="name-row">
+                <text class="name fs-36">{{ item.file_name }}</text>
+              </view>
+              <view class="sub-row">
+                <text class="sub">{{ formatSize(item.file_size) }}</text>
+                <text class="sub">{{ formatTime(item.created_time || item.created_at) }}</text>
+              </view>
+              <view class="icon-actions">
+                <view class="icon-btn" @click="onPreview(item)"><uni-icons type="eye" size="22" color="#1F2A37" /></view>
+                <view class="icon-btn" @click="onCopyLink(item)"><uni-icons type="link" size="22" color="#1F2A37" /></view>
+                <view class="icon-btn" @click="onDownload(item)"><uni-icons type="download" size="22" color="#1F2A37" /></view>
+                <view class="icon-btn delete-btn" @click="onDelete(item)"><uni-icons type="trash" size="22" color="#ef4444" /></view>
+              </view>
+            </view>
+          </view>
+          <view class="footer">
+            <view v-if="loading" class="loading">加载中...</view>
+            <view v-else-if="!hasMore" class="no-more">没有更多了</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 文件夹管理弹窗 -->
+      <FolderPicker v-model="currentFolder" v-model:visible="showFolderPicker" @change="onFolderChange" />
+    </view>
+  </PageLayout>
 </template>
 
 <style scoped lang="scss">

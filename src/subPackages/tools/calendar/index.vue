@@ -1,138 +1,138 @@
 <template>
-  <view class="calendar-page">
-    <!-- 顶部导航栏 -->
-    <nav-bar always-title title="万年历" custom-class="light" :custom-style="{ backgroundColor: '#C83C3C' }" />
-
-    <!-- 头部操作栏 -->
-    <view class="header">
-      <view class="header-left">
-        <view class="month-nav">
-          <view class="nav-arrow" @click="prevMonth">‹</view>
-          <picker mode="date" fields="month" :value="currentDateStr" @change="onDateChange">
-            <view class="date-picker">
-              <text class="year-month">{{ currentYear }}年{{ currentMonth }}月</text>
-              <text class="arrow">▼</text>
-            </view>
-          </picker>
-          <view class="nav-arrow" @click="nextMonth">›</view>
+  <PageLayout title="万年历" nav-bg-color="#C83C3C" nav-title-color="#fff">
+    <view class="calendar-page">
+      <!-- 顶部导航栏 -->
+      <!-- 头部操作栏 -->
+      <view class="header">
+        <view class="header-left">
+          <view class="month-nav">
+            <view class="nav-arrow" @click="prevMonth">‹</view>
+            <picker mode="date" fields="month" :value="currentDateStr" @change="onDateChange">
+              <view class="date-picker">
+                <text class="year-month">{{ currentYear }}年{{ currentMonth }}月</text>
+                <text class="arrow">▼</text>
+              </view>
+            </picker>
+            <view class="nav-arrow" @click="nextMonth">›</view>
+          </view>
         </view>
-      </view>
-      <view class="header-right">
-        <view class="header-btn today-btn" @click="goToday">
-          <text>今</text>
-        </view>
-        <view class="header-btn filter-btn" :class="{ active: showLuckyTags || selectedLuckyTag }" @click="toggleLuckyTags">
-          <uni-icons type="bars" size="16" :color="showLuckyTags || selectedLuckyTag ? '#C83C3C' : '#fff'" />
-        </view>
-        <!-- <view class="header-btn share-btn" @click="onShare">
+        <view class="header-right">
+          <view class="header-btn today-btn" @click="goToday">
+            <text>今</text>
+          </view>
+          <view class="header-btn filter-btn" :class="{ active: showLuckyTags || selectedLuckyTag }" @click="toggleLuckyTags">
+            <uni-icons type="bars" size="16" :color="showLuckyTags || selectedLuckyTag ? '#C83C3C' : '#fff'" />
+          </view>
+          <!-- <view class="header-btn share-btn" @click="onShare">
           <text>分享</text>
         </view> -->
-        <view class="header-btn festivals-btn" @click="goToAuspicious">
-          <text>择吉</text>
-        </view>
-        <view class="header-btn festivals-btn" @click="goToFestivals">
-          <text>节日</text>
+          <view class="header-btn festivals-btn" @click="goToAuspicious">
+            <text>择吉</text>
+          </view>
+          <view class="header-btn festivals-btn" @click="goToFestivals">
+            <text>节日</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <!-- 择吉日标签栏 -->
-    <view class="lucky-tags" v-if="showLuckyTags">
-      <scroll-view scroll-x class="tags-scroll">
-        <view class="tags-container">
-          <view
-            v-for="tag in luckyTags"
-            :key="tag.key"
-            class="lucky-tag"
-            :class="{ active: selectedLuckyTag === tag.key }"
-            @click="selectLuckyTag(tag.key)">
-            {{ tag.label }}
+      <!-- 择吉日标签栏 -->
+      <view class="lucky-tags" v-if="showLuckyTags">
+        <scroll-view scroll-x class="tags-scroll">
+          <view class="tags-container">
+            <view
+              v-for="tag in luckyTags"
+              :key="tag.key"
+              class="lucky-tag"
+              :class="{ active: selectedLuckyTag === tag.key }"
+              @click="selectLuckyTag(tag.key)">
+              {{ tag.label }}
+            </view>
+            <!-- 收起按钮 -->
+            <view class="lucky-tag close-tag" @click="toggleLuckyTags">
+              <uni-icons type="closeempty" size="14" color="#999" />
+            </view>
           </view>
-          <!-- 收起按钮 -->
-          <view class="lucky-tag close-tag" @click="toggleLuckyTags">
-            <uni-icons type="closeempty" size="14" color="#999" />
-          </view>
-        </view>
-      </scroll-view>
-    </view>
+        </scroll-view>
+      </view>
 
-    <!-- 星期标题 -->
-    <view class="week-header">
-      <view v-for="(day, index) in weekDays" :key="index" class="week-day" :class="{ weekend: index === 0 || index === 6 }">
-        {{ day }}
+      <!-- 星期标题 -->
+      <view class="week-header">
+        <view v-for="(day, index) in weekDays" :key="index" class="week-day" :class="{ weekend: index === 0 || index === 6 }">
+          {{ day }}
+        </view>
       </view>
-    </view>
 
-    <!-- 日历网格（只显示4行） -->
-    <view class="calendar-grid">
-      <view
-        v-for="(item, index) in displayCalendarData"
-        :key="index"
-        class="calendar-cell"
-        :class="{
-          'other-month': !item.isCurrentMonth,
-          selected: isSelected(item),
-          today: isToday(item),
-          'has-festival': item.jieQi || item.festivals.length > 0,
-          'lucky-day': isLuckyDay(item),
-        }"
-        @click="selectDate(item)">
-        <text class="solar-day">{{ item.solar.day }}</text>
-        <text class="lunar-day">
-          {{ item.jieQi || (item.festivals.length > 0 ? item.festivals[0] : item.lunar.day) }}
-        </text>
-        <!-- 假期标记 -->
-        <text v-if="getHolidayTag(item)" class="holiday-tag" :class="getHolidayTag(item)?.type">
-          {{ getHolidayTag(item)?.type === 'rest' ? '休' : '班' }}
-        </text>
+      <!-- 日历网格（只显示4行） -->
+      <view class="calendar-grid">
+        <view
+          v-for="(item, index) in displayCalendarData"
+          :key="index"
+          class="calendar-cell"
+          :class="{
+            'other-month': !item.isCurrentMonth,
+            selected: isSelected(item),
+            today: isToday(item),
+            'has-festival': item.jieQi || item.festivals.length > 0,
+            'lucky-day': isLuckyDay(item),
+          }"
+          @click="selectDate(item)">
+          <text class="solar-day">{{ item.solar.day }}</text>
+          <text class="lunar-day">
+            {{ item.jieQi || (item.festivals.length > 0 ? item.festivals[0] : item.lunar.day) }}
+          </text>
+          <!-- 假期标记 -->
+          <text v-if="getHolidayTag(item)" class="holiday-tag" :class="getHolidayTag(item)?.type">
+            {{ getHolidayTag(item)?.type === 'rest' ? '休' : '班' }}
+          </text>
+        </view>
       </view>
-    </view>
 
-    <!-- 选中日期详情卡片 -->
-    <view class="detail-card" @click="goToDetail">
-      <view class="card-content">
-        <view class="card-left">
-          <text class="big-day">{{ selectedData?.solar.day }}</text>
-          <view class="day-info">
-            <text class="month-text">{{ selectedData?.solar.month }}月</text>
-            <text class="week-text">{{ selectedData?.solar.weekDayName }}</text>
+      <!-- 选中日期详情卡片 -->
+      <view class="detail-card" @click="goToDetail">
+        <view class="card-content">
+          <view class="card-left">
+            <text class="big-day">{{ selectedData?.solar.day }}</text>
+            <view class="day-info">
+              <text class="month-text">{{ selectedData?.solar.month }}月</text>
+              <text class="week-text">{{ selectedData?.solar.weekDayName }}</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <view class="lunar-info">
+              <text class="lunar-date">{{ selectedData?.lunar.dateStr }}</text>
+              <text class="gan-zhi">第{{ selectedData?.week.weekOfYear }}周 {{ selectedData?.xingZuo }}座</text>
+            </view>
+            <view class="extra-info">
+              <text
+                >{{ selectedData?.ganZhi.year }}年 {{ selectedData?.ganZhi.month }}月 {{ selectedData?.ganZhi.day }}日 [{{
+                  selectedData?.shengXiao
+                }}]</text
+              >
+            </view>
           </view>
         </view>
-        <view class="card-right">
-          <view class="lunar-info">
-            <text class="lunar-date">{{ selectedData?.lunar.dateStr }}</text>
-            <text class="gan-zhi">第{{ selectedData?.week.weekOfYear }}周 {{ selectedData?.xingZuo }}座</text>
+        <!-- 宜忌独立行 -->
+        <view class="yi-ji-wrapper">
+          <view class="yi-section">
+            <view class="yi-icon">宜</view>
+            <view class="yi-list">
+              <text v-for="(item, idx) in displayYi" :key="idx" class="yi-item">{{ item }}</text>
+            </view>
           </view>
-          <view class="extra-info">
-            <text
-              >{{ selectedData?.ganZhi.year }}年 {{ selectedData?.ganZhi.month }}月 {{ selectedData?.ganZhi.day }}日 [{{
-                selectedData?.shengXiao
-              }}]</text
-            >
-          </view>
-        </view>
-      </view>
-      <!-- 宜忌独立行 -->
-      <view class="yi-ji-wrapper">
-        <view class="yi-section">
-          <view class="yi-icon">宜</view>
-          <view class="yi-list">
-            <text v-for="(item, idx) in displayYi" :key="idx" class="yi-item">{{ item }}</text>
+          <view class="ji-section">
+            <view class="ji-icon">忌</view>
+            <view class="ji-list">
+              <text v-for="(item, idx) in displayJi" :key="idx" class="ji-item">{{ item }}</text>
+            </view>
           </view>
         </view>
-        <view class="ji-section">
-          <view class="ji-icon">忌</view>
-          <view class="ji-list">
-            <text v-for="(item, idx) in displayJi" :key="idx" class="ji-item">{{ item }}</text>
-          </view>
+        <!-- 查看更多 -->
+        <view class="card-footer">
+          <text class="view-more">查看更多 ›</text>
         </view>
-      </view>
-      <!-- 查看更多 -->
-      <view class="card-footer">
-        <text class="view-more">查看更多 ›</text>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -141,7 +141,6 @@
   import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import { formatDate, getTodayStr } from '@/utils/lunar'
-  import NavBar from '@/components/nav-bar.vue'
   import { holidays } from './holidays'
 
   const weekDays = ['日', '一', '二', '三', '四', '五', '六']

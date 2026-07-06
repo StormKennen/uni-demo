@@ -1,204 +1,199 @@
 <template>
-  <view class="video-compress-page">
-    <!-- 顶部导航栏 -->
-    <NavBar
-      always-title
-      title="视频压缩神器"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 主要内容区域 -->
-    <view class="main-content">
-      <!-- 视频选择区域 -->
-      <view class="upload-section">
-        <view v-if="!videoInfo.path" class="upload-area" @click="handleSelectVideo">
-          <view class="upload-icon">
-            <text class="plus-icon">+</text>
-          </view>
-          <text class="upload-text">选择文件</text>
-          <text class="upload-desc">支持 MP4、MOV 等常见格式</text>
-        </view>
-
-        <view v-else class="video-preview-section" @click="handleSelectVideo">
-          <!-- #ifdef MP-WEIXIN -->
-          <video
-            v-if="videoInfo.path"
-            class="preview-video"
-            :src="videoInfo.path"
-            :poster="videoInfo.thumbPath"
-            :controls="false"
-            :autoplay="false"
-            object-fit="contain" />
-          <!-- #endif -->
-          <!-- #ifdef H5 -->
-          <view class="video-placeholder">
-            <uni-icons type="videocam" size="64" color="#667eea" />
-            <text class="video-name">{{ videoInfo.name || '已选择视频' }}</text>
-          </view>
-          <!-- #endif -->
-          <view class="reselect-tip">点击重新选择</view>
-        </view>
-      </view>
-
-      <!-- 压缩参数控制区域 -->
-      <view class="compress-controls">
-        <!-- 压缩质量预设场景组 -->
-        <view class="quality-presets">
-          <text class="section-title">压缩预设方案</text>
-          <view class="preset-buttons">
-            <view
-              v-for="preset in qualityPresets"
-              :key="preset.value"
-              class="preset-btn"
-              :class="{ active: currentPreset === preset.value }"
-              @click="selectPreset(preset.value)">
-              {{ preset.label }}
+  <PageLayout title="视频压缩神器" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="video-compress-page">
+      <!-- 顶部导航栏 -->
+      <!-- 主要内容区域 -->
+      <view class="main-content">
+        <!-- 视频选择区域 -->
+        <view class="upload-section">
+          <view v-if="!videoInfo.path" class="upload-area" @click="handleSelectVideo">
+            <view class="upload-icon">
+              <text class="plus-icon">+</text>
             </view>
+            <text class="upload-text">选择文件</text>
+            <text class="upload-desc">支持 MP4、MOV 等常见格式</text>
+          </view>
+
+          <view v-else class="video-preview-section" @click="handleSelectVideo">
+            <!-- #ifdef MP-WEIXIN -->
+            <video
+              v-if="videoInfo.path"
+              class="preview-video"
+              :src="videoInfo.path"
+              :poster="videoInfo.thumbPath"
+              :controls="false"
+              :autoplay="false"
+              object-fit="contain" />
+            <!-- #endif -->
+            <!-- #ifdef H5 -->
+            <view class="video-placeholder">
+              <uni-icons type="videocam" size="64" color="#667eea" />
+              <text class="video-name">{{ videoInfo.name || '已选择视频' }}</text>
+            </view>
+            <!-- #endif -->
+            <view class="reselect-tip">点击重新选择</view>
           </view>
         </view>
 
-        <!-- 预设方案详细释义说明 -->
-        <view class="preset-description">
-          <text class="desc-icon">💡</text>
-          <text class="desc-text">{{ selectedPresetDesc }}</text>
-        </view>
-
-        <!-- 手动微调滑块区域 -->
-        <view class="advanced-controls">
-          <text class="section-title spec-title">参数微调 (拖动滑块定制)</text>
-
-          <!-- 视频码率 -->
-          <view class="slider-group">
-            <view class="slider-header">
-              <text class="slider-label">视频码率 (Bitrate)</text>
-              <text class="slider-value" :class="{ 'warning-color': hasBloatRisk }">{{ compressParams.bitrate }} kbps</text>
-            </view>
-            <slider
-              :value="compressParams.bitrate"
-              :min="200"
-              :max="10000"
-              :step="50"
-              @change="onBitrateChange"
-              @changing="onBitrateChanging"
-              activeColor="#667eea"
-              backgroundColor="#E5E7EB" />
-            <view class="original-bitrate-hint" v-if="originalBitrate > 0">
-              <text class="hint-text">原视频码率: ~{{ originalBitrate }} kbps</text>
-              <text class="warning-badge" v-if="hasBloatRisk">⚠️ 码率偏高，体积可能膨胀</text>
+        <!-- 压缩参数控制区域 -->
+        <view class="compress-controls">
+          <!-- 压缩质量预设场景组 -->
+          <view class="quality-presets">
+            <text class="section-title">压缩预设方案</text>
+            <view class="preset-buttons">
+              <view
+                v-for="preset in qualityPresets"
+                :key="preset.value"
+                class="preset-btn"
+                :class="{ active: currentPreset === preset.value }"
+                @click="selectPreset(preset.value)">
+                {{ preset.label }}
+              </view>
             </view>
           </view>
 
-          <!-- 视频帧率 -->
-          <view class="slider-group">
-            <view class="slider-header">
-              <text class="slider-label">视频帧率 (FPS)</text>
-              <text class="slider-value">{{ compressParams.fps }} fps</text>
-            </view>
-            <slider
-              :value="compressParams.fps"
-              :min="10"
-              :max="60"
-              :step="1"
-              @change="onFpsChange"
-              @changing="onFpsChanging"
-              activeColor="#667eea"
-              backgroundColor="#E5E7EB" />
+          <!-- 预设方案详细释义说明 -->
+          <view class="preset-description">
+            <text class="desc-icon">💡</text>
+            <text class="desc-text">{{ selectedPresetDesc }}</text>
           </view>
 
-          <!-- 分辨率缩放 -->
-          <view class="slider-group">
-            <view class="slider-header">
-              <text class="slider-label">分辨率缩放 (Resolution)</text>
-              <text class="slider-value">{{ compressParams.resolution }}%</text>
-            </view>
-            <slider
-              :value="compressParams.resolution"
-              :min="10"
-              :max="100"
-              :step="5"
-              @change="onResolutionChange"
-              @changing="onResolutionChanging"
-              activeColor="#667eea"
-              backgroundColor="#E5E7EB" />
-          </view>
-        </view>
-      </view>
+          <!-- 手动微调滑块区域 -->
+          <view class="advanced-controls">
+            <text class="section-title spec-title">参数微调 (拖动滑块定制)</text>
 
-      <!-- 数据看板 -->
-      <view class="info-dashboard">
-        <text class="section-title">视频信息</text>
-        <view class="info-grid">
-          <view class="info-card">
-            <text class="info-title">压缩前</text>
-            <view class="info-row">
-              <text class="info-label">大小:</text>
-              <text class="info-value">{{ formatFileSize(videoInfo.size) }}</text>
+            <!-- 视频码率 -->
+            <view class="slider-group">
+              <view class="slider-header">
+                <text class="slider-label">视频码率 (Bitrate)</text>
+                <text class="slider-value" :class="{ 'warning-color': hasBloatRisk }">{{ compressParams.bitrate }} kbps</text>
+              </view>
+              <slider
+                :value="compressParams.bitrate"
+                :min="200"
+                :max="10000"
+                :step="50"
+                @change="onBitrateChange"
+                @changing="onBitrateChanging"
+                activeColor="#667eea"
+                backgroundColor="#E5E7EB" />
+              <view class="original-bitrate-hint" v-if="originalBitrate > 0">
+                <text class="hint-text">原视频码率: ~{{ originalBitrate }} kbps</text>
+                <text class="warning-badge" v-if="hasBloatRisk">⚠️ 码率偏高，体积可能膨胀</text>
+              </view>
             </view>
-            <view class="info-row">
-              <text class="info-label">分辨率:</text>
-              <text class="info-value">{{ videoInfo.width && videoInfo.height ? `${videoInfo.width}×${videoInfo.height}` : '--' }}</text>
+
+            <!-- 视频帧率 -->
+            <view class="slider-group">
+              <view class="slider-header">
+                <text class="slider-label">视频帧率 (FPS)</text>
+                <text class="slider-value">{{ compressParams.fps }} fps</text>
+              </view>
+              <slider
+                :value="compressParams.fps"
+                :min="10"
+                :max="60"
+                :step="1"
+                @change="onFpsChange"
+                @changing="onFpsChanging"
+                activeColor="#667eea"
+                backgroundColor="#E5E7EB" />
             </view>
-            <view class="info-row">
-              <text class="info-label">时长:</text>
-              <text class="info-value">{{ formatDuration(videoInfo.duration) }}</text>
-            </view>
-          </view>
-          <view class="info-card">
-            <text class="info-title">压缩后 <text class="estimate-tag">[预估]</text></text>
-            <view class="info-row">
-              <text class="info-label">大小:</text>
-              <text class="info-value highlight">{{ formatFileSize(estimatedSize) }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">分辨率:</text>
-              <text class="info-value">{{ estimatedResolution }}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">节省:</text>
-              <text class="info-value saved">{{ compressionRatio }}%</text>
+
+            <!-- 分辨率缩放 -->
+            <view class="slider-group">
+              <view class="slider-header">
+                <text class="slider-label">分辨率缩放 (Resolution)</text>
+                <text class="slider-value">{{ compressParams.resolution }}%</text>
+              </view>
+              <slider
+                :value="compressParams.resolution"
+                :min="10"
+                :max="100"
+                :step="5"
+                @change="onResolutionChange"
+                @changing="onResolutionChanging"
+                activeColor="#667eea"
+                backgroundColor="#E5E7EB" />
             </view>
           </view>
         </view>
-      </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-section">
-        <button class="compress-btn" :disabled="!videoInfo.path || isCompressing" @click="handleCompress">
-          {{ isCompressing ? '压缩中...' : '开始压缩' }}
-        </button>
-      </view>
+        <!-- 数据看板 -->
+        <view class="info-dashboard">
+          <text class="section-title">视频信息</text>
+          <view class="info-grid">
+            <view class="info-card">
+              <text class="info-title">压缩前</text>
+              <view class="info-row">
+                <text class="info-label">大小:</text>
+                <text class="info-value">{{ formatFileSize(videoInfo.size) }}</text>
+              </view>
+              <view class="info-row">
+                <text class="info-label">分辨率:</text>
+                <text class="info-value">{{ videoInfo.width && videoInfo.height ? `${videoInfo.width}×${videoInfo.height}` : '--' }}</text>
+              </view>
+              <view class="info-row">
+                <text class="info-label">时长:</text>
+                <text class="info-value">{{ formatDuration(videoInfo.duration) }}</text>
+              </view>
+            </view>
+            <view class="info-card">
+              <text class="info-title">压缩后 <text class="estimate-tag">[预估]</text></text>
+              <view class="info-row">
+                <text class="info-label">大小:</text>
+                <text class="info-value highlight">{{ formatFileSize(estimatedSize) }}</text>
+              </view>
+              <view class="info-row">
+                <text class="info-label">分辨率:</text>
+                <text class="info-value">{{ estimatedResolution }}</text>
+              </view>
+              <view class="info-row">
+                <text class="info-label">节省:</text>
+                <text class="info-value saved">{{ compressionRatio }}%</text>
+              </view>
+            </view>
+          </view>
+        </view>
 
-      <!-- 温馨提示 -->
-      <view class="tips-section">
-        <text class="tips-title">使用说明</text>
-        <view class="tips-content">
-          <text class="tip-item">• 支持格式：MP4、MOV、AVI、M4V、3GP、MKV</text>
-          <text class="tip-item">• 文件限制：最大 500MB，时长不超过 10 分钟</text>
-          <text class="tip-item">• 选择方式：从相册选择或从聊天记录选择</text>
-          <text class="tip-item">• 压缩后的视频将自动保存到系统相册</text>
-          <text class="tip-item">• 如遇问题，请尝试重启小程序或使用聊天记录模式</text>
-          <text class="tip-item">• H5 环境暂不支持本地视频压缩功能</text>
+        <!-- 操作按钮 -->
+        <view class="action-section">
+          <button class="compress-btn" :disabled="!videoInfo.path || isCompressing" @click="handleCompress">
+            {{ isCompressing ? '压缩中...' : '开始压缩' }}
+          </button>
+        </view>
+
+        <!-- 温馨提示 -->
+        <view class="tips-section">
+          <text class="tips-title">使用说明</text>
+          <view class="tips-content">
+            <text class="tip-item">• 支持格式：MP4、MOV、AVI、M4V、3GP、MKV</text>
+            <text class="tip-item">• 文件限制：最大 500MB，时长不超过 10 分钟</text>
+            <text class="tip-item">• 选择方式：从相册选择或从聊天记录选择</text>
+            <text class="tip-item">• 压缩后的视频将自动保存到系统相册</text>
+            <text class="tip-item">• 如遇问题，请尝试重启小程序或使用聊天记录模式</text>
+            <text class="tip-item">• H5 环境暂不支持本地视频压缩功能</text>
+          </view>
         </view>
       </view>
+
+      <!-- H5引导弹窗 -->
+      <uni-popup ref="h5GuidePopup" type="center">
+        <view class="h5-guide-modal">
+          <text class="modal-title">功能提示</text>
+          <text class="modal-desc">H5 环境暂不支持本地视频压缩，请前往小程序操作</text>
+          <image v-if="miniProgramQrCode" class="qr-image" :src="miniProgramQrCode" mode="aspectFit" />
+          <view class="modal-actions">
+            <button class="modal-btn secondary" @click="copyMiniProgramPath">复制小程序路径</button>
+            <button class="modal-btn primary" @click="closeH5Guide">我知道了</button>
+          </view>
+        </view>
+      </uni-popup>
     </view>
-
-    <!-- H5引导弹窗 -->
-    <uni-popup ref="h5GuidePopup" type="center">
-      <view class="h5-guide-modal">
-        <text class="modal-title">功能提示</text>
-        <text class="modal-desc">H5 环境暂不支持本地视频压缩，请前往小程序操作</text>
-        <image v-if="miniProgramQrCode" class="qr-image" :src="miniProgramQrCode" mode="aspectFit" />
-        <view class="modal-actions">
-          <button class="modal-btn secondary" @click="copyMiniProgramPath">复制小程序路径</button>
-          <button class="modal-btn primary" @click="closeH5Guide">我知道了</button>
-        </view>
-      </view>
-    </uni-popup>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import NavBar from '@/components/nav-bar.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
