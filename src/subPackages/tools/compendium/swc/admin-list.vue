@@ -103,8 +103,20 @@
                   </view>
                 </view>
 
-                <view class="locale-section">
-                  <text class="locale-title">中文</text>
+                <view class="locale-tabs">
+                  <view
+                    class="locale-tab"
+                    :class="{ active: row.draft.activeLocale === 'zh-CN' }"
+                    @click="row.draft.activeLocale = 'zh-CN'">
+                    中文
+                  </view>
+                  <view class="locale-tab" :class="{ active: row.draft.activeLocale === 'en' }" @click="row.draft.activeLocale = 'en'">
+                    English
+                  </view>
+                </view>
+
+                <view v-if="row.draft.activeLocale === 'zh-CN'" class="locale-section">
+                  <text class="locale-title">中文翻译（locale: zh-CN）</text>
                   <view class="field-grid single-col">
                     <view class="field">
                       <text class="field-label">名称</text>
@@ -123,8 +135,8 @@
                   </view>
                 </view>
 
-                <view class="locale-section">
-                  <text class="locale-title">English</text>
+                <view v-if="row.draft.activeLocale === 'en'" class="locale-section">
+                  <text class="locale-title">英文基础字段（locale: en）</text>
                   <view class="field-grid single-col">
                     <view class="field">
                       <text class="field-label">Name</text>
@@ -149,8 +161,8 @@
 
                 <view class="skills-panel">
                   <view class="skills-head">
-                    <text class="locale-title">技能</text>
-                    <text class="skills-hint">中文 / English 双语编辑，未改动字段会按原记录回传</text>
+                    <text class="locale-title">技能（{{ row.draft.activeLocale === 'zh-CN' ? '中文' : 'English' }}）</text>
+                    <text class="skills-hint">仅显示当前语言的技能字段，未改动字段按原记录回传</text>
                   </view>
 
                   <view v-if="row.detailsLoading" class="skills-state">加载人物详情中...</view>
@@ -162,37 +174,33 @@
                         <text class="skill-key" v-if="skill.key">{{ skill.key }}</text>
                       </view>
 
-                      <view class="skill-locale-grid">
-                        <view class="skill-locale-card">
-                          <text class="skill-locale-title">中文</text>
-                          <view class="field">
-                            <text class="field-label">技能名称</text>
-                            <input v-model="skill.zh.name" class="field-input" placeholder="请输入中文技能名" />
-                          </view>
-                          <view class="field">
-                            <text class="field-label">技能描述</text>
-                            <textarea
-                              v-model="skill.zh.description"
-                              class="field-textarea"
-                              placeholder="请输入中文技能描述"
-                              :maxlength="2000" />
-                          </view>
+                      <view v-if="row.draft.activeLocale === 'zh-CN'" class="skill-locale-card">
+                        <view class="field">
+                          <text class="field-label">技能名称</text>
+                          <input v-model="skill.zh.name" class="field-input" placeholder="请输入中文技能名" />
                         </view>
+                        <view class="field">
+                          <text class="field-label">技能描述</text>
+                          <textarea
+                            v-model="skill.zh.description"
+                            class="field-textarea"
+                            placeholder="请输入中文技能描述"
+                            :maxlength="2000" />
+                        </view>
+                      </view>
 
-                        <view class="skill-locale-card">
-                          <text class="skill-locale-title">English</text>
-                          <view class="field">
-                            <text class="field-label">Skill Name</text>
-                            <input v-model="skill.en.name" class="field-input" placeholder="Enter English skill name" />
-                          </view>
-                          <view class="field">
-                            <text class="field-label">Skill Description</text>
-                            <textarea
-                              v-model="skill.en.description"
-                              class="field-textarea"
-                              placeholder="Enter English skill description"
-                              :maxlength="2000" />
-                          </view>
+                      <view v-else class="skill-locale-card">
+                        <view class="field">
+                          <text class="field-label">Skill Name</text>
+                          <input v-model="skill.en.name" class="field-input" placeholder="Enter English skill name" />
+                        </view>
+                        <view class="field">
+                          <text class="field-label">Skill Description</text>
+                          <textarea
+                            v-model="skill.en.description"
+                            class="field-textarea"
+                            placeholder="Enter English skill description"
+                            :maxlength="2000" />
                         </view>
                       </view>
                     </view>
@@ -200,12 +208,15 @@
                 </view>
 
                 <view class="action-row">
-                  <button class="action-btn ghost" :loading="row.submitting" :disabled="row.submitting" @click="cancelEdit(row)"
-                    >取消</button
-                  >
-                  <button class="action-btn primary" :loading="row.submitting" :disabled="row.submitting" @click="saveRow(row)"
-                    >保存</button
-                  >
+                  <text class="save-hint">保存时按后端规则分发：修改中文→locale:zh-CN；修改英文→locale:en</text>
+                  <view class="action-btns">
+                    <button class="action-btn ghost" :loading="row.submitting" :disabled="row.submitting" @click="cancelEdit(row)"
+                      >取消</button
+                    >
+                    <button class="action-btn primary" :loading="row.submitting" :disabled="row.submitting" @click="saveRow(row)"
+                      >保存</button
+                    >
+                  </view>
                 </view>
               </view>
             </view>
@@ -264,7 +275,10 @@
     en: LocaleSkillDraft
   }
 
+  type EditLocale = 'zh-CN' | 'en'
+
   interface RowDraft {
+    activeLocale: EditLocale
     elementKey: string
     starsText: string
     zhName: string
@@ -398,7 +412,7 @@
 
   const splitAliases = (text: string): string[] =>
     text
-      .split(/[、,，\/\n]+/)
+      .split(/[、,，/\n]+/)
       .map(item => item.trim())
       .filter(Boolean)
 
@@ -524,6 +538,7 @@
   }
 
   const createDraftFromSnapshots = (row: AdminCharacterRow): RowDraft => ({
+    activeLocale: DEFAULT_LOCALE as EditLocale,
     elementKey: row.loadedElementKey || row.elementKey || '',
     starsText: row.loadedStarsText || row.starsText || '',
     zhName: row.loadedZhName || row.zhName || '',
@@ -539,6 +554,7 @@
     const zhSnapshot = readLocaleSnapshot(zhData, row)
     const enSnapshot = readLocaleSnapshot(enData, row)
     return {
+      activeLocale: DEFAULT_LOCALE as EditLocale,
       elementKey: zhSnapshot.elementKey || enSnapshot.elementKey || row.elementKey,
       starsText: zhSnapshot.starsText || enSnapshot.starsText || row.starsText,
       zhName: zhSnapshot.name || row.zhName,
@@ -604,6 +620,7 @@
       zhSkillsOriginal: [],
       enSkillsOriginal: [],
       draft: {
+        activeLocale: DEFAULT_LOCALE as EditLocale,
         elementKey,
         starsText,
         zhName: name,
@@ -914,6 +931,36 @@
     }
   }
 
+  const hasZhLocaleChanged = (row: AdminCharacterRow): boolean => {
+    if (row.draft.zhName !== row.loadedZhName) return true
+    if (row.draft.zhDescription !== row.loadedZhDescription) return true
+    if (row.draft.zhAliasesText !== row.loadedZhAliasesText) return true
+    for (const skill of row.draft.skills) {
+      const original = skill.zhOriginal
+      if (skill.zh.name !== readString(cloneAttribute(original), ['name'])) return true
+      if (skill.zh.description !== readString(cloneAttribute(original), ['description'])) return true
+    }
+    return false
+  }
+
+  const hasEnLocaleChanged = (row: AdminCharacterRow): boolean => {
+    if (row.draft.enName !== row.loadedEnName) return true
+    if (row.draft.enDescription !== row.loadedEnDescription) return true
+    if (row.draft.enAliasesText !== row.loadedEnAliasesText) return true
+    for (const skill of row.draft.skills) {
+      const original = skill.enOriginal
+      if (skill.en.name !== readString(cloneAttribute(original), ['name'])) return true
+      if (skill.en.description !== readString(cloneAttribute(original), ['description'])) return true
+    }
+    return false
+  }
+
+  const hasCommonFieldsChanged = (row: AdminCharacterRow): boolean => {
+    if (row.draft.elementKey !== row.loadedElementKey) return true
+    if (row.draft.starsText !== row.loadedStarsText) return true
+    return false
+  }
+
   const saveRow = async (row: AdminCharacterRow) => {
     if (!canManage.value || row.submitting) return
 
@@ -927,51 +974,76 @@
         return
       }
 
+      const zhChanged = hasZhLocaleChanged(row)
+      const enChanged = hasEnLocaleChanged(row)
+      const commonChanged = hasCommonFieldsChanged(row)
+
+      // 语言无关字段（attributes/categories）跟随任意 locale 请求一起发送
+      // 若仅修改了语言无关字段，默认通过 zh-CN 请求发送
+      const needZhRequest = zhChanged || (commonChanged && !enChanged)
+      const needEnRequest = enChanged
+
+      if (!needZhRequest && !needEnRequest && !commonChanged) {
+        uni.showToast({ title: '未检测到修改', icon: 'none' })
+        return
+      }
+
       const zhDetail = row.zhDetail || (await fetchCharacterDetails(row.characterId, DEFAULT_LOCALE))
       const enDetail = row.enDetail || (await fetchCharacterDetails(row.characterId, 'en'))
 
-      const zhBody = buildLocaleBody(
-        DEFAULT_LOCALE,
-        row,
-        zhDetail,
-        row.draft.zhName,
-        row.draft.zhDescription,
-        row.draft.zhAliasesText,
-        buildLocaleSkillsPayload(
-          row.zhSkillsOriginal.length ? row.zhSkillsOriginal : toArray(zhDetail.skills).map(cloneAttribute),
-          row.draft.skills,
-          'zh',
-        ),
-        submittedStarsValue,
-      )
-      const zhPatchResult = await patchAdminCompendiumsCharacters(zhBody as never)
-      const zhPatchData = extractData(zhPatchResult)
+      let zhPatchData: CharacterRecord = zhDetail
+      let enPatchData: CharacterRecord = enDetail
 
-      if (shouldVerifyStars) {
-        const verified = await verifyStarsAfterPatch(zhPatchData, submittedStarsValue as number, row, zhBody)
-        if (!verified) return
+      if (needZhRequest) {
+        const zhBody = buildLocaleBody(
+          DEFAULT_LOCALE,
+          row,
+          zhDetail,
+          row.draft.zhName,
+          row.draft.zhDescription,
+          row.draft.zhAliasesText,
+          buildLocaleSkillsPayload(
+            row.zhSkillsOriginal.length ? row.zhSkillsOriginal : toArray(zhDetail.skills).map(cloneAttribute),
+            row.draft.skills,
+            'zh',
+          ),
+          submittedStarsValue,
+        )
+        const zhPatchResult = await patchAdminCompendiumsCharacters(zhBody as never)
+        zhPatchData = extractData(zhPatchResult)
+
+        if (shouldVerifyStars) {
+          const verified = await verifyStarsAfterPatch(zhPatchData, submittedStarsValue as number, row, zhBody)
+          if (!verified) return
+        }
       }
 
-      const enBody = buildLocaleBody(
-        'en',
-        row,
-        enDetail,
-        row.draft.enName,
-        row.draft.enDescription,
-        row.draft.enAliasesText,
-        buildLocaleSkillsPayload(
-          row.enSkillsOriginal.length ? row.enSkillsOriginal : toArray(enDetail.skills).map(cloneAttribute),
-          row.draft.skills,
+      if (needEnRequest) {
+        const enBody = buildLocaleBody(
           'en',
-        ),
-        submittedStarsValue,
-      )
-      const enPatchResult = await patchAdminCompendiumsCharacters(enBody as never)
-      const enPatchData = extractData(enPatchResult)
+          row,
+          enDetail,
+          row.draft.enName,
+          row.draft.enDescription,
+          row.draft.enAliasesText,
+          buildLocaleSkillsPayload(
+            row.enSkillsOriginal.length ? row.enSkillsOriginal : toArray(enDetail.skills).map(cloneAttribute),
+            row.draft.skills,
+            'en',
+          ),
+          submittedStarsValue,
+        )
+        const enPatchResult = await patchAdminCompendiumsCharacters(enBody as never)
+        enPatchData = extractData(enPatchResult)
+      }
 
       syncRowFromSnapshot(row, zhPatchData, enPatchData)
       row.editing = false
-      uni.showToast({ title: '保存成功', icon: 'success' })
+
+      const parts: string[] = []
+      if (needZhRequest) parts.push('中文')
+      if (needEnRequest) parts.push('English')
+      uni.showToast({ title: `保存成功（${parts.join(' + ')}）`, icon: 'success' })
     } catch (error) {
       const message = typeof error === 'string' ? error : '保存失败，请稍后重试'
       uni.showToast({ title: message, icon: 'none' })
@@ -1211,6 +1283,32 @@
     font-size: 26rpx;
   }
 
+  .locale-tabs {
+    display: flex;
+    gap: 0;
+    margin-top: 18rpx;
+    border-radius: 16rpx;
+    overflow: hidden;
+    border: 1rpx solid #e2e8f0;
+  }
+
+  .locale-tab {
+    flex: 1;
+    height: 64rpx;
+    line-height: 64rpx;
+    text-align: center;
+    font-size: 26rpx;
+    color: #64748b;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+
+  .locale-tab.active {
+    background: linear-gradient(135deg, #0f766e 0%, #38bdf8 100%);
+    color: #fff;
+    font-weight: 600;
+  }
+
   .locale-section,
   .skills-panel {
     margin-top: 18rpx;
@@ -1280,7 +1378,19 @@
   .action-row {
     margin-top: 20rpx;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12rpx;
+  }
+
+  .save-hint {
+    font-size: 22rpx;
+    color: #94a3b8;
+    align-self: flex-start;
+  }
+
+  .action-btns {
+    display: flex;
     gap: 16rpx;
   }
 
