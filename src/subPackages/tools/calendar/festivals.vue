@@ -1,79 +1,78 @@
 <template>
-  <view class="festivals-page">
-    <!-- 顶部导航栏 -->
-    <nav-bar always-title title="节日" custom-class="light" :custom-style="{ backgroundColor: '#C83C3C' }" />
-
-    <!-- 法定节假日 -->
-    <view class="section">
-      <view class="section-header" @click="toggleHolidays">
-        <view class="section-title">
-          <view class="icon holiday-icon">●</view>
-          <text>法定节假日</text>
-        </view>
-        <text class="arrow" :class="{ expanded: holidaysExpanded }">∨</text>
-      </view>
-      <view v-if="holidaysExpanded" class="section-content">
-        <view v-for="(item, index) in holidays" :key="index" class="festival-item" @click="goToDetail(item.date)">
-          <view class="festival-info">
-            <text class="festival-name">{{ item.name }}</text>
-            <text class="festival-date">{{ item.dateStr }}</text>
+  <PageLayout title="节日" nav-bg-color="#C83C3C" nav-title-color="#fff">
+    <view class="festivals-page">
+      <!-- 顶部导航栏 -->
+      <!-- 法定节假日 -->
+      <view class="section">
+        <view class="section-header" @click="toggleHolidays">
+          <view class="section-title">
+            <view class="icon holiday-icon">●</view>
+            <text>法定节假日</text>
           </view>
-          <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
-            {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
-          </text>
+          <text class="arrow" :class="{ expanded: holidaysExpanded }">∨</text>
+        </view>
+        <view v-if="holidaysExpanded" class="section-content">
+          <view v-for="(item, index) in holidays" :key="index" class="festival-item" @click="goToDetail(item.date)">
+            <view class="festival-info">
+              <text class="festival-name">{{ item.name }}</text>
+              <text class="festival-date">{{ item.dateStr }}</text>
+            </view>
+            <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
+              {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 二十四节气 -->
+      <view class="section">
+        <view class="section-header" @click="toggleSolarTerms">
+          <view class="section-title">
+            <view class="icon solar-icon">◐</view>
+            <text>二十四节气</text>
+          </view>
+          <text class="arrow" :class="{ expanded: solarTermsExpanded }">∨</text>
+        </view>
+        <view v-if="solarTermsExpanded" class="section-content">
+          <view v-for="(item, index) in solarTerms" :key="index" class="festival-item" @click="goToDetail(item.date)">
+            <view class="festival-info">
+              <text class="festival-name">{{ item.name }}</text>
+              <text class="festival-date">{{ item.dateStr }}</text>
+            </view>
+            <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
+              {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
+            </text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 热门节日 -->
+      <view class="section">
+        <view class="section-header" @click="togglePopular">
+          <view class="section-title">
+            <view class="icon popular-icon">★</view>
+            <text>热门节日</text>
+          </view>
+          <text class="arrow" :class="{ expanded: popularExpanded }">∨</text>
+        </view>
+        <view v-if="popularExpanded" class="section-content">
+          <view v-for="(item, index) in popularFestivals" :key="index" class="festival-item" @click="goToDetail(item.date)">
+            <view class="festival-info">
+              <text class="festival-name">{{ item.name }}</text>
+              <text class="festival-date">{{ item.dateStr }}</text>
+            </view>
+            <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
+              {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
+            </text>
+          </view>
         </view>
       </view>
     </view>
-
-    <!-- 二十四节气 -->
-    <view class="section">
-      <view class="section-header" @click="toggleSolarTerms">
-        <view class="section-title">
-          <view class="icon solar-icon">◐</view>
-          <text>二十四节气</text>
-        </view>
-        <text class="arrow" :class="{ expanded: solarTermsExpanded }">∨</text>
-      </view>
-      <view v-if="solarTermsExpanded" class="section-content">
-        <view v-for="(item, index) in solarTerms" :key="index" class="festival-item" @click="goToDetail(item.date)">
-          <view class="festival-info">
-            <text class="festival-name">{{ item.name }}</text>
-            <text class="festival-date">{{ item.dateStr }}</text>
-          </view>
-          <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
-            {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
-          </text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 热门节日 -->
-    <view class="section">
-      <view class="section-header" @click="togglePopular">
-        <view class="section-title">
-          <view class="icon popular-icon">★</view>
-          <text>热门节日</text>
-        </view>
-        <text class="arrow" :class="{ expanded: popularExpanded }">∨</text>
-      </view>
-      <view v-if="popularExpanded" class="section-content">
-        <view v-for="(item, index) in popularFestivals" :key="index" class="festival-item" @click="goToDetail(item.date)">
-          <view class="festival-info">
-            <text class="festival-name">{{ item.name }}</text>
-            <text class="festival-date">{{ item.dateStr }}</text>
-          </view>
-          <text class="festival-countdown" :class="{ today: item.daysLeft === 0 }">
-            {{ item.daysLeft === 0 ? '今天' : item.daysLeft === 1 ? '明天' : `${item.daysLeft}天后` }}
-          </text>
-        </view>
-      </view>
-    </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import NavBar from '@/components/nav-bar.vue'
   import { holidayList, solarTermList, popularFestivalList } from './holidays'
 
   const holidaysExpanded = ref(true)

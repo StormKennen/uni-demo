@@ -8,7 +8,6 @@
   import { onShow } from '@dcloudio/uni-app'
   import { useShare } from '@/utils/share'
   import H5TabBar from '@/components/h5-tab-bar.vue'
-  import ThemeRoot from '@/components/ThemeRoot.vue'
   import { useThemeStore } from '@/stores/theme'
 
   const themeStore = useThemeStore()
@@ -106,47 +105,48 @@
 </script>
 
 <template>
-  <ThemeRoot />
-  <view class="mine">
-    <view class="bg" />
-    <view class="mine-top" hover-class="none" hover-stop-propagation="false">
-      <uni-nav-bar backgroundColor="none" title="" statusBar :border="false"></uni-nav-bar>
-      <view class="mine-user" hover-class="none" hover-stop-propagation="false">
-        <view class="mine-user-avator" hover-class="none" hover-stop-propagation="false">
-          <image
-            :class="`${token && (userInfo?.avatarUrl || userInfo?.avatar) ? 'border avator-image' : 'avator-image'}`"
-            :src="avatar || defaultAvator"></image>
-        </view>
-        <view class="mine-user-name" @click="onLogin" hover-class="none" hover-stop-propagation="false">
-          <text class="user-name-text">{{ token ? userInfo?.nickname || userInfo?.name || 'kai用户' : '请登录' }}</text>
-          <image v-if="!token" class="user-name-right-arrow" :src="rightArrow" />
-        </view>
-      </view>
-    </view>
-    <view class="mine-list" hover-class="none" hover-stop-propagation="false">
-      <view v-for="item in displayList" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
-        <MineListItem :data="item" @click="handleItemClick(item)" />
-      </view>
-      <view class="mine-list-content mine-theme-row" hover-class="none" hover-stop-propagation="false">
-        <view class="mine-list-item" hover-class="none" hover-stop-propagation="false">
-          <view class="left" hover-class="none" hover-stop-propagation="false">
-            <image class="left-image" :src="themeIcon"> </image>
+  <PageLayout title="我的" :show-nav="false" :nav-back="false">
+    <view class="mine">
+      <view class="bg" />
+      <view class="mine-top" hover-class="none" hover-stop-propagation="false">
+        <uni-nav-bar backgroundColor="none" title="" statusBar :border="false"></uni-nav-bar>
+        <view class="mine-user" hover-class="none" hover-stop-propagation="false">
+          <view class="mine-user-avator" hover-class="none" hover-stop-propagation="false">
+            <image
+              :class="`${token && (userInfo?.avatarUrl || userInfo?.avatar) ? 'border avator-image' : 'avator-image'}`"
+              :src="avatar || defaultAvator"></image>
           </view>
-          <view class="center" hover-class="none" hover-stop-propagation="false">
-            <text class="center-text">夜间模式</text>
-          </view>
-          <view class="right theme-switch-wrap" hover-class="none" hover-stop-propagation="false">
-            <switch :checked="isDark" color="#0046b4" @change="handleThemeChange" />
+          <view class="mine-user-name" @click="onLogin" hover-class="none" hover-stop-propagation="false">
+            <text class="user-name-text">{{ token ? userInfo?.nickname || userInfo?.name || 'kai用户' : '请登录' }}</text>
+            <image v-if="!token" class="user-name-right-arrow" :src="rightArrow" />
           </view>
         </view>
       </view>
-    </view>
+      <view class="mine-list" hover-class="none" hover-stop-propagation="false">
+        <view v-for="item in displayList" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+          <MineListItem :data="item" @click="handleItemClick(item)" />
+        </view>
+        <view class="mine-list-content mine-theme-row" hover-class="none" hover-stop-propagation="false">
+          <view class="mine-list-item" hover-class="none" hover-stop-propagation="false">
+            <view class="left" hover-class="none" hover-stop-propagation="false">
+              <image class="left-image" :src="themeIcon"> </image>
+            </view>
+            <view class="center" hover-class="none" hover-stop-propagation="false">
+              <text class="center-text">夜间模式</text>
+            </view>
+            <view class="right theme-switch-wrap" hover-class="none" hover-stop-propagation="false">
+              <switch :checked="isDark" color="#0046b4" @change="handleThemeChange" />
+            </view>
+          </view>
+        </view>
+      </view>
 
-    <!-- H5 底部导航 -->
-    <!-- #ifdef H5 -->
-    <H5TabBar current="mine" />
-    <!-- #endif -->
-  </view>
+      <!-- H5 底部导航 -->
+      <!-- #ifdef H5 -->
+      <H5TabBar current="mine" />
+      <!-- #endif -->
+    </view>
+  </PageLayout>
 </template>
 
 <style lang="scss">

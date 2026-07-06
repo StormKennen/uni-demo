@@ -1,99 +1,100 @@
 <template>
-  <ThemeRoot />
-  <view class="home-page">
-    <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: '#667eea' }">
-      <template #title>
-        <view class="home-navbar-content">
-          <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
-          <text class="navbar-title-single">工具箱</text>
-        </view>
-      </template>
-    </NavBarBase>
-
-    <!-- 最近使用 -->
-    <view v-if="recentTools.length > 0" class="section">
-      <view class="section-header">
-        <text class="section-title">最近使用</text>
-        <text class="section-subtitle">RECENT</text>
-      </view>
-      <view class="recent-grid">
-        <view v-for="item in recentTools" :key="item.key" class="recent-item" @click="handleToolClick(item.key, item.tool)">
-          <view class="recent-icon" :style="{ background: item.tool.gradient }">
-            <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
+  <PageLayout title="工具箱" :show-nav="false" :nav-back="false">
+    <view class="home-page">
+      <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: '#667eea' }">
+        <template #title>
+          <view class="home-navbar-content">
+            <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
+            <text class="navbar-title-single">工具箱</text>
           </view>
-          <text class="recent-name">{{ item.tool.name }}</text>
-        </view>
-      </view>
-    </view>
+        </template>
+      </NavBarBase>
 
-    <!-- 全量分类 -->
-    <view v-for="cat in visibleCategories" :key="cat.key" class="section">
-      <view class="section-header fold-header" @click="toggleCategoryFold(cat.key)">
-        <view class="section-header-left">
-          <text class="section-title">{{ cat.name }}</text>
-          <text class="section-subtitle">{{ cat.subtitle }}</text>
+      <!-- 最近使用 -->
+      <view v-if="recentTools.length > 0" class="section">
+        <view class="section-header">
+          <text class="section-title">最近使用</text>
+          <text class="section-subtitle">RECENT</text>
         </view>
-        <view class="fold-arrow" :class="{ folded: isFolded(cat.key) }">
-          <uni-icons type="down" size="18" color="var(--theme-text-tertiary)" />
-        </view>
-      </view>
-
-      <view v-if="!isFolded(cat.key)" class="category-body">
-        <!-- 网格布局 -->
-        <view v-if="cat.layout === 'grid'" class="tools-grid">
-          <view
-            v-for="item in getToolsByCategory(cat.key)"
-            :key="item.key"
-            :class="['tool-card', { disabled: item.tool.disabled }]"
-            @click="handleToolClick(item.key, item.tool)">
-            <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
+        <view class="recent-grid">
+          <view v-for="item in recentTools" :key="item.key" class="recent-item" @click="handleToolClick(item.key, item.tool)">
+            <view class="recent-icon" :style="{ background: item.tool.gradient }">
               <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
             </view>
-            <text class="tool-name">{{ item.tool.name }}</text>
-            <text class="tool-desc">{{ item.tool.desc }}</text>
-            <view v-if="item.tool.isNew" class="new-dot" />
-            <view v-if="item.tool.badge" class="tool-badge">{{ item.tool.badge }}</view>
+            <text class="recent-name">{{ item.tool.name }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 全量分类 -->
+      <view v-for="cat in visibleCategories" :key="cat.key" class="section">
+        <view class="section-header fold-header" @click="toggleCategoryFold(cat.key)">
+          <view class="section-header-left">
+            <text class="section-title">{{ cat.name }}</text>
+            <text class="section-subtitle">{{ cat.subtitle }}</text>
+          </view>
+          <view class="fold-arrow" :class="{ folded: isFolded(cat.key) }">
+            <uni-icons type="down" size="18" color="var(--theme-text-tertiary)" />
           </view>
         </view>
 
-        <!-- 列表布局 -->
-        <view v-else class="tools-list">
-          <view
-            v-for="item in getToolsByCategory(cat.key)"
-            :key="item.key"
-            :class="['tool-list-item', { disabled: item.tool.disabled }]"
-            @click="handleToolClick(item.key, item.tool)">
-            <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
-              <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
-            </view>
-            <view class="tool-content">
+        <view v-if="!isFolded(cat.key)" class="category-body">
+          <!-- 网格布局 -->
+          <view v-if="cat.layout === 'grid'" class="tools-grid">
+            <view
+              v-for="item in getToolsByCategory(cat.key)"
+              :key="item.key"
+              :class="['tool-card', { disabled: item.tool.disabled }]"
+              @click="handleToolClick(item.key, item.tool)">
+              <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
+                <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
+              </view>
               <text class="tool-name">{{ item.tool.name }}</text>
               <text class="tool-desc">{{ item.tool.desc }}</text>
+              <view v-if="item.tool.isNew" class="new-dot" />
+              <view v-if="item.tool.badge" class="tool-badge">{{ item.tool.badge }}</view>
             </view>
-            <view class="tool-status">
-              <text v-if="item.tool.requiresAuth" class="login-badge">需登录</text>
-              <text v-else-if="item.tool.disabled" class="status-dev">开发中</text>
-              <uni-icons v-else type="right" size="16" color="var(--theme-text-tertiary)" />
+          </view>
+
+          <!-- 列表布局 -->
+          <view v-else class="tools-list">
+            <view
+              v-for="item in getToolsByCategory(cat.key)"
+              :key="item.key"
+              :class="['tool-list-item', { disabled: item.tool.disabled }]"
+              @click="handleToolClick(item.key, item.tool)">
+              <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
+                <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
+              </view>
+              <view class="tool-content">
+                <text class="tool-name">{{ item.tool.name }}</text>
+                <text class="tool-desc">{{ item.tool.desc }}</text>
+              </view>
+              <view class="tool-status">
+                <text v-if="item.tool.requiresAuth" class="login-badge">需登录</text>
+                <text v-else-if="item.tool.disabled" class="status-dev">开发中</text>
+                <uni-icons v-else type="right" size="16" color="var(--theme-text-tertiary)" />
+              </view>
             </view>
           </view>
         </view>
       </view>
+
+      <!-- 底部 -->
+      <view class="footer">
+        <text class="footer-note">数据本地处理 · 保护您的隐私安全</text>
+        <text class="icp-text">粤ICP备2025489016号-2</text>
+      </view>
+
+      <!-- #ifdef H5 -->
+      <H5TabBar current="index" />
+      <!-- #endif -->
+
+      <!-- #ifdef MP-WEIXIN -->
+      <PrivacyPopup />
+      <!-- #endif -->
     </view>
-
-    <!-- 底部 -->
-    <view class="footer">
-      <text class="footer-note">数据本地处理 · 保护您的隐私安全</text>
-      <text class="icp-text">粤ICP备2025489016号-2</text>
-    </view>
-
-    <!-- #ifdef H5 -->
-    <H5TabBar current="index" />
-    <!-- #endif -->
-
-    <!-- #ifdef MP-WEIXIN -->
-    <PrivacyPopup />
-    <!-- #endif -->
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -105,7 +106,6 @@
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import PrivacyPopup from '@/components/privacy-popup.vue'
-  import ThemeRoot from '@/components/ThemeRoot.vue'
   import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_RECENT, STORAGE_KEY_FOLD_STATUS } from '@/config/tools'
   import type { ToolItem } from '@/config/tools'
 

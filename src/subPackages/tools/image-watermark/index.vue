@@ -1,253 +1,248 @@
 <template>
-  <view class="watermark-page">
-    <NavBar
-      always-title
-      title="图片加水印"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }" />
+  <PageLayout title="图片加水印" nav-gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
+    <view class="watermark-page">
+      <PlatformRestrictionNotice
+        v-if="isWeixinRestricted"
+        description="根据微信小程序平台运营规范，当前平台暂不提供图片加水印功能，请前往 H5 使用。"
+        action-text="返回首页"
+        @action="goHome" />
 
-    <PlatformRestrictionNotice
-      v-if="isWeixinRestricted"
-      description="根据微信小程序平台运营规范，当前平台暂不提供图片加水印功能，请前往 H5 使用。"
-      action-text="返回首页"
-      @action="goHome" />
+      <view v-else class="main-content">
+        <view class="card upload-card">
+          <view v-if="!baseImage.src" class="upload-area" @click="selectBaseImage">
+            <uni-icons type="image" size="52" color="#96a0b5" />
+            <text class="upload-title">点击选择图片</text>
+            <text class="upload-desc">支持 JPG、PNG、WEBP 等格式</text>
+            <text class="upload-hint">建议使用高清原图，便于输出清晰水印</text>
+          </view>
 
-    <view v-else class="main-content">
-      <view class="card upload-card">
-        <view v-if="!baseImage.src" class="upload-area" @click="selectBaseImage">
-          <uni-icons type="image" size="52" color="#96a0b5" />
-          <text class="upload-title">点击选择图片</text>
-          <text class="upload-desc">支持 JPG、PNG、WEBP 等格式</text>
-          <text class="upload-hint">建议使用高清原图，便于输出清晰水印</text>
-        </view>
-
-        <view v-else class="preview-area">
-          <view class="preview-header">
-            <text class="preview-title">预览</text>
-            <view class="preview-meta">
-              <text>{{ baseImage.width }} × {{ baseImage.height }}</text>
-              <text class="divider">|</text>
-              <text>{{ formatFileSize(baseImage.size) }}</text>
+          <view v-else class="preview-area">
+            <view class="preview-header">
+              <text class="preview-title">预览</text>
+              <view class="preview-meta">
+                <text>{{ baseImage.width }} × {{ baseImage.height }}</text>
+                <text class="divider">|</text>
+                <text>{{ formatFileSize(baseImage.size) }}</text>
+              </view>
             </view>
-          </view>
-          <view class="preview-canvas">
-            <image class="base-image" :src="baseImage.previewSrc" mode="widthFix" />
-            <view v-if="watermarkMode === 'text' && textWatermark.content" class="watermark-overlay" :style="textOverlayStyle">
-              <text :style="textPreviewStyle">{{ textWatermark.content }}</text>
+            <view class="preview-canvas">
+              <image class="base-image" :src="baseImage.previewSrc" mode="widthFix" />
+              <view v-if="watermarkMode === 'text' && textWatermark.content" class="watermark-overlay" :style="textOverlayStyle">
+                <text :style="textPreviewStyle">{{ textWatermark.content }}</text>
+              </view>
+              <view v-else-if="watermarkMode === 'image' && imageWatermark.previewSrc" class="watermark-overlay" :style="imageOverlayStyle">
+                <image :src="imageWatermark.previewSrc" :style="imagePreviewStyle" mode="widthFix" />
+              </view>
             </view>
-            <view v-else-if="watermarkMode === 'image' && imageWatermark.previewSrc" class="watermark-overlay" :style="imageOverlayStyle">
-              <image :src="imageWatermark.previewSrc" :style="imagePreviewStyle" mode="widthFix" />
-            </view>
-          </view>
-          <view class="preview-actions">
-            <button class="ghost-btn" @click="selectBaseImage">重新选择</button>
-            <button class="ghost-btn" @click="resetAll">清空设置</button>
-          </view>
-        </view>
-      </view>
-
-      <view class="mode-switch" v-if="baseImage.src">
-        <view class="mode-item" :class="{ active: watermarkMode === 'text' }" @click="setWatermarkMode('text')">文字水印</view>
-        <view class="mode-item" :class="{ active: watermarkMode === 'image' }" @click="setWatermarkMode('image')">图片水印</view>
-      </view>
-
-      <view class="card control-card" v-if="baseImage.src && watermarkMode === 'text'">
-        <view class="control-group">
-          <text class="control-label">水印内容</text>
-          <textarea
-            v-model.trim="textWatermark.content"
-            class="text-input"
-            :maxlength="50"
-            placeholder="输入水印文字，比如：版权所属·凉白开工具箱" />
-        </view>
-
-        <view class="control-grid">
-          <view class="control-group">
-            <text class="control-label">字体大小 {{ textWatermark.fontSize }}px</text>
-            <slider
-              :value="textWatermark.fontSize"
-              :min="16"
-              :max="120"
-              :step="2"
-              @change="e => (textWatermark.fontSize = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-          <view class="control-group">
-            <text class="control-label">字体粗细 {{ textWatermark.fontWeight }}</text>
-            <slider
-              :value="textWatermark.fontWeight"
-              :min="300"
-              :max="900"
-              :step="100"
-              @change="e => (textWatermark.fontWeight = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-        </view>
-
-        <view class="control-grid">
-          <view class="control-group">
-            <text class="control-label">透明度 {{ Math.round(textWatermark.opacity * 100) }}%</text>
-            <slider
-              :value="textWatermark.opacity"
-              :min="0.1"
-              :max="1"
-              :step="0.05"
-              @change="e => (textWatermark.opacity = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-          <view class="control-group">
-            <text class="control-label">旋转角度 {{ textWatermark.rotation }}°</text>
-            <slider
-              :value="textWatermark.rotation"
-              :min="-90"
-              :max="90"
-              :step="1"
-              @change="e => (textWatermark.rotation = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-        </view>
-
-        <view class="control-grid">
-          <view class="control-group">
-            <text class="control-label">水平位置 {{ textWatermark.offsetX }}%</text>
-            <slider
-              :value="textWatermark.offsetX"
-              :min="0"
-              :max="100"
-              :step="1"
-              @change="e => (textWatermark.offsetX = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-          <view class="control-group">
-            <text class="control-label">垂直位置 {{ textWatermark.offsetY }}%</text>
-            <slider
-              :value="textWatermark.offsetY"
-              :min="0"
-              :max="100"
-              :step="1"
-              @change="e => (textWatermark.offsetY = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
-          </view>
-        </view>
-
-        <view class="control-group">
-          <text class="control-label">颜色</text>
-          <view class="color-palette">
-            <view
-              v-for="item in colorPresets"
-              :key="item"
-              class="color-swatch"
-              :class="{ active: textWatermark.color === item }"
-              :style="{ backgroundColor: item }"
-              @click="() => (textWatermark.color = item)" />
-            <input class="color-input" v-model.trim="textWatermark.color" :maxlength="9" />
-          </view>
-        </view>
-      </view>
-
-      <view class="card control-card" v-if="baseImage.src && watermarkMode === 'image'">
-        <view class="control-group">
-          <text class="control-label">内置贴纸</text>
-          <view class="sticker-grid">
-            <view
-              v-for="item in builtinStickers"
-              :key="item.src"
-              class="sticker-item"
-              :class="{ active: imageWatermark.source === item.src }"
-              @click="selectBuiltinSticker(item)">
-              <image :src="item.src" mode="aspectFit" />
-              <text>{{ item.name }}</text>
-            </view>
-            <view class="sticker-item upload" @click="selectWatermarkImage">
-              <uni-icons type="plus" size="22" color="#4facfe" />
-              <text>导入图片</text>
+            <view class="preview-actions">
+              <button class="ghost-btn" @click="selectBaseImage">重新选择</button>
+              <button class="ghost-btn" @click="resetAll">清空设置</button>
             </view>
           </view>
         </view>
 
-        <view v-if="imageWatermark.previewSrc" class="control-grid">
+        <view class="mode-switch" v-if="baseImage.src">
+          <view class="mode-item" :class="{ active: watermarkMode === 'text' }" @click="setWatermarkMode('text')">文字水印</view>
+          <view class="mode-item" :class="{ active: watermarkMode === 'image' }" @click="setWatermarkMode('image')">图片水印</view>
+        </view>
+
+        <view class="card control-card" v-if="baseImage.src && watermarkMode === 'text'">
           <view class="control-group">
-            <text class="control-label">尺寸 {{ imageWatermark.scale }}%</text>
-            <slider
-              :value="imageWatermark.scale"
-              :min="5"
-              :max="60"
-              :step="1"
-              @change="e => (imageWatermark.scale = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
+            <text class="control-label">水印内容</text>
+            <textarea
+              v-model.trim="textWatermark.content"
+              class="text-input"
+              :maxlength="50"
+              placeholder="输入水印文字，比如：版权所属·凉白开工具箱" />
           </view>
+
+          <view class="control-grid">
+            <view class="control-group">
+              <text class="control-label">字体大小 {{ textWatermark.fontSize }}px</text>
+              <slider
+                :value="textWatermark.fontSize"
+                :min="16"
+                :max="120"
+                :step="2"
+                @change="e => (textWatermark.fontSize = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+            <view class="control-group">
+              <text class="control-label">字体粗细 {{ textWatermark.fontWeight }}</text>
+              <slider
+                :value="textWatermark.fontWeight"
+                :min="300"
+                :max="900"
+                :step="100"
+                @change="e => (textWatermark.fontWeight = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+          </view>
+
+          <view class="control-grid">
+            <view class="control-group">
+              <text class="control-label">透明度 {{ Math.round(textWatermark.opacity * 100) }}%</text>
+              <slider
+                :value="textWatermark.opacity"
+                :min="0.1"
+                :max="1"
+                :step="0.05"
+                @change="e => (textWatermark.opacity = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+            <view class="control-group">
+              <text class="control-label">旋转角度 {{ textWatermark.rotation }}°</text>
+              <slider
+                :value="textWatermark.rotation"
+                :min="-90"
+                :max="90"
+                :step="1"
+                @change="e => (textWatermark.rotation = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+          </view>
+
+          <view class="control-grid">
+            <view class="control-group">
+              <text class="control-label">水平位置 {{ textWatermark.offsetX }}%</text>
+              <slider
+                :value="textWatermark.offsetX"
+                :min="0"
+                :max="100"
+                :step="1"
+                @change="e => (textWatermark.offsetX = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+            <view class="control-group">
+              <text class="control-label">垂直位置 {{ textWatermark.offsetY }}%</text>
+              <slider
+                :value="textWatermark.offsetY"
+                :min="0"
+                :max="100"
+                :step="1"
+                @change="e => (textWatermark.offsetY = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+          </view>
+
           <view class="control-group">
-            <text class="control-label">透明度 {{ Math.round(imageWatermark.opacity * 100) }}%</text>
-            <slider
-              :value="imageWatermark.opacity"
-              :min="0.1"
-              :max="1"
-              :step="0.05"
-              @change="e => (imageWatermark.opacity = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
+            <text class="control-label">颜色</text>
+            <view class="color-palette">
+              <view
+                v-for="item in colorPresets"
+                :key="item"
+                class="color-swatch"
+                :class="{ active: textWatermark.color === item }"
+                :style="{ backgroundColor: item }"
+                @click="() => (textWatermark.color = item)" />
+              <input class="color-input" v-model.trim="textWatermark.color" :maxlength="9" />
+            </view>
           </view>
         </view>
 
-        <view v-if="imageWatermark.previewSrc" class="control-grid">
+        <view class="card control-card" v-if="baseImage.src && watermarkMode === 'image'">
           <view class="control-group">
-            <text class="control-label">水平位置 {{ imageWatermark.offsetX }}%</text>
-            <slider
-              :value="imageWatermark.offsetX"
-              :min="0"
-              :max="100"
-              :step="1"
-              @change="e => (imageWatermark.offsetX = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
+            <text class="control-label">内置贴纸</text>
+            <view class="sticker-grid">
+              <view
+                v-for="item in builtinStickers"
+                :key="item.src"
+                class="sticker-item"
+                :class="{ active: imageWatermark.source === item.src }"
+                @click="selectBuiltinSticker(item)">
+                <image :src="item.src" mode="aspectFit" />
+                <text>{{ item.name }}</text>
+              </view>
+              <view class="sticker-item upload" @click="selectWatermarkImage">
+                <uni-icons type="plus" size="22" color="#4facfe" />
+                <text>导入图片</text>
+              </view>
+            </view>
           </view>
-          <view class="control-group">
-            <text class="control-label">垂直位置 {{ imageWatermark.offsetY }}%</text>
-            <slider
-              :value="imageWatermark.offsetY"
-              :min="0"
-              :max="100"
-              :step="1"
-              @change="e => (imageWatermark.offsetY = Number(e.detail.value))"
-              activeColor="#4facfe"
-              backgroundColor="#e5e7eb" />
+
+          <view v-if="imageWatermark.previewSrc" class="control-grid">
+            <view class="control-group">
+              <text class="control-label">尺寸 {{ imageWatermark.scale }}%</text>
+              <slider
+                :value="imageWatermark.scale"
+                :min="5"
+                :max="60"
+                :step="1"
+                @change="e => (imageWatermark.scale = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+            <view class="control-group">
+              <text class="control-label">透明度 {{ Math.round(imageWatermark.opacity * 100) }}%</text>
+              <slider
+                :value="imageWatermark.opacity"
+                :min="0.1"
+                :max="1"
+                :step="0.05"
+                @change="e => (imageWatermark.opacity = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
           </view>
+
+          <view v-if="imageWatermark.previewSrc" class="control-grid">
+            <view class="control-group">
+              <text class="control-label">水平位置 {{ imageWatermark.offsetX }}%</text>
+              <slider
+                :value="imageWatermark.offsetX"
+                :min="0"
+                :max="100"
+                :step="1"
+                @change="e => (imageWatermark.offsetX = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+            <view class="control-group">
+              <text class="control-label">垂直位置 {{ imageWatermark.offsetY }}%</text>
+              <slider
+                :value="imageWatermark.offsetY"
+                :min="0"
+                :max="100"
+                :step="1"
+                @change="e => (imageWatermark.offsetY = Number(e.detail.value))"
+                activeColor="#4facfe"
+                backgroundColor="#e5e7eb" />
+            </view>
+          </view>
+        </view>
+
+        <view class="card action-card" v-if="baseImage.src">
+          <button class="primary-btn" :loading="isGenerating" @click="generateWatermark">生成水印图片</button>
+          <button class="ghost-btn" v-if="generatedImage" @click="saveResult">保存/下载图片</button>
+        </view>
+
+        <view class="card result-card" v-if="generatedImage">
+          <view class="result-header">
+            <text class="result-title">导出结果</text>
+            <text class="result-desc">长按保存或继续调整</text>
+          </view>
+          <image class="result-image" :src="generatedImage" mode="widthFix" show-menu-by-longpress />
         </view>
       </view>
 
-      <view class="card action-card" v-if="baseImage.src">
-        <button class="primary-btn" :loading="isGenerating" @click="generateWatermark">生成水印图片</button>
-        <button class="ghost-btn" v-if="generatedImage" @click="saveResult">保存/下载图片</button>
-      </view>
-
-      <view class="card result-card" v-if="generatedImage">
-        <view class="result-header">
-          <text class="result-title">导出结果</text>
-          <text class="result-desc">长按保存或继续调整</text>
-        </view>
-        <image class="result-image" :src="generatedImage" mode="widthFix" show-menu-by-longpress />
-      </view>
+      <canvas
+        canvas-id="watermarkCanvas"
+        id="watermarkCanvas"
+        class="hidden-canvas"
+        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+        :width="canvasWidth"
+        :height="canvasHeight"></canvas>
     </view>
-
-    <canvas
-      canvas-id="watermarkCanvas"
-      id="watermarkCanvas"
-      class="hidden-canvas"
-      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
-      :width="canvasWidth"
-      :height="canvasHeight"></canvas>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import NavBar from '@/components/nav-bar.vue'
   import { ref, reactive, computed, getCurrentInstance } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'

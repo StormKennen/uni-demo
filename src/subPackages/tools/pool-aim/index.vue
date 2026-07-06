@@ -1,149 +1,150 @@
 <template>
-  <view class="pool-page">
-    <!-- <view class="hero">
+  <PageLayout title="台球瞄准器">
+    <view class="pool-page">
+      <!-- <view class="hero">
       <text class="hero-title">台球瞄准器</text>
       <text class="hero-subtitle">点球桌放置白球和黑球</text>
     </view> -->
 
-    <view class="panel sight-panel">
-      <view class="section-heading">
-        <text class="section-title">击球点</text>
-        <!-- <text class="section-tip">从白球看向黑球，球心保持同高</text> -->
-      </view>
-      <view class="sight-canvas-shell">
-        <canvas id="poolSightCanvas" canvas-id="poolSightCanvas" type="2d" class="sight-canvas" />
-      </view>
-      <view class="sight-legend">
-        <view class="legend-item">
-          <view class="legend-ball cue-legend" />
-          <text>白球瞄准位置</text>
+      <view class="panel sight-panel">
+        <view class="section-heading">
+          <text class="section-title">击球点</text>
+          <!-- <text class="section-tip">从白球看向黑球，球心保持同高</text> -->
         </view>
-        <view class="legend-item">
-          <view class="legend-ball target-legend" />
-          <text>黑球</text>
+        <view class="sight-canvas-shell">
+          <canvas id="poolSightCanvas" canvas-id="poolSightCanvas" type="2d" class="sight-canvas" />
         </view>
-      </view>
-      <view class="sight-message">
-        <text class="sight-scene">{{ sightDescription.scene }}</text>
-        <text class="sight-detail">{{ sightDescription.detail }}</text>
-      </view>
-    </view>
-
-    <view class="table-card">
-      <view class="section-heading table-heading">
-        <text class="section-title">台球桌</text>
-        <view class="title-switch">
-          <view class="title-switch-item" :class="{ active: state.activeBall === 'cue' }" @click="setActiveBall('cue')">
-            <view class="title-switch-dot cue-dot" />
-            <text>白球</text>
+        <view class="sight-legend">
+          <view class="legend-item">
+            <view class="legend-ball cue-legend" />
+            <text>白球瞄准位置</text>
           </view>
-          <view class="title-switch-item" :class="{ active: state.activeBall === 'target' }" @click="setActiveBall('target')">
-            <view class="title-switch-dot target-dot" />
+          <view class="legend-item">
+            <view class="legend-ball target-legend" />
             <text>黑球</text>
           </view>
         </view>
-        <text class="section-tip">点击球桌放球，洞口选袋口</text>
+        <view class="sight-message">
+          <text class="sight-scene">{{ sightDescription.scene }}</text>
+          <text class="sight-detail">{{ sightDescription.detail }}</text>
+        </view>
       </view>
-      <view class="canvas-shell">
-        <canvas id="poolAimCanvas" canvas-id="poolAimCanvas" type="2d" class="pool-canvas" @tap="handleCanvasTap" />
-      </view>
-      <!-- <view class="table-hint">
+
+      <view class="table-card">
+        <view class="section-heading table-heading">
+          <text class="section-title">台球桌</text>
+          <view class="title-switch">
+            <view class="title-switch-item" :class="{ active: state.activeBall === 'cue' }" @click="setActiveBall('cue')">
+              <view class="title-switch-dot cue-dot" />
+              <text>白球</text>
+            </view>
+            <view class="title-switch-item" :class="{ active: state.activeBall === 'target' }" @click="setActiveBall('target')">
+              <view class="title-switch-dot target-dot" />
+              <text>黑球</text>
+            </view>
+          </view>
+          <text class="section-tip">点击球桌放球，洞口选袋口</text>
+        </view>
+        <view class="canvas-shell">
+          <canvas id="poolAimCanvas" canvas-id="poolAimCanvas" type="2d" class="pool-canvas" @tap="handleCanvasTap" />
+        </view>
+        <!-- <view class="table-hint">
         <text>{{ placementHint }}</text>
       </view>
       <view class="coordinate-readout">
         <text>白球：{{ formatBallCoordinate(state.cueBall) }}</text>
         <text>黑球：{{ formatBallCoordinate(state.targetBall) }}</text>
       </view> -->
-      <!-- <view class="bank-scale-note">两侧数字为新中式翻袋参考刻度，不参与球坐标和路线计算</view> -->
-      <!-- <view class="pocket-hint">
+        <!-- <view class="bank-scale-note">两侧数字为新中式翻袋参考刻度，不参与球坐标和路线计算</view> -->
+        <!-- <view class="pocket-hint">
         <text>目标袋口：{{ selectedPocket.name }}</text>
         <text class="pocket-mode">{{ state.pocketSelectionMode === 'auto' ? '自动推荐' : '手动选择' }}</text>
         <text class="pocket-action">点袋口切换</text>
       </view> -->
-    </view>
+      </view>
 
-    <view class="panel coordinate-panel">
-      <view class="section-heading">
-        <text class="section-title">位置调整</text>
-        <!-- <text class="section-tip">每次 0.05，约 12.7mm</text> -->
-      </view>
-      <view class="selector-brief">
-        <text class="selector-label">当前放置</text>
-        <text class="selector-value">{{ activeBallName }}</text>
-      </view>
-      <view class="ball-control-list">
-        <view
-          v-for="ball in BALL_CONTROL_OPTIONS"
-          :key="ball.value"
-          class="ball-control-card"
-          :class="{ active: state.activeBall === ball.value }">
-          <view class="ball-control-heading">
-            <view class="ball-control-name">
-              <view class="ball-dot" :class="ball.value === 'cue' ? 'cue-dot' : 'target-dot'" />
-              <text>{{ ball.label }}</text>
+      <view class="panel coordinate-panel">
+        <view class="section-heading">
+          <text class="section-title">位置调整</text>
+          <!-- <text class="section-tip">每次 0.05，约 12.7mm</text> -->
+        </view>
+        <view class="selector-brief">
+          <text class="selector-label">当前放置</text>
+          <text class="selector-value">{{ activeBallName }}</text>
+        </view>
+        <view class="ball-control-list">
+          <view
+            v-for="ball in BALL_CONTROL_OPTIONS"
+            :key="ball.value"
+            class="ball-control-card"
+            :class="{ active: state.activeBall === ball.value }">
+            <view class="ball-control-heading">
+              <view class="ball-control-name">
+                <view class="ball-dot" :class="ball.value === 'cue' ? 'cue-dot' : 'target-dot'" />
+                <text>{{ ball.label }}</text>
+              </view>
+              <text>{{ formatBallCoordinate(state[ball.stateKey]) }}</text>
             </view>
-            <text>{{ formatBallCoordinate(state[ball.stateKey]) }}</text>
-          </view>
-          <view class="axis-control">
-            <text class="axis-name">横向</text>
-            <view class="axis-actions">
-              <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'x', -1)">−</button>
-              <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'x') }}</text>
-              <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'x', 1)">+</button>
+            <view class="axis-control">
+              <text class="axis-name">横向</text>
+              <view class="axis-actions">
+                <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'x', -1)">−</button>
+                <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'x') }}</text>
+                <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'x', 1)">+</button>
+              </view>
             </view>
-          </view>
-          <view class="axis-control">
-            <text class="axis-name">纵向</text>
-            <view class="axis-actions">
-              <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'y', -1)">−</button>
-              <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'y') }}</text>
-              <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'y', 1)">+</button>
+            <view class="axis-control">
+              <text class="axis-name">纵向</text>
+              <view class="axis-actions">
+                <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'y', -1)">−</button>
+                <text class="axis-value">{{ formatAxisValue(state[ball.stateKey], 'y') }}</text>
+                <button class="coordinate-button" @click.stop="adjustBallCoordinate(ball.value, 'y', 1)">+</button>
+              </view>
             </view>
           </view>
         </view>
-      </view>
-      <!-- <view class="grid-note">
+        <!-- <view class="grid-note">
         <text>点击吸附：0.1（25.4mm）</text>
         <text>按钮微调：0.05（12.7mm）</text>
       </view> -->
-    </view>
-
-    <view class="panel">
-      <view class="section-heading">
-        <text class="section-title">路线模式</text>
-        <!-- <text class="section-tip">反弹路线使用镜像法计算</text> -->
       </view>
-      <view class="route-tabs">
-        <view
-          v-for="tab in ROUTE_TABS"
-          :key="tab.key"
-          class="route-tab"
-          :class="{ active: activeRouteTab === tab.key }"
-          @click="setRouteTab(tab.key)">
-          {{ tab.label }}
+
+      <view class="panel">
+        <view class="section-heading">
+          <text class="section-title">路线模式</text>
+          <!-- <text class="section-tip">反弹路线使用镜像法计算</text> -->
+        </view>
+        <view class="route-tabs">
+          <view
+            v-for="tab in ROUTE_TABS"
+            :key="tab.key"
+            class="route-tab"
+            :class="{ active: activeRouteTab === tab.key }"
+            @click="setRouteTab(tab.key)">
+            {{ tab.label }}
+          </view>
+        </view>
+        <view class="option-grid route-grid cushion-grid" :class="{ disabled: isCushionDisabled }">
+          <view
+            v-for="option in CUSHION_OPTIONS"
+            :key="option.value"
+            class="option-button"
+            :class="{ active: !isCushionDisabled && activeCushion === option.value, disabled: isCushionDisabled }"
+            @click="setRouteCushion(option.value)">
+            {{ option.label }}
+          </view>
         </view>
       </view>
-      <view class="option-grid route-grid cushion-grid" :class="{ disabled: isCushionDisabled }">
-        <view
-          v-for="option in CUSHION_OPTIONS"
-          :key="option.value"
-          class="option-button"
-          :class="{ active: !isCushionDisabled && activeCushion === option.value, disabled: isCushionDisabled }"
-          @click="setRouteCushion(option.value)">
-          {{ option.label }}
-        </view>
+
+      <view class="share-entry" v-if="!isH5">
+        <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「台球瞄准器」工具</text>
+        <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
       </view>
-    </view>
+      <view class="share-entry" v-else>
+        <button class="share-btn" @click="handleShare">复制分享链接</button>
+      </view>
 
-    <view class="share-entry" v-if="!isH5">
-      <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「台球瞄准器」工具</text>
-      <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
-    </view>
-    <view class="share-entry" v-else>
-      <button class="share-btn" @click="handleShare">复制分享链接</button>
-    </view>
-
-    <!-- <view class="panel status-panel">
+      <!-- <view class="panel status-panel">
       <view class="section-heading">
         <text class="section-title">路线状态</text>
         <text class="status-chip" :class="state.routeValid ? 'valid' : 'invalid'">
@@ -168,7 +169,8 @@
         {{ state.routeMessage || '路线已计算，可参考球桌上的辅助线。' }}
       </view>
     </view> -->
-  </view>
+    </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

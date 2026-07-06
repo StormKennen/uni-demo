@@ -1,58 +1,57 @@
 <script setup lang="ts">
-import { onPageScroll } from '@dcloudio/uni-app';
-import { defineProps, ref } from 'vue';
-import NavBarBase from '@/components/nav-bar-base.vue';
+  import { onPageScroll } from '@dcloudio/uni-app'
+  import { defineProps, ref } from 'vue'
+  import NavBarBase from '@/components/nav-bar-base.vue'
 
-interface Props {
-  initBgColor?: string
-  bgColor?: string;
+  interface Props {
+    initBgColor?: string
+    bgColor?: string
 
-  title?: string
-  alwaysTitle?: boolean
+    title?: string
+    alwaysTitle?: boolean
 
-  customStyle?: Record<string, any>
-  customClass?: string
-  titleColor?: string
-  navBack?: boolean
-  onBack?: ()=>void
-  customGoBack?: boolean
-  beforeBack?: () => boolean | Promise<boolean>
-}
+    customStyle?: Record<string, any>
+    customClass?: string
+    titleColor?: string
+    navBack?: boolean
+    onBack?: () => void
+    customGoBack?: boolean
+    beforeBack?: () => boolean | Promise<boolean>
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  initBgColor: 'transparent',
-  bgColor: 'white',
-  navBack: true,
-  alwaysTitle: false,
-  customGoBack: false,
-})
+  const props = withDefaults(defineProps<Props>(), {
+    initBgColor: 'transparent',
+    bgColor: 'var(--theme-surface)',
+    navBack: true,
+    alwaysTitle: false,
+    customGoBack: false,
+  })
 
-const emit = defineEmits<{
-  back: []
-}>();
+  const emit = defineEmits<{
+    back: []
+  }>()
 
-const navBgColor = ref(props.initBgColor)
-const navTitle = ref(props.alwaysTitle ? props.title : '')
+  const navBgColor = ref(props.initBgColor)
+  const navTitle = ref(props.alwaysTitle ? props.title : '')
 
-const onBack = () => {
-  uni.navigateBack()
-  props?.onBack()
-}
-onPageScroll((event: any) => {
-  const scrollTop = event.scrollTop; // 获取滚动距离
-  if (scrollTop > 10) {
-    navBgColor.value = props.bgColor
-    navTitle.value = props.title
-  } else {
-    navBgColor.value = props.initBgColor
-    if (props.alwaysTitle) {
+  const onBack = () => {
+    uni.navigateBack()
+    props?.onBack()
+  }
+  onPageScroll((event: any) => {
+    const scrollTop = event.scrollTop // 获取滚动距离
+    if (scrollTop > 10) {
+      navBgColor.value = props.bgColor
       navTitle.value = props.title
     } else {
-      navTitle.value = undefined
+      navBgColor.value = props.initBgColor
+      if (props.alwaysTitle) {
+        navTitle.value = props.title
+      } else {
+        navTitle.value = undefined
+      }
     }
-  }
-})
-
+  })
 </script>
 
 <template>
@@ -65,13 +64,12 @@ onPageScroll((event: any) => {
     :custom-go-back="props.customGoBack"
     :before-back="props.beforeBack"
     :title-color="props.titleColor"
-    @back="emit('back')"
-  >
+    @back="emit('back')">
     <template #title>
-      <slot name="title" >{{ navTitle }}</slot>
+      <slot name="title">{{ navTitle }}</slot>
     </template>
     <template #right>
-      <slot name="right" ></slot>
+      <slot name="right"></slot>
     </template>
   </NavBarBase>
 </template>

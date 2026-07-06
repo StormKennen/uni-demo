@@ -56,5 +56,6 @@ const getTokens = (mode: ThemeMode): ThemeTokens => (mode === 'dark' ? DARK_TOKE
 
 export const buildPageStyleVars = (mode: ThemeMode): string => {
   const tokens = getTokens(mode)
-  return TOKEN_ORDER.map(key => `${key}:${tokens[key]}`).join(';')
+  const vars = TOKEN_ORDER.map(key => `${key}:${tokens[key]}`).join(';')
+  return `${vars};background-color:${tokens['--theme-bg']}`
 }

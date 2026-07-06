@@ -1,102 +1,104 @@
 <template>
-  <view class="lineup-edit-page">
-    <view class="hero-card">
-      <text class="hero-title">{{ isEditMode ? form.name || '编辑阵容' : '创建新阵容' }}</text>
-      <text class="hero-subtitle">可自由增删成员，提交时会保留你当前的成员顺序。</text>
-    </view>
+  <PageLayout title="编辑阵容">
+    <view class="lineup-edit-page">
+      <view class="hero-card">
+        <text class="hero-title">{{ isEditMode ? form.name || '编辑阵容' : '创建新阵容' }}</text>
+        <text class="hero-subtitle">可自由增删成员，提交时会保留你当前的成员顺序。</text>
+      </view>
 
-    <StateBlock v-if="loading" class="state-block" text="加载数据中..." />
+      <StateBlock v-if="loading" class="state-block" text="加载数据中..." />
 
-    <StateBlock
-      v-else-if="errorMessage"
-      class="state-block"
-      :text="errorMessage"
-      action-text="重新加载"
-      theme="violet"
-      @action="loadInitialData" />
+      <StateBlock
+        v-else-if="errorMessage"
+        class="state-block"
+        :text="errorMessage"
+        action-text="重新加载"
+        theme="violet"
+        @action="loadInitialData" />
 
-    <view v-else class="content">
-      <view class="section-card">
-        <text class="section-title">基础信息</text>
+      <view v-else class="content">
+        <view class="section-card">
+          <text class="section-title">基础信息</text>
 
-        <view class="field">
-          <text class="field-label">阵容名称</text>
-          <input v-model="form.name" class="field-input" placeholder="请输入阵容名称" maxlength="120" />
+          <view class="field">
+            <text class="field-label">阵容名称</text>
+            <input v-model="form.name" class="field-input" placeholder="请输入阵容名称" maxlength="120" />
+          </view>
+
+          <view class="field">
+            <text class="field-label">阵容类型</text>
+            <input v-model="form.type" class="field-input" placeholder="请输入阵容类型，如竞技场防守" maxlength="60" />
+            <view class="preset-head">
+              <text class="preset-title">快速填写</text>
+              <text class="preset-tip">点选后仍可继续手动修改</text>
+            </view>
+            <view class="chip-row preset-chip-row">
+              <text
+                v-for="option in LINEUP_TYPE_PRESET_OPTIONS"
+                :key="option.value"
+                class="chip"
+                :class="{ active: form.type === option.value }"
+                @click="form.type = option.value">
+                {{ option.label }}
+              </text>
+            </view>
+          </view>
+
+          <view class="field">
+            <text class="field-label">状态</text>
+            <view class="chip-row">
+              <text
+                v-for="option in LINEUP_STATUS_OPTIONS"
+                :key="option.value"
+                class="chip"
+                :class="{ active: form.status === option.value }"
+                @click="form.status = option.value">
+                {{ option.label }}
+              </text>
+            </view>
+          </view>
+
+          <view class="field">
+            <text class="field-label">阵容描述</text>
+            <textarea v-model="form.description" class="field-textarea" maxlength="1000" placeholder="请输入阵容思路、适用场景或关键打法" />
+          </view>
         </view>
 
-        <view class="field">
-          <text class="field-label">阵容类型</text>
-          <input v-model="form.type" class="field-input" placeholder="请输入阵容类型，如竞技场防守" maxlength="60" />
-          <view class="preset-head">
-            <text class="preset-title">快速填写</text>
-            <text class="preset-tip">点选后仍可继续手动修改</text>
+        <view class="section-card">
+          <view class="section-head">
+            <text class="section-title">阵容成员</text>
+            <text class="section-tip">{{ selectedMembers.length }}</text>
           </view>
-          <view class="chip-row preset-chip-row">
-            <text
-              v-for="option in LINEUP_TYPE_PRESET_OPTIONS"
-              :key="option.value"
-              class="chip"
-              :class="{ active: form.type === option.value }"
-              @click="form.type = option.value">
-              {{ option.label }}
-            </text>
-          </view>
-        </view>
 
-        <view class="field">
-          <text class="field-label">状态</text>
-          <view class="chip-row">
-            <text
-              v-for="option in LINEUP_STATUS_OPTIONS"
-              :key="option.value"
-              class="chip"
-              :class="{ active: form.status === option.value }"
-              @click="form.status = option.value">
-              {{ option.label }}
-            </text>
-          </view>
-        </view>
+          <SwcLineup
+            v-if="selectedMembers.length"
+            class="selected-members-grid"
+            :characters="selectedMemberViews"
+            :columns="5"
+            editable
+            :show-member-name="false"
+            :show-stars="false"
+            :show-element="true"
+            :show-order="true"
+            :avatar-size="92"
+            empty-text="还没有选择成员，请点击下方按钮添加。"
+            @remove="handleRemoveMember" />
 
-        <view class="field">
-          <text class="field-label">阵容描述</text>
-          <textarea v-model="form.description" class="field-textarea" maxlength="1000" placeholder="请输入阵容思路、适用场景或关键打法" />
+          <StateBlock v-else class="empty-block" text="还没有选择成员，请点击下方按钮添加。" />
+
+          <view class="picker-btn-wrap">
+            <button class="picker-btn" @click="navigateToCharacterPicker">精准人物筛选</button>
+          </view>
         </view>
       </view>
 
-      <view class="section-card">
-        <view class="section-head">
-          <text class="section-title">阵容成员</text>
-          <text class="section-tip">{{ selectedMembers.length }}</text>
-        </view>
-
-        <SwcLineup
-          v-if="selectedMembers.length"
-          class="selected-members-grid"
-          :characters="selectedMemberViews"
-          :columns="5"
-          editable
-          :show-member-name="false"
-          :show-stars="false"
-          :show-element="true"
-          :show-order="true"
-          :avatar-size="92"
-          empty-text="还没有选择成员，请点击下方按钮添加。"
-          @remove="handleRemoveMember" />
-
-        <StateBlock v-else class="empty-block" text="还没有选择成员，请点击下方按钮添加。" />
-
-        <view class="picker-btn-wrap">
-          <button class="picker-btn" @click="navigateToCharacterPicker">精准人物筛选</button>
-        </view>
-      </view>
+      <StickyActionBar>
+        <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">
+          {{ isEditMode ? '保存修改' : '创建阵容' }}
+        </button>
+      </StickyActionBar>
     </view>
-
-    <StickyActionBar>
-      <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">
-        {{ isEditMode ? '保存修改' : '创建阵容' }}
-      </button>
-    </StickyActionBar>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

@@ -1,42 +1,38 @@
 <template>
-  <view class="watermark-page">
-    <NavBar
-      always-title
-      title="视频去水印"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)' }" />
+  <PageLayout title="视频去水印" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
+    <view class="watermark-page">
+      <PlatformRestrictionNotice
+        v-if="isWeixinRestricted"
+        description="根据微信小程序平台运营规范，当前平台暂不提供视频去水印功能，请前往 H5 使用。"
+        action-text="返回首页"
+        @action="goHome" />
 
-    <PlatformRestrictionNotice
-      v-if="isWeixinRestricted"
-      description="根据微信小程序平台运营规范，当前平台暂不提供视频去水印功能，请前往 H5 使用。"
-      action-text="返回首页"
-      @action="goHome" />
-
-    <view v-else class="main-content">
-      <view class="card input-card" v-if="!parsedVideoUrl">
-        <textarea v-model="videoLink" class="textarea" placeholder="请在此处粘贴视频（或图集）链接。" :maxlength="-1" />
-        <view class="btn-row">
-          <button class="btn primary full" @click="handlePasteAndParse" :loading="isParsing">粘贴并解析</button>
+      <view v-else class="main-content">
+        <view class="card input-card" v-if="!parsedVideoUrl">
+          <textarea v-model="videoLink" class="textarea" placeholder="请在此处粘贴视频（或图集）链接。" :maxlength="-1" />
+          <view class="btn-row">
+            <button class="btn primary full" @click="handlePasteAndParse" :loading="isParsing">粘贴并解析</button>
+          </view>
         </view>
-      </view>
 
-      <view class="share-entry" v-if="!isH5 && !parsedVideoUrl">
-        <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享给好友</text>
-      </view>
+        <view class="share-entry" v-if="!isH5 && !parsedVideoUrl">
+          <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享给好友</text>
+        </view>
 
-      <view class="card result-card" v-if="parsedVideoUrl">
-        <view class="tips-row">
-          <text class="error-tips clickable" @click="handleReparse">解析有问题，点击重试</text>
+        <view class="card result-card" v-if="parsedVideoUrl">
+          <view class="tips-row">
+            <text class="error-tips clickable" @click="handleReparse">解析有问题，点击重试</text>
+          </view>
+          <video class="preview" :src="parsedVideoUrl" :poster="parsedCover" controls object-fit="contain" />
+          <view class="result-btn-row">
+            <button class="btn primary" @click="handleSaveVideo" :loading="isDownloading">保存视频</button>
+            <button class="btn ghost" @click="handleCopyLink">复制视频链接</button>
+          </view>
+          <text class="tips secondary clickable new-link" @click="handleReset">继续解析</text>
         </view>
-        <video class="preview" :src="parsedVideoUrl" :poster="parsedCover" controls object-fit="contain" />
-        <view class="result-btn-row">
-          <button class="btn primary" @click="handleSaveVideo" :loading="isDownloading">保存视频</button>
-          <button class="btn ghost" @click="handleCopyLink">复制视频链接</button>
-        </view>
-        <text class="tips secondary clickable new-link" @click="handleReset">继续解析</text>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -44,7 +40,6 @@
   import { ref } from 'vue'
   import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
   import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 
   const videoLink = ref('')

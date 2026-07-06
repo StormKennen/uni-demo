@@ -39,7 +39,8 @@
         {
           "path": "setting/setting",
           "style": {
-            "navigationBarTitleText": "设置"
+            "navigationBarTitleText": "设置",
+            "navigationStyle": "custom"
           }
         }
       ]
@@ -222,7 +223,8 @@
         {
           "path": "pool-aim/index",
           "style": {
-            "navigationBarTitleText": "台球瞄准器"
+            "navigationBarTitleText": "台球瞄准器",
+            "navigationStyle": "custom"
           }
         },
         {
@@ -230,65 +232,75 @@
           "style": {
             "navigationBarTitleText": "魔灵 wiki-图鉴",
             "enablePullDownRefresh": true,
-            "onReachBottomDistance": 120
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/detail",
           "style": {
             "navigationBarTitleText": "魔灵 wiki-详情",
-            "enablePullDownRefresh": true
+            "enablePullDownRefresh": true,
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/edit",
           "style": {
-            "navigationBarTitleText": "编辑角色"
+            "navigationBarTitleText": "编辑角色",
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/admin-list",
           "style": {
             "navigationBarTitleText": "魔灵召唤·图鉴管理",
-            "onReachBottomDistance": 120
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/lineups",
           "style": {
-            "navigationBarTitleText": "魔灵召唤阵容"
+            "navigationBarTitleText": "魔灵召唤阵容",
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/lineup-edit",
           "style": {
-            "navigationBarTitleText": "编辑阵容"
+            "navigationBarTitleText": "编辑阵容",
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/lineup-relations",
           "style": {
-            "navigationBarTitleText": "阵容克制关系"
+            "navigationBarTitleText": "阵容克制关系",
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/character-picker",
           "style": {
             "navigationBarTitleText": "选择筛选魔灵",
-            "onReachBottomDistance": 120
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/lineup-mappings",
           "style": {
             "navigationBarTitleText": "魔灵召唤阵容映射",
-            "onReachBottomDistance": 120
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
           }
         },
         {
           "path": "compendium/swc/lineup-mapping-detail",
           "style": {
-            "navigationBarTitleText": "阵容映射详情"
+            "navigationBarTitleText": "阵容映射详情",
+            "navigationStyle": "custom"
           }
         },
         {
@@ -308,7 +320,8 @@
         {
           "path": "game-coupons/index",
           "style": {
-            "navigationBarTitleText": "游戏兑换券"
+            "navigationBarTitleText": "游戏兑换券",
+            "navigationStyle": "custom"
           }
         }
       ]

@@ -1,78 +1,74 @@
 <template>
-  <view class="markdown-page">
-    <NavBar
-      always-title
-      title="Markdown 转 HTML"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' }" />
-
-    <view class="content">
-      <view class="card input-card">
-        <view class="card-header">
-          <text class="card-title">Markdown 输入</text>
-          <view class="actions">
-            <button class="ghost-btn" @click="insertSample">插入示例</button>
-            <button class="ghost-btn" @click="clearContent">清空</button>
-          </view>
-        </view>
-        <textarea
-          class="markdown-input"
-          v-model="markdownContent"
-          placeholder="在此粘贴或编写 Markdown 文本"
-          :auto-height="false"></textarea>
-        <view class="stats">
-          <text>字数 {{ textStats.chars }}</text>
-          <text>行数 {{ textStats.lines }}</text>
-        </view>
-      </view>
-
-      <view class="card tabs-card">
-        <view class="tab-bar">
-          <view
-            v-for="tab in tabs"
-            :key="tab.value"
-            class="tab-item"
-            :class="{ active: activeTab === tab.value }"
-            @click="activeTab = tab.value"
-            >{{ tab.label }}</view
-          >
-        </view>
-
-        <view class="tab-content" v-if="activeTab === 'preview'">
-          <view class="preview-toolbar">
-            <text>实时预览（已做基础 XSS 过滤）</text>
-            <view class="preview-options">
-              <label class="switch">
-                <text>深色背景</text>
-                <switch :checked="darkPreview" @change="togglePreviewTheme" color="#a18cd1" />
-              </label>
+  <PageLayout title="Markdown 转 HTML" nav-gradient="linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)">
+    <view class="markdown-page">
+      <view class="content">
+        <view class="card input-card">
+          <view class="card-header">
+            <text class="card-title">Markdown 输入</text>
+            <view class="actions">
+              <button class="ghost-btn" @click="insertSample">插入示例</button>
+              <button class="ghost-btn" @click="clearContent">清空</button>
             </view>
           </view>
-          <view class="preview-box" :class="{ dark: darkPreview }">
-            <!-- #ifdef H5 -->
-            <div class="preview-html" v-html="safeHtml"></div>
-            <!-- #endif -->
-            <!-- #ifndef H5 -->
-            <rich-text class="preview-html" :nodes="safeHtml" />
-            <!-- #endif -->
+          <textarea
+            class="markdown-input"
+            v-model="markdownContent"
+            placeholder="在此粘贴或编写 Markdown 文本"
+            :auto-height="false"></textarea>
+          <view class="stats">
+            <text>字数 {{ textStats.chars }}</text>
+            <text>行数 {{ textStats.lines }}</text>
           </view>
         </view>
 
-        <view class="tab-content" v-else>
-          <view class="code-header">
-            <text>HTML 源码</text>
-            <view class="code-actions">
-              <button class="ghost-btn" @click="copyHtml" :disabled="!safeHtml">复制 HTML</button>
-              <button class="ghost-btn" @click="downloadHtml" :disabled="!safeHtml">下载 .html</button>
+        <view class="card tabs-card">
+          <view class="tab-bar">
+            <view
+              v-for="tab in tabs"
+              :key="tab.value"
+              class="tab-item"
+              :class="{ active: activeTab === tab.value }"
+              @click="activeTab = tab.value"
+              >{{ tab.label }}</view
+            >
+          </view>
+
+          <view class="tab-content" v-if="activeTab === 'preview'">
+            <view class="preview-toolbar">
+              <text>实时预览（已做基础 XSS 过滤）</text>
+              <view class="preview-options">
+                <label class="switch">
+                  <text>深色背景</text>
+                  <switch :checked="darkPreview" @change="togglePreviewTheme" color="#a18cd1" />
+                </label>
+              </view>
+            </view>
+            <view class="preview-box" :class="{ dark: darkPreview }">
+              <!-- #ifdef H5 -->
+              <div class="preview-html" v-html="safeHtml"></div>
+              <!-- #endif -->
+              <!-- #ifndef H5 -->
+              <rich-text class="preview-html" :nodes="safeHtml" />
+              <!-- #endif -->
             </view>
           </view>
-          <scroll-view scroll-y class="code-box">
-            <text selectable>{{ formattedHtml }}</text>
-          </scroll-view>
+
+          <view class="tab-content" v-else>
+            <view class="code-header">
+              <text>HTML 源码</text>
+              <view class="code-actions">
+                <button class="ghost-btn" @click="copyHtml" :disabled="!safeHtml">复制 HTML</button>
+                <button class="ghost-btn" @click="downloadHtml" :disabled="!safeHtml">下载 .html</button>
+              </view>
+            </view>
+            <scroll-view scroll-y class="code-box">
+              <text selectable>{{ formattedHtml }}</text>
+            </scroll-view>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -80,7 +76,6 @@
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import { marked } from 'marked'
-  import NavBar from '@/components/nav-bar.vue'
 
   onShow(() => {
     reportToolVisit('markdown')

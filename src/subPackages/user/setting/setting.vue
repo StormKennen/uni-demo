@@ -5,7 +5,6 @@
   import { ref } from 'vue'
   import { getToken, removeToken, removeWxUserInfo, setToken, setWxUserInfo } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
-  import ThemeRoot from '@/components/ThemeRoot.vue'
 
   const isLogut = ref(!getToken())
   const appBaseInfo = uni.getAppBaseInfo()
@@ -47,18 +46,19 @@
 </script>
 
 <template>
-  <ThemeRoot />
-  <view class="setting">
-    <view class="list" hover-class="none" hover-stop-propagation="false">
-      <view v-for="item in list" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
-        <MineListItem :data="item" />
+  <PageLayout title="设置">
+    <view class="setting">
+      <view class="list" hover-class="none" hover-stop-propagation="false">
+        <view v-for="item in list" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+          <MineListItem :data="item" />
+        </view>
       </view>
+      <view v-if="!isLogut" class="bottom" hover-class="none" hover-stop-propagation="false">
+        <button class="btn" @click="logout">退出登录</button>
+      </view>
+      <ConfirmDialog ref="confirmDialogRef" title="确定要退出当前账号吗？" :confirm="lougouConfirm" />
     </view>
-    <view v-if="!isLogut" class="bottom" hover-class="none" hover-stop-propagation="false">
-      <button class="btn" @click="logout">退出登录</button>
-    </view>
-    <ConfirmDialog ref="confirmDialogRef" title="确定要退出当前账号吗？" :confirm="lougouConfirm" />
-  </view>
+  </PageLayout>
 </template>
 
 <style lang="scss" scoped>

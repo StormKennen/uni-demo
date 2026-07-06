@@ -1,86 +1,88 @@
 <template>
-  <view class="mapping-page">
-    <view class="hero-banner">
-      <view>
-        <text class="hero-title">魔灵召唤阵容映射</text>
-        <text class="hero-subtitle">
-          浏览「源阵容 → 目标阵容」的容器化映射，点击查看详情。{{ isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。' }}
-        </text>
-      </view>
-      <text v-if="isAdmin" class="hero-badge">ADMIN</text>
-    </view>
-
-    <StateBlock v-if="loading && !mappings.length" class="state-block" text="加载映射中..." />
-
-    <StateBlock
-      v-else-if="errorMessage && !mappings.length"
-      class="state-block"
-      :text="errorMessage"
-      action-text="重新加载"
-      theme="teal"
-      @action="refreshList" />
-
-    <view v-else class="content">
-      <view class="summary-row">
-        <text class="summary-text">共 {{ pagination.total }} 个映射</text>
+  <PageLayout title="魔灵召唤阵容映射">
+    <view class="mapping-page">
+      <view class="hero-banner">
+        <view>
+          <text class="hero-title">魔灵召唤阵容映射</text>
+          <text class="hero-subtitle">
+            浏览「源阵容 → 目标阵容」的容器化映射，点击查看详情。{{ isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。' }}
+          </text>
+        </view>
+        <text v-if="isAdmin" class="hero-badge">ADMIN</text>
       </view>
 
-      <StateBlock v-if="!mappings.length" class="empty-block" text="暂无阵容映射，快去创建一个吧" />
+      <StateBlock v-if="loading && !mappings.length" class="state-block" text="加载映射中..." />
 
-      <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card" @click="goDetail(mapping.id)">
-        <view class="mapping-main">
-          <text class="mapping-name">{{ mapping.name || '未命名映射' }}</text>
-          <text class="mapping-desc">{{ mapping.description || '暂无描述' }}</text>
-          <view class="mapping-meta">
-            <text class="meta-chip">源 {{ mapping.sourceContainer.items.length }}</text>
-            <text class="meta-chip">目标 {{ mapping.targetContainer.items.length }}</text>
+      <StateBlock
+        v-else-if="errorMessage && !mappings.length"
+        class="state-block"
+        :text="errorMessage"
+        action-text="重新加载"
+        theme="teal"
+        @action="refreshList" />
+
+      <view v-else class="content">
+        <view class="summary-row">
+          <text class="summary-text">共 {{ pagination.total }} 个映射</text>
+        </view>
+
+        <StateBlock v-if="!mappings.length" class="empty-block" text="暂无阵容映射，快去创建一个吧" />
+
+        <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card" @click="goDetail(mapping.id)">
+          <view class="mapping-main">
+            <text class="mapping-name">{{ mapping.name || '未命名映射' }}</text>
+            <text class="mapping-desc">{{ mapping.description || '暂无描述' }}</text>
+            <view class="mapping-meta">
+              <text class="meta-chip">源 {{ mapping.sourceContainer.items.length }}</text>
+              <text class="meta-chip">目标 {{ mapping.targetContainer.items.length }}</text>
+            </view>
+          </view>
+          <view class="mapping-tail">
+            <button
+              v-if="isAdmin"
+              class="card-btn danger"
+              size="mini"
+              :loading="deletingId === mapping.id"
+              @click.stop="confirmDelete(mapping.id)">
+              删除
+            </button>
+            <text class="mapping-arrow">›</text>
           </view>
         </view>
-        <view class="mapping-tail">
-          <button
-            v-if="isAdmin"
-            class="card-btn danger"
-            size="mini"
-            :loading="deletingId === mapping.id"
-            @click.stop="confirmDelete(mapping.id)">
-            删除
-          </button>
-          <text class="mapping-arrow">›</text>
+
+        <view v-if="pagination.hasNext" class="load-more">
+          <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
         </view>
       </view>
 
-      <view v-if="pagination.hasNext" class="load-more">
-        <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
+      <view class="fab" @click="openCreate">
+        <text class="fab-icon">+</text>
+        <text class="fab-text">{{ isLoggedIn ? '创建映射' : '登录创建' }}</text>
       </view>
-    </view>
 
-    <view class="fab" @click="openCreate">
-      <text class="fab-icon">+</text>
-      <text class="fab-text">{{ isLoggedIn ? '创建映射' : '登录创建' }}</text>
-    </view>
+      <view v-if="createVisible" class="modal-mask" @click="closeCreate">
+        <view class="create-panel" @click.stop>
+          <text class="create-title">创建阵容映射</text>
 
-    <view v-if="createVisible" class="modal-mask" @click="closeCreate">
-      <view class="create-panel" @click.stop>
-        <text class="create-title">创建阵容映射</text>
+          <text class="field-label">映射名称</text>
+          <input v-model="createName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
 
-        <text class="field-label">映射名称</text>
-        <input v-model="createName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
+          <text class="field-label">映射描述</text>
+          <textarea
+            v-model="createDescription"
+            class="desc-input"
+            placeholder="例如：防守阵容 → 进攻反制（最长 500 字，可选）"
+            maxlength="500"
+            auto-height />
 
-        <text class="field-label">映射描述</text>
-        <textarea
-          v-model="createDescription"
-          class="desc-input"
-          placeholder="例如：防守阵容 → 进攻反制（最长 500 字，可选）"
-          maxlength="500"
-          auto-height />
-
-        <view class="create-actions">
-          <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
-          <button class="footer-btn primary" size="mini" :loading="creating" @click="submitCreate"> 确认创建 </button>
+          <view class="create-actions">
+            <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
+            <button class="footer-btn primary" size="mini" :loading="creating" @click="submitCreate"> 确认创建 </button>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

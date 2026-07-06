@@ -1,121 +1,117 @@
 <template>
-  <view class="container">
-    <NavBar
-      always-title
-      :title="pageTitle"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 操作行：游客警告 + 历史入口（审核模式下隐藏历史入口） -->
-    <view class="header-actions">
-      <view class="guest-warning" v-if="!isLoggedIn && !isAuditMode">
-        <text>⚠️ 未登录，草稿将在刷新后清除</text>
-      </view>
-      <view class="history-link" @click="goToHistory" v-if="isLoggedIn && !isAuditMode">
-        <text class="icon">📂</text>
-        <text>我的草稿</text>
-      </view>
-    </view>
-
-    <scroll-view class="draft-list" scroll-y :scroll-top="scrollTop" :scroll-with-animation="true">
-      <!-- 加载中 -->
-      <view v-if="isLoadingHistory" class="loading-history">
-        <view class="loading-dots">
-          <view class="dot"></view>
-          <view class="dot"></view>
-          <view class="dot"></view>
+  <PageLayout :title="pageTitle" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="container">
+      <!-- 操作行：游客警告 + 历史入口（审核模式下隐藏历史入口） -->
+      <view class="header-actions">
+        <view class="guest-warning" v-if="!isLoggedIn && !isAuditMode">
+          <text>⚠️ 未登录，草稿将在刷新后清除</text>
         </view>
-        <text>加载素材中...</text>
-      </view>
-
-      <!-- 欢迎区域 -->
-      <view v-else-if="messages.length === 0 && isOwner" class="welcome-section">
-        <view class="welcome-icon">📝</view>
-        <text class="welcome-title">个人笔记收藏</text>
-        <text class="welcome-desc">记录您的灵感与想法，整理个人笔记，随时查阅收藏内容。</text>
-        <view class="welcome-tips">
-          <view class="tip-item" @click="sendQuickMessage('帮我整理一份工作日志大纲')">
-            <text>📋 工作日志记录</text>
-          </view>
-          <view class="tip-item" @click="sendQuickMessage('整理一下关于健康饮食的知识要点')">
-            <text>📚 日常随笔记录</text>
-          </view>
+        <view class="history-link" @click="goToHistory" v-if="isLoggedIn && !isAuditMode">
+          <text class="icon">📂</text>
+          <text>我的草稿</text>
         </view>
       </view>
 
-      <!-- 内容卡片列表 -->
-      <view v-for="(msg, index) in messages" :key="index" class="content-card">
-        <!-- 用户需求卡片 -->
-        <view v-if="msg.role === 'user'" class="requirement-card">
-          <view class="card-header">
-            <text class="card-label">📌 需求记录</text>
-            <text class="card-index">#{{ Math.floor(index / 2) + 1 }}</text>
+      <scroll-view class="draft-list" scroll-y :scroll-top="scrollTop" :scroll-with-animation="true">
+        <!-- 加载中 -->
+        <view v-if="isLoadingHistory" class="loading-history">
+          <view class="loading-dots">
+            <view class="dot"></view>
+            <view class="dot"></view>
+            <view class="dot"></view>
           </view>
-          <view class="card-body">
-            <text class="requirement-text">{{ msg.content }}</text>
-          </view>
+          <text>加载素材中...</text>
         </view>
 
-        <!-- 素材结果卡片 -->
-        <view v-else class="result-card">
-          <view class="card-header">
-            <text class="card-label">📄 素材内容</text>
-            <view class="card-actions">
-              <text class="action-btn" @click="copyResponse(msg.content)">复制</text>
+        <!-- 欢迎区域 -->
+        <view v-else-if="messages.length === 0 && isOwner" class="welcome-section">
+          <view class="welcome-icon">📝</view>
+          <text class="welcome-title">个人笔记收藏</text>
+          <text class="welcome-desc">记录您的灵感与想法，整理个人笔记，随时查阅收藏内容。</text>
+          <view class="welcome-tips">
+            <view class="tip-item" @click="sendQuickMessage('帮我整理一份工作日志大纲')">
+              <text>📋 工作日志记录</text>
             </view>
-          </view>
-          <view class="card-body">
-            <rich-text :nodes="formatMarkdown(msg.content)" class="markdown-content" />
-          </view>
-        </view>
-      </view>
-
-      <!-- 加载中状态 -->
-      <view v-if="isLoading" class="content-card">
-        <view class="result-card loading">
-          <view class="card-header">
-            <text class="card-label">📄 素材整理中</text>
-          </view>
-          <view class="card-body">
-            <view class="loading-dots">
-              <view class="dot"></view>
-              <view class="dot"></view>
-              <view class="dot"></view>
+            <view class="tip-item" @click="sendQuickMessage('整理一下关于健康饮食的知识要点')">
+              <text>📚 日常随笔记录</text>
             </view>
           </view>
         </view>
+
+        <!-- 内容卡片列表 -->
+        <view v-for="(msg, index) in messages" :key="index" class="content-card">
+          <!-- 用户需求卡片 -->
+          <view v-if="msg.role === 'user'" class="requirement-card">
+            <view class="card-header">
+              <text class="card-label">📌 需求记录</text>
+              <text class="card-index">#{{ Math.floor(index / 2) + 1 }}</text>
+            </view>
+            <view class="card-body">
+              <text class="requirement-text">{{ msg.content }}</text>
+            </view>
+          </view>
+
+          <!-- 素材结果卡片 -->
+          <view v-else class="result-card">
+            <view class="card-header">
+              <text class="card-label">📄 素材内容</text>
+              <view class="card-actions">
+                <text class="action-btn" @click="copyResponse(msg.content)">复制</text>
+              </view>
+            </view>
+            <view class="card-body">
+              <rich-text :nodes="formatMarkdown(msg.content)" class="markdown-content" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 加载中状态 -->
+        <view v-if="isLoading" class="content-card">
+          <view class="result-card loading">
+            <view class="card-header">
+              <text class="card-label">📄 素材整理中</text>
+            </view>
+            <view class="card-body">
+              <view class="loading-dots">
+                <view class="dot"></view>
+                <view class="dot"></view>
+                <view class="dot"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 底部占位 -->
+        <view class="bottom-placeholder"></view>
+      </scroll-view>
+
+      <!-- 输入区域 - 仅创建者可见 -->
+      <view v-if="isOwner" class="input-area">
+        <view class="input-wrapper">
+          <textarea
+            v-model="inputText"
+            class="input-field"
+            :placeholder="inputPlaceholder"
+            :auto-height="true"
+            :maxlength="2000"
+            :disabled="isLoading"
+            @confirm="sendMessage" />
+        </view>
+        <view class="send-btn" :class="{ disabled: !inputText.trim() || isLoading }" @click="sendMessage">
+          <text v-if="isLoading">⏳</text>
+          <text v-else>{{ submitBtnText }}</text>
+        </view>
       </view>
 
-      <!-- 底部占位 -->
-      <view class="bottom-placeholder"></view>
-    </scroll-view>
-
-    <!-- 输入区域 - 仅创建者可见 -->
-    <view v-if="isOwner" class="input-area">
-      <view class="input-wrapper">
-        <textarea
-          v-model="inputText"
-          class="input-field"
-          :placeholder="inputPlaceholder"
-          :auto-height="true"
-          :maxlength="2000"
-          :disabled="isLoading"
-          @confirm="sendMessage" />
-      </view>
-      <view class="send-btn" :class="{ disabled: !inputText.trim() || isLoading }" @click="sendMessage">
-        <text v-if="isLoading">⏳</text>
-        <text v-else>{{ submitBtnText }}</text>
+      <!-- 只读模式提示 -->
+      <view v-else class="read-only-bar" @click="createNewChat">
+        <text class="read-only-text">当前为预览模式</text>
+        <view class="read-only-btn">
+          <text>新建草稿</text>
+        </view>
       </view>
     </view>
-
-    <!-- 只读模式提示 -->
-    <view v-else class="read-only-bar" @click="createNewChat">
-      <text class="read-only-text">当前为预览模式</text>
-      <view class="read-only-btn">
-        <text>新建草稿</text>
-      </view>
-    </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -123,7 +119,6 @@
   import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import { ref, nextTick, computed } from 'vue'
-  import NavBar from '@/components/nav-bar.vue'
 
   interface ContentBlock {
     role: 'user' | 'model'

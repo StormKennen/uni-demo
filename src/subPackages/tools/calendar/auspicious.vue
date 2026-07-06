@@ -1,180 +1,179 @@
 <template>
-  <view class="auspicious-page">
-    <!-- 顶部导航栏 -->
-    <nav-bar always-title title="择吉日" custom-class="light" :custom-style="{ backgroundColor: '#C83C3C' }" />
+  <PageLayout title="择吉日" nav-bg-color="#C83C3C" nav-title-color="#fff">
+    <view class="auspicious-page">
+      <!-- 顶部导航栏 -->
+      <!-- 操作按钮栏 -->
+      <view class="action-bar">
+        <view class="action-left">
+          <text class="selected-count" v-if="selectedDays.size > 0">已选 {{ selectedDays.size }} 天</text>
+        </view>
+        <view class="action-right">
+          <view class="action-btn" @click="onCopy">
+            <uni-icons type="copy" size="16" color="#666" />
+            <text class="action-text">复制</text>
+          </view>
+          <view class="action-btn" @click="onExport">
+            <uni-icons type="download" size="16" color="#666" />
+            <text class="action-text">导出</text>
+          </view>
+          <view class="action-btn" @click="onShare">
+            <uni-icons type="redo" size="16" color="#666" />
+            <text class="action-text">分享</text>
+          </view>
+        </view>
+      </view>
 
-    <!-- 操作按钮栏 -->
-    <view class="action-bar">
-      <view class="action-left">
-        <text class="selected-count" v-if="selectedDays.size > 0">已选 {{ selectedDays.size }} 天</text>
-      </view>
-      <view class="action-right">
-        <view class="action-btn" @click="onCopy">
-          <uni-icons type="copy" size="16" color="#666" />
-          <text class="action-text">复制</text>
-        </view>
-        <view class="action-btn" @click="onExport">
-          <uni-icons type="download" size="16" color="#666" />
-          <text class="action-text">导出</text>
-        </view>
-        <view class="action-btn" @click="onShare">
-          <uni-icons type="redo" size="16" color="#666" />
-          <text class="action-text">分享</text>
+      <!-- 筛选条件 -->
+      <view class="filter-section">
+        <view class="filter-title">选择事件类型</view>
+        <view class="filter-tags">
+          <view
+            v-for="tag in luckyTags"
+            :key="tag.key"
+            class="filter-tag"
+            :class="{ active: selectedTag === tag.key }"
+            @click="selectTag(tag.key)">
+            {{ tag.label }}
+          </view>
         </view>
       </view>
+
+      <view class="auspicious-main">
+        <!-- 事件说明 -->
+        <view class="event-desc" v-if="selectedTag">
+          <text class="desc-text">{{ currentTagDesc }}</text>
+        </view>
+
+        <!-- 统计信息 -->
+        <view class="stats-info" v-if="selectedTag && !loading">
+          <text class="stats-text">
+            近期宜{{ currentTagLabel }}的日子共有 <text class="stats-count">{{ selectedDays.size || filteredDays.length }}</text> 天
+          </text>
+        </view>
+
+        <!-- 日期范围和过滤选项 -->
+        <view class="options-bar" v-if="selectedTag">
+          <view class="date-range">
+            <view class="range-item" @click="showStartPicker = true">
+              <text class="range-label">开始</text>
+              <text class="range-value">{{ formatDisplayDate(startDate) }}</text>
+            </view>
+            <view class="range-item" @click="showEndPicker = true">
+              <text class="range-label">结束</text>
+              <text class="range-value">{{ formatDisplayDate(endDate) }}</text>
+            </view>
+          </view>
+          <view class="weekend-filter" @click="onlyWeekend = !onlyWeekend">
+            <text class="filter-label">只看周末</text>
+            <switch :checked="onlyWeekend" color="#C83C3C" style="transform: scale(0.7)" />
+          </view>
+        </view>
+
+        <!-- 加载状态 -->
+        <view class="loading-wrapper" v-if="loading">
+          <text class="loading-text">加载中...</text>
+        </view>
+
+        <!-- 结果列表 -->
+        <scroll-view v-else-if="selectedTag && filteredDays.length > 0" scroll-y class="result-list">
+          <view
+            v-for="(day, index) in filteredDays"
+            :key="index"
+            class="result-card"
+            :class="{ 'export-hidden': shouldHideForExport(day) }"
+            @click="goToDetail(day)">
+            <!-- 左侧日期区域 -->
+            <view class="card-date">
+              <view class="date-day">{{ String(day.solar.day).padStart(2, '0') }}</view>
+              <view class="date-month">{{ day.solar.year }}.{{ String(day.solar.month).padStart(2, '0') }}</view>
+              <view class="date-week" :class="{ weekend: isWeekend(day) }">{{ getWeekDay(day) }}</view>
+            </view>
+
+            <!-- 右侧信息区域 -->
+            <view class="card-info">
+              <view class="info-header">
+                <text class="lunar-text">农历 {{ day.lunar.month }}月{{ day.lunar.day }}</text>
+                <text class="days-badge" :class="getDaysClass(day)">{{ getDaysFromNow(day) }}</text>
+              </view>
+              <view class="info-ganzhi">
+                <text class="ganzhi-year">{{ day.ganZhi }}</text>
+                <text class="shengxiao">{{ day.shengXiao || '属蛇' }}</text>
+              </view>
+              <view class="info-extra" v-if="day.shenSha || day.xingXiu">
+                <text class="extra-item" v-if="day.shenSha">值神: {{ day.shenSha }}</text>
+                <text class="extra-item" v-if="day.xingXiu">星宿: {{ day.xingXiu }}</text>
+              </view>
+            </view>
+
+            <!-- 复选框 -->
+            <view class="card-checkbox" @click.stop="toggleSelect(day)">
+              <view class="checkbox" :class="{ checked: isSelected(day) }">
+                <uni-icons v-if="isSelected(day)" type="checkmarkempty" size="14" color="#fff" />
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+
+        <!-- 空状态 -->
+        <view class="empty-state" v-else-if="selectedTag && !loading">
+          <text class="empty-text">暂无符合条件的吉日</text>
+        </view>
+
+        <!-- 未选择状态 -->
+        <view class="empty-state" v-else-if="!selectedTag">
+          <text class="empty-text">请选择事件类型</text>
+        </view>
+      </view>
+
+      <!-- 日期选择器 -->
+      <uni-popup ref="startPickerPopup" type="bottom">
+        <view class="picker-wrapper">
+          <view class="picker-header">
+            <text class="picker-cancel" @click="startPickerPopup?.close()">取消</text>
+            <text class="picker-title">选择开始日期</text>
+            <text class="picker-confirm" @click="confirmStartDate">确定</text>
+          </view>
+          <picker-view :value="startPickerValue" @change="onStartPickerChange" class="picker-view">
+            <picker-view-column>
+              <view v-for="year in yearRange" :key="year" class="picker-item">{{ year }}年</view>
+            </picker-view-column>
+            <picker-view-column>
+              <view v-for="month in 12" :key="month" class="picker-item">{{ month }}月</view>
+            </picker-view-column>
+            <picker-view-column>
+              <view v-for="day in 31" :key="day" class="picker-item">{{ day }}日</view>
+            </picker-view-column>
+          </picker-view>
+        </view>
+      </uni-popup>
+
+      <uni-popup ref="endPickerPopup" type="bottom">
+        <view class="picker-wrapper">
+          <view class="picker-header">
+            <text class="picker-cancel" @click="endPickerPopup?.close()">取消</text>
+            <text class="picker-title">选择结束日期</text>
+            <text class="picker-confirm" @click="confirmEndDate">确定</text>
+          </view>
+          <picker-view :value="endPickerValue" @change="onEndPickerChange" class="picker-view">
+            <picker-view-column>
+              <view v-for="year in yearRange" :key="year" class="picker-item">{{ year }}年</view>
+            </picker-view-column>
+            <picker-view-column>
+              <view v-for="month in 12" :key="month" class="picker-item">{{ month }}月</view>
+            </picker-view-column>
+            <picker-view-column>
+              <view v-for="day in 31" :key="day" class="picker-item">{{ day }}日</view>
+            </picker-view-column>
+          </picker-view>
+        </view>
+      </uni-popup>
     </view>
-
-    <!-- 筛选条件 -->
-    <view class="filter-section">
-      <view class="filter-title">选择事件类型</view>
-      <view class="filter-tags">
-        <view
-          v-for="tag in luckyTags"
-          :key="tag.key"
-          class="filter-tag"
-          :class="{ active: selectedTag === tag.key }"
-          @click="selectTag(tag.key)">
-          {{ tag.label }}
-        </view>
-      </view>
-    </view>
-
-    <view class="auspicious-main">
-      <!-- 事件说明 -->
-      <view class="event-desc" v-if="selectedTag">
-        <text class="desc-text">{{ currentTagDesc }}</text>
-      </view>
-
-      <!-- 统计信息 -->
-      <view class="stats-info" v-if="selectedTag && !loading">
-        <text class="stats-text">
-          近期宜{{ currentTagLabel }}的日子共有 <text class="stats-count">{{ selectedDays.size || filteredDays.length }}</text> 天
-        </text>
-      </view>
-
-      <!-- 日期范围和过滤选项 -->
-      <view class="options-bar" v-if="selectedTag">
-        <view class="date-range">
-          <view class="range-item" @click="showStartPicker = true">
-            <text class="range-label">开始</text>
-            <text class="range-value">{{ formatDisplayDate(startDate) }}</text>
-          </view>
-          <view class="range-item" @click="showEndPicker = true">
-            <text class="range-label">结束</text>
-            <text class="range-value">{{ formatDisplayDate(endDate) }}</text>
-          </view>
-        </view>
-        <view class="weekend-filter" @click="onlyWeekend = !onlyWeekend">
-          <text class="filter-label">只看周末</text>
-          <switch :checked="onlyWeekend" color="#C83C3C" style="transform: scale(0.7)" />
-        </view>
-      </view>
-
-      <!-- 加载状态 -->
-      <view class="loading-wrapper" v-if="loading">
-        <text class="loading-text">加载中...</text>
-      </view>
-
-      <!-- 结果列表 -->
-      <scroll-view v-else-if="selectedTag && filteredDays.length > 0" scroll-y class="result-list">
-        <view
-          v-for="(day, index) in filteredDays"
-          :key="index"
-          class="result-card"
-          :class="{ 'export-hidden': shouldHideForExport(day) }"
-          @click="goToDetail(day)">
-          <!-- 左侧日期区域 -->
-          <view class="card-date">
-            <view class="date-day">{{ String(day.solar.day).padStart(2, '0') }}</view>
-            <view class="date-month">{{ day.solar.year }}.{{ String(day.solar.month).padStart(2, '0') }}</view>
-            <view class="date-week" :class="{ weekend: isWeekend(day) }">{{ getWeekDay(day) }}</view>
-          </view>
-
-          <!-- 右侧信息区域 -->
-          <view class="card-info">
-            <view class="info-header">
-              <text class="lunar-text">农历 {{ day.lunar.month }}月{{ day.lunar.day }}</text>
-              <text class="days-badge" :class="getDaysClass(day)">{{ getDaysFromNow(day) }}</text>
-            </view>
-            <view class="info-ganzhi">
-              <text class="ganzhi-year">{{ day.ganZhi }}</text>
-              <text class="shengxiao">{{ day.shengXiao || '属蛇' }}</text>
-            </view>
-            <view class="info-extra" v-if="day.shenSha || day.xingXiu">
-              <text class="extra-item" v-if="day.shenSha">值神: {{ day.shenSha }}</text>
-              <text class="extra-item" v-if="day.xingXiu">星宿: {{ day.xingXiu }}</text>
-            </view>
-          </view>
-
-          <!-- 复选框 -->
-          <view class="card-checkbox" @click.stop="toggleSelect(day)">
-            <view class="checkbox" :class="{ checked: isSelected(day) }">
-              <uni-icons v-if="isSelected(day)" type="checkmarkempty" size="14" color="#fff" />
-            </view>
-          </view>
-        </view>
-      </scroll-view>
-
-      <!-- 空状态 -->
-      <view class="empty-state" v-else-if="selectedTag && !loading">
-        <text class="empty-text">暂无符合条件的吉日</text>
-      </view>
-
-      <!-- 未选择状态 -->
-      <view class="empty-state" v-else-if="!selectedTag">
-        <text class="empty-text">请选择事件类型</text>
-      </view>
-    </view>
-
-    <!-- 日期选择器 -->
-    <uni-popup ref="startPickerPopup" type="bottom">
-      <view class="picker-wrapper">
-        <view class="picker-header">
-          <text class="picker-cancel" @click="startPickerPopup?.close()">取消</text>
-          <text class="picker-title">选择开始日期</text>
-          <text class="picker-confirm" @click="confirmStartDate">确定</text>
-        </view>
-        <picker-view :value="startPickerValue" @change="onStartPickerChange" class="picker-view">
-          <picker-view-column>
-            <view v-for="year in yearRange" :key="year" class="picker-item">{{ year }}年</view>
-          </picker-view-column>
-          <picker-view-column>
-            <view v-for="month in 12" :key="month" class="picker-item">{{ month }}月</view>
-          </picker-view-column>
-          <picker-view-column>
-            <view v-for="day in 31" :key="day" class="picker-item">{{ day }}日</view>
-          </picker-view-column>
-        </picker-view>
-      </view>
-    </uni-popup>
-
-    <uni-popup ref="endPickerPopup" type="bottom">
-      <view class="picker-wrapper">
-        <view class="picker-header">
-          <text class="picker-cancel" @click="endPickerPopup?.close()">取消</text>
-          <text class="picker-title">选择结束日期</text>
-          <text class="picker-confirm" @click="confirmEndDate">确定</text>
-        </view>
-        <picker-view :value="endPickerValue" @change="onEndPickerChange" class="picker-view">
-          <picker-view-column>
-            <view v-for="year in yearRange" :key="year" class="picker-item">{{ year }}年</view>
-          </picker-view-column>
-          <picker-view-column>
-            <view v-for="month in 12" :key="month" class="picker-item">{{ month }}月</view>
-          </picker-view-column>
-          <picker-view-column>
-            <view v-for="day in 31" :key="day" class="picker-item">{{ day }}日</view>
-          </picker-view-column>
-        </picker-view>
-      </view>
-    </uni-popup>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, watch, onMounted } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import NavBar from '@/components/nav-bar.vue'
   import { getCalendarAuspicious } from '@/services/apifox/NODEJSDEMO/CALENDAR/apifox'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
   import { formatDate } from '@/utils/lunar'

@@ -1,119 +1,114 @@
 <template>
-  <view class="container">
-    <NavBar
-      always-title
-      title="我的草稿"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 未登录状态 -->
-    <view v-if="!isLoggedIn" class="login-required">
-      <view class="login-icon">🔒</view>
-      <text class="login-title">请登录后查看草稿</text>
-      <text class="login-desc">登录后可保存和查看所有个人笔记</text>
-      <view class="login-btn" @click="goToLogin">
-        <text>去登录</text>
-      </view>
-    </view>
-
-    <!-- 会话列表 -->
-    <scroll-view
-      v-else
-      class="session-list"
-      scroll-y
-      :refresher-enabled="true"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-      @scrolltolower="loadMore">
-      <!-- 空状态 -->
-      <view v-if="!isLoading && sessions.length === 0" class="empty-state">
-        <view class="empty-icon">📝</view>
-        <text class="empty-title">暂无草稿</text>
-        <text class="empty-desc">点击下方按钮新建草稿</text>
+  <PageLayout title="我的草稿" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="container">
+      <!-- 未登录状态 -->
+      <view v-if="!isLoggedIn" class="login-required">
+        <view class="login-icon">🔒</view>
+        <text class="login-title">请登录后查看草稿</text>
+        <text class="login-desc">登录后可保存和查看所有个人笔记</text>
+        <view class="login-btn" @click="goToLogin">
+          <text>去登录</text>
+        </view>
       </view>
 
-      <!-- 会话列表项 -->
-      <view
-        v-for="session in sessions"
-        :key="session.id"
-        class="session-item"
-        :class="{ 'actions-visible': expandedSessionId === session.id }">
-        <!-- 左侧主内容区域 -->
-        <view class="session-main" @click="openSession(session.id)">
-          <view class="session-icon">📄</view>
-          <view class="session-info">
-            <view class="session-title-row">
-              <text class="session-title">{{ session.title || '新建草稿' }}</text>
-              <view v-if="session.isShared" class="shared-tag">
-                <text>共享</text>
+      <!-- 会话列表 -->
+      <scroll-view
+        v-else
+        class="session-list"
+        scroll-y
+        :refresher-enabled="true"
+        :refresher-triggered="isRefreshing"
+        @refresherrefresh="onRefresh"
+        @scrolltolower="loadMore">
+        <!-- 空状态 -->
+        <view v-if="!isLoading && sessions.length === 0" class="empty-state">
+          <view class="empty-icon">📝</view>
+          <text class="empty-title">暂无草稿</text>
+          <text class="empty-desc">点击下方按钮新建草稿</text>
+        </view>
+
+        <!-- 会话列表项 -->
+        <view
+          v-for="session in sessions"
+          :key="session.id"
+          class="session-item"
+          :class="{ 'actions-visible': expandedSessionId === session.id }">
+          <!-- 左侧主内容区域 -->
+          <view class="session-main" @click="openSession(session.id)">
+            <view class="session-icon">📄</view>
+            <view class="session-info">
+              <view class="session-title-row">
+                <text class="session-title">{{ session.title || '新建草稿' }}</text>
+                <view v-if="session.isShared" class="shared-tag">
+                  <text>共享</text>
+                </view>
+              </view>
+              <view class="session-meta">
+                <text class="session-count">{{ session.messageCount || 0 }} 条素材</text>
+                <text class="session-time">{{ session.updatedAt || session.createdAt }}</text>
               </view>
             </view>
-            <view class="session-meta">
-              <text class="session-count">{{ session.messageCount || 0 }} 条素材</text>
-              <text class="session-time">{{ session.updatedAt || session.createdAt }}</text>
+          </view>
+
+          <!-- 右侧操作按钮 -->
+          <view class="session-actions">
+            <view class="action-btn edit" @click.stop="renameSessionDirect(session)">
+              <text>编辑</text>
+            </view>
+            <view class="action-btn delete" @click.stop="deleteSessionDirect(session)">
+              <text>删除</text>
             </view>
           </view>
-        </view>
 
-        <!-- 右侧操作按钮 -->
-        <view class="session-actions">
-          <view class="action-btn edit" @click.stop="renameSessionDirect(session)">
-            <text>编辑</text>
-          </view>
-          <view class="action-btn delete" @click.stop="deleteSessionDirect(session)">
-            <text>删除</text>
+          <!-- 展开/收起按钮 -->
+          <view class="session-toggle" @click.stop="toggleActions(session.id)">
+            <text class="toggle-icon">{{ expandedSessionId === session.id ? '×' : '⋮' }}</text>
           </view>
         </view>
 
-        <!-- 展开/收起按钮 -->
-        <view class="session-toggle" @click.stop="toggleActions(session.id)">
-          <text class="toggle-icon">{{ expandedSessionId === session.id ? '×' : '⋮' }}</text>
+        <!-- 加载更多 -->
+        <view v-if="isLoadingMore" class="loading-more">
+          <text>加载中...</text>
         </view>
+
+        <!-- 没有更多 -->
+        <view v-if="!hasMore && sessions.length > 0" class="no-more">
+          <text>没有更多了</text>
+        </view>
+
+        <!-- 底部占位 -->
+        <view class="bottom-placeholder"></view>
+      </scroll-view>
+
+      <!-- 新建会话按钮 - 仅登录用户可见 -->
+      <view v-if="isLoggedIn" class="fab-btn" @click="createNewSession">
+        <text class="fab-icon">+</text>
       </view>
 
-      <!-- 加载更多 -->
-      <view v-if="isLoadingMore" class="loading-more">
-        <text>加载中...</text>
-      </view>
-
-      <!-- 没有更多 -->
-      <view v-if="!hasMore && sessions.length > 0" class="no-more">
-        <text>没有更多了</text>
-      </view>
-
-      <!-- 底部占位 -->
-      <view class="bottom-placeholder"></view>
-    </scroll-view>
-
-    <!-- 新建会话按钮 - 仅登录用户可见 -->
-    <view v-if="isLoggedIn" class="fab-btn" @click="createNewSession">
-      <text class="fab-icon">+</text>
+      <!-- 操作弹窗 -->
+      <uni-popup ref="actionPopup" type="bottom">
+        <view class="action-sheet">
+          <view class="action-item" @click="renameSession">
+            <text class="action-icon">✏️</text>
+            <text class="action-text">重命名</text>
+          </view>
+          <view class="action-item danger" @click="deleteSessionConfirm">
+            <text class="action-icon">🗑️</text>
+            <text class="action-text">删除</text>
+          </view>
+          <view class="action-cancel" @click="closeActions">
+            <text>取消</text>
+          </view>
+        </view>
+      </uni-popup>
     </view>
-
-    <!-- 操作弹窗 -->
-    <uni-popup ref="actionPopup" type="bottom">
-      <view class="action-sheet">
-        <view class="action-item" @click="renameSession">
-          <text class="action-icon">✏️</text>
-          <text class="action-text">重命名</text>
-        </view>
-        <view class="action-item danger" @click="deleteSessionConfirm">
-          <text class="action-icon">🗑️</text>
-          <text class="action-text">删除</text>
-        </view>
-        <view class="action-cancel" @click="closeActions">
-          <text>取消</text>
-        </view>
-      </view>
-    </uni-popup>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { deleteGeminiSessionId, patchGeminiSessionId, getGeminiSessions } from '@/services/apifox/NODEJSDEMO/GEMINI/apifox'
 
   import { ref, onMounted } from 'vue'
-  import NavBar from '@/components/nav-bar.vue'
 
   interface Session {
     id: string
