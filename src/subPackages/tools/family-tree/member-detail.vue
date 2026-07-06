@@ -107,310 +107,315 @@
 </template>
 
 <script setup>
-import { getFamiliesMembersMemberId } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox';
-import { computed, ref, watch } from 'vue';
+  import { getFamiliesMembersMemberId } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
+  import { computed, ref, watch } from 'vue'
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false
-  },
-  memberData: {
-    type: Object,
-    default: () => null
-  },
-  parentName: {
-    type: String,
-    default: ''
-  },
-  showEditBtn: {
-    type: Boolean,
-    default: false
+  const props = defineProps({
+    visible: {
+      type: Boolean,
+      default: false,
+    },
+    memberData: {
+      type: Object,
+      default: () => null,
+    },
+    parentName: {
+      type: String,
+      default: '',
+    },
+    showEditBtn: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  const emit = defineEmits(['close', 'edit'])
+
+  // 详情数据
+  const detailData = ref(null)
+  const loading = ref(false)
+
+  // 加载成员详情
+  const loadMemberDetail = async memberId => {
+    if (!memberId) return
+
+    try {
+      loading.value = true
+      const response = await getFamiliesMembersMemberId(memberId)
+      console.log('成员详情:', response)
+      detailData.value = response
+    } catch (error) {
+      console.error('加载成员详情失败:', error)
+    } finally {
+      loading.value = false
+    }
   }
-});
 
-const emit = defineEmits(['close', 'edit']);
+  // 监听弹窗打开，加载详情
+  watch(
+    () => props.visible,
+    newVal => {
+      console.log('弹窗状态变化:', newVal, 'memberData:', props.memberData)
+      if (newVal && props.memberData?.id) {
+        console.log('加载成员详情, memberId:', props.memberData.id)
+        loadMemberDetail(props.memberData.id)
+      } else if (!newVal) {
+        detailData.value = null
+      }
+    },
+  )
 
-// 详情数据
-const detailData = ref(null);
-const loading = ref(false);
+  // 合并数据：优先使用接口返回的详情数据
+  const mergedData = computed(() => {
+    return detailData.value || props.memberData
+  })
 
-// 加载成员详情
-const loadMemberDetail = async (memberId) => {
-  if (!memberId) return;
-  
-  try {
-    loading.value = true;
-    const response = await getFamiliesMembersMemberId(memberId);
-    console.log('成员详情:', response);
-    detailData.value = response;
-  } catch (error) {
-    console.error('加载成员详情失败:', error);
-  } finally {
-    loading.value = false;
+  // 计算属性
+  const memberGender = computed(() => {
+    return mergedData.value?.gender || mergedData.value?.value?.gender || 'unknown'
+  })
+
+  const memberGeneration = computed(() => {
+    return mergedData.value?.generation || mergedData.value?.value?.generation
+  })
+
+  const memberSurname = computed(() => {
+    return mergedData.value?.nameZh?.surname || mergedData.value?.surname || mergedData.value?.value?.surname
+  })
+
+  const memberGivenName = computed(() => {
+    return mergedData.value?.nameZh?.given || mergedData.value?.givenName || mergedData.value?.value?.givenName
+  })
+
+  const memberFullName = computed(() => {
+    return (
+      mergedData.value?.nameZh?.full || mergedData.value?.name || `${memberSurname.value || ''}${memberGivenName.value || ''}` || '未知'
+    )
+  })
+
+  const childrenCount = computed(() => {
+    return mergedData.value?.children?.length || 0
+  })
+
+  const childrenNames = computed(() => {
+    if (!mergedData.value?.children) return []
+    // children 可能是 ID 数组，需要显示数量而非名称
+    return mergedData.value.children.map(child => (typeof child === 'string' ? child : child.name)).filter(name => name)
+  })
+
+  const onMaskClick = () => {
+    emit('close')
   }
-};
 
-// 监听弹窗打开，加载详情
-watch(() => props.visible, (newVal) => {
-  console.log('弹窗状态变化:', newVal, 'memberData:', props.memberData);
-  if (newVal && props.memberData?.id) {
-    console.log('加载成员详情, memberId:', props.memberData.id);
-    loadMemberDetail(props.memberData.id);
-  } else if (!newVal) {
-    detailData.value = null;
+  const onClose = () => {
+    emit('close')
   }
-});
 
-// 合并数据：优先使用接口返回的详情数据
-const mergedData = computed(() => {
-  return detailData.value || props.memberData;
-});
-
-// 计算属性
-const memberGender = computed(() => {
-  return mergedData.value?.gender || mergedData.value?.value?.gender || 'unknown';
-});
-
-const memberGeneration = computed(() => {
-  return mergedData.value?.generation || mergedData.value?.value?.generation;
-});
-
-const memberSurname = computed(() => {
-  return mergedData.value?.nameZh?.surname || mergedData.value?.surname || mergedData.value?.value?.surname;
-});
-
-const memberGivenName = computed(() => {
-  return mergedData.value?.nameZh?.given || mergedData.value?.givenName || mergedData.value?.value?.givenName;
-});
-
-const memberFullName = computed(() => {
-  return mergedData.value?.nameZh?.full || mergedData.value?.name || `${memberSurname.value || ''}${memberGivenName.value || ''}` || '未知';
-});
-
-const childrenCount = computed(() => {
-  return mergedData.value?.children?.length || 0;
-});
-
-const childrenNames = computed(() => {
-  if (!mergedData.value?.children) return [];
-  // children 可能是 ID 数组，需要显示数量而非名称
-  return mergedData.value.children.map(child => typeof child === 'string' ? child : child.name).filter(name => name);
-});
-
-const onMaskClick = () => {
-  emit('close');
-};
-
-const onClose = () => {
-  emit('close');
-};
-
-const onEdit = () => {
-  emit('edit', mergedData.value);
-};
+  const onEdit = () => {
+    emit('edit', mergedData.value)
+  }
 </script>
 
 <style scoped>
-.member-detail-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 10000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.member-detail-popup {
-  width: 100%;
-  max-height: 80vh;
-  background-color: #fff;
-  border-radius: 32rpx 32rpx 0 0;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
+  .member-detail-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
   }
-  to {
-    transform: translateY(0);
+
+  .member-detail-popup {
+    width: 100%;
+    max-height: 80vh;
+    background-color: var(--theme-elevated);
+    border-radius: 32rpx 32rpx 0 0;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
   }
-}
 
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 32rpx;
-  border-bottom: 1rpx solid #eee;
-}
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 32rpx;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
 
-.member-avatar {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #87CEEB 0%, #5BA3C6 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+  }
 
-.member-avatar.female {
-  background: linear-gradient(135deg, #FFB6C1 0%, #FF8DA1 100%);
-}
+  .member-avatar {
+    width: 100rpx;
+    height: 100rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #87ceeb 0%, #5ba3c6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 
-.avatar-text {
-  font-size: 40rpx;
-  color: #fff;
-  font-weight: bold;
-}
+  .member-avatar.female {
+    background: linear-gradient(135deg, #ffb6c1 0%, #ff8da1 100%);
+  }
 
-.header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
+  .avatar-text {
+    font-size: 40rpx;
+    color: #fff;
+    font-weight: bold;
+  }
 
-.member-name {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-}
+  .header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+  }
 
-.member-tags {
-  display: flex;
-  gap: 12rpx;
-}
+  .member-name {
+    font-size: 36rpx;
+    font-weight: 600;
+    color: var(--theme-text);
+  }
 
-.gender-tag {
-  padding: 4rpx 16rpx;
-  font-size: 24rpx;
-  border-radius: 12rpx;
-}
+  .member-tags {
+    display: flex;
+    gap: 12rpx;
+  }
 
-.gender-tag.male {
-  color: #1890ff;
-  background-color: #e6f7ff;
-}
+  .gender-tag {
+    padding: 4rpx 16rpx;
+    font-size: 24rpx;
+    border-radius: 12rpx;
+  }
 
-.gender-tag.female {
-  color: #eb2f96;
-  background-color: #fff0f6;
-}
+  .gender-tag.male {
+    color: #1890ff;
+    background-color: #e6f7ff;
+  }
 
-.gender-tag.unknown {
-  color: #666;
-  background-color: #f5f5f5;
-}
+  .gender-tag.female {
+    color: #eb2f96;
+    background-color: #fff0f6;
+  }
 
-.generation-tag {
-  padding: 4rpx 16rpx;
-  font-size: 24rpx;
-  color: #667eea;
-  background-color: #f0f0ff;
-  border-radius: 12rpx;
-}
+  .gender-tag.unknown {
+    color: var(--theme-text-secondary);
+    background-color: var(--theme-surface-2);
+  }
 
-.close-btn {
-  padding: 16rpx;
-}
+  .generation-tag {
+    padding: 4rpx 16rpx;
+    font-size: 24rpx;
+    color: #667eea;
+    background-color: #f0f0ff;
+    border-radius: 12rpx;
+  }
 
-.detail-content {
-  flex: 1;
-  max-height: 50vh;
-  padding: 0 32rpx;
-}
+  .close-btn {
+    padding: 16rpx;
+  }
 
-.info-section {
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
-}
+  .detail-content {
+    flex: 1;
+    max-height: 50vh;
+    padding: 0 32rpx;
+  }
 
-.info-section:last-child {
-  border-bottom: none;
-}
+  .info-section {
+    padding: 24rpx 0;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 20rpx;
-}
+  .info-section:last-child {
+    border-bottom: none;
+  }
 
-.title-text {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
-}
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    margin-bottom: 20rpx;
+  }
 
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
+  .title-text {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: var(--theme-text);
+  }
 
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 20rpx;
-}
+  .info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
+  }
 
-.info-label {
-  width: 140rpx;
-  font-size: 28rpx;
-  color: #999;
-  flex-shrink: 0;
-}
+  .info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20rpx;
+  }
 
-.info-value {
-  flex: 1;
-  font-size: 28rpx;
-  color: #333;
-  word-break: break-all;
-}
+  .info-label {
+    width: 140rpx;
+    font-size: 28rpx;
+    color: var(--theme-text-tertiary);
+    flex-shrink: 0;
+  }
 
-.avatar-image {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 8rpx;
-}
+  .info-value {
+    flex: 1;
+    font-size: 28rpx;
+    color: var(--theme-text);
+    word-break: break-all;
+  }
 
-.detail-footer {
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #eee;
-}
+  .avatar-image {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 8rpx;
+  }
 
-.footer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  padding: 24rpx;
-  border-radius: 16rpx;
-  cursor: pointer;
-}
+  .detail-footer {
+    padding: 24rpx 32rpx;
+    padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+    border-top: 1rpx solid var(--theme-border);
+  }
 
-.edit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
+  .footer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    padding: 24rpx;
+    border-radius: 16rpx;
+    cursor: pointer;
+  }
 
-.btn-text {
-  font-size: 30rpx;
-  color: #fff;
-}
+  .edit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .btn-text {
+    font-size: 30rpx;
+    color: #fff;
+  }
 </style>

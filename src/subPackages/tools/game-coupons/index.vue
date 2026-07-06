@@ -6,7 +6,11 @@
       <text class="page-subtitle">{{ gameConfig.subtitle }}</text>
       <view class="login-tip" :class="{ guest: !isLoggedIn }">
         <text class="login-tip-text">
-          {{ isLoggedIn ? '已登录：账号已云端托管，换设备或清缓存都不会丢失。' : '未登录：账号仅保存在本机，清理缓存或换设备会丢失。登录后自动同步到云端，永不丢失。' }}
+          {{
+            isLoggedIn
+              ? '已登录：账号已云端托管，换设备或清缓存都不会丢失。'
+              : '未登录：账号仅保存在本机，清理缓存或换设备会丢失。登录后自动同步到云端，永不丢失。'
+          }}
         </text>
         <text v-if="!isLoggedIn" class="login-link" @click="goLogin">登录同步 ›</text>
       </view>
@@ -28,7 +32,9 @@
 
         <view class="account-main">
           <view class="account-line">
-            <text class="account-name">{{ account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText }}</text>
+            <text class="account-name">{{
+              account.nickname || account.accountIdMasked || account.accountId || gameConfig.accountIdEmptyText
+            }}</text>
             <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
             <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
           </view>
@@ -870,13 +876,13 @@
 </script>
 
 <style lang="scss" scoped>
-  $page-bg: #f4f5f7;
-  $card-bg: #ffffff;
-  $border: #ebedf0;
-  $field-bg: #f6f7f9;
-  $text-primary: #1f2330;
-  $text-secondary: #6b7180;
-  $text-hint: #9aa0ad;
+  $page-bg: var(--theme-bg);
+  $card-bg: var(--theme-surface);
+  $border: var(--theme-border);
+  $field-bg: var(--theme-surface-2);
+  $text-primary: var(--theme-text);
+  $text-secondary: var(--theme-text-secondary);
+  $text-hint: var(--theme-text-tertiary);
   $accent: #4f6ef2;
   $accent-2: #6a8bff;
   $success: #16a34a;

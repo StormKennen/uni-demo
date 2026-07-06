@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-06 [theme/fullcoverage] 夜间模式全覆盖落地：新增 4 个语义 token（--theme-elevated/mask/surface-2/text-tertiary）+ useTheme()/useThemeOnPage() hook + ThemeRoot 升级驱动原生导航栏/TabBar；将 82 个文件（36 全局组件 + 46 页面/子页面）的硬编码颜色迁移至 CSS token 体系，覆盖 background/color/border/box-shadow 四类属性，保留品牌色(#0046b4)与状态色不变（Devin）
 - 2026-07-03 [components/ThemeRoot] 封装 ThemeRoot 统一小程序 page-meta 注入，页面只需首节点引入即可同步主题页级样式（Devin）
 - 2026-07-03 [theme/index] 首页接入 ThemeRoot，并将首页中性背景、卡片、文字、边框与提示态颜色迁移到主题 token（Devin）
 - 2026-07-03 [theme/compendium-list] 图鉴列表页接入 ThemeRoot，并将筛选栏、列表壳、提示文案等中性颜色迁移到主题 token（Devin）

@@ -390,7 +390,7 @@
 <style scoped lang="scss">
   .edit-page {
     min-height: 100vh;
-    background: #f4f6fb;
+    background: var(--theme-bg);
     padding-bottom: 160rpx;
   }
 

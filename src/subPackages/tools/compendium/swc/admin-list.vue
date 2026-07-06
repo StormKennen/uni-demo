@@ -994,15 +994,15 @@
   .swc-admin-page {
     min-height: 100vh;
     padding-bottom: 40rpx;
-    background: #f7f8fb;
+    background: var(--theme-bg);
   }
 
   .filter-bar {
     margin: 24rpx;
     padding: 24rpx;
     border-radius: 20rpx;
-    background: #fff;
-    box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06);
+    background: var(--theme-surface);
+    box-shadow: 0 8rpx 24rpx var(--theme-shadow-xs);
   }
 
   .filter-group + .filter-group {

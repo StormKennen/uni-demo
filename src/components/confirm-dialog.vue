@@ -11,24 +11,24 @@
   const props = defineProps({
     showTitle: {
       type: Boolean,
-      default: true
+      default: true,
     },
     cancelText: {
       type: String,
-      default: '取消'
+      default: '取消',
     },
     confirmText: {
       type: String,
-      default: '确定'
+      default: '确定',
     },
     title: {
       type: String,
-      default: ''
+      default: '',
     },
     confirm: {
       type: Function,
-      default: () => {}
-    }
+      default: () => {},
+    },
   })
 
   const change = () => {
@@ -53,7 +53,7 @@
 
 <template>
   <view class="read-dialog">
-    <uni-popup ref="popup" background-color="#fff" border-radius="12rpx" @change="change">
+    <uni-popup ref="popup" :background-color="'var(--theme-elevated)'" border-radius="12rpx" @change="change">
       <view class="popup-content">
         <view class="top" hover-class="none" hover-stop-propagation="false">
           <text v-if="title" class="">
@@ -82,7 +82,7 @@
       .top {
         text-align: center;
         font-size: 30rpx;
-        color: #222;
+        color: var(--theme-text);
         padding: 0 4rpx;
       }
       .bottom {
@@ -103,7 +103,7 @@
         }
         .cancel-btn {
           color: $ga-brand-4;
-          border:1rpx solid $ga-brand-4;
+          border: 1rpx solid $ga-brand-4;
         }
         .agree-btn {
           background: $ga-brand-4;

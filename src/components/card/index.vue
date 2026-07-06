@@ -8,40 +8,40 @@
 </template>
 
 <script lang="ts" setup>
-import { useSlots } from 'vue';
+  import { useSlots } from 'vue'
 
-defineProps<{
-  styles?: {
-    container?: string | Record<string, string | number>,
-    header?: string | Record<string, string | number>,
-  },
-}>()
+  defineProps<{
+    styles?: {
+      container?: string | Record<string, string | number>
+      header?: string | Record<string, string | number>
+    }
+  }>()
 
-const slots = useSlots()
+  const slots = useSlots()
 </script>
 <style lang="scss" scoped>
-.business-card-section {
-  background-color: #fff;
-  border-radius: 12rpx;
-}
-
-.business-card-header {
-  color: #121a26;
-  position: relative;
-  padding: 32rpx 36rpx 24rpx 36rpx;
-  font-size: 34rpx;
-  font-weight: 500;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: 1px;
-    background-color: #e9ecf0;
-    transform: scaleY(0.5);
-    transform-origin: 0 100%;
+  .business-card-section {
+    background-color: var(--theme-surface);
+    border-radius: 12rpx;
   }
-}
+
+  .business-card-header {
+    color: var(--theme-text);
+    position: relative;
+    padding: 32rpx 36rpx 24rpx 36rpx;
+    font-size: 34rpx;
+    font-weight: 500;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 1px;
+      background-color: var(--theme-border);
+      transform: scaleY(0.5);
+      transform-origin: 0 100%;
+    }
+  }
 </style>

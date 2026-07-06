@@ -9,6 +9,8 @@
 
 <script setup lang="ts">
   import { useThemeStore } from '@/stores/theme'
+  import { useThemeOnPage } from '@/hooks/useTheme'
 
   const themeStore = useThemeStore()
+  useThemeOnPage()
 </script>

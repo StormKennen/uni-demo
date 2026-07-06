@@ -196,7 +196,7 @@
 <style scoped lang="scss">
   .magnet-page {
     min-height: 100vh;
-    background: #f4f6fb;
+    background: var(--theme-bg);
   }
 
   .content {
@@ -207,14 +207,14 @@
     margin-bottom: 24rpx;
     padding: 24rpx;
     border-radius: 18rpx;
-    background: #fff;
-    box-shadow: 0 2rpx 12rpx rgba(34, 48, 76, 0.05);
+    background: var(--theme-surface);
+    box-shadow: 0 2rpx 12rpx var(--theme-shadow-xs);
   }
 
   .section-title {
     font-size: 28rpx;
     font-weight: 800;
-    color: #1b2434;
+    color: var(--theme-text);
     margin-bottom: 16rpx;
   }
 
@@ -222,11 +222,11 @@
     width: 100%;
     min-height: 200rpx;
     padding: 20rpx;
-    border: 2rpx solid #e8edf5;
+    border: 2rpx solid var(--theme-border);
     border-radius: 12rpx;
     font-size: 26rpx;
     line-height: 1.6;
-    color: #333;
+    color: var(--theme-text);
     box-sizing: border-box;
   }
 
@@ -261,10 +261,10 @@
     flex: 1;
     height: 72rpx;
     padding: 0 20rpx;
-    border: 2rpx solid #e8edf5;
+    border: 2rpx solid var(--theme-border);
     border-radius: 12rpx;
     font-size: 26rpx;
-    color: #333;
+    color: var(--theme-text);
   }
 
   .replace-arrow {
@@ -306,9 +306,9 @@
     padding: 16rpx 24rpx;
     margin-bottom: 24rpx;
     border-radius: 12rpx;
-    background: #fff;
+    background: var(--theme-surface);
     font-size: 24rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-weight: 700;
   }
 
@@ -330,7 +330,7 @@
     align-items: flex-start;
     gap: 12rpx;
     padding: 16rpx 0;
-    border-bottom: 1rpx solid #f0f2f5;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .link-item:last-child {
@@ -356,7 +356,7 @@
   .link-text {
     flex: 1;
     font-size: 22rpx;
-    color: #374151;
+    color: var(--theme-text);
     line-height: 1.5;
     word-break: break-all;
   }

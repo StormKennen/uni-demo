@@ -298,7 +298,7 @@
 <style scoped lang="scss">
   .lineup-edit-page {
     min-height: 100vh;
-    background: #f6f7fb;
+    background: var(--theme-bg);
     padding-bottom: 180rpx;
   }
 

@@ -268,7 +268,7 @@
 <style scoped lang="scss">
   .mapping-detail-page {
     min-height: 100vh;
-    background: #f6f7fb;
+    background: var(--theme-bg);
     color: #172033;
     padding-bottom: 60rpx;
   }

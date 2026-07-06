@@ -495,7 +495,7 @@
 <style scoped lang="scss">
   .character-picker-page {
     min-height: 100vh;
-    background: #f6f7fb;
+    background: var(--theme-bg);
     display: flex;
     flex-direction: column;
     padding-bottom: 140rpx;

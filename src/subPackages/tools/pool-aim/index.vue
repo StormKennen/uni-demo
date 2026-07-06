@@ -172,8 +172,13 @@
 </template>
 
 <script setup lang="ts">
-import { getCompendiumsCharacters, getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox';
-import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCompendiumsCharacterQuery, getCompendiumsCharacterRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface';
+  import { getCompendiumsCharacters, getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
+  import type {
+    getCompendiumsCharactersQuery,
+    getCompendiumsCharactersRes,
+    getCompendiumsCharacterQuery,
+    getCompendiumsCharacterRes,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
 
   import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
   import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
@@ -878,9 +883,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   }
 
   function getPocketRadius(pocket: Pocket): number {
-    const diameterMultiplier = pocket.id.startsWith('m')
-      ? MIDDLE_POCKET_DIAMETER_MULTIPLIER
-      : CORNER_POCKET_DIAMETER_MULTIPLIER
+    const diameterMultiplier = pocket.id.startsWith('m') ? MIDDLE_POCKET_DIAMETER_MULTIPLIER : CORNER_POCKET_DIAMETER_MULTIPLIER
     return logicalLengthToCanvas(BALL_DIAMETER * diameterMultiplier * 0.5)
   }
 
@@ -1517,8 +1520,8 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     min-height: 100vh;
     padding: 28rpx 24rpx calc(48rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
-    background: radial-gradient(circle at 10% 0%, rgba(35, 158, 106, 0.16), transparent 34%), #f3f6f4;
-    color: #1d2b26;
+    background: radial-gradient(circle at 10% 0%, rgba(35, 158, 106, 0.16), transparent 34%), var(--theme-bg);
+    color: var(--theme-text);
   }
 
   .hero {
@@ -1574,13 +1577,13 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     padding: 26rpx;
     border: 1rpx solid rgba(35, 76, 61, 0.08);
     border-radius: 24rpx;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 12rpx 36rpx rgba(31, 66, 52, 0.07);
+    background: var(--theme-surface);
+    box-shadow: 0 12rpx 36rpx var(--theme-shadow-sm);
   }
 
   .table-card {
     padding: 10rpx;
-    background: #ffffff;
+    background: var(--theme-surface);
   }
 
   .selector-brief {
@@ -1693,9 +1696,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     align-items: center;
     justify-content: center;
     min-height: 74rpx;
-    border: 2rpx solid #e2e9e5;
+    border: 2rpx solid var(--theme-border);
     border-radius: 16rpx;
-    background: #f8faf9;
+    background: var(--theme-surface-2);
     color: #607069;
     font-size: 25rpx;
     transition: all 0.2s ease;
@@ -1739,7 +1742,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
     aspect-ratio: 6 / 11;
     overflow: hidden;
     border-radius: 16rpx;
-    background: #ffffff;
+    background: var(--theme-surface);
   }
 
   .pool-canvas {
@@ -1902,9 +1905,9 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
 
   .ball-control-card {
     padding: 16rpx 14rpx;
-    border: 2rpx solid #e5ebe8;
+    border: 2rpx solid var(--theme-border);
     border-radius: 18rpx;
-    background: #f8faf9;
+    background: var(--theme-surface-2);
   }
 
   .ball-control-card.active {
@@ -2064,7 +2067,7 @@ import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes, getCom
   .status-item {
     padding: 18rpx 10rpx;
     border-radius: 14rpx;
-    background: #f6f8f7;
+    background: var(--theme-surface-2);
     text-align: center;
   }
 

@@ -289,8 +289,8 @@
   $text-secondary: var(--theme-text-secondary);
   $text-hint: var(--theme-text-tertiary);
   $border-color: var(--theme-border);
-  $shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-  $shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  $shadow-sm: 0 2rpx 12rpx var(--theme-shadow-xs);
+  $shadow-md: 0 4rpx 20rpx var(--theme-shadow-sm);
   $radius-sm: 16rpx;
   $radius-md: 24rpx;
   $radius-lg: 32rpx;

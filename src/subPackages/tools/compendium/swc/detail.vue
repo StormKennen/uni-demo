@@ -1021,16 +1021,16 @@
 <style scoped lang="scss">
   .detail-page {
     min-height: 100vh;
-    background: #f4f6fb;
-    color: #121a26;
+    background: var(--theme-bg);
+    color: var(--theme-text);
   }
 
   .top-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     height: 96rpx;
-    background: #fff;
-    border-bottom: 1rpx solid #edf0f6;
+    background: var(--theme-surface);
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .top-tab {

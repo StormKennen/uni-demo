@@ -290,7 +290,7 @@
 <style scoped lang="scss">
   .relation-page {
     min-height: 100vh;
-    background: #f6f7fb;
+    background: var(--theme-bg);
     padding-bottom: 180rpx;
   }
 

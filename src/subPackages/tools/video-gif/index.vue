@@ -418,7 +418,7 @@
 <style scoped lang="scss">
   .gif-page {
     min-height: 100vh;
-    background: #f4f6fb;
+    background: var(--theme-bg);
   }
 
   .content {
@@ -429,19 +429,19 @@
     margin-bottom: 24rpx;
     padding: 24rpx;
     border-radius: 18rpx;
-    background: #fff;
-    box-shadow: 0 2rpx 12rpx rgba(34, 48, 76, 0.05);
+    background: var(--theme-surface);
+    box-shadow: 0 2rpx 12rpx var(--theme-shadow-xs);
   }
 
   .section-title {
     font-size: 28rpx;
     font-weight: 800;
-    color: #1b2434;
+    color: var(--theme-text);
     margin-bottom: 16rpx;
   }
 
   .upload-area {
-    border: 3rpx dashed #d1d5db;
+    border: 3rpx dashed var(--theme-border);
     border-radius: 16rpx;
     overflow: hidden;
   }

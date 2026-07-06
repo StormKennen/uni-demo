@@ -560,15 +560,15 @@
 
 <style scoped lang="scss">
   /* 统一配色变量（与首页一致） */
-  $bg-color: #f5f7fa;
-  $card-bg: #ffffff;
-  $text-primary: #1a1a1a;
-  $text-secondary: #666666;
-  $text-hint: #999999;
-  $border-color: #eaeef3;
+  $bg-color: var(--theme-bg);
+  $card-bg: var(--theme-surface);
+  $text-primary: var(--theme-text);
+  $text-secondary: var(--theme-text-secondary);
+  $text-hint: var(--theme-text-tertiary);
+  $border-color: var(--theme-border);
   $primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  $shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
-  $shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  $shadow-sm: 0 2rpx 12rpx var(--theme-shadow-xs);
+  $shadow-md: 0 4rpx 20rpx var(--theme-shadow-sm);
   $radius-md: 24rpx;
 
   .qr-generator {

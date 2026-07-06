@@ -14,6 +14,10 @@ export const LIGHT_TOKENS: ThemeTokens = {
   '--theme-border': '#e9ecf0',
   '--theme-brand': '#0046b4',
   '--theme-mask': 'rgba(0,0,0,0.4)',
+  '--theme-elevated': '#ffffff',
+  '--theme-shadow-xs': 'rgba(0,0,0,0.05)',
+  '--theme-shadow-sm': 'rgba(0,0,0,0.1)',
+  '--theme-shadow-md': 'rgba(0,0,0,0.15)',
 }
 
 export const DARK_TOKENS: ThemeTokens = {
@@ -26,6 +30,10 @@ export const DARK_TOKENS: ThemeTokens = {
   '--theme-border': '#2b3644',
   '--theme-brand': '#4a86e8',
   '--theme-mask': 'rgba(0,0,0,0.6)',
+  '--theme-elevated': '#2a3746',
+  '--theme-shadow-xs': 'rgba(0,0,0,0.3)',
+  '--theme-shadow-sm': 'rgba(0,0,0,0.45)',
+  '--theme-shadow-md': 'rgba(0,0,0,0.55)',
 }
 
 const TOKEN_ORDER: Array<keyof typeof LIGHT_TOKENS> = [
@@ -38,6 +46,10 @@ const TOKEN_ORDER: Array<keyof typeof LIGHT_TOKENS> = [
   '--theme-border',
   '--theme-brand',
   '--theme-mask',
+  '--theme-elevated',
+  '--theme-shadow-xs',
+  '--theme-shadow-sm',
+  '--theme-shadow-md',
 ]
 
 const getTokens = (mode: ThemeMode): ThemeTokens => (mode === 'dark' ? DARK_TOKENS : LIGHT_TOKENS)

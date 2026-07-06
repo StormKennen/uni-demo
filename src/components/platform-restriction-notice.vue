@@ -7,14 +7,17 @@
 </template>
 
 <script setup lang="ts">
-  withDefaults(defineProps<{
-    title?: string
-    description: string
-    actionText?: string
-  }>(), {
-    title: '当前平台暂不提供该功能',
-    actionText: '',
-  })
+  withDefaults(
+    defineProps<{
+      title?: string
+      description: string
+      actionText?: string
+    }>(),
+    {
+      title: '当前平台暂不提供该功能',
+      actionText: '',
+    },
+  )
 
   defineEmits<{
     (event: 'action'): void
@@ -26,14 +29,14 @@
     margin: 32rpx;
     padding: 40rpx 32rpx;
     border-radius: 24rpx;
-    background: #fff;
-    box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+    background: var(--theme-surface);
+    box-shadow: 0 10rpx 30rpx var(--theme-shadow-xs);
     text-align: center;
   }
 
   .restriction-title {
     display: block;
-    color: #111827;
+    color: var(--theme-text);
     font-size: 34rpx;
     font-weight: 700;
   }
@@ -41,7 +44,7 @@
   .restriction-desc {
     display: block;
     margin-top: 16rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 26rpx;
     line-height: 1.7;
   }

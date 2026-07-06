@@ -2,7 +2,7 @@
   <view class="date-range-picker">
     <view class="picker-header">
       <text class="title">{{ title }}</text>
-      <img src="@/static/image/close.png" alt="" class="close-icon" @click="handleClose"></img>
+      <img src="@/static/image/close.png" alt="" class="close-icon" @click="handleClose" />
     </view>
 
     <view class="picker-content">
@@ -132,7 +132,7 @@
   }
 
   .date-range-picker {
-    background-color: #fff;
+    background-color: var(--theme-elevated);
     border-radius: 24rpx 24rpx 0 0;
     font-size: 28rpx;
   }
@@ -157,7 +157,7 @@
     }
   }
 
-  .picker-header::after{
+  .picker-header::after {
     content: '';
     position: absolute;
     left: 0;
@@ -167,8 +167,6 @@
     transform: scaleY(0.5);
     transform-origin: 0 100%;
   }
-
-
 
   .sub-title {
     margin-bottom: 24rpx;
