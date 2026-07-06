@@ -1,4 +1,5 @@
 <template>
+  <ThemeRoot />
   <view class="home-page">
     <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: '#667eea' }">
       <template #title>
@@ -16,13 +17,9 @@
         <text class="section-subtitle">RECENT</text>
       </view>
       <view class="recent-grid">
-        <view
-          v-for="item in recentTools"
-          :key="item.key"
-          class="recent-item"
-          @click="handleToolClick(item.key, item.tool)">
+        <view v-for="item in recentTools" :key="item.key" class="recent-item" @click="handleToolClick(item.key, item.tool)">
           <view class="recent-icon" :style="{ background: item.tool.gradient }">
-            <uni-icons :type="(item.tool.icon as any)" size="24" color="#fff" />
+            <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
           </view>
           <text class="recent-name">{{ item.tool.name }}</text>
         </view>
@@ -37,7 +34,7 @@
           <text class="section-subtitle">{{ cat.subtitle }}</text>
         </view>
         <view class="fold-arrow" :class="{ folded: isFolded(cat.key) }">
-          <uni-icons type="down" size="18" color="#999" />
+          <uni-icons type="down" size="18" color="var(--theme-text-tertiary)" />
         </view>
       </view>
 
@@ -50,7 +47,7 @@
             :class="['tool-card', { disabled: item.tool.disabled }]"
             @click="handleToolClick(item.key, item.tool)">
             <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
-              <uni-icons :type="(item.tool.icon as any)" size="24" color="#fff" />
+              <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
             </view>
             <text class="tool-name">{{ item.tool.name }}</text>
             <text class="tool-desc">{{ item.tool.desc }}</text>
@@ -67,7 +64,7 @@
             :class="['tool-list-item', { disabled: item.tool.disabled }]"
             @click="handleToolClick(item.key, item.tool)">
             <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
-              <uni-icons :type="(item.tool.icon as any)" size="20" color="#fff" />
+              <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
             </view>
             <view class="tool-content">
               <text class="tool-name">{{ item.tool.name }}</text>
@@ -76,7 +73,7 @@
             <view class="tool-status">
               <text v-if="item.tool.requiresAuth" class="login-badge">需登录</text>
               <text v-else-if="item.tool.disabled" class="status-dev">开发中</text>
-              <uni-icons v-else type="right" size="16" color="#ccc" />
+              <uni-icons v-else type="right" size="16" color="var(--theme-text-tertiary)" />
             </view>
           </view>
         </view>
@@ -108,12 +105,8 @@
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import PrivacyPopup from '@/components/privacy-popup.vue'
-  import {
-    ALL_TOOLS,
-    CATEGORIES,
-    STORAGE_KEY_RECENT,
-    STORAGE_KEY_FOLD_STATUS,
-  } from '@/config/tools'
+  import ThemeRoot from '@/components/ThemeRoot.vue'
+  import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_RECENT, STORAGE_KEY_FOLD_STATUS } from '@/config/tools'
   import type { ToolItem } from '@/config/tools'
 
   declare const uni: any
@@ -156,16 +149,12 @@
   )
 
   /** 可见分类（过滤掉没有工具的分类） */
-  const visibleCategories = computed(() =>
-    CATEGORIES.filter(cat => getToolsByCategory(cat.key).length > 0),
-  )
+  const visibleCategories = computed(() => CATEGORIES.filter(cat => getToolsByCategory(cat.key).length > 0))
 
   /** 最近使用的工具列表（从缓存 key 数组还原完整数据） */
   const recentTools = computed<KeyedToolItem[]>(() => {
     const available = new Set(availableTools.value.map(t => t.key))
-    return recentToolKeys.value
-      .filter(k => available.has(k) && ALL_TOOLS[k])
-      .map(k => ({ key: k, tool: ALL_TOOLS[k] }))
+    return recentToolKeys.value.filter(k => available.has(k) && ALL_TOOLS[k]).map(k => ({ key: k, tool: ALL_TOOLS[k] }))
   })
 
   // ── 工具方法 ──
@@ -294,12 +283,12 @@
 </script>
 
 <style lang="scss" scoped>
-  $bg-color: #f5f7fa;
-  $card-bg: #ffffff;
-  $text-primary: #1a1a1a;
-  $text-secondary: #666666;
-  $text-hint: #999999;
-  $border-color: #eaeef3;
+  $bg-color: var(--theme-bg);
+  $card-bg: var(--theme-surface);
+  $text-primary: var(--theme-text);
+  $text-secondary: var(--theme-text-secondary);
+  $text-hint: var(--theme-text-tertiary);
+  $border-color: var(--theme-border);
   $shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   $shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   $radius-sm: 16rpx;
@@ -428,8 +417,14 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-8rpx); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-8rpx);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   // ── 网格工具卡片 ──
@@ -529,7 +524,7 @@
     }
 
     &:active {
-      background: #f8f9fa;
+      background: var(--theme-surface-2);
     }
 
     &.disabled {
@@ -576,14 +571,14 @@
         font-size: 22rpx;
         color: $text-hint;
         padding: 6rpx 16rpx;
-        background: #f0f0f0;
+        background: var(--theme-surface-2);
         border-radius: 20rpx;
       }
     }
   }
 
   .login-badge {
-    color: #999;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 

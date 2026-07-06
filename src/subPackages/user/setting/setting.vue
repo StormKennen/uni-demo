@@ -5,9 +5,7 @@
   import { ref } from 'vue'
   import { getToken, removeToken, removeWxUserInfo, setToken, setWxUserInfo } from '@/utils/storage'
   import { onShow } from '@dcloudio/uni-app'
-  import { useThemeStore } from '@/stores/theme'
-
-  const themeStore = useThemeStore()
+  import ThemeRoot from '@/components/ThemeRoot.vue'
 
   const isLogut = ref(!getToken())
   const appBaseInfo = uni.getAppBaseInfo()
@@ -49,9 +47,7 @@
 </script>
 
 <template>
-  <!-- #ifdef MP-WEIXIN -->
-  <page-meta :page-style="themeStore.pageStyle" />
-  <!-- #endif -->
+  <ThemeRoot />
   <view class="setting">
     <view class="list" hover-class="none" hover-stop-propagation="false">
       <view v-for="item in list" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
