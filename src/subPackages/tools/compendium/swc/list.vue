@@ -1,4 +1,5 @@
 <template>
+  <ThemeRoot />
   <view class="compendium-page">
     <view class="locale-toolbar">
       <text class="locale-toolbar-label">语言</text>
@@ -204,6 +205,7 @@
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
+  import ThemeRoot from '@/components/ThemeRoot.vue'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
@@ -713,8 +715,8 @@
 <style scoped lang="scss">
   .compendium-page {
     min-height: 100vh;
-    background: #f7f8fb;
-    color: #121a26;
+    background: var(--theme-bg);
+    color: var(--theme-text);
   }
 
   .locale-toolbar {
@@ -723,11 +725,11 @@
     justify-content: space-between;
     gap: 16rpx;
     padding: 20rpx 24rpx 14rpx;
-    background: #f7f8fb;
+    background: var(--theme-bg);
   }
 
   .locale-toolbar-label {
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -738,7 +740,7 @@
     gap: 8rpx;
     padding: 6rpx;
     border-radius: 999rpx;
-    background: #e8eef5;
+    background: var(--theme-surface-2);
   }
 
   .locale-option {
@@ -747,7 +749,7 @@
     line-height: 56rpx;
     text-align: center;
     border-radius: 999rpx;
-    color: #808997;
+    color: var(--theme-text-tertiary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -761,8 +763,8 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: #fff;
-    border-bottom: 1rpx solid #eef0f5;
+    background: var(--theme-surface);
+    border-bottom: 1rpx solid var(--theme-border);
     box-shadow: 0 8rpx 22rpx rgba(30, 42, 64, 0.06);
   }
 
@@ -777,7 +779,7 @@
   .filter-icon {
     flex: none;
     font-size: 36rpx;
-    color: #b0b8c4;
+    color: var(--theme-text-tertiary);
   }
 
   .filter-icon.active {
@@ -802,7 +804,7 @@
     line-height: 44rpx;
     padding: 0 16rpx;
     border-radius: 999rpx;
-    background: #eef3fb;
+    background: var(--theme-surface-2);
     color: #4b9df4;
     font-size: 22rpx;
     font-weight: 700;
@@ -810,13 +812,13 @@
 
   .filter-hint {
     flex: 1;
-    color: #b0b8c4;
+    color: var(--theme-text-tertiary);
     font-size: 24rpx;
   }
 
   .filter-expand-arrow {
     flex: none;
-    color: #b0b8c4;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 
@@ -829,11 +831,11 @@
     align-items: center;
     justify-content: center;
     height: 64rpx;
-    border-top: 1rpx solid #eef0f5;
+    border-top: 1rpx solid var(--theme-border);
   }
 
   .filter-collapse-text {
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -847,7 +849,7 @@
   }
 
   .filter-title {
-    color: #121a26;
+    color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 800;
   }
@@ -857,8 +859,8 @@
     line-height: 44rpx;
     padding: 0 18rpx;
     border-radius: 999rpx;
-    background: #f6f8fb;
-    color: #667085;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -872,14 +874,14 @@
 
   .family-mode-tip {
     padding: 0 24rpx 16rpx 92rpx;
-    color: #8b94a4;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 
   .filter-label {
     flex: none;
     width: 56rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 800;
   }
@@ -901,10 +903,10 @@
     flex: none;
     height: 52rpx;
     padding: 0 20rpx;
-    border: 1rpx solid #e7ebf2;
+    border: 1rpx solid var(--theme-border);
     border-radius: 999rpx;
-    background: #f8fafc;
-    color: #465164;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -914,8 +916,8 @@
   }
 
   .quick-chip.selected {
-    border-color: #121a26;
-    background: #121a26;
+    border-color: var(--theme-text);
+    background: var(--theme-text);
     color: #fff;
   }
 
@@ -943,7 +945,7 @@
 
   .character-card {
     min-width: 0;
-    background: #f7f8fb;
+    background: var(--theme-bg);
     border: 2rpx solid rgba(255, 255, 255, 0.36);
     border-radius: 18rpx;
     color: #fff;
@@ -1021,7 +1023,7 @@
   .card-element-light {
     --family-stack-color: rgba(239, 205, 91, 0.7);
     background: rgba(255, 238, 171, 0.92);
-    color: #121a26;
+    color: var(--theme-text);
   }
 
   .card-element-dark {
@@ -1252,7 +1254,7 @@
     align-items: center;
     justify-content: center;
     gap: 20rpx;
-    color: #8b94a4;
+    color: var(--theme-text-tertiary);
     font-size: 28rpx;
   }
 
@@ -1269,11 +1271,11 @@
   .load-more {
     padding: 24rpx 0 40rpx;
     text-align: center;
-    color: #8b94a4;
+    color: var(--theme-text-tertiary);
     font-size: 24rpx;
   }
 
   .load-more.muted {
-    color: #c0c6d0;
+    color: var(--theme-text-tertiary);
   }
 </style>
