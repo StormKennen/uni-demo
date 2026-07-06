@@ -1,69 +1,64 @@
 <template>
-  <view class="cipher-page">
-    <NavBar
-      always-title
-      title="图片混淆"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' }" />
+  <PageLayout title="图片混淆" nav-gradient="linear-gradient(135deg, #f6d365 0%, #fda085 100%)">
+    <view class="cipher-page">
+      <PlatformRestrictionNotice
+        v-if="isWeixinRestricted"
+        description="根据微信小程序平台运营规范，当前平台暂不提供图片混淆/还原功能，请前往 H5 使用。"
+        action-text="返回首页"
+        @action="goHome" />
 
-    <PlatformRestrictionNotice
-      v-if="isWeixinRestricted"
-      description="根据微信小程序平台运营规范，当前平台暂不提供图片混淆/还原功能，请前往 H5 使用。"
-      action-text="返回首页"
-      @action="goHome" />
-
-    <view v-else class="content">
-      <view class="card upload-card">
-        <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
-          <uni-icons type="image" size="56" color="#b0bec5" />
-          <text class="upload-title">点击上传需要混淆的图片</text>
-          <text class="upload-desc">支持 JPG / PNG / WebP，最大 20MB</text>
-          <text class="upload-hint">所有处理均在本地完成，不会上传服务器</text>
-        </view>
-
-        <view v-else class="preview-area">
-          <view class="preview-header">
-            <view>
-              <text class="preview-title">当前图片</text>
-              <text class="preview-meta"
-                >{{ baseImage.width }} × {{ baseImage.height }} · {{ formatFileSize(currentImage.size || baseImage.size) }}</text
-              >
-            </view>
-            <button class="ghost-btn" @click="resetAll">重新选择</button>
+      <view v-else class="content">
+        <view class="card upload-card">
+          <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
+            <uni-icons type="image" size="56" color="#b0bec5" />
+            <text class="upload-title">点击上传需要混淆的图片</text>
+            <text class="upload-desc">支持 JPG / PNG / WebP，最大 20MB</text>
+            <text class="upload-hint">所有处理均在本地完成，不会上传服务器</text>
           </view>
-          <view class="preview-wrapper">
-            <image class="preview-image" :src="currentImage.src || baseImage.previewSrc" mode="widthFix" show-menu-by-longpress />
-            <view v-if="isProcessing" class="preview-overlay">
-              <view class="loader-circle"></view>
-              <text class="loader-text">处理中...</text>
+
+          <view v-else class="preview-area">
+            <view class="preview-header">
+              <view>
+                <text class="preview-title">当前图片</text>
+                <text class="preview-meta"
+                  >{{ baseImage.width }} × {{ baseImage.height }} · {{ formatFileSize(currentImage.size || baseImage.size) }}</text
+                >
+              </view>
+              <button class="ghost-btn" @click="resetAll">重新选择</button>
             </view>
-          </view>
-          <view class="preview-footer">
-            <text class="result-meta">兼容模式：依据密钥即可在任意渠道还原</text>
-            <view class="preview-actions">
-              <button class="ghost-btn" @click="saveResult">保存/下载</button>
-              <button class="ghost-btn" @click="copyDataUrl" :disabled="!currentImage.src.startsWith('data:')">复制 DataURL</button>
+            <view class="preview-wrapper">
+              <image class="preview-image" :src="currentImage.src || baseImage.previewSrc" mode="widthFix" show-menu-by-longpress />
+              <view v-if="isProcessing" class="preview-overlay">
+                <view class="loader-circle"></view>
+                <text class="loader-text">处理中...</text>
+              </view>
+            </view>
+            <view class="preview-footer">
+              <text class="result-meta">兼容模式：依据密钥即可在任意渠道还原</text>
+              <view class="preview-actions">
+                <button class="ghost-btn" @click="saveResult">保存/下载</button>
+                <button class="ghost-btn" @click="copyDataUrl" :disabled="!currentImage.src.startsWith('data:')">复制 DataURL</button>
+              </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <view class="share-entry" v-if="!isH5">
-        <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「图片混淆」工具</text>
-        <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
-      </view>
-      <view class="share-entry" v-else>
-        <button class="share-btn" @click="handleShare">复制分享链接</button>
-      </view>
-
-      <view class="card control-card" v-if="baseImage.src">
-        <text class="mode-hint">兼容模式：可在微信相册、社交平台等渠道保存后再还原</text>
-
-        <view class="control-group">
-          <text class="control-label">密钥（任意字符）</text>
-          <input v-model.trim="cipherSettings.seed" class="text-input" placeholder="例如：123" />
+        <view class="share-entry" v-if="!isH5">
+          <text class="share-tip" v-if="isWeixinMiniProgram">请点击右上角 · 分享「图片混淆」工具</text>
+          <text class="share-tip" v-else>请点击右上角 · 分享本工具</text>
         </view>
-        <!-- <view class="control-group">
+        <view class="share-entry" v-else>
+          <button class="share-btn" @click="handleShare">复制分享链接</button>
+        </view>
+
+        <view class="card control-card" v-if="baseImage.src">
+          <text class="mode-hint">兼容模式：可在微信相册、社交平台等渠道保存后再还原</text>
+
+          <view class="control-group">
+            <text class="control-label">密钥（任意字符）</text>
+            <input v-model.trim="cipherSettings.seed" class="text-input" placeholder="例如：123" />
+          </view>
+          <!-- <view class="control-group">
           <text class="control-label">混淆网格 {{ cipherSettings.grid }} × {{ cipherSettings.grid }}</text>
           <slider
             :value="cipherSettings.grid"
@@ -77,50 +72,50 @@
           <text class="hint">网格越大越复杂，但处理时间也更长</text>
         </view> -->
 
-        <view class="btn-row">
+          <view class="btn-row">
+            <button
+              class="primary-btn"
+              :loading="isProcessing"
+              loading-text="处理中..."
+              :disabled="isProcessing"
+              @click="() => handleCipher('encrypt')"
+              >混淆一次</button
+            >
+            <button
+              class="ghost-btn"
+              :loading="isProcessing"
+              loading-text="处理中..."
+              :disabled="isProcessing"
+              @click="() => handleCipher('decrypt')"
+              >还原一次</button
+            >
+          </view>
           <button
-            class="primary-btn"
+            class="ghost-btn full"
             :loading="isProcessing"
             loading-text="处理中..."
-            :disabled="isProcessing"
-            @click="() => handleCipher('encrypt')"
-            >混淆一次</button
-          >
-          <button
-            class="ghost-btn"
-            :loading="isProcessing"
-            loading-text="处理中..."
-            :disabled="isProcessing"
-            @click="() => handleCipher('decrypt')"
-            >还原一次</button
+            :disabled="isProcessing || !baseImage.src || currentImage.src === baseImage.previewSrc"
+            @click="restoreOriginal"
+            >还原到原图</button
           >
         </view>
-        <button
-          class="ghost-btn full"
-          :loading="isProcessing"
-          loading-text="处理中..."
-          :disabled="isProcessing || !baseImage.src || currentImage.src === baseImage.previewSrc"
-          @click="restoreOriginal"
-          >还原到原图</button
-        >
       </view>
-    </view>
 
-    <canvas
-      canvas-id="cipherCanvas"
-      id="cipherCanvas"
-      class="hidden-canvas"
-      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
-      :width="canvasWidth"
-      :height="canvasHeight"></canvas>
-  </view>
+      <canvas
+        canvas-id="cipherCanvas"
+        id="cipherCanvas"
+        class="hidden-canvas"
+        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+        :width="canvasWidth"
+        :height="canvasHeight"></canvas>
+    </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { ref, reactive, computed } from 'vue'
   import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
   import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
   import { SimpleScrambler } from '@/engine/simple-scrambler'
 

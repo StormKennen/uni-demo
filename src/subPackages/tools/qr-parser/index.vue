@@ -1,52 +1,47 @@
 <template>
-  <view class="qr-parser">
-    <!-- 导航栏（统一样式） -->
-    <nav-bar
-      always-title
-      title="二维码解析"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 内容区域 -->
-    <view class="content">
-      <!-- 图片解析（仅 H5 展示） -->
-      <!-- #ifdef H5 -->
-      <view class="parse-section">
-        <view class="section-title">图片解析（手机浏览器）</view>
-        <button class="action-btn parse-btn" @click="parseQRCodeFromImage"> 选择图片并解析二维码 </button>
-        <view class="tips">若解析失败，请确保图片清晰且包含完整二维码</view>
-        <view v-if="previewSrc" class="preview-wrap">
-          <image :src="previewSrc" class="preview-image" mode="widthFix" />
+  <PageLayout title="二维码解析" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="qr-parser">
+      <!-- 导航栏（统一样式） -->
+      <!-- 内容区域 -->
+      <view class="content">
+        <!-- 图片解析（仅 H5 展示） -->
+        <!-- #ifdef H5 -->
+        <view class="parse-section">
+          <view class="section-title">图片解析（手机浏览器）</view>
+          <button class="action-btn parse-btn" @click="parseQRCodeFromImage"> 选择图片并解析二维码 </button>
+          <view class="tips">若解析失败，请确保图片清晰且包含完整二维码</view>
+          <view v-if="previewSrc" class="preview-wrap">
+            <image :src="previewSrc" class="preview-image" mode="widthFix" />
+          </view>
         </view>
-      </view>
-      <!-- #endif -->
+        <!-- #endif -->
 
-      <!-- 扫码解析（小程序/APP 展示） -->
-      <!-- #ifndef H5 -->
-      <view class="parse-section">
-        <view class="section-title">扫码解析（微信小程序/APP）</view>
-        <button class="action-btn scan-btn" @click="scanQRCode"> 打开相机扫码解析 </button>
-      </view>
-      <!-- #endif -->
-
-      <!-- 解析结果 -->
-      <view class="result-section" v-if="parseResult || parseError">
-        <view class="section-title">解析结果</view>
-        <view class="info-item" v-if="parseResult">
-          <text class="info-label">内容：</text>
-          <text class="info-value">{{ parseResult }}</text>
+        <!-- 扫码解析（小程序/APP 展示） -->
+        <!-- #ifndef H5 -->
+        <view class="parse-section">
+          <view class="section-title">扫码解析（微信小程序/APP）</view>
+          <button class="action-btn scan-btn" @click="scanQRCode"> 打开相机扫码解析 </button>
         </view>
-        <view class="info-item" v-if="parseError">
-          <text class="info-label">错误：</text>
-          <text class="info-value">{{ parseError }}</text>
+        <!-- #endif -->
+
+        <!-- 解析结果 -->
+        <view class="result-section" v-if="parseResult || parseError">
+          <view class="section-title">解析结果</view>
+          <view class="info-item" v-if="parseResult">
+            <text class="info-label">内容：</text>
+            <text class="info-value">{{ parseResult }}</text>
+          </view>
+          <view class="info-item" v-if="parseError">
+            <text class="info-label">错误：</text>
+            <text class="info-value">{{ parseError }}</text>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script>
-  import NavBar from '@/components/nav-bar.vue'
   import { reportToolVisit } from '@/utils/tracker'
 
   export default {

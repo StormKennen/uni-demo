@@ -1,94 +1,89 @@
 <template>
-  <view class="format-page">
-    <NavBar
-      always-title
-      title="图片格式转换"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)' }" />
-
-    <view class="content">
-      <view class="card upload-card">
-        <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
-          <uni-icons type="cloud-upload" size="54" color="#90a4ae" />
-          <text class="upload-title">点击上传图片</text>
-          <text class="upload-desc">支持 JPG / PNG / WebP，单张 ≤ 20MB</text>
-          <text class="upload-hint">建议使用清晰原图，便于保持画质</text>
-        </view>
-
-        <view v-else class="preview-area">
-          <view class="preview-header">
-            <view>
-              <text class="preview-title">原图预览</text>
-              <text class="preview-meta">{{ baseImage.width }} × {{ baseImage.height }} · {{ formatFileSize(baseImage.size) }}</text>
-            </view>
-            <button class="ghost-btn" @click="reset">重新选择</button>
+  <PageLayout title="图片格式转换" nav-gradient="linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)">
+    <view class="format-page">
+      <view class="content">
+        <view class="card upload-card">
+          <view v-if="!baseImage.src" class="upload-area" @click="selectImage">
+            <uni-icons type="cloud-upload" size="54" color="#90a4ae" />
+            <text class="upload-title">点击上传图片</text>
+            <text class="upload-desc">支持 JPG / PNG / WebP，单张 ≤ 20MB</text>
+            <text class="upload-hint">建议使用清晰原图，便于保持画质</text>
           </view>
-          <image class="preview-image" :src="baseImage.previewSrc" mode="widthFix" />
-        </view>
-      </view>
 
-      <view class="card control-card" v-if="baseImage.src">
-        <view class="control-group">
-          <text class="control-label">目标格式</text>
-          <view class="format-options">
-            <view
-              v-for="option in formatOptions"
-              :key="option.value"
-              class="format-item"
-              :class="{ active: targetFormat === option.value, disabled: !option.supported }"
-              @click="selectFormat(option)">
-              <text>{{ option.label }}</text>
-              <text class="format-desc" v-if="option.tip">{{ option.tip }}</text>
+          <view v-else class="preview-area">
+            <view class="preview-header">
+              <view>
+                <text class="preview-title">原图预览</text>
+                <text class="preview-meta">{{ baseImage.width }} × {{ baseImage.height }} · {{ formatFileSize(baseImage.size) }}</text>
+              </view>
+              <button class="ghost-btn" @click="reset">重新选择</button>
             </view>
+            <image class="preview-image" :src="baseImage.previewSrc" mode="widthFix" />
           </view>
         </view>
 
-        <view class="control-group" v-if="targetFormat !== 'png'">
-          <text class="control-label">压缩质量 {{ quality }}%</text>
-          <slider
-            :value="quality"
-            :min="40"
-            :max="100"
-            :step="5"
-            @change="e => (quality = Number(e.detail.value))"
-            activeColor="#4caf50"
-            backgroundColor="#e0e0e0" />
-          <text class="quality-hint">数值越高体积越大，建议 80% 以上保留清晰度</text>
+        <view class="card control-card" v-if="baseImage.src">
+          <view class="control-group">
+            <text class="control-label">目标格式</text>
+            <view class="format-options">
+              <view
+                v-for="option in formatOptions"
+                :key="option.value"
+                class="format-item"
+                :class="{ active: targetFormat === option.value, disabled: !option.supported }"
+                @click="selectFormat(option)">
+                <text>{{ option.label }}</text>
+                <text class="format-desc" v-if="option.tip">{{ option.tip }}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="control-group" v-if="targetFormat !== 'png'">
+            <text class="control-label">压缩质量 {{ quality }}%</text>
+            <slider
+              :value="quality"
+              :min="40"
+              :max="100"
+              :step="5"
+              @change="e => (quality = Number(e.detail.value))"
+              activeColor="#4caf50"
+              backgroundColor="#e0e0e0" />
+            <text class="quality-hint">数值越高体积越大，建议 80% 以上保留清晰度</text>
+          </view>
+
+          <view class="warning" v-if="targetFormat === 'webp' && !isH5">
+            <uni-icons type="info" size="20" color="#fb8c00" />
+            <text>小程序暂不支持导出 WebP，请改用 PNG / JPG 或前往 H5 访问。</text>
+          </view>
+
+          <button class="primary-btn" :loading="isConverting" @click="convertImage">开始转换</button>
         </view>
 
-        <view class="warning" v-if="targetFormat === 'webp' && !isH5">
-          <uni-icons type="info" size="20" color="#fb8c00" />
-          <text>小程序暂不支持导出 WebP，请改用 PNG / JPG 或前往 H5 访问。</text>
+        <view class="card result-card" v-if="convertedImage.src">
+          <view class="result-header">
+            <text class="result-title">转换结果 · {{ convertedImage.format.toUpperCase() }}</text>
+            <text class="result-meta">{{ formatFileSize(convertedImage.size) }}</text>
+          </view>
+          <image class="result-image" :src="convertedImage.src" mode="widthFix" show-menu-by-longpress />
+          <view class="result-actions">
+            <button class="ghost-btn" @click="saveResult">保存到本地</button>
+            <button class="ghost-btn" @click="copyLink" :disabled="!canCopyPath">复制地址</button>
+          </view>
         </view>
-
-        <button class="primary-btn" :loading="isConverting" @click="convertImage">开始转换</button>
       </view>
 
-      <view class="card result-card" v-if="convertedImage.src">
-        <view class="result-header">
-          <text class="result-title">转换结果 · {{ convertedImage.format.toUpperCase() }}</text>
-          <text class="result-meta">{{ formatFileSize(convertedImage.size) }}</text>
-        </view>
-        <image class="result-image" :src="convertedImage.src" mode="widthFix" show-menu-by-longpress />
-        <view class="result-actions">
-          <button class="ghost-btn" @click="saveResult">保存到本地</button>
-          <button class="ghost-btn" @click="copyLink" :disabled="!canCopyPath">复制地址</button>
-        </view>
-      </view>
+      <canvas
+        canvas-id="formatCanvas"
+        id="formatCanvas"
+        class="hidden-canvas"
+        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+        :width="canvasWidth"
+        :height="canvasHeight"></canvas>
     </view>
-
-    <canvas
-      canvas-id="formatCanvas"
-      id="formatCanvas"
-      class="hidden-canvas"
-      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
-      :width="canvasWidth"
-      :height="canvasHeight"></canvas>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import NavBar from '@/components/nav-bar.vue'
   import { ref, reactive, computed, getCurrentInstance } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'

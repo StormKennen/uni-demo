@@ -1,203 +1,204 @@
 <template>
-  <ThemeRoot />
-  <view class="compendium-page">
-    <view class="locale-toolbar">
-      <text class="locale-toolbar-label">语言</text>
-      <view class="locale-switch">
-        <text
-          v-for="option in localeOptions"
-          :key="option.value"
-          class="locale-option"
-          :class="{ selected: option.value === selectedLocale }"
-          @click="changeLocale(option.value)">
-          {{ option.label }}
-        </text>
+  <PageLayout title="魔灵 wiki-图鉴" :nav-back="true">
+    <view class="compendium-page">
+      <view class="locale-toolbar">
+        <text class="locale-toolbar-label">语言</text>
+        <view class="locale-switch">
+          <text
+            v-for="option in localeOptions"
+            :key="option.value"
+            class="locale-option"
+            :class="{ selected: option.value === selectedLocale }"
+            @click="changeLocale(option.value)">
+            {{ option.label }}
+          </text>
+        </view>
       </view>
-    </view>
 
-    <view class="filter-shell">
-      <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
-        <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
-        <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
-          <view class="filter-tags-row">
-            <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
+      <view class="filter-shell">
+        <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
+          <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
+          <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
+            <view class="filter-tags-row">
+              <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
+            </view>
+          </scroll-view>
+          <text v-else class="filter-hint">点击展开筛选</text>
+          <text class="filter-expand-arrow">▼</text>
+        </view>
+
+        <view v-else class="filter-expanded">
+          <view class="filter-section">
+            <text class="filter-label">属性</text>
+            <scroll-view class="filter-scroll" scroll-x enable-flex>
+              <view class="filter-chip-row">
+                <view
+                  v-for="option in elementOptions"
+                  :key="option.value"
+                  class="quick-chip element-chip"
+                  :class="{ selected: option.value === selectedElement }"
+                  @click="selectFilter('element', option.value)">
+                  <SwcElementBadge
+                    v-if="option.value !== ALL_VALUE"
+                    :element-key="option.value"
+                    :label="option.label"
+                    :size="24"
+                    :font-size="24"
+                    :gap="8" />
+                  <text v-else>{{ option.label }}</text>
+                </view>
+              </view>
+            </scroll-view>
           </view>
-        </scroll-view>
-        <text v-else class="filter-hint">点击展开筛选</text>
-        <text class="filter-expand-arrow">▼</text>
+
+          <view class="filter-section">
+            <text class="filter-label">形态</text>
+            <scroll-view class="filter-scroll" scroll-x enable-flex>
+              <view class="filter-chip-row">
+                <view
+                  v-for="option in awakenOptions"
+                  :key="option.value"
+                  class="quick-chip"
+                  :class="{ selected: option.value === selectedAwaken }"
+                  @click="selectFilter('awaken', option.value)">
+                  <text>{{ option.label }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-section">
+            <text class="filter-label">类型</text>
+            <scroll-view class="filter-scroll" scroll-x enable-flex>
+              <view class="filter-chip-row">
+                <view
+                  v-for="option in typeOptions"
+                  :key="option.value"
+                  class="quick-chip"
+                  :class="{ selected: option.value === selectedType }"
+                  @click="selectFilter('type', option.value)">
+                  <text>{{ option.label }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-section">
+            <text class="filter-label">胎星级</text>
+            <scroll-view class="filter-scroll" scroll-x enable-flex>
+              <view class="filter-chip-row">
+                <view
+                  v-for="option in starOptions"
+                  :key="option.value"
+                  class="quick-chip"
+                  :class="{ selected: option.value === selectedStar }"
+                  @click="selectFilter('star', option.value)">
+                  <text>{{ option.label }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-section">
+            <text class="filter-label">排序</text>
+            <scroll-view class="filter-scroll" scroll-x enable-flex>
+              <view class="filter-chip-row">
+                <view
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  class="quick-chip"
+                  :class="{ selected: option.value === selectedSort }"
+                  @click="selectFilter('sort', option.value)">
+                  <text>{{ getSortOptionLabel(option) }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-collapse-bar" @click="filterExpanded = false">
+            <text class="filter-collapse-text">收起筛选 ▲</text>
+          </view>
+        </view>
       </view>
 
-      <view v-else class="filter-expanded">
-        <view class="filter-section">
-          <text class="filter-label">属性</text>
-          <scroll-view class="filter-scroll" scroll-x enable-flex>
-            <view class="filter-chip-row">
-              <view
-                v-for="option in elementOptions"
-                :key="option.value"
-                class="quick-chip element-chip"
-                :class="{ selected: option.value === selectedElement }"
-                @click="selectFilter('element', option.value)">
+      <view v-if="loading && characters.length === 0" class="state-block">
+        <text>{{ isFamilyMode ? '加载物种中...' : '加载魔灵中...' }}</text>
+      </view>
+
+      <view v-else-if="errorMessage" class="state-block">
+        <text>{{ errorMessage }}</text>
+        <button class="retry-btn" @click="refreshCharacters">重试</button>
+      </view>
+
+      <view v-else-if="characters.length === 0" class="state-block">
+        <text>{{ emptyText }}</text>
+      </view>
+
+      <view v-else class="character-grid" :class="{ 'family-grid': isFamilyMode }">
+        <template v-if="isFamilyMode">
+          <view
+            v-for="character in characters"
+            :key="character.characterId"
+            class="character-card"
+            :class="['card-element-' + character.elementKey, { 'family-card': isFamilyMode }]"
+            @click="goToDetail(character)">
+            <view class="avatar-wrap">
+              <image v-if="character.avatar" class="avatar" :src="character.avatar" mode="aspectFill" lazy-load />
+              <view v-else class="avatar-placeholder">
+                <text>{{ character.name.slice(0, 1) || '?' }}</text>
+              </view>
+              <view v-if="character.stars" class="stars">
+                <text v-for="i in Number(character.displayStars)" :key="i" class="star-icon">★</text>
+              </view>
+              <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
+            </view>
+            <view class="character-info">
+              <view class="character-name-row">
                 <SwcElementBadge
-                  v-if="option.value !== ALL_VALUE"
-                  :element-key="option.value"
-                  :label="option.label"
-                  :size="24"
-                  :font-size="24"
-                  :gap="8" />
-                <text v-else>{{ option.label }}</text>
+                  v-if="character.elementName"
+                  :element-key="character.elementKey"
+                  :label="character.elementName"
+                  :size="20"
+                  :font-size="20"
+                  :icon-only="true" />
+                <text class="character-name">
+                  {{ character.familyName }}
+                </text>
+              </view>
+              <view class="representative-row">
+                <text class="representative-label">代表魔灵</text>
+                <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
+              </view>
+              <view class="meta-row family-meta-row">
+                <view v-if="character.archetype" class="meta-chip">
+                  <text>{{ character.archetype }}</text>
+                </view>
               </view>
             </view>
-          </scroll-view>
-        </view>
+          </view>
+        </template>
 
-        <view class="filter-section">
-          <text class="filter-label">形态</text>
-          <scroll-view class="filter-scroll" scroll-x enable-flex>
-            <view class="filter-chip-row">
-              <view
-                v-for="option in awakenOptions"
-                :key="option.value"
-                class="quick-chip"
-                :class="{ selected: option.value === selectedAwaken }"
-                @click="selectFilter('awaken', option.value)">
-                <text>{{ option.label }}</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-
-        <view class="filter-section">
-          <text class="filter-label">类型</text>
-          <scroll-view class="filter-scroll" scroll-x enable-flex>
-            <view class="filter-chip-row">
-              <view
-                v-for="option in typeOptions"
-                :key="option.value"
-                class="quick-chip"
-                :class="{ selected: option.value === selectedType }"
-                @click="selectFilter('type', option.value)">
-                <text>{{ option.label }}</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-
-        <view class="filter-section">
-          <text class="filter-label">胎星级</text>
-          <scroll-view class="filter-scroll" scroll-x enable-flex>
-            <view class="filter-chip-row">
-              <view
-                v-for="option in starOptions"
-                :key="option.value"
-                class="quick-chip"
-                :class="{ selected: option.value === selectedStar }"
-                @click="selectFilter('star', option.value)">
-                <text>{{ option.label }}</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-
-        <view class="filter-section">
-          <text class="filter-label">排序</text>
-          <scroll-view class="filter-scroll" scroll-x enable-flex>
-            <view class="filter-chip-row">
-              <view
-                v-for="option in sortOptions"
-                :key="option.value"
-                class="quick-chip"
-                :class="{ selected: option.value === selectedSort }"
-                @click="selectFilter('sort', option.value)">
-                <text>{{ getSortOptionLabel(option) }}</text>
-              </view>
-            </view>
-          </scroll-view>
-        </view>
-
-        <view class="filter-collapse-bar" @click="filterExpanded = false">
-          <text class="filter-collapse-text">收起筛选 ▲</text>
-        </view>
-      </view>
-    </view>
-
-    <view v-if="loading && characters.length === 0" class="state-block">
-      <text>{{ isFamilyMode ? '加载物种中...' : '加载魔灵中...' }}</text>
-    </view>
-
-    <view v-else-if="errorMessage" class="state-block">
-      <text>{{ errorMessage }}</text>
-      <button class="retry-btn" @click="refreshCharacters">重试</button>
-    </view>
-
-    <view v-else-if="characters.length === 0" class="state-block">
-      <text>{{ emptyText }}</text>
-    </view>
-
-    <view v-else class="character-grid" :class="{ 'family-grid': isFamilyMode }">
-      <template v-if="isFamilyMode">
-        <view
+        <SwcCharacterCard
+          v-else
           v-for="character in characters"
           :key="character.characterId"
           class="character-card"
-          :class="['card-element-' + character.elementKey, { 'family-card': isFamilyMode }]"
-          @click="goToDetail(character)">
-          <view class="avatar-wrap">
-            <image v-if="character.avatar" class="avatar" :src="character.avatar" mode="aspectFill" lazy-load />
-            <view v-else class="avatar-placeholder">
-              <text>{{ character.name.slice(0, 1) || '?' }}</text>
-            </view>
-            <view v-if="character.stars" class="stars">
-              <text v-for="i in Number(character.displayStars)" :key="i" class="star-icon">★</text>
-            </view>
-            <text v-if="isAdmin" class="edit-badge" @click.stop="goToEdit(character)">✎</text>
-          </view>
-          <view class="character-info">
-            <view class="character-name-row">
-              <SwcElementBadge
-                v-if="character.elementName"
-                :element-key="character.elementKey"
-                :label="character.elementName"
-                :size="20"
-                :font-size="20"
-                :icon-only="true" />
-              <text class="character-name">
-                {{ character.familyName }}
-              </text>
-            </view>
-            <view class="representative-row">
-              <text class="representative-label">代表魔灵</text>
-              <text class="representative-name">{{ character.name || '未知魔灵' }}</text>
-            </view>
-            <view class="meta-row family-meta-row">
-              <view v-if="character.archetype" class="meta-chip">
-                <text>{{ character.archetype }}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-      </template>
+          :character="character"
+          :show-name="false"
+          :show-family="true"
+          :show-element="true"
+          :show-stars="true"
+          :show-original-stars="false"
+          :show-edit="isAdmin"
+          :avatar-size="260"
+          @click="goToDetail"
+          @edit="goToEdit" />
+      </view>
 
-      <SwcCharacterCard
-        v-else
-        v-for="character in characters"
-        :key="character.characterId"
-        class="character-card"
-        :character="character"
-        :show-name="false"
-        :show-family="true"
-        :show-element="true"
-        :show-stars="true"
-        :show-original-stars="false"
-        :show-edit="isAdmin"
-        :avatar-size="260"
-        @click="goToDetail"
-        @edit="goToEdit" />
+      <view v-if="loading && characters.length > 0" class="load-more">继续加载...</view>
+      <view v-else-if="!hasNext && characters.length > 0" class="load-more muted">没有更多了</view>
     </view>
-
-    <view v-if="loading && characters.length > 0" class="load-more">继续加载...</view>
-    <view v-else-if="!hasNext && characters.length > 0" class="load-more muted">没有更多了</view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -205,7 +206,6 @@
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
-  import ThemeRoot from '@/components/ThemeRoot.vue'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'

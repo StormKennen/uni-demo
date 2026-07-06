@@ -10,379 +10,374 @@
     - 底部保存/预览
 -->
 <template>
-  <view class="editor-page">
-    <!-- 导航栏 -->
-    <nav-bar
-      always-title
-      title="编辑备忘录"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 新增块类型菜单 -->
-    <view v-if="addMenuVisible" class="add-menu-overlay" @click="addMenuVisible = false">
-      <view class="add-menu-panel" @click.stop>
-        <view class="add-menu-header">
-          <text class="add-menu-title">选择内容类型</text>
-        </view>
-        <view class="add-menu-grid">
-          <view v-for="s in allSchemas" :key="s.type" class="add-menu-item" @click="addBlockAndClose(s.type)">
-            <text class="add-menu-icon">{{ s.icon }}</text>
-            <text class="add-menu-label">{{ s.label }}</text>
+  <PageLayout title="编辑备忘录" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="editor-page">
+      <!-- 导航栏 -->
+      <!-- 新增块类型菜单 -->
+      <view v-if="addMenuVisible" class="add-menu-overlay" @click="addMenuVisible = false">
+        <view class="add-menu-panel" @click.stop>
+          <view class="add-menu-header">
+            <text class="add-menu-title">选择内容类型</text>
           </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 可滚动内容区域 -->
-    <scroll-view class="scrollable-content" scroll-y>
-      <!-- 备忘录名称和标签 -->
-      <view class="memo-info-section">
-        <view class="memo-header-row">
-          <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
-          <view class="tag-add-btn" @click="showTagInput = !showTagInput">
-            <text>🏷️</text>
-          </view>
-        </view>
-        <view class="tags-section" v-if="showTagInput || tags.length > 0">
-          <view class="tags-row">
-            <view v-for="(tag, i) in tags" :key="i" class="tag-chip" @click="removeTag(i)">
-              <text class="tag-text">{{ tag }}</text>
-              <text class="tag-remove">×</text>
+          <view class="add-menu-grid">
+            <view v-for="s in allSchemas" :key="s.type" class="add-menu-item" @click="addBlockAndClose(s.type)">
+              <text class="add-menu-icon">{{ s.icon }}</text>
+              <text class="add-menu-label">{{ s.label }}</text>
             </view>
           </view>
-          <view class="tag-input-row" v-if="showTagInput">
-            <input class="tag-input" v-model="tagInput" placeholder="输入标签后回车" :maxlength="20" @confirm="addTag" />
-          </view>
         </view>
       </view>
 
-      <!-- 内容块列表 -->
-      <view class="content-section">
-        <view v-if="!doc.length" class="empty-hint">
-          <text class="empty-icon">📄</text>
-          <text class="empty-text">点击右下角 "+" 添加内容块</text>
-        </view>
-
-        <view v-for="(block, idx) in doc" :key="idx" class="block-row" :class="{ 'is-locked': block.locked }">
-          <!-- 锚点徽章 -->
-          <view v-if="block.anchor" class="anchor-badge" @click="copyAnchor(block.anchor)">
-            <text class="anchor-tag">#{{ block.anchor }}</text>
+      <!-- 可滚动内容区域 -->
+      <scroll-view class="scrollable-content" scroll-y>
+        <!-- 备忘录名称和标签 -->
+        <view class="memo-info-section">
+          <view class="memo-header-row">
+            <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
+            <view class="tag-add-btn" @click="showTagInput = !showTagInput">
+              <text>🏷️</text>
+            </view>
           </view>
-          <BlockHost
-            :block="block"
-            :block-index="idx"
-            :selected="selectedIndex === idx"
-            @select="selectedIndex = idx"
-            @select-item="onSelectItem"
-            @add-item="onAddItem" />
-          <!-- 块操作按钮 -->
-          <view v-if="settings.showBlockActions" class="block-row-actions">
-            <view v-if="idx > 0 && !block.locked" class="row-btn" @click="moveBlock(idx, -1)">↑</view>
-            <view v-if="idx < doc.length - 1 && !block.locked" class="row-btn" @click="moveBlock(idx, 1)">↓</view>
-            <picker
-              v-if="!block.locked"
-              mode="selector"
-              :range="getMovePositions(idx)"
-              range-key="label"
-              @change="onMoveBlockPick(idx, Number($event.detail.value))">
-              <view class="row-btn" @click.stop>≡</view>
-            </picker>
-            <view class="row-btn" :class="{ 'row-lock-active': block.locked }" @click="toggleBlockLock(idx)">{{
-              block.locked ? '🔒' : '🔓'
-            }}</view>
-            <view class="row-btn" @click="openBlockPanel(idx)">⚙️</view>
-            <view v-if="(block as any).type === 'route'" class="row-btn row-json" @click="openJsonImport(idx)">JSON</view>
-            <view v-if="!block.locked" class="row-btn row-del" @click="removeBlock(idx)">×</view>
-          </view>
-        </view>
-      </view>
-    </scroll-view>
-
-    <!-- 回到顶部 -->
-    <view v-if="settings.showBackToTop" class="back-to-top-btn" @click="scrollToTop">
-      <text class="back-to-top-icon">↑</text>
-    </view>
-
-    <!-- 底部操作 -->
-    <view class="footer-actions">
-      <view class="footer-btn add" @click="toggleAddMenu">{{ addMenuVisible ? '关闭' : '新增' }}</view>
-      <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
-      <view class="footer-btn save" @click="saveData">保存</view>
-      <view class="footer-btn more" @click="moreMenuVisible = true">更多</view>
-    </view>
-
-    <view v-if="moreMenuVisible" class="more-menu-overlay" @click="moreMenuVisible = false">
-      <view class="more-menu-panel" @click.stop>
-        <view class="more-menu-item" :class="{ disabled: !canUndo }" @click="handleMoreUndo">撤销</view>
-        <view class="more-menu-item" :class="{ disabled: !canRedo }" @click="handleMoreRedo">重做</view>
-        <view class="more-menu-item" @click="handleMoreSettings">设置</view>
-        <view class="more-menu-item" @click="handleMorePoster">海报</view>
-      </view>
-    </view>
-
-    <!-- JSON 导入路径块 Modal -->
-    <view v-if="jsonImportVisible" class="json-mask" @click.self="jsonImportVisible = false">
-      <view class="json-sheet">
-        <view class="json-header">
-          <text class="json-title">JSON 导入路径节点</text>
-          <view class="json-close" @click="jsonImportVisible = false">×</view>
-        </view>
-        <view class="json-hint">
-          <text>粘贴 RouteNode[] 或 { content: RouteNode[] } 格式</text>
-        </view>
-        <textarea
-          class="json-textarea"
-          :value="jsonImportText"
-          :placeholder="jsonImportPlaceholder"
-          auto-height
-          @input="jsonImportText = $event.detail.value" />
-        <view class="json-footer">
-          <view class="json-btn cancel" @click="jsonImportVisible = false">取消</view>
-          <view class="json-btn confirm" @click="applyJsonImport">导入</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 海报生成面板 -->
-    <PosterPanel v-model:visible="posterVisible" :memo-name="memoName" :tags="tags" :content="doc" />
-
-    <!-- Schema 驱动面板 -->
-    <SchemaDrivenPanel
-      v-model:visible="panelVisible"
-      :schema="editingSchema"
-      :block="editingBlock"
-      :mode="panelMode"
-      :item-index="editingItemIndex"
-      @save="onPanelSave" />
-
-    <!-- 设置面板 -->
-    <view v-if="settingsVisible" class="settings-overlay" @click="cancelSettings">
-      <view class="settings-panel" @click.stop>
-        <view class="settings-header">
-          <text class="settings-title">🎨 全局配置</text>
-          <view class="settings-close" @click="cancelSettings">×</view>
-        </view>
-
-        <!-- Tab 切换 -->
-        <view class="settings-tabs">
-          <view class="tab-item" :class="{ active: activeTab === 'appearance' }" @click="activeTab = 'appearance'">
-            <text>外观</text>
-          </view>
-          <view class="tab-item" :class="{ active: activeTab === 'layout' }" @click="activeTab = 'layout'">
-            <text>排版</text>
-          </view>
-          <view class="tab-item" :class="{ active: activeTab === 'typography' }" @click="activeTab = 'typography'">
-            <text>字体</text>
-          </view>
-        </view>
-
-        <scroll-view class="settings-body" scroll-y>
-          <!-- 外观 Tab -->
-          <view v-show="activeTab === 'appearance'">
-            <view class="settings-section">
-              <view class="section-title">莫兰迪配色</view>
-              <view class="color-palette">
-                <view
-                  v-for="color in morandiColors"
-                  :key="color.value"
-                  class="palette-item"
-                  :class="{ active: settingsDraft.appearance.backgroundColor === color.value }"
-                  :style="{ backgroundColor: color.value }"
-                  @click="settingsDraft.appearance.backgroundColor = color.value">
-                  <text v-if="settingsDraft.appearance.backgroundColor === color.value" class="palette-check">✓</text>
-                </view>
+          <view class="tags-section" v-if="showTagInput || tags.length > 0">
+            <view class="tags-row">
+              <view v-for="(tag, i) in tags" :key="i" class="tag-chip" @click="removeTag(i)">
+                <text class="tag-text">{{ tag }}</text>
+                <text class="tag-remove">×</text>
               </view>
             </view>
+            <view class="tag-input-row" v-if="showTagInput">
+              <input class="tag-input" v-model="tagInput" placeholder="输入标签后回车" :maxlength="20" @confirm="addTag" />
+            </view>
+          </view>
+        </view>
 
-            <view class="settings-section">
-              <view class="section-title">背景图片</view>
-              <view class="bg-image-row">
-                <view
-                  v-if="settingsDraft.appearance.backgroundImage"
-                  class="bg-image-thumb"
-                  :style="{ backgroundImage: `url(${settingsDraft.appearance.backgroundImage})` }" />
-                <view class="bg-image-btns">
-                  <view class="bg-upload-btn" @click="uploadBgImage">
-                    <text>{{ settingsDraft.appearance.backgroundImage ? '更换图片' : '＋ 上传图片' }}</text>
+        <!-- 内容块列表 -->
+        <view class="content-section">
+          <view v-if="!doc.length" class="empty-hint">
+            <text class="empty-icon">📄</text>
+            <text class="empty-text">点击右下角 "+" 添加内容块</text>
+          </view>
+
+          <view v-for="(block, idx) in doc" :key="idx" class="block-row" :class="{ 'is-locked': block.locked }">
+            <!-- 锚点徽章 -->
+            <view v-if="block.anchor" class="anchor-badge" @click="copyAnchor(block.anchor)">
+              <text class="anchor-tag">#{{ block.anchor }}</text>
+            </view>
+            <BlockHost
+              :block="block"
+              :block-index="idx"
+              :selected="selectedIndex === idx"
+              @select="selectedIndex = idx"
+              @select-item="onSelectItem"
+              @add-item="onAddItem" />
+            <!-- 块操作按钮 -->
+            <view v-if="settings.showBlockActions" class="block-row-actions">
+              <view v-if="idx > 0 && !block.locked" class="row-btn" @click="moveBlock(idx, -1)">↑</view>
+              <view v-if="idx < doc.length - 1 && !block.locked" class="row-btn" @click="moveBlock(idx, 1)">↓</view>
+              <picker
+                v-if="!block.locked"
+                mode="selector"
+                :range="getMovePositions(idx)"
+                range-key="label"
+                @change="onMoveBlockPick(idx, Number($event.detail.value))">
+                <view class="row-btn" @click.stop>≡</view>
+              </picker>
+              <view class="row-btn" :class="{ 'row-lock-active': block.locked }" @click="toggleBlockLock(idx)">{{
+                block.locked ? '🔒' : '🔓'
+              }}</view>
+              <view class="row-btn" @click="openBlockPanel(idx)">⚙️</view>
+              <view v-if="(block as any).type === 'route'" class="row-btn row-json" @click="openJsonImport(idx)">JSON</view>
+              <view v-if="!block.locked" class="row-btn row-del" @click="removeBlock(idx)">×</view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- 回到顶部 -->
+      <view v-if="settings.showBackToTop" class="back-to-top-btn" @click="scrollToTop">
+        <text class="back-to-top-icon">↑</text>
+      </view>
+
+      <!-- 底部操作 -->
+      <view class="footer-actions">
+        <view class="footer-btn add" @click="toggleAddMenu">{{ addMenuVisible ? '关闭' : '新增' }}</view>
+        <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
+        <view class="footer-btn save" @click="saveData">保存</view>
+        <view class="footer-btn more" @click="moreMenuVisible = true">更多</view>
+      </view>
+
+      <view v-if="moreMenuVisible" class="more-menu-overlay" @click="moreMenuVisible = false">
+        <view class="more-menu-panel" @click.stop>
+          <view class="more-menu-item" :class="{ disabled: !canUndo }" @click="handleMoreUndo">撤销</view>
+          <view class="more-menu-item" :class="{ disabled: !canRedo }" @click="handleMoreRedo">重做</view>
+          <view class="more-menu-item" @click="handleMoreSettings">设置</view>
+          <view class="more-menu-item" @click="handleMorePoster">海报</view>
+        </view>
+      </view>
+
+      <!-- JSON 导入路径块 Modal -->
+      <view v-if="jsonImportVisible" class="json-mask" @click.self="jsonImportVisible = false">
+        <view class="json-sheet">
+          <view class="json-header">
+            <text class="json-title">JSON 导入路径节点</text>
+            <view class="json-close" @click="jsonImportVisible = false">×</view>
+          </view>
+          <view class="json-hint">
+            <text>粘贴 RouteNode[] 或 { content: RouteNode[] } 格式</text>
+          </view>
+          <textarea
+            class="json-textarea"
+            :value="jsonImportText"
+            :placeholder="jsonImportPlaceholder"
+            auto-height
+            @input="jsonImportText = $event.detail.value" />
+          <view class="json-footer">
+            <view class="json-btn cancel" @click="jsonImportVisible = false">取消</view>
+            <view class="json-btn confirm" @click="applyJsonImport">导入</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 海报生成面板 -->
+      <PosterPanel v-model:visible="posterVisible" :memo-name="memoName" :tags="tags" :content="doc" />
+
+      <!-- Schema 驱动面板 -->
+      <SchemaDrivenPanel
+        v-model:visible="panelVisible"
+        :schema="editingSchema"
+        :block="editingBlock"
+        :mode="panelMode"
+        :item-index="editingItemIndex"
+        @save="onPanelSave" />
+
+      <!-- 设置面板 -->
+      <view v-if="settingsVisible" class="settings-overlay" @click="cancelSettings">
+        <view class="settings-panel" @click.stop>
+          <view class="settings-header">
+            <text class="settings-title">🎨 全局配置</text>
+            <view class="settings-close" @click="cancelSettings">×</view>
+          </view>
+
+          <!-- Tab 切换 -->
+          <view class="settings-tabs">
+            <view class="tab-item" :class="{ active: activeTab === 'appearance' }" @click="activeTab = 'appearance'">
+              <text>外观</text>
+            </view>
+            <view class="tab-item" :class="{ active: activeTab === 'layout' }" @click="activeTab = 'layout'">
+              <text>排版</text>
+            </view>
+            <view class="tab-item" :class="{ active: activeTab === 'typography' }" @click="activeTab = 'typography'">
+              <text>字体</text>
+            </view>
+          </view>
+
+          <scroll-view class="settings-body" scroll-y>
+            <!-- 外观 Tab -->
+            <view v-show="activeTab === 'appearance'">
+              <view class="settings-section">
+                <view class="section-title">莫兰迪配色</view>
+                <view class="color-palette">
+                  <view
+                    v-for="color in morandiColors"
+                    :key="color.value"
+                    class="palette-item"
+                    :class="{ active: settingsDraft.appearance.backgroundColor === color.value }"
+                    :style="{ backgroundColor: color.value }"
+                    @click="settingsDraft.appearance.backgroundColor = color.value">
+                    <text v-if="settingsDraft.appearance.backgroundColor === color.value" class="palette-check">✓</text>
                   </view>
+                </view>
+              </view>
+
+              <view class="settings-section">
+                <view class="section-title">背景图片</view>
+                <view class="bg-image-row">
                   <view
                     v-if="settingsDraft.appearance.backgroundImage"
-                    class="bg-clear-btn"
-                    @click="settingsDraft.appearance.backgroundImage = ''">
-                    <text>清除</text>
+                    class="bg-image-thumb"
+                    :style="{ backgroundImage: `url(${settingsDraft.appearance.backgroundImage})` }" />
+                  <view class="bg-image-btns">
+                    <view class="bg-upload-btn" @click="uploadBgImage">
+                      <text>{{ settingsDraft.appearance.backgroundImage ? '更换图片' : '＋ 上传图片' }}</text>
+                    </view>
+                    <view
+                      v-if="settingsDraft.appearance.backgroundImage"
+                      class="bg-clear-btn"
+                      @click="settingsDraft.appearance.backgroundImage = ''">
+                      <text>清除</text>
+                    </view>
+                  </view>
+                </view>
+                <view v-if="settingsDraft.appearance.backgroundImage" class="settings-item">
+                  <text class="settings-label">模糊度 {{ settingsDraft.appearance.backgroundBlur }}</text>
+                  <slider
+                    :value="settingsDraft.appearance.backgroundBlur"
+                    :min="0"
+                    :max="20"
+                    :step="1"
+                    activeColor="#667eea"
+                    @change="settingsDraft.appearance.backgroundBlur = $event.detail.value" />
+                </view>
+                <view v-if="settingsDraft.appearance.backgroundImage" class="settings-item">
+                  <text class="settings-label">透明度 {{ Math.round(settingsDraft.appearance.backgroundOpacity * 100) }}%</text>
+                  <slider
+                    :value="settingsDraft.appearance.backgroundOpacity * 100"
+                    :min="10"
+                    :max="100"
+                    :step="5"
+                    activeColor="#667eea"
+                    @change="settingsDraft.appearance.backgroundOpacity = $event.detail.value / 100" />
+                </view>
+              </view>
+
+              <view class="settings-section">
+                <view class="section-title">视觉特效</view>
+                <view class="settings-item">
+                  <text class="settings-label">动态光斑</text>
+                  <switch
+                    :checked="settingsDraft.appearance.enableBlob"
+                    @change="settingsDraft.appearance.enableBlob = $event.detail.value"
+                    color="#667eea" />
+                </view>
+                <view class="settings-item">
+                  <text class="settings-label">科技感网格</text>
+                  <switch
+                    :checked="settingsDraft.appearance.enableCyberGrid"
+                    @change="settingsDraft.appearance.enableCyberGrid = $event.detail.value"
+                    color="#667eea" />
+                </view>
+              </view>
+            </view>
+
+            <!-- 排版 Tab -->
+            <view v-show="activeTab === 'layout'">
+              <view class="settings-section">
+                <view class="section-title">内容边距 (rpx)</view>
+                <view class="padding-grid">
+                  <view v-for="side in ['top', 'bottom', 'left', 'right'] as const" :key="side" class="padding-item">
+                    <text class="padding-label">{{ sideLabel[side] }}</text>
+                    <input
+                      type="number"
+                      class="padding-input"
+                      :value="String(settingsDraft.padding[side])"
+                      @input="settingsDraft.padding[side] = Number($event.detail.value) || 0" />
                   </view>
                 </view>
               </view>
-              <view v-if="settingsDraft.appearance.backgroundImage" class="settings-item">
-                <text class="settings-label">模糊度 {{ settingsDraft.appearance.backgroundBlur }}</text>
-                <slider
-                  :value="settingsDraft.appearance.backgroundBlur"
-                  :min="0"
-                  :max="20"
-                  :step="1"
-                  activeColor="#667eea"
-                  @change="settingsDraft.appearance.backgroundBlur = $event.detail.value" />
-              </view>
-              <view v-if="settingsDraft.appearance.backgroundImage" class="settings-item">
-                <text class="settings-label">透明度 {{ Math.round(settingsDraft.appearance.backgroundOpacity * 100) }}%</text>
-                <slider
-                  :value="settingsDraft.appearance.backgroundOpacity * 100"
-                  :min="10"
-                  :max="100"
-                  :step="5"
-                  activeColor="#667eea"
-                  @change="settingsDraft.appearance.backgroundOpacity = $event.detail.value / 100" />
-              </view>
-            </view>
 
-            <view class="settings-section">
-              <view class="section-title">视觉特效</view>
-              <view class="settings-item">
-                <text class="settings-label">动态光斑</text>
-                <switch
-                  :checked="settingsDraft.appearance.enableBlob"
-                  @change="settingsDraft.appearance.enableBlob = $event.detail.value"
-                  color="#667eea" />
-              </view>
-              <view class="settings-item">
-                <text class="settings-label">科技感网格</text>
-                <switch
-                  :checked="settingsDraft.appearance.enableCyberGrid"
-                  @change="settingsDraft.appearance.enableCyberGrid = $event.detail.value"
-                  color="#667eea" />
-              </view>
-            </view>
-          </view>
-
-          <!-- 排版 Tab -->
-          <view v-show="activeTab === 'layout'">
-            <view class="settings-section">
-              <view class="section-title">内容边距 (rpx)</view>
-              <view class="padding-grid">
-                <view v-for="side in ['top', 'bottom', 'left', 'right'] as const" :key="side" class="padding-item">
-                  <text class="padding-label">{{ sideLabel[side] }}</text>
+              <view class="settings-section">
+                <view class="section-title">内容边框</view>
+                <view class="border-grid">
+                  <view v-for="side in ['top', 'bottom', 'left', 'right'] as const" :key="side" class="border-item">
+                    <text class="border-label">{{ sideLabel[side] }}边框</text>
+                    <input
+                      type="number"
+                      class="border-input"
+                      :value="String(settingsDraft.border[side])"
+                      @input="settingsDraft.border[side] = Number($event.detail.value) || 0"
+                      placeholder="0" />
+                  </view>
+                </view>
+                <view class="border-color-row">
+                  <text class="border-color-label">边框颜色</text>
                   <input
-                    type="number"
-                    class="padding-input"
-                    :value="String(settingsDraft.padding[side])"
-                    @input="settingsDraft.padding[side] = Number($event.detail.value) || 0" />
+                    class="border-color-input"
+                    :value="settingsDraft.border.color"
+                    @input="settingsDraft.border.color = $event.detail.value"
+                    placeholder="#eeeeee" />
+                </view>
+              </view>
+
+              <view class="settings-section">
+                <view class="section-title">布局宽度</view>
+                <view class="settings-item">
+                  <text class="settings-label">窄屏居中</text>
+                  <switch
+                    :checked="settingsDraft.layout.contentWidth === 'narrow'"
+                    @change="settingsDraft.layout.contentWidth = $event.detail.value ? 'narrow' : 'full'"
+                    color="#667eea" />
                 </view>
               </view>
             </view>
 
-            <view class="settings-section">
-              <view class="section-title">内容边框</view>
-              <view class="border-grid">
-                <view v-for="side in ['top', 'bottom', 'left', 'right'] as const" :key="side" class="border-item">
-                  <text class="border-label">{{ sideLabel[side] }}边框</text>
-                  <input
-                    type="number"
-                    class="border-input"
-                    :value="String(settingsDraft.border[side])"
-                    @input="settingsDraft.border[side] = Number($event.detail.value) || 0"
-                    placeholder="0" />
+            <!-- 字体 Tab -->
+            <view v-show="activeTab === 'typography'">
+              <view class="settings-section">
+                <view class="section-title">字号档位</view>
+                <view class="font-size-options">
+                  <view
+                    v-for="opt in fontSizeOptions"
+                    :key="opt.value"
+                    class="font-size-option"
+                    :class="{ active: settingsDraft.typography.fontSize === opt.value }"
+                    @click="settingsDraft.typography.fontSize = opt.value">
+                    <text>{{ opt.label }}</text>
+                  </view>
                 </view>
               </view>
-              <view class="border-color-row">
-                <text class="border-color-label">边框颜色</text>
-                <input
-                  class="border-color-input"
-                  :value="settingsDraft.border.color"
-                  @input="settingsDraft.border.color = $event.detail.value"
-                  placeholder="#eeeeee" />
-              </view>
-            </view>
 
-            <view class="settings-section">
-              <view class="section-title">布局宽度</view>
-              <view class="settings-item">
-                <text class="settings-label">窄屏居中</text>
-                <switch
-                  :checked="settingsDraft.layout.contentWidth === 'narrow'"
-                  @change="settingsDraft.layout.contentWidth = $event.detail.value ? 'narrow' : 'full'"
-                  color="#667eea" />
+              <view class="settings-section">
+                <view class="section-title">行高</view>
+                <view class="slider-row">
+                  <slider
+                    :value="settingsDraft.typography.lineHeight * 10"
+                    :min="12"
+                    :max="24"
+                    :step="1"
+                    activeColor="#667eea"
+                    @change="settingsDraft.typography.lineHeight = $event.detail.value / 10" />
+                  <text class="slider-value">{{ settingsDraft.typography.lineHeight.toFixed(1) }}</text>
+                </view>
               </view>
-            </view>
-          </view>
 
-          <!-- 字体 Tab -->
-          <view v-show="activeTab === 'typography'">
-            <view class="settings-section">
-              <view class="section-title">字号档位</view>
-              <view class="font-size-options">
-                <view
-                  v-for="opt in fontSizeOptions"
-                  :key="opt.value"
-                  class="font-size-option"
-                  :class="{ active: settingsDraft.typography.fontSize === opt.value }"
-                  @click="settingsDraft.typography.fontSize = opt.value">
-                  <text>{{ opt.label }}</text>
+              <view class="settings-section">
+                <view class="section-title">其他</view>
+                <view class="settings-item">
+                  <text class="settings-label">显示水印</text>
+                  <switch
+                    :checked="settingsDraft.features.showWatermark"
+                    @change="settingsDraft.features.showWatermark = $event.detail.value"
+                    color="#667eea" />
+                </view>
+                <view class="settings-item">
+                  <text class="settings-label">显示块操作</text>
+                  <switch
+                    :checked="settingsDraft.showBlockActions"
+                    @change="settingsDraft.showBlockActions = $event.detail.value"
+                    color="#667eea" />
+                </view>
+                <view class="settings-item">
+                  <text class="settings-label">回到顶部按钮</text>
+                  <switch
+                    :checked="settingsDraft.showBackToTop"
+                    @change="settingsDraft.showBackToTop = $event.detail.value"
+                    color="#667eea" />
                 </view>
               </view>
             </view>
+          </scroll-view>
 
-            <view class="settings-section">
-              <view class="section-title">行高</view>
-              <view class="slider-row">
-                <slider
-                  :value="settingsDraft.typography.lineHeight * 10"
-                  :min="12"
-                  :max="24"
-                  :step="1"
-                  activeColor="#667eea"
-                  @change="settingsDraft.typography.lineHeight = $event.detail.value / 10" />
-                <text class="slider-value">{{ settingsDraft.typography.lineHeight.toFixed(1) }}</text>
-              </view>
+          <!-- 底部操作按钮 -->
+          <view class="settings-footer">
+            <view class="settings-footer-btn reset" @click="resetSettings">
+              <text>重置</text>
             </view>
-
-            <view class="settings-section">
-              <view class="section-title">其他</view>
-              <view class="settings-item">
-                <text class="settings-label">显示水印</text>
-                <switch
-                  :checked="settingsDraft.features.showWatermark"
-                  @change="settingsDraft.features.showWatermark = $event.detail.value"
-                  color="#667eea" />
-              </view>
-              <view class="settings-item">
-                <text class="settings-label">显示块操作</text>
-                <switch
-                  :checked="settingsDraft.showBlockActions"
-                  @change="settingsDraft.showBlockActions = $event.detail.value"
-                  color="#667eea" />
-              </view>
-              <view class="settings-item">
-                <text class="settings-label">回到顶部按钮</text>
-                <switch
-                  :checked="settingsDraft.showBackToTop"
-                  @change="settingsDraft.showBackToTop = $event.detail.value"
-                  color="#667eea" />
-              </view>
+            <view class="settings-footer-btn cancel" @click="cancelSettings">
+              <text>取消</text>
             </view>
-          </view>
-        </scroll-view>
-
-        <!-- 底部操作按钮 -->
-        <view class="settings-footer">
-          <view class="settings-footer-btn reset" @click="resetSettings">
-            <text>重置</text>
-          </view>
-          <view class="settings-footer-btn cancel" @click="cancelSettings">
-            <text>取消</text>
-          </view>
-          <view class="settings-footer-btn save" @click="saveSettings">
-            <text>保存</text>
+            <view class="settings-footer-btn save" @click="saveSettings">
+              <text>保存</text>
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
-  import NavBar from '@/components/nav-bar.vue'
   import BlockHost from './components/editor-core/renderers/BlockHost.vue'
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'

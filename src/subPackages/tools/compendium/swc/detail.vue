@@ -1,6 +1,7 @@
 ﻿<template>
-  <view class="detail-page">
-    <!-- <view class="top-tabs">
+  <PageLayout title="魔灵 wiki-详情">
+    <view class="detail-page">
+      <!-- <view class="top-tabs">
       <view
         v-for="tab in topTabs"
         :key="tab.key"
@@ -12,216 +13,221 @@
       </view>
     </view> -->
 
-    <view v-if="loading && !switching" class="state-block">
-      <text>加载详情中...</text>
-    </view>
-
-    <view v-else-if="!switching && errorMessage" class="state-block">
-      <text>{{ errorMessage }}</text>
-      <button class="retry-btn" @click="loadDetail">重试</button>
-    </view>
-
-    <view v-else class="content" :class="{ 'content-switching': switching }">
-      <view v-if="switching" class="switching-overlay">
-        <text>切换中...</text>
+      <view v-if="loading && !switching" class="state-block">
+        <text>加载详情中...</text>
       </view>
-      <view class="locale-toolbar">
-        <text class="locale-toolbar-label">语言</text>
-        <view class="locale-switch">
-          <text
-            v-for="option in localeOptions"
-            :key="option.value"
-            class="locale-option"
-            :class="{ selected: option.value === selectedLocale }"
-            @click="changeLocale(option.value)">
-            {{ option.label }}
-          </text>
-        </view>
+
+      <view v-else-if="!switching && errorMessage" class="state-block">
+        <text>{{ errorMessage }}</text>
+        <button class="retry-btn" @click="loadDetail">重试</button>
       </view>
-      <view class="hero-card">
-        <view class="avatar-column">
-          <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
-          <view v-else class="main-avatar avatar-placeholder">
-            <text>{{ detail.name.slice(0, 1) || '?' }}</text>
-          </view>
-          <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
-          <view v-if="canSwitchAwaken" class="awaken-btn" @click="onAwakenToggle">
-            <text>切换形态</text>
-          </view>
+
+      <view v-else class="content" :class="{ 'content-switching': switching }">
+        <view v-if="switching" class="switching-overlay">
+          <text>切换中...</text>
         </view>
-
-        <view class="profile-column">
-          <view class="profile-head">
-            <view class="title-wrap">
-              <view class="name-line">
-                <text class="name">{{ detail.name || '未知魔灵' }}</text>
-                <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
-              </view>
-              <view class="tag-line">
-                <text v-if="detail.elementName" class="tag accent">{{ detail.elementIcon }} {{ detail.elementName }}</text>
-                <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
-                <text v-if="detail.archetype" class="tag">{{ detail.archetype }}</text>
-                <text v-if="detail.family" class="tag">{{ detail.family }}</text>
-              </view>
-              <text v-if="detail.description" class="species">{{ detail.description }}</text>
-            </view>
-          </view>
-
-          <view class="element-row">
-            <view
-              v-for="option in elementBadges"
+        <view class="locale-toolbar">
+          <text class="locale-toolbar-label">语言</text>
+          <view class="locale-switch">
+            <text
+              v-for="option in localeOptions"
               :key="option.value"
-              class="element-dot"
-              :class="{ active: option.value === detail.elementKey, clickable: hasElementForm(option.value) }"
-              :style="{ background: option.color }"
-              @click="onElementClick(option.value)">
-            </view>
+              class="locale-option"
+              :class="{ selected: option.value === selectedLocale }"
+              @click="changeLocale(option.value)">
+              {{ option.label }}
+            </text>
           </view>
         </view>
-      </view>
+        <view class="hero-card">
+          <view class="avatar-column">
+            <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
+            <view v-else class="main-avatar avatar-placeholder">
+              <text>{{ detail.name.slice(0, 1) || '?' }}</text>
+            </view>
+            <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
+            <view v-if="canSwitchAwaken" class="awaken-btn" @click="onAwakenToggle">
+              <text>切换形态</text>
+            </view>
+          </view>
 
-      <view class="detail-tabs">
-        <view class="detail-tab" :class="{ active: activeDetailTab === 'stats' }" @click="activeDetailTab = 'stats'">
-          <text>属性</text>
-        </view>
-        <view class="detail-tab" :class="{ active: activeDetailTab === 'skills' }" @click="activeDetailTab = 'skills'">
-          <text>技能</text>
-        </view>
-      </view>
-
-      <view v-if="activeDetailTab === 'stats'" class="stats-panel">
-        <view class="stat-list">
-          <view v-for="stat in primaryStats" :key="stat.key" class="stat-row">
-            <view class="stat-row-header">
-              <view class="stat-label-group">
-                <view class="stat-icon-circle" :style="{ background: stat.color }">
-                  <text class="stat-icon">{{ stat.icon }}</text>
+          <view class="profile-column">
+            <view class="profile-head">
+              <view class="title-wrap">
+                <view class="name-line">
+                  <text class="name">{{ detail.name || '未知魔灵' }}</text>
+                  <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
                 </view>
-                <text class="stat-label">{{ stat.label }}</text>
-              </view>
-              <view class="stat-value-group">
-                <text class="stat-value">{{ stat.value || '--' }}</text>
-                <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+                <view class="tag-line">
+                  <text v-if="detail.elementName" class="tag accent">{{ detail.elementIcon }} {{ detail.elementName }}</text>
+                  <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
+                  <text v-if="detail.archetype" class="tag">{{ detail.archetype }}</text>
+                  <text v-if="detail.family" class="tag">{{ detail.family }}</text>
+                </view>
+                <text v-if="detail.description" class="species">{{ detail.description }}</text>
               </view>
             </view>
-            <view class="stat-bar">
-              <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
-            </view>
-          </view>
-        </view>
 
-        <view class="stat-list secondary">
-          <view v-for="stat in secondaryStats" :key="stat.key" class="stat-row minor">
-            <view class="stat-row-header">
-              <text class="stat-label">{{ stat.label }}</text>
-              <view class="stat-value-group">
-                <text class="stat-value">{{ stat.value || '--' }}</text>
-                <text v-if="stat.rankLabel" class="stat-rank minor-rank">{{ stat.rankLabel }}</text>
+            <view class="element-row">
+              <view
+                v-for="option in elementBadges"
+                :key="option.value"
+                class="element-dot"
+                :class="{ active: option.value === detail.elementKey, clickable: hasElementForm(option.value) }"
+                :style="{ background: option.color }"
+                @click="onElementClick(option.value)">
               </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <view v-else-if="activeDetailTab === 'skills'" class="skill-section">
-        <view v-if="detail.skills.length === 0" class="empty-card">暂无技能数据</view>
-        <view v-for="skill in detail.skills" :key="skill.id || skill.name" class="skill-card" :class="{ leader: skill.type === 'leader' }">
-          <view class="skill-head">
-            <image v-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
-            <view v-else class="skill-icon empty-icon">{{ skill.type === 'leader' ? 'L' : skill.orderText }}</view>
-            <view class="skill-title-wrap">
-              <view class="skill-title">
-                <text>{{ skill.name || '未命名技能' }}</text>
-                <text v-if="skill.cost" class="skill-badge">{{ skill.cost }}</text>
-              </view>
-              <text v-if="skill.typeText" class="skill-type">{{ skill.typeText }}</text>
-            </view>
+        <view class="detail-tabs">
+          <view class="detail-tab" :class="{ active: activeDetailTab === 'stats' }" @click="activeDetailTab = 'stats'">
+            <text>属性</text>
           </view>
-          <text v-if="skill.description" class="skill-desc">{{ skill.description }}</text>
-          <view v-if="skill.multiplierFormula || skill.hitCountText || skill.cooldownText" class="skill-meta-list">
-            <view v-if="skill.multiplierFormula" class="skill-meta-item">
-              <text class="skill-meta-label">技能系数</text>
-              <text class="skill-meta-value">{{ skill.multiplierFormula }}</text>
-            </view>
-            <view v-if="skill.hitCountText" class="skill-meta-item">
-              <text class="skill-meta-label">命中次数</text>
-              <text class="skill-meta-value">{{ skill.hitCountText }}</text>
-            </view>
-            <view v-if="skill.cooldownText" class="skill-meta-item">
-              <text class="skill-meta-label">冷却回合</text>
-              <text class="skill-meta-value">{{ skill.cooldownText }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="lineup-section">
-        <view class="lineup-section-head">
-          <view>
-            <text class="lineup-section-title">参与阵容</text>
-            <text class="lineup-section-subtitle">展示该魔灵参与的阵容，以及每个阵容的双向映射关系</text>
+          <view class="detail-tab" :class="{ active: activeDetailTab === 'skills' }" @click="activeDetailTab = 'skills'">
+            <text>技能</text>
           </view>
         </view>
 
-        <view v-if="lineupLoading" class="empty-card">
-          <text>加载阵容中...</text>
-        </view>
-
-        <view v-else-if="lineupErrorMessage" class="empty-card">
-          <text>{{ lineupErrorMessage }}</text>
-        </view>
-
-        <view v-else class="lineup-groups">
-          <view class="lineup-group-card">
-            <view class="lineup-group-head">
-              <text class="lineup-group-title">相关阵容</text>
-              <text class="lineup-group-count">{{ lineupUsage.lineups.length }}</text>
-            </view>
-
-            <view v-if="!lineupUsage.lineups.length" class="empty-inline">暂无相关阵容</view>
-
-            <view v-for="lineup in lineupUsage.lineups" :key="lineup.id || lineup.name" class="lineup-item-card">
-              <view class="lineup-item-head">
-                <text class="lineup-item-name">{{ lineup.name || '未命名阵容' }}</text>
-                <text class="lineup-item-count">{{ lineup.memberCount }} 人</text>
-              </view>
-              <text class="lineup-item-type">类型：{{ lineup.type || '未设置' }}</text>
-              <text v-if="lineup.description" class="lineup-item-desc">{{ lineup.description }}</text>
-              <text class="lineup-item-relation">对应阵容：{{ getTargetSummary(lineup) }}</text>
-              <text class="lineup-item-relation">上游阵容：{{ getIncomingSummary(lineup) }}</text>
-
-              <view class="lineup-relation-metrics">
-                <text class="lineup-relation-badge">目标 {{ lineup.targetLineupsCount }}</text>
-                <text class="lineup-relation-badge incoming">上游 {{ lineup.sourceLineupsCount }}</text>
-              </view>
-
-              <scroll-view v-if="lineup.characters.length" class="lineup-member-scroll" scroll-x>
-                <view class="lineup-member-row">
-                  <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="lineup-member-pill">
-                    <image v-if="member.avatar" class="lineup-member-avatar" :src="member.avatar" mode="aspectFill" />
-                    <view v-else class="lineup-member-avatar lineup-member-avatar-placeholder">
-                      <text>{{ (member.name || '?').slice(0, 1) }}</text>
-                    </view>
-                    <text class="lineup-member-name">{{ member.name || member.label || '未知魔灵' }}</text>
+        <view v-if="activeDetailTab === 'stats'" class="stats-panel">
+          <view class="stat-list">
+            <view v-for="stat in primaryStats" :key="stat.key" class="stat-row">
+              <view class="stat-row-header">
+                <view class="stat-label-group">
+                  <view class="stat-icon-circle" :style="{ background: stat.color }">
+                    <text class="stat-icon">{{ stat.icon }}</text>
                   </view>
+                  <text class="stat-label">{{ stat.label }}</text>
                 </view>
-              </scroll-view>
+                <view class="stat-value-group">
+                  <text class="stat-value">{{ stat.value || '--' }}</text>
+                  <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+                </view>
+              </view>
+              <view class="stat-bar">
+                <view class="stat-bar-inner" :style="{ width: stat.percent, background: stat.color }" />
+              </view>
+            </view>
+          </view>
 
-              <view class="lineup-reaction-row">
-                <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-                  👍 {{ lineup.likeCount }}
-                </text>
-                <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-                  👎 {{ lineup.dislikeCount }}
-                </text>
-                <text class="lineup-reaction-score">热度 {{ lineup.score }}</text>
+          <view class="stat-list secondary">
+            <view v-for="stat in secondaryStats" :key="stat.key" class="stat-row minor">
+              <view class="stat-row-header">
+                <text class="stat-label">{{ stat.label }}</text>
+                <view class="stat-value-group">
+                  <text class="stat-value">{{ stat.value || '--' }}</text>
+                  <text v-if="stat.rankLabel" class="stat-rank minor-rank">{{ stat.rankLabel }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view v-else-if="activeDetailTab === 'skills'" class="skill-section">
+          <view v-if="detail.skills.length === 0" class="empty-card">暂无技能数据</view>
+          <view
+            v-for="skill in detail.skills"
+            :key="skill.id || skill.name"
+            class="skill-card"
+            :class="{ leader: skill.type === 'leader' }">
+            <view class="skill-head">
+              <image v-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
+              <view v-else class="skill-icon empty-icon">{{ skill.type === 'leader' ? 'L' : skill.orderText }}</view>
+              <view class="skill-title-wrap">
+                <view class="skill-title">
+                  <text>{{ skill.name || '未命名技能' }}</text>
+                  <text v-if="skill.cost" class="skill-badge">{{ skill.cost }}</text>
+                </view>
+                <text v-if="skill.typeText" class="skill-type">{{ skill.typeText }}</text>
+              </view>
+            </view>
+            <text v-if="skill.description" class="skill-desc">{{ skill.description }}</text>
+            <view v-if="skill.multiplierFormula || skill.hitCountText || skill.cooldownText" class="skill-meta-list">
+              <view v-if="skill.multiplierFormula" class="skill-meta-item">
+                <text class="skill-meta-label">技能系数</text>
+                <text class="skill-meta-value">{{ skill.multiplierFormula }}</text>
+              </view>
+              <view v-if="skill.hitCountText" class="skill-meta-item">
+                <text class="skill-meta-label">命中次数</text>
+                <text class="skill-meta-value">{{ skill.hitCountText }}</text>
+              </view>
+              <view v-if="skill.cooldownText" class="skill-meta-item">
+                <text class="skill-meta-label">冷却回合</text>
+                <text class="skill-meta-value">{{ skill.cooldownText }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="lineup-section">
+          <view class="lineup-section-head">
+            <view>
+              <text class="lineup-section-title">参与阵容</text>
+              <text class="lineup-section-subtitle">展示该魔灵参与的阵容，以及每个阵容的双向映射关系</text>
+            </view>
+          </view>
+
+          <view v-if="lineupLoading" class="empty-card">
+            <text>加载阵容中...</text>
+          </view>
+
+          <view v-else-if="lineupErrorMessage" class="empty-card">
+            <text>{{ lineupErrorMessage }}</text>
+          </view>
+
+          <view v-else class="lineup-groups">
+            <view class="lineup-group-card">
+              <view class="lineup-group-head">
+                <text class="lineup-group-title">相关阵容</text>
+                <text class="lineup-group-count">{{ lineupUsage.lineups.length }}</text>
+              </view>
+
+              <view v-if="!lineupUsage.lineups.length" class="empty-inline">暂无相关阵容</view>
+
+              <view v-for="lineup in lineupUsage.lineups" :key="lineup.id || lineup.name" class="lineup-item-card">
+                <view class="lineup-item-head">
+                  <text class="lineup-item-name">{{ lineup.name || '未命名阵容' }}</text>
+                  <text class="lineup-item-count">{{ lineup.memberCount }} 人</text>
+                </view>
+                <text class="lineup-item-type">类型：{{ lineup.type || '未设置' }}</text>
+                <text v-if="lineup.description" class="lineup-item-desc">{{ lineup.description }}</text>
+                <text class="lineup-item-relation">对应阵容：{{ getTargetSummary(lineup) }}</text>
+                <text class="lineup-item-relation">上游阵容：{{ getIncomingSummary(lineup) }}</text>
+
+                <view class="lineup-relation-metrics">
+                  <text class="lineup-relation-badge">目标 {{ lineup.targetLineupsCount }}</text>
+                  <text class="lineup-relation-badge incoming">上游 {{ lineup.sourceLineupsCount }}</text>
+                </view>
+
+                <scroll-view v-if="lineup.characters.length" class="lineup-member-scroll" scroll-x>
+                  <view class="lineup-member-row">
+                    <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="lineup-member-pill">
+                      <image v-if="member.avatar" class="lineup-member-avatar" :src="member.avatar" mode="aspectFill" />
+                      <view v-else class="lineup-member-avatar lineup-member-avatar-placeholder">
+                        <text>{{ (member.name || '?').slice(0, 1) }}</text>
+                      </view>
+                      <text class="lineup-member-name">{{ member.name || member.label || '未知魔灵' }}</text>
+                    </view>
+                  </view>
+                </scroll-view>
+
+                <view class="lineup-reaction-row">
+                  <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+                    👍 {{ lineup.likeCount }}
+                  </text>
+                  <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+                    👎 {{ lineup.dislikeCount }}
+                  </text>
+                  <text class="lineup-reaction-score">热度 {{ lineup.score }}</text>
+                </view>
               </view>
             </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

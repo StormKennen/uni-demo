@@ -1,78 +1,73 @@
 <template>
-  <view class="qr-generator">
-    <!-- 导航栏（统一样式） -->
-    <nav-bar
-      always-title
-      title="二维码生成器"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
+  <PageLayout title="二维码生成器" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="qr-generator">
+      <!-- 导航栏（统一样式） -->
+      <!-- 内容区域 -->
+      <view class="content">
+        <!-- 输入区域 -->
+        <view class="input-section">
+          <view class="section-title">输入内容</view>
 
-    <!-- 内容区域 -->
-    <view class="content">
-      <!-- 输入区域 -->
-      <view class="input-section">
-        <view class="section-title">输入内容</view>
-
-        <!-- 大文本输入框 -->
-        <textarea
-          v-model="inputContent"
-          class="input-textarea"
-          placeholder="请输入要生成二维码的文本内容或链接地址..."
-          :maxlength="500"
-          auto-height />
-        <view class="input-footer">
-          <text class="paste-btn" @click="readClipboard">粘贴</text>
-          <text class="input-counter">{{ inputContent.length }}/500</text>
-        </view>
-      </view>
-
-      <!-- 生成按钮 -->
-      <button
-        class="generate-btn"
-        :class="{ loading: isGenerating }"
-        :disabled="!inputContent.trim() || isGenerating"
-        @click="generateQRCode">
-        {{ isGenerating ? '生成中...' : '生成二维码' }}
-      </button>
-
-      <!-- 二维码显示区域：生成中也渲染Canvas，避免DOM未挂载导致找不到元素 -->
-      <view v-show="qrGenerated || isGenerating" class="qr-display">
-        <view class="section-title">生成结果</view>
-        <!-- 显示比例调节：用于微调避免右侧裁剪 -->
-        <view class="scale-control">
-          <text class="scale-label">显示比例</text>
-          <slider min="70" max="100" step="1" :value="Math.round(displayScale * 100)" @change="onScaleChanged" activeColor="#667eea" />
-        </view>
-        <view class="qr-container">
-          <canvas
-            id="qrcode"
-            canvas-id="qrcode"
-            :width="canvasPixelSize"
-            :height="canvasPixelSize"
-            :style="{ width: canvasDisplaySize + 'px', height: canvasDisplaySize + 'px' }"
-            class="qr-canvas" />
+          <!-- 大文本输入框 -->
+          <textarea
+            v-model="inputContent"
+            class="input-textarea"
+            placeholder="请输入要生成二维码的文本内容或链接地址..."
+            :maxlength="500"
+            auto-height />
+          <view class="input-footer">
+            <text class="paste-btn" @click="readClipboard">粘贴</text>
+            <text class="input-counter">{{ inputContent.length }}/500</text>
+          </view>
         </view>
 
-        <!-- 操作按钮 -->
-        <view class="action-buttons">
-          <button class="action-btn download-btn" @click="downloadQRCode"> 下载二维码 </button>
-          <button class="action-btn share-btn" @click="shareQRCode"> 分享二维码 </button>
-        </view>
+        <!-- 生成按钮 -->
+        <button
+          class="generate-btn"
+          :class="{ loading: isGenerating }"
+          :disabled="!inputContent.trim() || isGenerating"
+          @click="generateQRCode">
+          {{ isGenerating ? '生成中...' : '生成二维码' }}
+        </button>
 
-        <!-- 信息显示 -->
-        <view class="qr-info">
-          <view class="info-item">
-            <text class="info-label">内容长度：</text>
-            <text class="info-value">{{ inputContent.length }} 字符</text>
+        <!-- 二维码显示区域：生成中也渲染Canvas，避免DOM未挂载导致找不到元素 -->
+        <view v-show="qrGenerated || isGenerating" class="qr-display">
+          <view class="section-title">生成结果</view>
+          <!-- 显示比例调节：用于微调避免右侧裁剪 -->
+          <view class="scale-control">
+            <text class="scale-label">显示比例</text>
+            <slider min="70" max="100" step="1" :value="Math.round(displayScale * 100)" @change="onScaleChanged" activeColor="#667eea" />
+          </view>
+          <view class="qr-container">
+            <canvas
+              id="qrcode"
+              canvas-id="qrcode"
+              :width="canvasPixelSize"
+              :height="canvasPixelSize"
+              :style="{ width: canvasDisplaySize + 'px', height: canvasDisplaySize + 'px' }"
+              class="qr-canvas" />
+          </view>
+
+          <!-- 操作按钮 -->
+          <view class="action-buttons">
+            <button class="action-btn download-btn" @click="downloadQRCode"> 下载二维码 </button>
+            <button class="action-btn share-btn" @click="shareQRCode"> 分享二维码 </button>
+          </view>
+
+          <!-- 信息显示 -->
+          <view class="qr-info">
+            <view class="info-item">
+              <text class="info-label">内容长度：</text>
+              <text class="info-value">{{ inputContent.length }} 字符</text>
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script>
-  import NavBar from '@/components/nav-bar.vue'
   import UQRCode from 'uqrcodejs'
   import { reportToolVisit } from '@/utils/tracker'
 

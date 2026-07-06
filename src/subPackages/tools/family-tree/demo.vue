@@ -1,41 +1,36 @@
 <template>
-  <view class="family-tree-page">
-    <!-- 顶部导航栏（统一组件） -->
-    <nav-bar
-      always-title
-      title="家族族谱树形图（快照）"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
+  <PageLayout title="家族族谱树形图（快照）" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="family-tree-page">
+      <!-- 顶部导航栏（统一组件） -->
+      <view class="chart-container">
+        <LEchart
+          class="echart"
+          ref="chart"
+          :custom-style="{
+            width: '100vw',
+            height: '90vh',
+            minHeight: '600px',
+            backgroundColor: '#ffffff',
+          }"
+          :webview-styles="{
+            progress: false,
+            bounce: false,
+            scrollIndicator: false,
+          }"></LEchart>
 
-    <view class="chart-container">
-      <LEchart
-        class="echart"
-        ref="chart"
-        :custom-style="{
-          width: '100vw',
-          height: '90vh',
-          minHeight: '600px',
-          backgroundColor: '#ffffff',
-        }"
-        :webview-styles="{
-          progress: false,
-          bounce: false,
-          scrollIndicator: false,
-        }"></LEchart>
-
-      <!-- 刷新控制面板 -->
-      <view class="zoom-controls">
-        <view class="zoom-btn zoom-refresh" @click="refreshChart">
-          <uni-icons type="refreshempty" size="18" color="#333" />
+        <!-- 刷新控制面板 -->
+        <view class="zoom-controls">
+          <view class="zoom-btn zoom-refresh" @click="refreshChart">
+            <uni-icons type="refreshempty" size="18" color="#333" />
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup>
   import LEchart from '@/components/l-echart/l-echart.vue'
-  import NavBar from '@/components/nav-bar.vue'
   import { onBeforeMount, onMounted, reactive, ref } from 'vue'
   const echarts = require('../../../static/echarts.min')
 

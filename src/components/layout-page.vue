@@ -1,3 +1,4 @@
+<!-- @deprecated 请使用 PageLayout（easycom）替代本组件 -->
 <template>
   <view class="layout-page-container" :class="{ 'safe-area-inset-bottom': !isShowFooter }" :style="styles?.container">
     <!-- 页头 -->

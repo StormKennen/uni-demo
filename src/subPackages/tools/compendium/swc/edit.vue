@@ -1,108 +1,107 @@
 <template>
-  <view class="edit-page">
-    <PageLayout title="编辑角色" nav-gradient="linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)" />
-
-    <view v-if="loading" class="state-block">
-      <text>加载数据中...</text>
-    </view>
-
-    <view v-else-if="errorMessage" class="state-block">
-      <text>{{ errorMessage }}</text>
-      <button class="retry-btn" @click="loadDetail">重试</button>
-    </view>
-
-    <view v-else class="content">
-      <view class="hero-card">
-        <image v-if="heroAvatar" class="hero-avatar" :src="heroAvatar" mode="aspectFill" lazy-load />
-        <view v-else class="hero-avatar hero-avatar-placeholder">
-          <text>{{ heroInitial }}</text>
-        </view>
-
-        <view class="hero-meta">
-          <text class="hero-caption">当前编辑人物</text>
-          <text class="hero-name">{{ displayName }}</text>
-          <text class="hero-locale">语言：{{ selectedLocaleLabel }}</text>
-        </view>
+  <PageLayout title="编辑角色" nav-gradient="linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)">
+    <view class="edit-page">
+      <view v-if="loading" class="state-block">
+        <text>加载数据中...</text>
       </view>
 
-      <view class="locale-toolbar">
-        <text class="locale-toolbar-label">编辑语言</text>
-        <view class="locale-switch">
-          <text
-            v-for="option in localeOptions"
-            :key="option.value"
-            class="locale-option"
-            :class="{ selected: option.value === selectedLocale }"
-            @click="changeLocale(option.value)">
-            {{ option.label }}
-          </text>
-        </view>
+      <view v-else-if="errorMessage" class="state-block">
+        <text>{{ errorMessage }}</text>
+        <button class="retry-btn" @click="loadDetail">重试</button>
       </view>
 
-      <view class="section">
-        <text class="section-title">人物文案</text>
-        <view class="field">
-          <text class="field-label">人物名称</text>
-          <input v-model="form.name" class="field-input" placeholder="请输入人物名称" />
+      <view v-else class="content">
+        <view class="hero-card">
+          <image v-if="heroAvatar" class="hero-avatar" :src="heroAvatar" mode="aspectFill" lazy-load />
+          <view v-else class="hero-avatar hero-avatar-placeholder">
+            <text>{{ heroInitial }}</text>
+          </view>
+
+          <view class="hero-meta">
+            <text class="hero-caption">当前编辑人物</text>
+            <text class="hero-name">{{ displayName }}</text>
+            <text class="hero-locale">语言：{{ selectedLocaleLabel }}</text>
+          </view>
         </view>
-        <view class="field">
-          <text class="field-label">原始星级</text>
-          <input v-model="originalStarsText" class="field-input" type="number" placeholder="请输入原始星级" />
+
+        <view class="locale-toolbar">
+          <text class="locale-toolbar-label">编辑语言</text>
+          <view class="locale-switch">
+            <text
+              v-for="option in localeOptions"
+              :key="option.value"
+              class="locale-option"
+              :class="{ selected: option.value === selectedLocale }"
+              @click="changeLocale(option.value)">
+              {{ option.label }}
+            </text>
+          </view>
         </view>
-        <text class="field-tip">攻击、生命、防御等数值属性暂不开放编辑。</text>
-      </view>
 
-      <view class="section">
-        <text class="section-title">技能内容</text>
-        <view v-if="form.skills.length === 0" class="empty-block">当前人物暂无技能数据</view>
-
-        <view v-for="(skill, index) in form.skills" :key="skill.id || String(index)" class="skill-block">
-          <view class="skill-head-row">
-            <text class="skill-index">技能 {{ index + 1 }}</text>
-            <text v-if="skill.type" class="skill-type-label">{{ skill.type }}</text>
-          </view>
-
+        <view class="section">
+          <text class="section-title">人物文案</text>
           <view class="field">
-            <text class="field-label">技能名称</text>
-            <input v-model="skill.name" class="field-input" placeholder="请输入技能名称" />
+            <text class="field-label">人物名称</text>
+            <input v-model="form.name" class="field-input" placeholder="请输入人物名称" />
           </view>
-
           <view class="field">
-            <text class="field-label">技能描述</text>
-            <textarea v-model="skill.description" class="field-textarea" placeholder="请输入技能描述" :maxlength="2000" />
+            <text class="field-label">原始星级</text>
+            <input v-model="originalStarsText" class="field-input" type="number" placeholder="请输入原始星级" />
           </view>
+          <text class="field-tip">攻击、生命、防御等数值属性暂不开放编辑。</text>
+        </view>
 
-          <view class="field">
-            <text class="field-label">技能次数</text>
-            <input v-model="skill.hitCountText" class="field-input" type="number" placeholder="请输入命中次数 / 攻击次数" />
-          </view>
+        <view class="section">
+          <text class="section-title">技能内容</text>
+          <view v-if="form.skills.length === 0" class="empty-block">当前人物暂无技能数据</view>
 
-          <view v-if="skill.coefficients.length" class="coefficient-section">
-            <text class="coefficient-title">技能系数</text>
-            <view
-              v-for="(coefficient, coefficientIndex) in skill.coefficients"
-              :key="coefficient.id || `${index}-${coefficientIndex}`"
-              class="coefficient-item">
-              <view class="field">
-                <text class="field-label">{{ coefficient.name || `系数 ${coefficientIndex + 1}` }}</text>
-                <input v-model="coefficient.valueText" class="field-input" type="digit" placeholder="请输入技能系数" />
+          <view v-for="(skill, index) in form.skills" :key="skill.id || String(index)" class="skill-block">
+            <view class="skill-head-row">
+              <text class="skill-index">技能 {{ index + 1 }}</text>
+              <text v-if="skill.type" class="skill-type-label">{{ skill.type }}</text>
+            </view>
+
+            <view class="field">
+              <text class="field-label">技能名称</text>
+              <input v-model="skill.name" class="field-input" placeholder="请输入技能名称" />
+            </view>
+
+            <view class="field">
+              <text class="field-label">技能描述</text>
+              <textarea v-model="skill.description" class="field-textarea" placeholder="请输入技能描述" :maxlength="2000" />
+            </view>
+
+            <view class="field">
+              <text class="field-label">技能次数</text>
+              <input v-model="skill.hitCountText" class="field-input" type="number" placeholder="请输入命中次数 / 攻击次数" />
+            </view>
+
+            <view v-if="skill.coefficients.length" class="coefficient-section">
+              <text class="coefficient-title">技能系数</text>
+              <view
+                v-for="(coefficient, coefficientIndex) in skill.coefficients"
+                :key="coefficient.id || `${index}-${coefficientIndex}`"
+                class="coefficient-item">
+                <view class="field">
+                  <text class="field-label">{{ coefficient.name || `系数 ${coefficientIndex + 1}` }}</text>
+                  <input v-model="coefficient.valueText" class="field-input" type="digit" placeholder="请输入技能系数" />
+                </view>
               </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
 
-    <view class="action-bar">
-      <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">保存修改</button>
+      <view class="action-bar">
+        <button class="submit-btn" :loading="submitting" :disabled="submitting" @click="handleSubmit">保存修改</button>
+      </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import PageLayout from '@/components/PageLayout.vue'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { patchAdminCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox'

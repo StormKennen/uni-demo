@@ -1,151 +1,153 @@
 <template>
-  <view class="character-picker-page">
-    <view class="search-section">
-      <SearchActionRow
-        v-model="keyword"
-        class="search-row"
-        placeholder="输入人物名称或 code"
-        theme="violet"
-        @search="refreshCharacterOptions" />
+  <PageLayout title="选择筛选魔灵">
+    <view class="character-picker-page">
+      <view class="search-section">
+        <SearchActionRow
+          v-model="keyword"
+          class="search-row"
+          placeholder="输入人物名称或 code"
+          theme="violet"
+          @search="refreshCharacterOptions" />
 
-      <view v-if="showQuickFilters" class="filter-shell">
-        <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
-          <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
-          <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
-            <view class="filter-tags-row">
-              <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
+        <view v-if="showQuickFilters" class="filter-shell">
+          <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
+            <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
+            <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
+              <view class="filter-tags-row">
+                <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
+              </view>
+            </scroll-view>
+            <text v-else class="filter-hint">点击展开快速筛选</text>
+            <text class="filter-expand-arrow">▼</text>
+          </view>
+
+          <view v-else class="filter-expanded">
+            <view class="filter-header">
+              <text class="filter-title">快速筛选</text>
+              <text v-if="hasActiveFilters" class="filter-reset" @click.stop="resetQuickFilters">重置</text>
             </view>
-          </scroll-view>
-          <text v-else class="filter-hint">点击展开快速筛选</text>
-          <text class="filter-expand-arrow">▼</text>
-        </view>
 
-        <view v-else class="filter-expanded">
-          <view class="filter-header">
-            <text class="filter-title">快速筛选</text>
-            <text v-if="hasActiveFilters" class="filter-reset" @click.stop="resetQuickFilters">重置</text>
-          </view>
-
-          <view class="filter-section">
-            <text class="filter-label">属性</text>
-            <scroll-view class="filter-scroll" scroll-x enable-flex>
-              <view class="filter-chip-row">
-                <view
-                  v-for="option in elementOptions"
-                  :key="option.value"
-                  class="quick-chip element-chip"
-                  :class="{ selected: option.value === selectedElement }"
-                  @click="selectQuickFilter('element', option.value)">
-                  <SwcElementBadge
-                    v-if="option.value !== ALL_VALUE"
-                    :element-key="option.value"
-                    :label="option.label"
-                    :size="24"
-                    :font-size="24"
-                    :gap="8" />
-                  <text v-else>{{ option.label }}</text>
+            <view class="filter-section">
+              <text class="filter-label">属性</text>
+              <scroll-view class="filter-scroll" scroll-x enable-flex>
+                <view class="filter-chip-row">
+                  <view
+                    v-for="option in elementOptions"
+                    :key="option.value"
+                    class="quick-chip element-chip"
+                    :class="{ selected: option.value === selectedElement }"
+                    @click="selectQuickFilter('element', option.value)">
+                    <SwcElementBadge
+                      v-if="option.value !== ALL_VALUE"
+                      :element-key="option.value"
+                      :label="option.label"
+                      :size="24"
+                      :font-size="24"
+                      :gap="8" />
+                    <text v-else>{{ option.label }}</text>
+                  </view>
                 </view>
-              </view>
-            </scroll-view>
-          </view>
+              </scroll-view>
+            </view>
 
-          <view class="filter-section">
-            <text class="filter-label">形态</text>
-            <scroll-view class="filter-scroll" scroll-x enable-flex>
-              <view class="filter-chip-row">
-                <view
-                  v-for="option in awakenOptions"
-                  :key="option.value"
-                  class="quick-chip"
-                  :class="{ selected: option.value === selectedAwaken }"
-                  @click="selectQuickFilter('awaken', option.value)">
-                  <text>{{ option.label }}</text>
+            <view class="filter-section">
+              <text class="filter-label">形态</text>
+              <scroll-view class="filter-scroll" scroll-x enable-flex>
+                <view class="filter-chip-row">
+                  <view
+                    v-for="option in awakenOptions"
+                    :key="option.value"
+                    class="quick-chip"
+                    :class="{ selected: option.value === selectedAwaken }"
+                    @click="selectQuickFilter('awaken', option.value)">
+                    <text>{{ option.label }}</text>
+                  </view>
                 </view>
-              </view>
-            </scroll-view>
-          </view>
+              </scroll-view>
+            </view>
 
-          <view v-if="supportsTypeFilter" class="filter-section">
-            <text class="filter-label">类型</text>
-            <scroll-view class="filter-scroll" scroll-x enable-flex>
-              <view class="filter-chip-row">
-                <view
-                  v-for="option in typeOptions"
-                  :key="option.value"
-                  class="quick-chip"
-                  :class="{ selected: option.value === selectedType }"
-                  @click="selectQuickFilter('type', option.value)">
-                  <text>{{ option.label }}</text>
+            <view v-if="supportsTypeFilter" class="filter-section">
+              <text class="filter-label">类型</text>
+              <scroll-view class="filter-scroll" scroll-x enable-flex>
+                <view class="filter-chip-row">
+                  <view
+                    v-for="option in typeOptions"
+                    :key="option.value"
+                    class="quick-chip"
+                    :class="{ selected: option.value === selectedType }"
+                    @click="selectQuickFilter('type', option.value)">
+                    <text>{{ option.label }}</text>
+                  </view>
                 </view>
-              </view>
-            </scroll-view>
-          </view>
+              </scroll-view>
+            </view>
 
-          <view class="filter-section">
-            <text class="filter-label">星级</text>
-            <scroll-view class="filter-scroll" scroll-x enable-flex>
-              <view class="filter-chip-row">
-                <view
-                  v-for="option in starOptions"
-                  :key="option.value"
-                  class="quick-chip"
-                  :class="{ selected: option.value === selectedStar }"
-                  @click="selectQuickFilter('star', option.value)">
-                  <text>{{ option.label }}</text>
+            <view class="filter-section">
+              <text class="filter-label">星级</text>
+              <scroll-view class="filter-scroll" scroll-x enable-flex>
+                <view class="filter-chip-row">
+                  <view
+                    v-for="option in starOptions"
+                    :key="option.value"
+                    class="quick-chip"
+                    :class="{ selected: option.value === selectedStar }"
+                    @click="selectQuickFilter('star', option.value)">
+                    <text>{{ option.label }}</text>
+                  </view>
                 </view>
-              </view>
-            </scroll-view>
-          </view>
+              </scroll-view>
+            </view>
 
-          <view class="filter-collapse-bar" @click="filterExpanded = false">
-            <text class="filter-collapse-text">收起筛选 ▲</text>
+            <view class="filter-collapse-bar" @click="filterExpanded = false">
+              <text class="filter-collapse-text">收起筛选 ▲</text>
+            </view>
           </view>
         </view>
       </view>
+
+      <StateBlock v-if="loading && !characterOptions.length" class="state-block" text="加载人物中..." />
+
+      <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
+
+      <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
+        <view v-if="filteredCharacterCards.length" class="grid-wrap">
+          <SwcCharacterCard
+            v-for="item in filteredCharacterCards"
+            :key="item.option.characterId || item.option.id"
+            class="grid-item"
+            :character="item.view"
+            :show-name="false"
+            :show-family="false"
+            :show-element="false"
+            :show-stars="false"
+            :show-original-stars="false"
+            selectable
+            :selected="isSelected(item.option.characterId)"
+            :selected-index="getSelectedIndex(item.option.characterId)"
+            :avatar-size="176"
+            @click="toggleSelect(item.option)" />
+        </view>
+
+        <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
+
+        <view v-if="loadingMore" class="load-more">
+          <text class="load-more-text">加载更多中...</text>
+        </view>
+
+        <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
+          <text class="load-more-text muted">没有更多了</text>
+        </view>
+      </scroll-view>
+
+      <view class="footer-bar">
+        <view class="footer-selected-info">
+          <text class="footer-count">{{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}</text>
+        </view>
+        <button class="footer-cancel-btn" @click="handleCancel">取消</button>
+        <button class="footer-confirm-btn" @click="handleConfirm">确认选择</button>
+      </view>
     </view>
-
-    <StateBlock v-if="loading && !characterOptions.length" class="state-block" text="加载人物中..." />
-
-    <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
-
-    <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
-      <view v-if="filteredCharacterCards.length" class="grid-wrap">
-        <SwcCharacterCard
-          v-for="item in filteredCharacterCards"
-          :key="item.option.characterId || item.option.id"
-          class="grid-item"
-          :character="item.view"
-          :show-name="false"
-          :show-family="false"
-          :show-element="false"
-          :show-stars="false"
-          :show-original-stars="false"
-          selectable
-          :selected="isSelected(item.option.characterId)"
-          :selected-index="getSelectedIndex(item.option.characterId)"
-          :avatar-size="176"
-          @click="toggleSelect(item.option)" />
-      </view>
-
-      <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
-
-      <view v-if="loadingMore" class="load-more">
-        <text class="load-more-text">加载更多中...</text>
-      </view>
-
-      <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
-        <text class="load-more-text muted">没有更多了</text>
-      </view>
-    </scroll-view>
-
-    <view class="footer-bar">
-      <view class="footer-selected-info">
-        <text class="footer-count">{{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}</text>
-      </view>
-      <button class="footer-cancel-btn" @click="handleCancel">取消</button>
-      <button class="footer-confirm-btn" @click="handleConfirm">确认选择</button>
-    </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

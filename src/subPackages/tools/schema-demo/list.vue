@@ -1,92 +1,86 @@
 <template>
-  <view class="schema-demo-page">
-    <!-- 导航栏 -->
-    <nav-bar
-      always-title
-      title="Schema 编辑器 Demo"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 操作栏 -->
-    <view class="action-bar">
-      <view class="action-bar-left">
-        <text class="info-text">新一代 Schema 驱动编辑器</text>
-      </view>
-      <view class="action-bar-right">
-        <view class="action-btn demo-btn" @click="goToDemo">
-          <text class="icon">🚀</text>
-          <text class="btn-text">进入 Demo</text>
+  <PageLayout title="Schema 编辑器 Demo" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="schema-demo-page">
+      <!-- 导航栏 -->
+      <!-- 操作栏 -->
+      <view class="action-bar">
+        <view class="action-bar-left">
+          <text class="info-text">新一代 Schema 驱动编辑器</text>
         </view>
-      </view>
-    </view>
-
-    <!-- 功能介绍 -->
-    <view class="content-wrapper">
-      <view class="feature-list">
-        <view class="feature-item">
-          <text class="feature-icon">📝</text>
-          <view class="feature-content">
-            <text class="feature-title">文字块 (TextBlock)</text>
-            <text class="feature-desc">支持富文本样式：粗体、斜体、下划线、删除线、字号、颜色</text>
-            <text class="feature-status">✅ itemSchema 已完成</text>
-          </view>
-        </view>
-
-        <view class="feature-item">
-          <text class="feature-icon">🖼️</text>
-          <view class="feature-content">
-            <text class="feature-title">图片块 (ImageBlock)</text>
-            <text class="feature-desc">支持多种布局：网格、轮播、自由布局</text>
-            <text class="feature-status">⏸ itemSchema 待补全</text>
-          </view>
-        </view>
-
-        <view class="feature-item">
-          <text class="feature-icon">🗺️</text>
-          <view class="feature-content">
-            <text class="feature-title">路径块 (RouteBlock)</text>
-            <text class="feature-desc">时间轴式路径展示，支持节点配置</text>
-            <text class="feature-status">⏸ itemSchema 待补全</text>
-          </view>
-        </view>
-
-        <view class="feature-item">
-          <text class="feature-icon">📎</text>
-          <view class="feature-content">
-            <text class="feature-title">附件块 (AttachmentBlock)</text>
-            <text class="feature-desc">文件附件管理</text>
-            <text class="feature-status">⏸ itemSchema 待补全</text>
-          </view>
-        </view>
-
-        <view class="feature-item">
-          <text class="feature-icon">🎬</text>
-          <view class="feature-content">
-            <text class="feature-title">媒体块 (MediaBlock)</text>
-            <text class="feature-desc">音视频播放控制</text>
-            <text class="feature-status">⏸ itemSchema 待补全</text>
+        <view class="action-bar-right">
+          <view class="action-btn demo-btn" @click="goToDemo">
+            <text class="icon">🚀</text>
+            <text class="btn-text">进入 Demo</text>
           </view>
         </view>
       </view>
 
-      <!-- 测试说明 -->
-      <view class="test-guide">
-        <text class="guide-title">📋 测试指南</text>
-        <view class="guide-steps">
-          <text class="guide-step">1. 点击"进入 Demo"按钮</text>
-          <text class="guide-step">2. 点击顶部 5 个按钮创建不同类型的 Block</text>
-          <text class="guide-step">3. 点击 Block 右上角 ⚙️ 打开 Block 设置面板</text>
-          <text class="guide-step">4. 点击文字块内每段右边的 ⚙️ 打开 Item 设置面板</text>
-          <text class="guide-step">5. 在 Item 面板中修改粗体/字号/颜色，保存后立即生效</text>
+      <!-- 功能介绍 -->
+      <view class="content-wrapper">
+        <view class="feature-list">
+          <view class="feature-item">
+            <text class="feature-icon">📝</text>
+            <view class="feature-content">
+              <text class="feature-title">文字块 (TextBlock)</text>
+              <text class="feature-desc">支持富文本样式：粗体、斜体、下划线、删除线、字号、颜色</text>
+              <text class="feature-status">✅ itemSchema 已完成</text>
+            </view>
+          </view>
+
+          <view class="feature-item">
+            <text class="feature-icon">🖼️</text>
+            <view class="feature-content">
+              <text class="feature-title">图片块 (ImageBlock)</text>
+              <text class="feature-desc">支持多种布局：网格、轮播、自由布局</text>
+              <text class="feature-status">⏸ itemSchema 待补全</text>
+            </view>
+          </view>
+
+          <view class="feature-item">
+            <text class="feature-icon">🗺️</text>
+            <view class="feature-content">
+              <text class="feature-title">路径块 (RouteBlock)</text>
+              <text class="feature-desc">时间轴式路径展示，支持节点配置</text>
+              <text class="feature-status">⏸ itemSchema 待补全</text>
+            </view>
+          </view>
+
+          <view class="feature-item">
+            <text class="feature-icon">📎</text>
+            <view class="feature-content">
+              <text class="feature-title">附件块 (AttachmentBlock)</text>
+              <text class="feature-desc">文件附件管理</text>
+              <text class="feature-status">⏸ itemSchema 待补全</text>
+            </view>
+          </view>
+
+          <view class="feature-item">
+            <text class="feature-icon">🎬</text>
+            <view class="feature-content">
+              <text class="feature-title">媒体块 (MediaBlock)</text>
+              <text class="feature-desc">音视频播放控制</text>
+              <text class="feature-status">⏸ itemSchema 待补全</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 测试说明 -->
+        <view class="test-guide">
+          <text class="guide-title">📋 测试指南</text>
+          <view class="guide-steps">
+            <text class="guide-step">1. 点击"进入 Demo"按钮</text>
+            <text class="guide-step">2. 点击顶部 5 个按钮创建不同类型的 Block</text>
+            <text class="guide-step">3. 点击 Block 右上角 ⚙️ 打开 Block 设置面板</text>
+            <text class="guide-step">4. 点击文字块内每段右边的 ⚙️ 打开 Item 设置面板</text>
+            <text class="guide-step">5. 在 Item 面板中修改粗体/字号/颜色，保存后立即生效</text>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import NavBar from '@/components/nav-bar.vue'
-
   const goToDemo = () => {
     uni.navigateTo({
       url: '/editor-core/demo/SchemaEditorDemo',

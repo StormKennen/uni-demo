@@ -1,172 +1,137 @@
 <template>
-  <view class="container" :class="{ 'bot-mode': pageMode === 'bot' }">
-    <!-- 用户模式显示导航栏 -->
-    <NavBar
-      always-title
-      title="图片拼接"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <view class="content">
-      <!-- 模式选择 -->
-      <view v-if="pageMode === 'user'" class="section">
-        <view class="section-header">
-          <text class="section-title">拼接模式</text>
-        </view>
-        <view class="mode-tabs">
-          <view class="mode-tab" :class="{ active: layoutMode === '1N' }" @click="layoutMode = '1N'">
-            <text class="mode-icon">↓</text>
-            <text>竖排 1×N</text>
+  <PageLayout title="图片拼接" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="container" :class="{ 'bot-mode': pageMode === 'bot' }">
+      <!-- 用户模式显示导航栏 -->
+      <view class="content">
+        <!-- 模式选择 -->
+        <view v-if="pageMode === 'user'" class="section">
+          <view class="section-header">
+            <text class="section-title">拼接模式</text>
           </view>
-          <view class="mode-tab" :class="{ active: layoutMode === 'N1' }" @click="layoutMode = 'N1'">
-            <text class="mode-icon">→</text>
-            <text>横排 N×1</text>
-          </view>
-          <view class="mode-tab" :class="{ active: layoutMode === 'grid' }" @click="layoutMode = 'grid'">
-            <text class="mode-icon">▦</text>
-            <text>自定义</text>
-          </view>
-        </view>
-
-        <!-- 10x10 网格选择器 (仅自定义模式) -->
-        <view v-if="layoutMode === 'grid'" class="grid-selector-wrapper">
-          <view class="grid-selector-header">
-            <text class="grid-selector-title">选择布局</text>
-            <text class="grid-selector-value">{{ gridLayout.rows }} × {{ gridLayout.cols }}</text>
-          </view>
-          <view class="grid-selector" @touchmove.prevent="onGridTouchMove" @touchend="onGridTouchEnd">
-            <view
-              v-for="index in 100"
-              :key="index"
-              class="grid-cell"
-              :class="{
-                selected: isCellSelected(index - 1),
-                hovered: isCellHovered(index - 1),
-              }"
-              @click="onGridCellClick(index - 1)"
-              @touchstart="onGridCellTouch(index - 1)" />
-          </view>
-        </view>
-      </view>
-
-      <!-- 属性配置表单 -->
-      <view v-if="pageMode === 'user'" class="section">
-        <view class="section-header">
-          <text class="section-title">样式设置</text>
-        </view>
-
-        <!-- 单元格尺寸 -->
-        <view class="form-row">
-          <view class="form-item">
-            <text class="form-label">宽度</text>
-            <view class="form-input-wrapper">
-              <input type="number" class="form-input" v-model="itemWidth" placeholder="auto" />
-              <text class="form-unit">px</text>
+          <view class="mode-tabs">
+            <view class="mode-tab" :class="{ active: layoutMode === '1N' }" @click="layoutMode = '1N'">
+              <text class="mode-icon">↓</text>
+              <text>竖排 1×N</text>
+            </view>
+            <view class="mode-tab" :class="{ active: layoutMode === 'N1' }" @click="layoutMode = 'N1'">
+              <text class="mode-icon">→</text>
+              <text>横排 N×1</text>
+            </view>
+            <view class="mode-tab" :class="{ active: layoutMode === 'grid' }" @click="layoutMode = 'grid'">
+              <text class="mode-icon">▦</text>
+              <text>自定义</text>
             </view>
           </view>
-          <view class="form-item">
-            <text class="form-label">高度</text>
-            <view class="form-input-wrapper">
-              <input type="number" class="form-input" v-model="itemHeight" placeholder="auto" />
-              <text class="form-unit">px</text>
+
+          <!-- 10x10 网格选择器 (仅自定义模式) -->
+          <view v-if="layoutMode === 'grid'" class="grid-selector-wrapper">
+            <view class="grid-selector-header">
+              <text class="grid-selector-title">选择布局</text>
+              <text class="grid-selector-value">{{ gridLayout.rows }} × {{ gridLayout.cols }}</text>
+            </view>
+            <view class="grid-selector" @touchmove.prevent="onGridTouchMove" @touchend="onGridTouchEnd">
+              <view
+                v-for="index in 100"
+                :key="index"
+                class="grid-cell"
+                :class="{
+                  selected: isCellSelected(index - 1),
+                  hovered: isCellHovered(index - 1),
+                }"
+                @click="onGridCellClick(index - 1)"
+                @touchstart="onGridCellTouch(index - 1)" />
             </view>
           </view>
         </view>
 
-        <!-- 尺寸提示 -->
-        <view v-if="itemWidth && itemHeight" class="form-tip warning">
-          <text>⚠️ 同时设置宽高将启用 object-fit: cover 模式</text>
-        </view>
-
-        <!-- 间距设置 -->
-        <view class="control-item">
-          <text class="control-label">间距 (gap)</text>
-          <text class="control-value">{{ gridGap }}px</text>
-        </view>
-        <slider :value="gridGap" :min="0" :max="50" :step="1" activeColor="#0046B4" @change="gridGap = $event.detail.value" />
-
-        <!-- 背景颜色 -->
-        <view class="control-item">
-          <text class="control-label">背景颜色</text>
-        </view>
-        <view class="color-picker">
-          <view
-            v-for="color in bgColorOptions"
-            :key="color"
-            class="color-option"
-            :class="{ active: bgColor === color }"
-            :style="{ backgroundColor: color }"
-            @click="bgColor = color" />
-        </view>
-      </view>
-
-      <!-- 实时预览区域 -->
-      <view class="section preview-section">
-        <!-- 用户模式显示标题 -->
-        <view v-if="pageMode === 'user'" class="section-header">
-          <text class="section-title">拼接预览</text>
-          <text class="section-subtitle">{{ images.length }}/20张</text>
-        </view>
-
-        <!-- 海报导出区域 - 容器ID锁定 -->
-        <view
-          id="stitch-container"
-          class="poster-wrapper"
-          :class="{ 'is-ready': isRenderReady, 'bot-mode': pageMode === 'bot' }"
-          :style="getPosterStyle()">
-          <!-- 渲染就绪标记 -->
-          <view v-if="isRenderReady && pageMode === 'bot'" id="render-done" class="render-done" />
-
-          <!-- 调试信息 (仅后端模式) -->
-          <view
-            v-if="pageMode === 'bot'"
-            style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              background: rgba(255, 0, 0, 0.8);
-              color: #fff;
-              padding: 4px 8px;
-              font-size: 12px;
-              z-index: 9999;
-            ">
-            mode: {{ layoutMode }} | grid: {{ gridLayout.rows }}x{{ gridLayout.cols }} | images: {{ images.length }}
+        <!-- 属性配置表单 -->
+        <view v-if="pageMode === 'user'" class="section">
+          <view class="section-header">
+            <text class="section-title">样式设置</text>
           </view>
 
-          <!-- 预览容器 - Grid 模式 -->
-          <view v-if="images.length > 0 && layoutMode === 'grid'" class="stitch-preview grid-mode" :style="getGridPreviewStyle()">
-            <view v-for="(img, index) in displayImages" :key="img.id" class="grid-item" :style="getGridItemStyle()">
-              <image :src="img.path" :mode="getImageMode()" class="grid-thumb" :style="getGridImageStyle()" @load="onImageLoad" />
-              <!-- 上传状态遮罩 -->
-              <view v-if="uploadingImages.has(img.id)" class="upload-overlay">
-                <view class="upload-spinner" />
-                <text class="upload-text">上传中...</text>
+          <!-- 单元格尺寸 -->
+          <view class="form-row">
+            <view class="form-item">
+              <text class="form-label">宽度</text>
+              <view class="form-input-wrapper">
+                <input type="number" class="form-input" v-model="itemWidth" placeholder="auto" />
+                <text class="form-unit">px</text>
               </view>
-              <!-- 用户模式显示操作按钮 -->
-              <template v-if="pageMode === 'user'">
-                <view class="image-index">{{ index + 1 }}</view>
-                <view class="image-actions">
-                  <view class="action-btn replace" @click.stop="replaceImage(index)">
-                    <uni-icons type="refreshempty" size="14" color="#fff" />
-                  </view>
-                  <view class="action-btn delete" @click.stop="removeImage(index)">
-                    <uni-icons type="close" size="14" color="#fff" />
-                  </view>
-                </view>
-              </template>
+            </view>
+            <view class="form-item">
+              <text class="form-label">高度</text>
+              <view class="form-input-wrapper">
+                <input type="number" class="form-input" v-model="itemHeight" placeholder="auto" />
+                <text class="form-unit">px</text>
+              </view>
             </view>
           </view>
 
-          <!-- 预览容器 - 1N/N1 模式 -->
-          <view v-else-if="images.length > 0" class="stitch-preview" :class="computedDirection" :style="getLinearPreviewStyle()">
-            <view v-for="(img, index) in images" :key="img.id" class="preview-item-wrapper">
-              <!-- 图片项 -->
-              <view class="preview-item" @longpress="pageMode === 'user' ? showImageActions(index) : null">
-                <image
-                  :src="img.path"
-                  :mode="computedDirection === 'vertical' ? 'widthFix' : 'heightFix'"
-                  class="preview-thumb"
-                  @load="onImageLoad" />
+          <!-- 尺寸提示 -->
+          <view v-if="itemWidth && itemHeight" class="form-tip warning">
+            <text>⚠️ 同时设置宽高将启用 object-fit: cover 模式</text>
+          </view>
+
+          <!-- 间距设置 -->
+          <view class="control-item">
+            <text class="control-label">间距 (gap)</text>
+            <text class="control-value">{{ gridGap }}px</text>
+          </view>
+          <slider :value="gridGap" :min="0" :max="50" :step="1" activeColor="#0046B4" @change="gridGap = $event.detail.value" />
+
+          <!-- 背景颜色 -->
+          <view class="control-item">
+            <text class="control-label">背景颜色</text>
+          </view>
+          <view class="color-picker">
+            <view
+              v-for="color in bgColorOptions"
+              :key="color"
+              class="color-option"
+              :class="{ active: bgColor === color }"
+              :style="{ backgroundColor: color }"
+              @click="bgColor = color" />
+          </view>
+        </view>
+
+        <!-- 实时预览区域 -->
+        <view class="section preview-section">
+          <!-- 用户模式显示标题 -->
+          <view v-if="pageMode === 'user'" class="section-header">
+            <text class="section-title">拼接预览</text>
+            <text class="section-subtitle">{{ images.length }}/20张</text>
+          </view>
+
+          <!-- 海报导出区域 - 容器ID锁定 -->
+          <view
+            id="stitch-container"
+            class="poster-wrapper"
+            :class="{ 'is-ready': isRenderReady, 'bot-mode': pageMode === 'bot' }"
+            :style="getPosterStyle()">
+            <!-- 渲染就绪标记 -->
+            <view v-if="isRenderReady && pageMode === 'bot'" id="render-done" class="render-done" />
+
+            <!-- 调试信息 (仅后端模式) -->
+            <view
+              v-if="pageMode === 'bot'"
+              style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                background: rgba(255, 0, 0, 0.8);
+                color: #fff;
+                padding: 4px 8px;
+                font-size: 12px;
+                z-index: 9999;
+              ">
+              mode: {{ layoutMode }} | grid: {{ gridLayout.rows }}x{{ gridLayout.cols }} | images: {{ images.length }}
+            </view>
+
+            <!-- 预览容器 - Grid 模式 -->
+            <view v-if="images.length > 0 && layoutMode === 'grid'" class="stitch-preview grid-mode" :style="getGridPreviewStyle()">
+              <view v-for="(img, index) in displayImages" :key="img.id" class="grid-item" :style="getGridItemStyle()">
+                <image :src="img.path" :mode="getImageMode()" class="grid-thumb" :style="getGridImageStyle()" @load="onImageLoad" />
                 <!-- 上传状态遮罩 -->
                 <view v-if="uploadingImages.has(img.id)" class="upload-overlay">
                   <view class="upload-spinner" />
@@ -185,113 +150,149 @@
                   </view>
                 </template>
               </view>
-              <!-- 分割线 -->
-              <view v-if="showDivider && index < images.length - 1" class="divider-line" :style="getDividerStyle()" />
+            </view>
+
+            <!-- 预览容器 - 1N/N1 模式 -->
+            <view v-else-if="images.length > 0" class="stitch-preview" :class="computedDirection" :style="getLinearPreviewStyle()">
+              <view v-for="(img, index) in images" :key="img.id" class="preview-item-wrapper">
+                <!-- 图片项 -->
+                <view class="preview-item" @longpress="pageMode === 'user' ? showImageActions(index) : null">
+                  <image
+                    :src="img.path"
+                    :mode="computedDirection === 'vertical' ? 'widthFix' : 'heightFix'"
+                    class="preview-thumb"
+                    @load="onImageLoad" />
+                  <!-- 上传状态遮罩 -->
+                  <view v-if="uploadingImages.has(img.id)" class="upload-overlay">
+                    <view class="upload-spinner" />
+                    <text class="upload-text">上传中...</text>
+                  </view>
+                  <!-- 用户模式显示操作按钮 -->
+                  <template v-if="pageMode === 'user'">
+                    <view class="image-index">{{ index + 1 }}</view>
+                    <view class="image-actions">
+                      <view class="action-btn replace" @click.stop="replaceImage(index)">
+                        <uni-icons type="refreshempty" size="14" color="#fff" />
+                      </view>
+                      <view class="action-btn delete" @click.stop="removeImage(index)">
+                        <uni-icons type="close" size="14" color="#fff" />
+                      </view>
+                    </view>
+                  </template>
+                </view>
+                <!-- 分割线 -->
+                <view v-if="showDivider && index < images.length - 1" class="divider-line" :style="getDividerStyle()" />
+              </view>
+            </view>
+
+            <!-- 空状态 -->
+            <view v-else class="empty-state">
+              <uni-icons type="image" size="60" color="#ddd" />
+              <text class="empty-text">{{ pageMode === 'bot' ? '无图片数据' : '请添加图片开始拼接' }}</text>
             </view>
           </view>
 
-          <!-- 空状态 -->
-          <view v-else class="empty-state">
-            <uni-icons type="image" size="60" color="#ddd" />
-            <text class="empty-text">{{ pageMode === 'bot' ? '无图片数据' : '请添加图片开始拼接' }}</text>
-          </view>
+          <!-- 用户模式显示添加图片按钮 -->
+          <template v-if="pageMode === 'user'">
+            <view v-if="images.length < 20" class="add-area" @click="showAddSheet">
+              <uni-icons type="plusempty" size="32" color="#0046B4" />
+              <text class="add-text">添加图片</text>
+            </view>
+          </template>
         </view>
 
-        <!-- 用户模式显示添加图片按钮 -->
+        <!-- 控制面板 - 仅用户模式 -->
         <template v-if="pageMode === 'user'">
-          <view v-if="images.length < 20" class="add-area" @click="showAddSheet">
-            <uni-icons type="plusempty" size="32" color="#0046B4" />
-            <text class="add-text">添加图片</text>
+          <view class="section">
+            <view class="section-header">
+              <text class="section-title">拼接设置</text>
+            </view>
+
+            <!-- 拼接方向 -->
+            <view class="control-item">
+              <text class="control-label">拼接方向</text>
+              <view class="direction-switch">
+                <view class="direction-option" :class="{ active: direction === 'vertical' }" @click="direction = 'vertical'">
+                  <uni-icons type="arrow-down" size="16" :color="direction === 'vertical' ? '#fff' : '#666'" />
+                  <text>纵向</text>
+                </view>
+                <view class="direction-option" :class="{ active: direction === 'horizontal' }" @click="direction = 'horizontal'">
+                  <uni-icons type="arrow-right" size="16" :color="direction === 'horizontal' ? '#fff' : '#666'" />
+                  <text>横向</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 导出宽度输入框 -->
+            <view class="control-item">
+              <text class="control-label">导出宽度(px)</text>
+              <view class="size-input-wrapper">
+                <input type="number" class="size-input" v-model="exportWidthInput" placeholder="750" @blur="onExportWidthBlur" />
+                <text class="size-unit">px</text>
+              </view>
+            </view>
+
+            <!-- 分割线设置 -->
+            <view class="control-item">
+              <text class="control-label">分割线</text>
+              <switch :checked="showDivider" @change="showDivider = $event.detail.value" color="#0046B4" />
+            </view>
+
+            <view v-if="showDivider" class="divider-settings">
+              <view class="control-item">
+                <text class="control-label">线条宽度</text>
+                <text class="control-value">{{ dividerWidth }}px</text>
+              </view>
+              <slider
+                :value="dividerWidth"
+                :min="1"
+                :max="20"
+                :step="1"
+                activeColor="#0046B4"
+                @change="dividerWidth = $event.detail.value" />
+
+              <view class="control-item">
+                <text class="control-label">线条颜色</text>
+              </view>
+              <view class="color-picker">
+                <view
+                  v-for="color in colorOptions"
+                  :key="color"
+                  class="color-option"
+                  :class="{ active: dividerColor === color }"
+                  :style="{ backgroundColor: color }"
+                  @click="dividerColor = color" />
+              </view>
+            </view>
           </view>
         </template>
       </view>
 
-      <!-- 控制面板 - 仅用户模式 -->
+      <!-- 底部操作栏 - 仅用户模式 -->
       <template v-if="pageMode === 'user'">
-        <view class="section">
-          <view class="section-header">
-            <text class="section-title">拼接设置</text>
-          </view>
-
-          <!-- 拼接方向 -->
-          <view class="control-item">
-            <text class="control-label">拼接方向</text>
-            <view class="direction-switch">
-              <view class="direction-option" :class="{ active: direction === 'vertical' }" @click="direction = 'vertical'">
-                <uni-icons type="arrow-down" size="16" :color="direction === 'vertical' ? '#fff' : '#666'" />
-                <text>纵向</text>
-              </view>
-              <view class="direction-option" :class="{ active: direction === 'horizontal' }" @click="direction = 'horizontal'">
-                <uni-icons type="arrow-right" size="16" :color="direction === 'horizontal' ? '#fff' : '#666'" />
-                <text>横向</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 导出宽度输入框 -->
-          <view class="control-item">
-            <text class="control-label">导出宽度(px)</text>
-            <view class="size-input-wrapper">
-              <input type="number" class="size-input" v-model="exportWidthInput" placeholder="750" @blur="onExportWidthBlur" />
-              <text class="size-unit">px</text>
-            </view>
-          </view>
-
-          <!-- 分割线设置 -->
-          <view class="control-item">
-            <text class="control-label">分割线</text>
-            <switch :checked="showDivider" @change="showDivider = $event.detail.value" color="#0046B4" />
-          </view>
-
-          <view v-if="showDivider" class="divider-settings">
-            <view class="control-item">
-              <text class="control-label">线条宽度</text>
-              <text class="control-value">{{ dividerWidth }}px</text>
-            </view>
-            <slider :value="dividerWidth" :min="1" :max="20" :step="1" activeColor="#0046B4" @change="dividerWidth = $event.detail.value" />
-
-            <view class="control-item">
-              <text class="control-label">线条颜色</text>
-            </view>
-            <view class="color-picker">
-              <view
-                v-for="color in colorOptions"
-                :key="color"
-                class="color-option"
-                :class="{ active: dividerColor === color }"
-                :style="{ backgroundColor: color }"
-                @click="dividerColor = color" />
-            </view>
-          </view>
+        <view class="bottom-bar">
+          <button class="btn-stitch" :disabled="images.length < 1 || isProcessing" @click="exportImage">
+            <uni-icons v-if="!isProcessing" type="download" size="18" color="#fff" />
+            <text>{{ isProcessing ? '处理中...' : '生成海报' }}</text>
+          </button>
         </view>
       </template>
-    </view>
 
-    <!-- 底部操作栏 - 仅用户模式 -->
-    <template v-if="pageMode === 'user'">
-      <view class="bottom-bar">
-        <button class="btn-stitch" :disabled="images.length < 1 || isProcessing" @click="exportImage">
-          <uni-icons v-if="!isProcessing" type="download" size="18" color="#fff" />
-          <text>{{ isProcessing ? '处理中...' : '生成海报' }}</text>
-        </button>
-      </view>
-    </template>
-
-    <!-- 进度提示 -->
-    <view v-if="isProcessing" class="progress-mask">
-      <view class="progress-content">
-        <view class="progress-spinner" />
-        <text class="progress-text">{{ progressText }}</text>
+      <!-- 进度提示 -->
+      <view v-if="isProcessing" class="progress-mask">
+        <view class="progress-content">
+          <view class="progress-spinner" />
+          <text class="progress-text">{{ progressText }}</text>
+        </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
   import { postFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
   import { getOssFormData } from '../oss-upload/utils'

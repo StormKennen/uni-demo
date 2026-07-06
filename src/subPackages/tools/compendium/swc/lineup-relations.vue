@@ -1,99 +1,101 @@
 <template>
-  <view class="relation-page">
-    <view class="hero-card">
-      <text class="hero-title">阵容映射关系</text>
-      <text class="hero-subtitle">为一个源阵容配置多个目标阵容，保存时会整组覆盖；也会展示哪些上游阵容正在引用当前阵容。</text>
-    </view>
-
-    <StateBlock v-if="pageLoading" class="state-block" text="加载关系配置中..." />
-
-    <StateBlock
-      v-else-if="errorMessage"
-      class="state-block"
-      :text="errorMessage"
-      action-text="重新加载"
-      theme="teal"
-      @action="loadInitialData" />
-
-    <view v-else class="content">
-      <LineupPickerPanel
-        v-model:keyword="sourceKeyword"
-        title="源阵容"
-        tip="选择 sourceLineup"
-        :options="sourceOptions"
-        :selected-items="selectedSource ? [selectedSource] : []"
-        :selected-ids="selectedSource ? [selectedSource.id] : []"
-        selected-action-text="清空"
-        selected-highlight
-        search-placeholder="搜索源阵容"
-        loading-text="加载源阵容中..."
-        empty-text="暂无源阵容可选"
-        :loading="sourceLoading"
-        @search="searchSourceOptions"
-        @toggle="selectSource"
-        @remove="clearSource" />
-
-      <view class="section-card">
-        <view class="section-head">
-          <text class="section-title">已选目标阵容</text>
-          <text class="section-tip">{{ selectedTargets.length }} 个</text>
-        </view>
-
-        <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
-
-        <StateBlock v-else-if="!selectedTargets.length" class="empty-block" text="当前还没有配置目标阵容" />
-
-        <view v-else class="selected-targets">
-          <view v-for="target in selectedTargets" :key="target.id" class="selected-card">
-            <view class="option-main">
-              <text class="option-name">{{ target.name || '未命名阵容' }}</text>
-              <text class="option-desc">{{ target.description || '暂无描述' }}</text>
-            </view>
-            <button class="mini-btn danger" size="mini" @click="removeTarget(target.id)">移除</button>
-          </view>
-        </view>
+  <PageLayout title="阵容克制关系">
+    <view class="relation-page">
+      <view class="hero-card">
+        <text class="hero-title">阵容映射关系</text>
+        <text class="hero-subtitle">为一个源阵容配置多个目标阵容，保存时会整组覆盖；也会展示哪些上游阵容正在引用当前阵容。</text>
       </view>
 
-      <view class="section-card">
-        <view class="section-head">
-          <text class="section-title">上游引用阵容</text>
-          <text class="section-tip">{{ incomingLineups.length }} 个</text>
-        </view>
+      <StateBlock v-if="pageLoading" class="state-block" text="加载关系配置中..." />
 
-        <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
+      <StateBlock
+        v-else-if="errorMessage"
+        class="state-block"
+        :text="errorMessage"
+        action-text="重新加载"
+        theme="teal"
+        @action="loadInitialData" />
 
-        <StateBlock v-else-if="!incomingLineups.length" class="empty-block" text="当前没有上游阵容引用它" />
+      <view v-else class="content">
+        <LineupPickerPanel
+          v-model:keyword="sourceKeyword"
+          title="源阵容"
+          tip="选择 sourceLineup"
+          :options="sourceOptions"
+          :selected-items="selectedSource ? [selectedSource] : []"
+          :selected-ids="selectedSource ? [selectedSource.id] : []"
+          selected-action-text="清空"
+          selected-highlight
+          search-placeholder="搜索源阵容"
+          loading-text="加载源阵容中..."
+          empty-text="暂无源阵容可选"
+          :loading="sourceLoading"
+          @search="searchSourceOptions"
+          @toggle="selectSource"
+          @remove="clearSource" />
 
-        <view v-else class="selected-targets">
-          <view v-for="lineup in incomingLineups" :key="lineup.id" class="selected-card">
-            <view class="option-main">
-              <text class="option-name">{{ lineup.name || '未命名阵容' }}</text>
-              <text class="option-desc">{{ lineup.description || '暂无描述' }}</text>
+        <view class="section-card">
+          <view class="section-head">
+            <text class="section-title">已选目标阵容</text>
+            <text class="section-tip">{{ selectedTargets.length }} 个</text>
+          </view>
+
+          <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
+
+          <StateBlock v-else-if="!selectedTargets.length" class="empty-block" text="当前还没有配置目标阵容" />
+
+          <view v-else class="selected-targets">
+            <view v-for="target in selectedTargets" :key="target.id" class="selected-card">
+              <view class="option-main">
+                <text class="option-name">{{ target.name || '未命名阵容' }}</text>
+                <text class="option-desc">{{ target.description || '暂无描述' }}</text>
+              </view>
+              <button class="mini-btn danger" size="mini" @click="removeTarget(target.id)">移除</button>
             </view>
           </view>
         </view>
+
+        <view class="section-card">
+          <view class="section-head">
+            <text class="section-title">上游引用阵容</text>
+            <text class="section-tip">{{ incomingLineups.length }} 个</text>
+          </view>
+
+          <StateBlock v-if="!selectedSource" class="empty-block" text="请先选择源阵容" />
+
+          <StateBlock v-else-if="!incomingLineups.length" class="empty-block" text="当前没有上游阵容引用它" />
+
+          <view v-else class="selected-targets">
+            <view v-for="lineup in incomingLineups" :key="lineup.id" class="selected-card">
+              <view class="option-main">
+                <text class="option-name">{{ lineup.name || '未命名阵容' }}</text>
+                <text class="option-desc">{{ lineup.description || '暂无描述' }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <LineupPickerPanel
+          v-model:keyword="targetKeyword"
+          title="搜索目标阵容"
+          tip="选择 targetLineups"
+          :options="targetOptions"
+          :selected-ids="selectedTargets.map(item => item.id)"
+          selection-mode="multiple"
+          search-placeholder="搜索目标阵容"
+          loading-text="加载目标阵容中..."
+          empty-text="暂无目标阵容可选"
+          :loading="targetLoading"
+          :disabled="!selectedSource"
+          @search="searchTargetOptions"
+          @toggle="toggleTarget" />
       </view>
 
-      <LineupPickerPanel
-        v-model:keyword="targetKeyword"
-        title="搜索目标阵容"
-        tip="选择 targetLineups"
-        :options="targetOptions"
-        :selected-ids="selectedTargets.map(item => item.id)"
-        selection-mode="multiple"
-        search-placeholder="搜索目标阵容"
-        loading-text="加载目标阵容中..."
-        empty-text="暂无目标阵容可选"
-        :loading="targetLoading"
-        :disabled="!selectedSource"
-        @search="searchTargetOptions"
-        @toggle="toggleTarget" />
+      <StickyActionBar>
+        <button class="submit-btn" :loading="saving" :disabled="saving || !selectedSource" @click="saveRelations"> 保存映射关系 </button>
+      </StickyActionBar>
     </view>
-
-    <StickyActionBar>
-      <button class="submit-btn" :loading="saving" :disabled="saving || !selectedSource" @click="saveRelations"> 保存映射关系 </button>
-    </StickyActionBar>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">

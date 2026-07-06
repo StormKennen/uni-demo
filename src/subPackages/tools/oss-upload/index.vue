@@ -7,7 +7,6 @@
   import { ref, computed } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import NavBar from '@/components/nav-bar.vue'
   import { generateDefaultOssKey } from '@/services/oss'
   import { getOssFormData } from './utils'
   import { getToken } from '@/utils/storage'
@@ -430,115 +429,112 @@
 </script>
 
 <template>
-  <view class="page">
-    <NavBar
-      always-title
-      title="文件上传"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-    <view class="entry" @click="goToFileList">
-      <view class="entry-left"><uni-icons type="list" size="24" color="#2B7EFF" /></view>
-      <view class="entry-content">
-        <text class="entry-title">文件列表</text>
-        <text class="entry-desc">查看并下载已上传文件</text>
+  <PageLayout title="文件上传" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="page">
+      <view class="entry" @click="goToFileList">
+        <view class="entry-left"><uni-icons type="list" size="24" color="#2B7EFF" /></view>
+        <view class="entry-content">
+          <text class="entry-title">文件列表</text>
+          <text class="entry-desc">查看并下载已上传文件</text>
+        </view>
+        <view class="entry-right"><uni-icons type="right" size="20" color="#7B8794" /></view>
       </view>
-      <view class="entry-right"><uni-icons type="right" size="20" color="#7B8794" /></view>
-    </view>
-    <view class="content">
-      <view class="section upload-section">
-        <!-- 模式切换 -->
-        <view class="mode-switch">
-          <view class="mode-btn" :class="{ active: !urlInputMode }" @click="urlInputMode = false">
-            <uni-icons type="upload" size="18" :color="!urlInputMode ? '#667eea' : '#999'" />
-            <text>上传文件</text>
+      <view class="content">
+        <view class="section upload-section">
+          <!-- 模式切换 -->
+          <view class="mode-switch">
+            <view class="mode-btn" :class="{ active: !urlInputMode }" @click="urlInputMode = false">
+              <uni-icons type="upload" size="18" :color="!urlInputMode ? '#667eea' : '#999'" />
+              <text>上传文件</text>
+            </view>
+            <view class="mode-btn" :class="{ active: urlInputMode }" @click="urlInputMode = true">
+              <uni-icons type="link" size="18" :color="urlInputMode ? '#667eea' : '#999'" />
+              <text>录入URL</text>
+            </view>
           </view>
-          <view class="mode-btn" :class="{ active: urlInputMode }" @click="urlInputMode = true">
-            <uni-icons type="link" size="18" :color="urlInputMode ? '#667eea' : '#999'" />
-            <text>录入URL</text>
+
+          <!-- 文件夹选择 -->
+          <view class="folder-selector" @click="showFolderPicker = true">
+            <view class="folder-icon">
+              <uni-icons type="folder" size="20" color="#667eea" />
+            </view>
+            <view class="folder-info">
+              <text class="folder-label">存放目录</text>
+              <text class="folder-path">{{ selectedFolder === '/' ? '根目录' : selectedFolder }}</text>
+            </view>
+            <uni-icons type="right" size="16" color="#999" />
+          </view>
+
+          <!-- URL录入模式 -->
+          <view v-if="urlInputMode" class="url-input-section">
+            <view class="url-input-box">
+              <uni-icons type="link" size="20" color="#999" />
+              <input class="url-input" v-model="directUrl" placeholder="请输入文件URL地址" confirm-type="done" />
+            </view>
+            <view class="url-hint">
+              <text>文件名将从URL中自动提取，大小固定为10MB</text>
+            </view>
+            <button class="btn primary" :disabled="savingUrl || !directUrl.trim()" @click="saveUrlRecord">
+              {{ savingUrl ? '保存中...' : '保存记录' }}
+            </button>
+          </view>
+
+          <!-- 文件上传模式 -->
+          <view v-else-if="!hasFile" class="upload-area">
+            <view class="upload-choices">
+              <view class="choice" @click="chooseImageAction">
+                <uni-icons type="camera" size="48" color="#999" />
+                <text class="upload-text">选择图片</text>
+                <text class="upload-desc">相机/相册</text>
+              </view>
+              <view class="choice" @click="chooseFileAction">
+                <uni-icons type="paperclip" size="48" color="#999" />
+                <text class="upload-text">选择文件</text>
+                <text class="upload-desc">聊天记录</text>
+              </view>
+            </view>
+          </view>
+          <view v-else class="selected-card">
+            <view class="selected-top">
+              <image
+                v-if="['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(selectedExt.toLowerCase())"
+                class="selected-image"
+                :src="selectedFilePath"
+                mode="aspectFit" />
+              <view v-else class="file-placeholder"><uni-icons type="paperclip" size="48" color="#999" /></view>
+            </view>
+            <view class="size-box mt-16rpx">
+              <text class="size-text">名称：</text>
+              <input class="edit-input" v-model="inputBaseName" placeholder="请输入文件名，默认是随机命名" confirm-type="done" />
+              <text class="size-text">.{{ selectedExt }}</text>
+            </view>
+            <view class="size-box mt-16rpx">
+              <text class="size-text">大小：{{ formatSize(selectedFileSize) }}</text>
+              <text v-if="sizeTooLarge" class="size-warn">超过10MB不可上传</text>
+            </view>
+            <view class="selected-actions">
+              <button class="action-btn" @click="resetSelection">重新选择</button>
+            </view>
           </view>
         </view>
-
-        <!-- 文件夹选择 -->
-        <view class="folder-selector" @click="showFolderPicker = true">
-          <view class="folder-icon">
-            <uni-icons type="folder" size="20" color="#667eea" />
-          </view>
-          <view class="folder-info">
-            <text class="folder-label">存放目录</text>
-            <text class="folder-path">{{ selectedFolder === '/' ? '根目录' : selectedFolder }}</text>
-          </view>
-          <uni-icons type="right" size="16" color="#999" />
-        </view>
-
-        <!-- URL录入模式 -->
-        <view v-if="urlInputMode" class="url-input-section">
-          <view class="url-input-box">
-            <uni-icons type="link" size="20" color="#999" />
-            <input class="url-input" v-model="directUrl" placeholder="请输入文件URL地址" confirm-type="done" />
-          </view>
-          <view class="url-hint">
-            <text>文件名将从URL中自动提取，大小固定为10MB</text>
-          </view>
-          <button class="btn primary" :disabled="savingUrl || !directUrl.trim()" @click="saveUrlRecord">
-            {{ savingUrl ? '保存中...' : '保存记录' }}
+        <view class="section">
+          <button class="btn primary" :disabled="uploadDisabled" @click="upload">
+            {{ uploading ? '上传中...' : '上传到OSS' }}
           </button>
-        </view>
-
-        <!-- 文件上传模式 -->
-        <view v-else-if="!hasFile" class="upload-area">
-          <view class="upload-choices">
-            <view class="choice" @click="chooseImageAction">
-              <uni-icons type="camera" size="48" color="#999" />
-              <text class="upload-text">选择图片</text>
-              <text class="upload-desc">相机/相册</text>
-            </view>
-            <view class="choice" @click="chooseFileAction">
-              <uni-icons type="paperclip" size="48" color="#999" />
-              <text class="upload-text">选择文件</text>
-              <text class="upload-desc">聊天记录</text>
-            </view>
-          </view>
-        </view>
-        <view v-else class="selected-card">
-          <view class="selected-top">
-            <image
-              v-if="['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(selectedExt.toLowerCase())"
-              class="selected-image"
-              :src="selectedFilePath"
-              mode="aspectFit" />
-            <view v-else class="file-placeholder"><uni-icons type="paperclip" size="48" color="#999" /></view>
-          </view>
-          <view class="size-box mt-16rpx">
-            <text class="size-text">名称：</text>
-            <input class="edit-input" v-model="inputBaseName" placeholder="请输入文件名，默认是随机命名" confirm-type="done" />
-            <text class="size-text">.{{ selectedExt }}</text>
-          </view>
-          <view class="size-box mt-16rpx">
-            <text class="size-text">大小：{{ formatSize(selectedFileSize) }}</text>
-            <text v-if="sizeTooLarge" class="size-warn">超过10MB不可上传</text>
-          </view>
-          <view class="selected-actions">
-            <button class="action-btn" @click="resetSelection">重新选择</button>
-          </view>
-        </view>
-      </view>
-      <view class="section">
-        <button class="btn primary" :disabled="uploadDisabled" @click="upload">
-          {{ uploading ? '上传中...' : '上传到OSS' }}
-        </button>
-        <!-- <view class="result" v-if="uploadedUrl">
+          <!-- <view class="result" v-if="uploadedUrl">
           <text>上传地址：</text>
           <text class="link">{{ uploadedUrl }}</text>
         </view> -->
-        <view class="error" v-if="uploadError">
-          <text>错误：{{ uploadError }}</text>
+          <view class="error" v-if="uploadError">
+            <text>错误：{{ uploadError }}</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <!-- 文件夹选择弹窗 -->
-    <FolderPicker v-model="selectedFolder" v-model:visible="showFolderPicker" />
-  </view>
+      <!-- 文件夹选择弹窗 -->
+      <FolderPicker v-model="selectedFolder" v-model:visible="showFolderPicker" />
+    </view>
+  </PageLayout>
 </template>
 
 <style scoped lang="scss">

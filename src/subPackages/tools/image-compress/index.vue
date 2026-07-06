@@ -1,112 +1,107 @@
 <template>
-  <view class="image-compress-page">
-    <!-- 顶部导航栏（统一组件） -->
-    <NavBar
-      always-title
-      title="图片压缩"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }" />
-
-    <!-- 主要内容区域 -->
-    <view class="main-content">
-      <!-- 图片上传区域 -->
-      <view class="upload-section">
-        <view v-if="!originalImage" class="upload-area" @click="selectImage">
-          <view class="upload-icon">
-            <uni-icons type="image" size="48" color="#999" />
-          </view>
-          <text class="upload-text">{{ isCheckingSecurity ? '图片安全校验中...' : '点击选择图片' }}</text>
-          <text class="upload-desc">支持 JPG、PNG、WEBP 格式</text>
-          <text class="upload-safe-tip">小程序发布场景会先进行内容安全校验</text>
-        </view>
-
-        <view v-else class="image-preview-section">
-          <!-- 原始图片预览 -->
-          <view class="image-preview">
-            <text class="preview-title">原始图片</text>
-            <image class="preview-image" :src="originalImage" mode="aspectFit" />
-            <view class="image-info">
-              <text class="image-size">{{ formatFileSize(originalSize) }}</text>
-              <text class="image-dimensions">{{ originalDimensions }}</text>
+  <PageLayout title="图片压缩" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view class="image-compress-page">
+      <!-- 顶部导航栏（统一组件） -->
+      <!-- 主要内容区域 -->
+      <view class="main-content">
+        <!-- 图片上传区域 -->
+        <view class="upload-section">
+          <view v-if="!originalImage" class="upload-area" @click="selectImage">
+            <view class="upload-icon">
+              <uni-icons type="image" size="48" color="#999" />
             </view>
+            <text class="upload-text">{{ isCheckingSecurity ? '图片安全校验中...' : '点击选择图片' }}</text>
+            <text class="upload-desc">支持 JPG、PNG、WEBP 格式</text>
+            <text class="upload-safe-tip">小程序发布场景会先进行内容安全校验</text>
           </view>
 
-          <!-- 压缩后图片预览 -->
-          <view v-if="compressedImage" class="image-preview">
-            <text class="preview-title">压缩后图片</text>
-            <image class="preview-image" :src="compressedImage" mode="aspectFit" />
-            <view class="image-info">
-              <text class="image-size">{{ formatFileSize(compressedSize) }}</text>
-              <text class="compression-ratio">压缩率: {{ compressionRatio }}%</text>
+          <view v-else class="image-preview-section">
+            <!-- 原始图片预览 -->
+            <view class="image-preview">
+              <text class="preview-title">原始图片</text>
+              <image class="preview-image" :src="originalImage" mode="aspectFit" />
+              <view class="image-info">
+                <text class="image-size">{{ formatFileSize(originalSize) }}</text>
+                <text class="image-dimensions">{{ originalDimensions }}</text>
+              </view>
+            </view>
+
+            <!-- 压缩后图片预览 -->
+            <view v-if="compressedImage" class="image-preview">
+              <text class="preview-title">压缩后图片</text>
+              <image class="preview-image" :src="compressedImage" mode="aspectFit" />
+              <view class="image-info">
+                <text class="image-size">{{ formatFileSize(compressedSize) }}</text>
+                <text class="compression-ratio">压缩率: {{ compressionRatio }}%</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <!-- 压缩控制区域 -->
-      <view v-if="originalImage" class="compress-controls">
-        <view class="control-section">
-          <text class="control-title">压缩质量</text>
+        <!-- 压缩控制区域 -->
+        <view v-if="originalImage" class="compress-controls">
+          <view class="control-section">
+            <text class="control-title">压缩质量</text>
 
-          <!-- 滑动条控制 -->
-          <view class="slider-control">
-            <text class="quality-label">{{ quality }}%</text>
-            <slider
-              class="quality-slider"
-              :value="quality"
-              :min="10"
-              :max="100"
-              :step="5"
-              @change="onQualityChange"
-              activeColor="#667eea"
-              backgroundColor="#E5E7EB" />
+            <!-- 滑动条控制 -->
+            <view class="slider-control">
+              <text class="quality-label">{{ quality }}%</text>
+              <slider
+                class="quality-slider"
+                :value="quality"
+                :min="10"
+                :max="100"
+                :step="5"
+                @change="onQualityChange"
+                activeColor="#667eea"
+                backgroundColor="#E5E7EB" />
+            </view>
+
+            <!-- 输入框控制 -->
+            <view class="input-control">
+              <text class="input-label">质量百分比:</text>
+              <input class="quality-input" type="number" :value="quality" @input="onQualityInput" placeholder="10-100" />
+              <text class="input-unit">%</text>
+            </view>
           </view>
 
-          <!-- 输入框控制 -->
-          <view class="input-control">
-            <text class="input-label">质量百分比:</text>
-            <input class="quality-input" type="number" :value="quality" @input="onQualityInput" placeholder="10-100" />
-            <text class="input-unit">%</text>
+          <!-- 操作按钮 -->
+          <view class="action-buttons">
+            <button class="action-btn secondary-btn" @click="resetImage"> 重新选择 </button>
+            <button class="action-btn primary-btn" @click="compressImage" :disabled="isCompressing || isCheckingSecurity">
+              {{ isCompressing ? '压缩中...' : '开始压缩' }}
+            </button>
+            <button v-if="compressedImage" class="action-btn download-btn" @click="downloadImage"> 下载图片 </button>
           </view>
         </view>
 
-        <!-- 操作按钮 -->
-        <view class="action-buttons">
-          <button class="action-btn secondary-btn" @click="resetImage"> 重新选择 </button>
-          <button class="action-btn primary-btn" @click="compressImage" :disabled="isCompressing || isCheckingSecurity">
-            {{ isCompressing ? '压缩中...' : '开始压缩' }}
-          </button>
-          <button v-if="compressedImage" class="action-btn download-btn" @click="downloadImage"> 下载图片 </button>
-        </view>
-      </view>
-
-      <!-- 压缩信息展示 -->
-      <view v-if="compressedImage" class="compress-info">
-        <view class="info-card">
-          <view class="info-item">
-            <text class="info-label">原始大小:</text>
-            <text class="info-value">{{ formatFileSize(originalSize) }}</text>
-          </view>
-          <view class="info-item">
-            <text class="info-label">压缩后大小:</text>
-            <text class="info-value">{{ formatFileSize(compressedSize) }}</text>
-          </view>
-          <view class="info-item">
-            <text class="info-label">节省空间:</text>
-            <text class="info-value saved">{{ formatFileSize(savedSpace) }}</text>
-          </view>
-          <view class="info-item">
-            <text class="info-label">压缩率:</text>
-            <text class="info-value">{{ compressionRatio }}%</text>
+        <!-- 压缩信息展示 -->
+        <view v-if="compressedImage" class="compress-info">
+          <view class="info-card">
+            <view class="info-item">
+              <text class="info-label">原始大小:</text>
+              <text class="info-value">{{ formatFileSize(originalSize) }}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">压缩后大小:</text>
+              <text class="info-value">{{ formatFileSize(compressedSize) }}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">节省空间:</text>
+              <text class="info-value saved">{{ formatFileSize(savedSpace) }}</text>
+            </view>
+            <view class="info-item">
+              <text class="info-label">压缩率:</text>
+              <text class="info-value">{{ compressionRatio }}%</text>
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import NavBar from '@/components/nav-bar.vue'
   import { ref, computed } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'

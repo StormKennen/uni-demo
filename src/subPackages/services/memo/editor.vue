@@ -1,883 +1,877 @@
 <template>
-  <view class="editor-page">
-    <!-- 导航栏 -->
-    <nav-bar
-      always-title
-      title="编辑备忘录"
-      custom-class="light"
-      :custom-style="{ backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }">
-      <template #right>
-        <view class="nav-actions">
-          <view class="nav-action-btn" :class="{ disabled: !canUndo }" @click="undo">
-            <text>↶</text>
-          </view>
-          <view class="nav-action-btn" :class="{ disabled: !canRedo }" @click="redo">
-            <text>↷</text>
-          </view>
-          <view class="nav-action-btn" @click="saveAndGoToDetail" v-if="memoId">
-            <text>👁️</text>
-          </view>
+  <PageLayout title="编辑备忘录" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <template #nav-right>
+      <view class="nav-actions">
+        <view class="nav-action-btn" :class="{ disabled: !canUndo }" @click="undo">
+          <text>↶</text>
         </view>
-      </template>
-    </nav-bar>
-
-    <!-- 可滚动内容区域 -->
-    <scroll-view class="scrollable-content" scroll-y>
-      <!-- 备忘录名称和设置按钮 -->
-      <view class="memo-info-section">
-        <view class="memo-header-row">
-          <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
-          <view class="settings-btn" @click="openConfigPanel">
-            <text class="settings-icon">⚙️</text>
-          </view>
+        <view class="nav-action-btn" :class="{ disabled: !canRedo }" @click="redo">
+          <text>↷</text>
         </view>
-        <!-- 标签预览（只读） -->
-        <view class="tags-preview" v-if="tags.length > 0">
-          <view v-for="(tag, index) in tags" :key="index" class="tag-preview-item">
-            <text class="tag-text">{{ tag }}</text>
-          </view>
+        <view class="nav-action-btn" @click="saveAndGoToDetail" v-if="memoId">
+          <text>👁️</text>
         </view>
       </view>
-
-      <!-- 内容区域 -->
-      <view class="content-section">
-        <!-- 内容块列表 -->
-        <view
-          v-for="(block, blockIndex) in pageData.content"
-          :key="blockIndex"
-          class="content-block"
-          :class="{ 'is-locked': block?.style?.locked === true }">
-          <!-- 锁定徽章（右上角，仅锁定块显示） -->
-          <view v-if="block?.style?.locked === true" class="locked-badge" @click.stop="onLockedBadgeClick(blockIndex)">
-            <text class="locked-icon">🔒</text>
-            <text class="locked-text">已锁定</text>
-          </view>
-          <!-- 文本块 -->
-          <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
-            <!-- 锚点ID显示 -->
-            <!-- <view class="anchor-id-display">
-              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
-                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
-                <text class="copy-hint">点击复制</text>
-              </view>
-            </view> -->
-            <!-- 编辑模式：显示块头部 -->
-            <view class="block-header">
-              <!-- <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text> -->
-              <!-- <text class="block-type-label">📝 文本块</text> -->
-              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
-                <text class="anchor-tag">文本容器#L{{ blockIndex + 1 }}</text>
-                <!-- <text class="copy-hint">点击复制</text> -->
-              </text>
-              <view class="block-actions">
-                <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <picker
-                  mode="selector"
-                  :range="getMovePositions(blockIndex)"
-                  range-key="label"
-                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
-                  @click.stop>
-                  <view class="action-btn" @click.stop>≡</view>
-                </picker>
-                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
-                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
-              </view>
-            </view>
-
-            <view
-              v-for="(item, itemIndex) in block.children"
-              :key="itemIndex"
-              class="text-item"
-              :class="{
-                selected: isItemSelected(blockIndex, itemIndex, 'text'),
-                'title-item': isTitleItem(blockIndex, itemIndex),
-              }">
-              <view
-                class="text-display"
-                :class="{ 'title-display': isTitleItem(blockIndex, itemIndex) }"
-                :style="getTextStyle(item.style)"
-                @click="selectItem(blockIndex, itemIndex, 'text')">
-                {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '文本') }}
-              </view>
-            </view>
-
-            <!-- 编辑模式：添加按钮 -->
-            <view class="add-item-btn" @click="addTextItem(blockIndex)">
-              <text class="add-icon">+</text>
-              <text class="add-text">添加文本</text>
+    </template>
+    <view class="editor-page">
+      <!-- 可滚动内容区域 -->
+      <scroll-view class="scrollable-content" scroll-y>
+        <!-- 备忘录名称和设置按钮 -->
+        <view class="memo-info-section">
+          <view class="memo-header-row">
+            <input class="memo-name-input" v-model="memoName" placeholder="请输入备忘录名称" :maxlength="100" />
+            <view class="settings-btn" @click="openConfigPanel">
+              <text class="settings-icon">⚙️</text>
             </view>
           </view>
-
-          <!-- 图片块 -->
-          <view v-if="block.type === 'image'" class="image-block" :style="getBlockBorderStyle(block)">
-            <!-- 锚点ID显示 -->
-            <!-- <view class="anchor-id-display">
-              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
-                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
-                <text class="copy-hint">点击复制</text>
-              </view>
-            </view> -->
-            <!-- 编辑模式：显示块头部 -->
-            <view class="block-header">
-              <!-- <text class="block-type-label">🖼️ 图片块</text> -->
-              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
-                <text class="anchor-tag">图片容器#L{{ blockIndex + 1 }}</text>
-                <!-- <text class="copy-hint">点击复制</text> -->
-              </text>
-              <view class="block-actions">
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <picker
-                  mode="selector"
-                  :range="getMovePositions(blockIndex)"
-                  range-key="label"
-                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
-                  @click.stop>
-                  <view class="action-btn" @click.stop>≡</view>
-                </picker>
-                <view class="action-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
-                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
-              </view>
-            </view>
-
-            <view
-              v-for="(item, itemIndex) in block.children"
-              :key="itemIndex"
-              class="image-item"
-              :class="{ selected: isItemSelected(blockIndex, itemIndex, 'image') }">
-              <!-- 图片上传/预览 -->
-              <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
-                <text class="upload-icon">+</text>
-                <text class="upload-text">点击上传</text>
-              </view>
-              <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
-                <view class="image-container">
-                  <image :src="item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
-                </view>
-              </view>
-            </view>
-
-            <!-- 编辑模式：添加按钮 -->
-            <view class="add-item-btn" @click="addImageItem(blockIndex)">
-              <text class="add-icon">+</text>
-              <text class="add-text">添加图片</text>
-            </view>
-          </view>
-
-          <!-- 路径块 -->
-          <view v-if="block.type === 'route'" class="route-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header">
-              <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
-                <text class="anchor-tag">行程路径#L{{ blockIndex + 1 }}</text>
-              </text>
-              <view class="block-actions">
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <picker
-                  mode="selector"
-                  :range="getMovePositions(blockIndex)"
-                  range-key="label"
-                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
-                  @click.stop>
-                  <view class="action-btn" @click.stop>≡</view>
-                </picker>
-                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
-                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
-              </view>
-            </view>
-
-            <view class="route-edit-container">
-              <!-- 路径编辑工具栏 -->
-              <view class="route-toolbar">
-                <view class="route-toolbar-btn" @click="showJsonImportModal(blockIndex)">
-                  <text class="toolbar-icon">📋</text>
-                  <text class="toolbar-text">导入 JSON</text>
-                </view>
-              </view>
-
-              <view v-for="(node, nodeIndex) in (block as RouteBlock).content" :key="nodeIndex" class="route-node-editor">
-                <!-- 插入节点按钮（非第一个节点前显示） -->
-                <view v-if="nodeIndex > 0" class="insert-node-btn" @click="insertRouteNode(blockIndex, nodeIndex)">
-                  <text class="insert-icon">+</text>
-                  <text class="insert-text">插入节点</text>
-                </view>
-
-                <view class="node-content" :class="{ 'is-end': node.isEnd, 'is-transfer': node.type === 'transfer' }">
-                  <view class="node-header">
-                    <text class="node-index">{{ nodeIndex + 1 }}</text>
-                    <text class="node-type-label">{{ node.isEnd ? '终点' : node.type === 'transfer' ? '换乘站' : '途经站' }}</text>
-                    <!-- 删除按钮（终点不可删除，且至少保留2个节点） -->
-                    <view
-                      v-if="!node.isEnd && (block as RouteBlock).content.length > 2"
-                      class="node-delete-btn"
-                      @click="deleteRouteNode(blockIndex, nodeIndex)"
-                      >×</view
-                    >
-                  </view>
-
-                  <!-- 站点名称（所有节点都有） -->
-                  <view class="node-input-group">
-                    <text class="input-label">站点名称</text>
-                    <input class="node-input" v-model="node.name" placeholder="请输入站点名称" :maxlength="50" />
-                  </view>
-
-                  <!-- 非终点节点的额外字段 -->
-                  <template v-if="!node.isEnd">
-                    <view class="node-input-row">
-                      <view class="node-input-group half">
-                        <text class="input-label">耗时</text>
-                        <input class="node-input" v-model="node.time" placeholder="如 1h" :maxlength="20" />
-                      </view>
-                      <view class="node-input-group half">
-                        <text class="input-label">交通图标</text>
-                        <input class="node-input" v-model="node.icon" placeholder="如 🚗" :maxlength="20" />
-                      </view>
-                    </view>
-
-                    <view class="node-input-group">
-                      <text class="input-label">描述</text>
-                      <input class="node-input" v-model="node.desc" placeholder="如 接机、换乘等" :maxlength="100" />
-                    </view>
-
-                    <view class="node-switch-row">
-                      <text class="switch-label">换乘站点</text>
-                      <switch :checked="node.type === 'transfer'" @change="toggleRouteNodeType(blockIndex, nodeIndex)" color="#667eea" />
-                    </view>
-                  </template>
-                </view>
-              </view>
-
-              <!-- 在终点前添加节点 -->
-              <view class="add-route-node-btn" @click="addRouteNodeBeforeEnd(blockIndex)">
-                <text class="add-icon">+</text>
-                <text class="add-text">添加途经站</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- 附件块 -->
-          <view v-if="block.type === 'attachment'" class="attachment-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header">
-              <text class="anchor-id-badge">
-                <text class="anchor-tag">附件容器#L{{ blockIndex + 1 }}</text>
-              </text>
-              <view class="block-actions">
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <picker
-                  mode="selector"
-                  :range="getMovePositions(blockIndex)"
-                  range-key="label"
-                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
-                  @click.stop>
-                  <view class="action-btn" @click.stop>≡</view>
-                </picker>
-                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
-                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
-              </view>
-            </view>
-
-            <view v-for="(item, itemIndex) in (block as AttachmentBlock).children" :key="itemIndex" class="attachment-item">
-              <view class="attachment-card">
-                <view class="attachment-icon">📄</view>
-                <view class="attachment-info">
-                  <input class="attachment-title-input" v-model="item.title" placeholder="附件标题" :maxlength="50" />
-                  <input
-                    class="attachment-url-input"
-                    v-model="item.url"
-                    placeholder="粘贴腾讯文档链接"
-                    :maxlength="500"
-                    @blur="onAttachmentUrlBlur(item)" />
-                </view>
-                <view class="attachment-delete" @click="deleteAttachmentItem(blockIndex, itemIndex)">×</view>
-              </view>
-            </view>
-
-            <view class="add-item-btn" @click="addAttachmentItem(blockIndex)">
-              <text class="add-icon">+</text>
-              <text class="add-text">添加附件</text>
-            </view>
-          </view>
-
-          <!-- 多媒体块 -->
-          <view v-if="block.type === 'media'" class="media-block" :style="getBlockBorderStyle(block)">
-            <view class="block-header">
-              <text class="anchor-tag">多媒体容器#L{{ blockIndex + 1 }}</text>
-              <view class="block-actions">
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
-                <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
-                <picker
-                  mode="selector"
-                  :range="getMovePositions(blockIndex)"
-                  range-key="label"
-                  @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
-                  @click.stop>
-                  <view class="action-btn" @click.stop>≡</view>
-                </picker>
-                <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
-                <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
-              </view>
-            </view>
-
-            <view v-for="(item, itemIndex) in (block as MediaBlock).children" :key="itemIndex" class="media-card">
-              <view class="media-info">
-                <input class="media-title-input" v-model="item.title" placeholder="视频/音频名称" :maxlength="50" />
-                <view class="media-status-row">
-                  <text class="media-url-preview" v-if="item.url"
-                    >{{ item.url.substring(0, 40) }}{{ item.url.length > 40 ? '...' : '' }}</text
-                  >
-                  <text class="media-url-preview empty" v-else>未设置媒体源</text>
-                  <view class="media-props-tags">
-                    <text v-if="item.autoplay" class="prop-tag">自动播放</text>
-                    <text v-if="item.loop" class="prop-tag">循环</text>
-                    <text v-if="item.controls !== false" class="prop-tag">控制条</text>
-                  </view>
-                </view>
-              </view>
-              <video v-if="item.url && item.url.includes('.mp4')" :src="item.url" class="mini-preview" controls></video>
-              <view v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a'))" class="audio-placeholder">
-                <text class="audio-icon">🎵</text>
-                <text class="audio-text">音频文件</text>
-              </view>
-              <view class="media-card-actions">
-                <view class="media-settings-btn" @click="openMediaItemSettings(blockIndex, itemIndex)">⚙️</view>
-                <view class="media-delete" @click="deleteMediaItem(blockIndex, itemIndex)">×</view>
-              </view>
-            </view>
-
-            <view class="add-item-btn" @click="addMediaItem(blockIndex)">
-              <text class="add-icon">+</text>
-              <text class="add-text">添加媒体</text>
+          <!-- 标签预览（只读） -->
+          <view class="tags-preview" v-if="tags.length > 0">
+            <view v-for="(tag, index) in tags" :key="index" class="tag-preview-item">
+              <text class="tag-text">{{ tag }}</text>
             </view>
           </view>
         </view>
-      </view>
-    </scroll-view>
 
-    <!-- FAB 悬浮按钮（仅编辑模式，控制面板显示时隐藏） -->
-    <view class="fab-container" v-if="!selectedItem && !isAnyPanelOpen">
-      <!-- 遮罩层 -->
-      <view class="fab-overlay" v-if="fabExpanded" @click="fabExpanded = false"></view>
-      <!-- 子按钮 -->
-      <view class="fab-actions" :class="{ expanded: fabExpanded }">
-        <view class="fab-action-btn" @click="addTextBlockAndClose">
-          <!-- <text class="fab-action-icon">📝</text> -->
-          <text class="fab-action-text">文字</text>
-        </view>
-        <view class="fab-action-btn" @click="addImageBlockAndClose">
-          <!-- <text class="fab-action-icon">🖼️</text> -->
-          <text class="fab-action-text">图片</text>
-        </view>
-        <view class="fab-action-btn route" @click="addRouteBlockAndClose">
-          <!-- <text class="fab-action-icon">🗺️</text> -->
-          <text class="fab-action-text">路径</text>
-        </view>
-        <view class="fab-action-btn attachment" @click="addAttachmentBlockAndClose">
-          <!-- <text class="fab-action-icon">📎</text> -->
-          <text class="fab-action-text">附件</text>
-        </view>
-        <view class="fab-action-btn media" @click="addMediaBlockAndClose">
-          <!-- <text class="fab-action-icon">🎬</text> -->
-          <text class="fab-action-text">视频</text>
-        </view>
-      </view>
-      <!-- 主按钮 -->
-      <view class="fab-main-btn" :class="{ active: fabExpanded }" @click="fabExpanded = !fabExpanded">
-        <text class="fab-main-icon">{{ fabExpanded ? '×' : '+' }}</text>
-      </view>
-    </view>
-
-    <!-- 颜色选择器弹窗 -->
-    <view class="color-picker-modal" v-if="colorPickerVisible" @click="colorPickerVisible = false">
-      <view class="color-picker-content" @click.stop>
-        <view class="color-picker-title">选择颜色</view>
-        <view class="color-grid">
+        <!-- 内容区域 -->
+        <view class="content-section">
+          <!-- 内容块列表 -->
           <view
-            v-for="color in colors"
-            :key="color"
-            class="color-item"
-            :style="{ backgroundColor: color }"
-            @click="selectColor(color)"></view>
+            v-for="(block, blockIndex) in pageData.content"
+            :key="blockIndex"
+            class="content-block"
+            :class="{ 'is-locked': block?.style?.locked === true }">
+            <!-- 锁定徽章（右上角，仅锁定块显示） -->
+            <view v-if="block?.style?.locked === true" class="locked-badge" @click.stop="onLockedBadgeClick(blockIndex)">
+              <text class="locked-icon">🔒</text>
+              <text class="locked-text">已锁定</text>
+            </view>
+            <!-- 文本块 -->
+            <view v-if="block.type === 'text'" class="text-block" :style="getBlockBorderStyle(block)">
+              <!-- 锚点ID显示 -->
+              <!-- <view class="anchor-id-display">
+              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
+                <text class="copy-hint">点击复制</text>
+              </view>
+            </view> -->
+              <!-- 编辑模式：显示块头部 -->
+              <view class="block-header">
+                <!-- <text class="block-type-label">{{ blockIndex === 0 ? '📌 标题块' : '📝 文本块' }}</text> -->
+                <!-- <text class="block-type-label">📝 文本块</text> -->
+                <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                  <text class="anchor-tag">文本容器#L{{ blockIndex + 1 }}</text>
+                  <!-- <text class="copy-hint">点击复制</text> -->
+                </text>
+                <view class="block-actions">
+                  <view class="action-btn" v-if="blockIndex > 0" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                  <picker
+                    mode="selector"
+                    :range="getMovePositions(blockIndex)"
+                    range-key="label"
+                    @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                    @click.stop>
+                    <view class="action-btn" @click.stop>≡</view>
+                  </picker>
+                  <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                  <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+                </view>
+              </view>
+
+              <view
+                v-for="(item, itemIndex) in block.children"
+                :key="itemIndex"
+                class="text-item"
+                :class="{
+                  selected: isItemSelected(blockIndex, itemIndex, 'text'),
+                  'title-item': isTitleItem(blockIndex, itemIndex),
+                }">
+                <view
+                  class="text-display"
+                  :class="{ 'title-display': isTitleItem(blockIndex, itemIndex) }"
+                  :style="getTextStyle(item.style)"
+                  @click="selectItem(blockIndex, itemIndex, 'text')">
+                  {{ item.value || (isTitleItem(blockIndex, itemIndex) ? '我的备忘录' : '文本') }}
+                </view>
+              </view>
+
+              <!-- 编辑模式：添加按钮 -->
+              <view class="add-item-btn" @click="addTextItem(blockIndex)">
+                <text class="add-icon">+</text>
+                <text class="add-text">添加文本</text>
+              </view>
+            </view>
+
+            <!-- 图片块 -->
+            <view v-if="block.type === 'image'" class="image-block" :style="getBlockBorderStyle(block)">
+              <!-- 锚点ID显示 -->
+              <!-- <view class="anchor-id-display">
+              <view class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                <text class="anchor-tag">#L{{ blockIndex + 1 }}</text>
+                <text class="copy-hint">点击复制</text>
+              </view>
+            </view> -->
+              <!-- 编辑模式：显示块头部 -->
+              <view class="block-header">
+                <!-- <text class="block-type-label">🖼️ 图片块</text> -->
+                <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                  <text class="anchor-tag">图片容器#L{{ blockIndex + 1 }}</text>
+                  <!-- <text class="copy-hint">点击复制</text> -->
+                </text>
+                <view class="block-actions">
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                  <picker
+                    mode="selector"
+                    :range="getMovePositions(blockIndex)"
+                    range-key="label"
+                    @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                    @click.stop>
+                    <view class="action-btn" @click.stop>≡</view>
+                  </picker>
+                  <view class="action-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                  <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+                </view>
+              </view>
+
+              <view
+                v-for="(item, itemIndex) in block.children"
+                :key="itemIndex"
+                class="image-item"
+                :class="{ selected: isItemSelected(blockIndex, itemIndex, 'image') }">
+                <!-- 图片上传/预览 -->
+                <view class="image-upload-area" v-if="!item.value.url" @click="chooseImage(blockIndex, itemIndex)">
+                  <text class="upload-icon">+</text>
+                  <text class="upload-text">点击上传</text>
+                </view>
+                <view class="image-preview" v-else @click="selectItem(blockIndex, itemIndex, 'image')">
+                  <view class="image-container">
+                    <image :src="item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
+                  </view>
+                </view>
+              </view>
+
+              <!-- 编辑模式：添加按钮 -->
+              <view class="add-item-btn" @click="addImageItem(blockIndex)">
+                <text class="add-icon">+</text>
+                <text class="add-text">添加图片</text>
+              </view>
+            </view>
+
+            <!-- 路径块 -->
+            <view v-if="block.type === 'route'" class="route-block" :style="getBlockBorderStyle(block)">
+              <view class="block-header">
+                <text class="anchor-id-badge" @click.stop="copyAnchor(blockIndex + 1)">
+                  <text class="anchor-tag">行程路径#L{{ blockIndex + 1 }}</text>
+                </text>
+                <view class="block-actions">
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                  <picker
+                    mode="selector"
+                    :range="getMovePositions(blockIndex)"
+                    range-key="label"
+                    @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                    @click.stop>
+                    <view class="action-btn" @click.stop>≡</view>
+                  </picker>
+                  <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                  <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+                </view>
+              </view>
+
+              <view class="route-edit-container">
+                <!-- 路径编辑工具栏 -->
+                <view class="route-toolbar">
+                  <view class="route-toolbar-btn" @click="showJsonImportModal(blockIndex)">
+                    <text class="toolbar-icon">📋</text>
+                    <text class="toolbar-text">导入 JSON</text>
+                  </view>
+                </view>
+
+                <view v-for="(node, nodeIndex) in (block as RouteBlock).content" :key="nodeIndex" class="route-node-editor">
+                  <!-- 插入节点按钮（非第一个节点前显示） -->
+                  <view v-if="nodeIndex > 0" class="insert-node-btn" @click="insertRouteNode(blockIndex, nodeIndex)">
+                    <text class="insert-icon">+</text>
+                    <text class="insert-text">插入节点</text>
+                  </view>
+
+                  <view class="node-content" :class="{ 'is-end': node.isEnd, 'is-transfer': node.type === 'transfer' }">
+                    <view class="node-header">
+                      <text class="node-index">{{ nodeIndex + 1 }}</text>
+                      <text class="node-type-label">{{ node.isEnd ? '终点' : node.type === 'transfer' ? '换乘站' : '途经站' }}</text>
+                      <!-- 删除按钮（终点不可删除，且至少保留2个节点） -->
+                      <view
+                        v-if="!node.isEnd && (block as RouteBlock).content.length > 2"
+                        class="node-delete-btn"
+                        @click="deleteRouteNode(blockIndex, nodeIndex)"
+                        >×</view
+                      >
+                    </view>
+
+                    <!-- 站点名称（所有节点都有） -->
+                    <view class="node-input-group">
+                      <text class="input-label">站点名称</text>
+                      <input class="node-input" v-model="node.name" placeholder="请输入站点名称" :maxlength="50" />
+                    </view>
+
+                    <!-- 非终点节点的额外字段 -->
+                    <template v-if="!node.isEnd">
+                      <view class="node-input-row">
+                        <view class="node-input-group half">
+                          <text class="input-label">耗时</text>
+                          <input class="node-input" v-model="node.time" placeholder="如 1h" :maxlength="20" />
+                        </view>
+                        <view class="node-input-group half">
+                          <text class="input-label">交通图标</text>
+                          <input class="node-input" v-model="node.icon" placeholder="如 🚗" :maxlength="20" />
+                        </view>
+                      </view>
+
+                      <view class="node-input-group">
+                        <text class="input-label">描述</text>
+                        <input class="node-input" v-model="node.desc" placeholder="如 接机、换乘等" :maxlength="100" />
+                      </view>
+
+                      <view class="node-switch-row">
+                        <text class="switch-label">换乘站点</text>
+                        <switch :checked="node.type === 'transfer'" @change="toggleRouteNodeType(blockIndex, nodeIndex)" color="#667eea" />
+                      </view>
+                    </template>
+                  </view>
+                </view>
+
+                <!-- 在终点前添加节点 -->
+                <view class="add-route-node-btn" @click="addRouteNodeBeforeEnd(blockIndex)">
+                  <text class="add-icon">+</text>
+                  <text class="add-text">添加途经站</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 附件块 -->
+            <view v-if="block.type === 'attachment'" class="attachment-block" :style="getBlockBorderStyle(block)">
+              <view class="block-header">
+                <text class="anchor-id-badge">
+                  <text class="anchor-tag">附件容器#L{{ blockIndex + 1 }}</text>
+                </text>
+                <view class="block-actions">
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                  <picker
+                    mode="selector"
+                    :range="getMovePositions(blockIndex)"
+                    range-key="label"
+                    @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                    @click.stop>
+                    <view class="action-btn" @click.stop>≡</view>
+                  </picker>
+                  <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                  <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+                </view>
+              </view>
+
+              <view v-for="(item, itemIndex) in (block as AttachmentBlock).children" :key="itemIndex" class="attachment-item">
+                <view class="attachment-card">
+                  <view class="attachment-icon">📄</view>
+                  <view class="attachment-info">
+                    <input class="attachment-title-input" v-model="item.title" placeholder="附件标题" :maxlength="50" />
+                    <input
+                      class="attachment-url-input"
+                      v-model="item.url"
+                      placeholder="粘贴腾讯文档链接"
+                      :maxlength="500"
+                      @blur="onAttachmentUrlBlur(item)" />
+                  </view>
+                  <view class="attachment-delete" @click="deleteAttachmentItem(blockIndex, itemIndex)">×</view>
+                </view>
+              </view>
+
+              <view class="add-item-btn" @click="addAttachmentItem(blockIndex)">
+                <text class="add-icon">+</text>
+                <text class="add-text">添加附件</text>
+              </view>
+            </view>
+
+            <!-- 多媒体块 -->
+            <view v-if="block.type === 'media'" class="media-block" :style="getBlockBorderStyle(block)">
+              <view class="block-header">
+                <text class="anchor-tag">多媒体容器#L{{ blockIndex + 1 }}</text>
+                <view class="block-actions">
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, -1)">↑</view>
+                  <view class="action-btn" @click.stop="moveBlock(blockIndex, 1)">↓</view>
+                  <picker
+                    mode="selector"
+                    :range="getMovePositions(blockIndex)"
+                    range-key="label"
+                    @change="onMoveBlockPick(blockIndex, Number($event.detail.value))"
+                    @click.stop>
+                    <view class="action-btn" @click.stop>≡</view>
+                  </picker>
+                  <view class="action-btn style-btn" @click.stop="openBlockStylePanel(blockIndex)">⚙️</view>
+                  <view class="action-btn delete" @click.stop="deleteBlock(blockIndex)">×</view>
+                </view>
+              </view>
+
+              <view v-for="(item, itemIndex) in (block as MediaBlock).children" :key="itemIndex" class="media-card">
+                <view class="media-info">
+                  <input class="media-title-input" v-model="item.title" placeholder="视频/音频名称" :maxlength="50" />
+                  <view class="media-status-row">
+                    <text class="media-url-preview" v-if="item.url"
+                      >{{ item.url.substring(0, 40) }}{{ item.url.length > 40 ? '...' : '' }}</text
+                    >
+                    <text class="media-url-preview empty" v-else>未设置媒体源</text>
+                    <view class="media-props-tags">
+                      <text v-if="item.autoplay" class="prop-tag">自动播放</text>
+                      <text v-if="item.loop" class="prop-tag">循环</text>
+                      <text v-if="item.controls !== false" class="prop-tag">控制条</text>
+                    </view>
+                  </view>
+                </view>
+                <video v-if="item.url && item.url.includes('.mp4')" :src="item.url" class="mini-preview" controls></video>
+                <view v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a'))" class="audio-placeholder">
+                  <text class="audio-icon">🎵</text>
+                  <text class="audio-text">音频文件</text>
+                </view>
+                <view class="media-card-actions">
+                  <view class="media-settings-btn" @click="openMediaItemSettings(blockIndex, itemIndex)">⚙️</view>
+                  <view class="media-delete" @click="deleteMediaItem(blockIndex, itemIndex)">×</view>
+                </view>
+              </view>
+
+              <view class="add-item-btn" @click="addMediaItem(blockIndex)">
+                <text class="add-icon">+</text>
+                <text class="add-text">添加媒体</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <!-- FAB 悬浮按钮（仅编辑模式，控制面板显示时隐藏） -->
+      <view class="fab-container" v-if="!selectedItem && !isAnyPanelOpen">
+        <!-- 遮罩层 -->
+        <view class="fab-overlay" v-if="fabExpanded" @click="fabExpanded = false"></view>
+        <!-- 子按钮 -->
+        <view class="fab-actions" :class="{ expanded: fabExpanded }">
+          <view class="fab-action-btn" @click="addTextBlockAndClose">
+            <!-- <text class="fab-action-icon">📝</text> -->
+            <text class="fab-action-text">文字</text>
+          </view>
+          <view class="fab-action-btn" @click="addImageBlockAndClose">
+            <!-- <text class="fab-action-icon">🖼️</text> -->
+            <text class="fab-action-text">图片</text>
+          </view>
+          <view class="fab-action-btn route" @click="addRouteBlockAndClose">
+            <!-- <text class="fab-action-icon">🗺️</text> -->
+            <text class="fab-action-text">路径</text>
+          </view>
+          <view class="fab-action-btn attachment" @click="addAttachmentBlockAndClose">
+            <!-- <text class="fab-action-icon">📎</text> -->
+            <text class="fab-action-text">附件</text>
+          </view>
+          <view class="fab-action-btn media" @click="addMediaBlockAndClose">
+            <!-- <text class="fab-action-icon">🎬</text> -->
+            <text class="fab-action-text">视频</text>
+          </view>
+        </view>
+        <!-- 主按钮 -->
+        <view class="fab-main-btn" :class="{ active: fabExpanded }" @click="fabExpanded = !fabExpanded">
+          <text class="fab-main-icon">{{ fabExpanded ? '×' : '+' }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 文件选择器弹窗 -->
-    <view class="file-picker-modal" v-if="filePickerVisible" @click="filePickerVisible = false">
-      <view class="file-picker-content" @click.stop>
-        <view class="file-picker-header">
-          <text class="file-picker-title">选择云端图片</text>
-          <text class="file-picker-close" @click="filePickerVisible = false">×</text>
+      <!-- 颜色选择器弹窗 -->
+      <view class="color-picker-modal" v-if="colorPickerVisible" @click="colorPickerVisible = false">
+        <view class="color-picker-content" @click.stop>
+          <view class="color-picker-title">选择颜色</view>
+          <view class="color-grid">
+            <view
+              v-for="color in colors"
+              :key="color"
+              class="color-item"
+              :style="{ backgroundColor: color }"
+              @click="selectColor(color)"></view>
+          </view>
         </view>
+      </view>
 
-        <!-- 云端文件列表 -->
-        <view class="file-tab-content">
-          <view v-if="loadingFiles" class="loading-files">
+      <!-- 文件选择器弹窗 -->
+      <view class="file-picker-modal" v-if="filePickerVisible" @click="filePickerVisible = false">
+        <view class="file-picker-content" @click.stop>
+          <view class="file-picker-header">
+            <text class="file-picker-title">选择云端图片</text>
+            <text class="file-picker-close" @click="filePickerVisible = false">×</text>
+          </view>
+
+          <!-- 云端文件列表 -->
+          <view class="file-tab-content">
+            <view v-if="loadingFiles" class="loading-files">
+              <text class="loading-icon">⏳</text>
+              <text>加载中...</text>
+            </view>
+            <view v-else-if="cloudFiles.length === 0" class="empty-files">
+              <text class="empty-icon">�</text>
+              <text>暂无图片文件</text>
+            </view>
+            <scroll-view v-else scroll-y class="file-list">
+              <view v-for="file in cloudFiles" :key="file.id" class="file-item" @click="selectCloudFile(file)">
+                <view class="file-preview">
+                  <image :src="file.file_url" class="file-thumb" mode="aspectFill" />
+                </view>
+                <view class="file-info">
+                  <text class="file-name">{{ file.file_name }}</text>
+                  <view class="file-meta">
+                    <text class="file-size">{{ file.file_size_formatted }}</text>
+                    <text class="file-date">{{ formatDate(file.created_at) }}</text>
+                  </view>
+                </view>
+                <view class="file-select-icon">✓</view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 写作素材选择弹窗 -->
+      <view class="chat-session-modal" v-if="chatSessionPickerVisible" @click="chatSessionPickerVisible = false">
+        <view class="chat-session-content" @click.stop>
+          <view class="chat-session-header">
+            <text class="chat-session-title">选择笔记</text>
+            <text class="chat-session-close" @click="chatSessionPickerVisible = false">×</text>
+          </view>
+          <view v-if="loadingChatSessions" class="loading-sessions">
             <text class="loading-icon">⏳</text>
             <text>加载中...</text>
           </view>
-          <view v-else-if="cloudFiles.length === 0" class="empty-files">
-            <text class="empty-icon">�</text>
-            <text>暂无图片文件</text>
+          <view v-else-if="chatSessions.length === 0" class="empty-sessions">
+            <text class="empty-icon">📝</text>
+            <text>暂无笔记</text>
           </view>
-          <scroll-view v-else scroll-y class="file-list">
-            <view v-for="file in cloudFiles" :key="file.id" class="file-item" @click="selectCloudFile(file)">
-              <view class="file-preview">
-                <image :src="file.file_url" class="file-thumb" mode="aspectFill" />
+          <scroll-view v-else scroll-y class="chat-session-list">
+            <view v-for="session in chatSessions" :key="session.id" class="chat-session-item" @click="selectChatSession(session)">
+              <view class="session-icon">📄</view>
+              <view class="session-info">
+                <text class="session-title">{{ session.title || '新建草稿' }}</text>
+                <text class="session-meta">{{ session.messageCount || 0 }} 条素材 · {{ session.updatedAt || session.createdAt }}</text>
               </view>
-              <view class="file-info">
-                <text class="file-name">{{ file.file_name }}</text>
-                <view class="file-meta">
-                  <text class="file-size">{{ file.file_size_formatted }}</text>
-                  <text class="file-date">{{ formatDate(file.created_at) }}</text>
-                </view>
-              </view>
-              <view class="file-select-icon">✓</view>
+              <view class="session-select-icon">›</view>
             </view>
           </scroll-view>
         </view>
       </view>
-    </view>
 
-    <!-- 写作素材选择弹窗 -->
-    <view class="chat-session-modal" v-if="chatSessionPickerVisible" @click="chatSessionPickerVisible = false">
-      <view class="chat-session-content" @click.stop>
-        <view class="chat-session-header">
-          <text class="chat-session-title">选择笔记</text>
-          <text class="chat-session-close" @click="chatSessionPickerVisible = false">×</text>
-        </view>
-        <view v-if="loadingChatSessions" class="loading-sessions">
-          <text class="loading-icon">⏳</text>
-          <text>加载中...</text>
-        </view>
-        <view v-else-if="chatSessions.length === 0" class="empty-sessions">
-          <text class="empty-icon">📝</text>
-          <text>暂无笔记</text>
-        </view>
-        <scroll-view v-else scroll-y class="chat-session-list">
-          <view v-for="session in chatSessions" :key="session.id" class="chat-session-item" @click="selectChatSession(session)">
-            <view class="session-icon">📄</view>
-            <view class="session-info">
-              <text class="session-title">{{ session.title || '新建草稿' }}</text>
-              <text class="session-meta">{{ session.messageCount || 0 }} 条素材 · {{ session.updatedAt || session.createdAt }}</text>
+      <!-- 备忘录选择弹窗 -->
+      <view class="chat-session-modal" v-if="memoPickerVisible" @click="memoPickerVisible = false">
+        <view class="chat-session-content" @click.stop>
+          <view class="chat-session-header">
+            <text class="chat-session-title">选择备忘录</text>
+            <text class="chat-session-close" @click="memoPickerVisible = false">×</text>
+          </view>
+          <view v-if="loadingMemosForPicker" class="loading-sessions">
+            <text class="loading-icon">⏳</text>
+            <text>加载中...</text>
+          </view>
+          <view v-else-if="memoListForPicker.length === 0" class="empty-sessions">
+            <text class="empty-icon">📋</text>
+            <text>暂无备忘录</text>
+          </view>
+          <scroll-view v-else scroll-y class="chat-session-list">
+            <view v-for="memo in memoListForPicker" :key="memo.id" class="chat-session-item" @click="selectMemo(memo)">
+              <view class="session-icon">📋</view>
+              <view class="session-info">
+                <text class="session-title">{{ memo.name || '未命名' }}</text>
+                <text class="session-meta">{{ memo.updatedAt ? formatMemoDate(memo.updatedAt) : '' }}</text>
+              </view>
+              <view class="session-select-icon">›</view>
             </view>
-            <view class="session-select-icon">›</view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-
-    <!-- 备忘录选择弹窗 -->
-    <view class="chat-session-modal" v-if="memoPickerVisible" @click="memoPickerVisible = false">
-      <view class="chat-session-content" @click.stop>
-        <view class="chat-session-header">
-          <text class="chat-session-title">选择备忘录</text>
-          <text class="chat-session-close" @click="memoPickerVisible = false">×</text>
-        </view>
-        <view v-if="loadingMemosForPicker" class="loading-sessions">
-          <text class="loading-icon">⏳</text>
-          <text>加载中...</text>
-        </view>
-        <view v-else-if="memoListForPicker.length === 0" class="empty-sessions">
-          <text class="empty-icon">📋</text>
-          <text>暂无备忘录</text>
-        </view>
-        <scroll-view v-else scroll-y class="chat-session-list">
-          <view v-for="memo in memoListForPicker" :key="memo.id" class="chat-session-item" @click="selectMemo(memo)">
-            <view class="session-icon">📋</view>
-            <view class="session-info">
-              <text class="session-title">{{ memo.name || '未命名' }}</text>
-              <text class="session-meta">{{ memo.updatedAt ? formatMemoDate(memo.updatedAt) : '' }}</text>
-            </view>
-            <view class="session-select-icon">›</view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-
-    <!-- JSON 导入弹窗 -->
-    <view class="json-import-modal" v-if="jsonImportVisible" @click="jsonImportVisible = false">
-      <view class="json-import-content" @click.stop>
-        <view class="json-import-header">
-          <text class="json-import-title">导入 JSON 路径数据</text>
-          <text class="json-import-close" @click="jsonImportVisible = false">×</text>
-        </view>
-        <view class="json-import-body">
-          <textarea
-            class="json-textarea"
-            v-model="jsonImportText"
-            placeholder="请粘贴 JSON 数组，如：[{name:机场,time:1h},{name:酒店,isEnd:true}]"
-            :maxlength="100000" />
-          <view class="json-import-tip">
-            <text>提示：最后一个节点会自动设置为终点</text>
-          </view>
-        </view>
-        <view class="json-import-footer">
-          <view class="json-btn cancel" @click="jsonImportVisible = false">取消</view>
-          <view class="json-btn confirm" @click="confirmJsonImport">确认导入</view>
+          </scroll-view>
         </view>
       </view>
-    </view>
 
-    <!-- 选项控制面板（重构后由组件统一管理草稿+确认/取消） -->
-    <OptionsControlPanel
-      v-model="configPanelVisible"
-      :settings="settings"
-      :tags="tags"
-      :morandi-colors="morandiColors"
-      :font-size-options="fontSizeOptions"
-      @save="onOptionsPanelSave"
-      @upload-bg="uploadBackgroundImage" />
-
-    <!-- 底部样式面板 -->
-    <view class="bottom-style-panel" v-if="selectedItem">
-      <!-- 文本样式面板 -->
-      <view class="style-panel-content" v-if="selectedItem.type === 'text'">
-        <view class="panel-header">
-          <view class="panel-title">文本样式</view>
-          <view class="panel-close" @click="selectedItem = null">×</view>
+      <!-- JSON 导入弹窗 -->
+      <view class="json-import-modal" v-if="jsonImportVisible" @click="jsonImportVisible = false">
+        <view class="json-import-content" @click.stop>
+          <view class="json-import-header">
+            <text class="json-import-title">导入 JSON 路径数据</text>
+            <text class="json-import-close" @click="jsonImportVisible = false">×</text>
+          </view>
+          <view class="json-import-body">
+            <textarea
+              class="json-textarea"
+              v-model="jsonImportText"
+              placeholder="请粘贴 JSON 数组，如：[{name:机场,time:1h},{name:酒店,isEnd:true}]"
+              :maxlength="100000" />
+            <view class="json-import-tip">
+              <text>提示：最后一个节点会自动设置为终点</text>
+            </view>
+          </view>
+          <view class="json-import-footer">
+            <view class="json-btn cancel" @click="jsonImportVisible = false">取消</view>
+            <view class="json-btn confirm" @click="confirmJsonImport">确认导入</view>
+          </view>
         </view>
-        <scroll-view class="panel-scroll-content" scroll-y>
-          <!-- 文本编辑区 -->
-          <textarea
-            class="panel-text-input"
-            v-model="getSelectedItem().value"
-            placeholder="输入文本内容..."
-            :style="getTextStyle(getSelectedItem().style)"
-            auto-height
-            :maxlength="100000" />
-          <view class="text-style-bar">
-            <view
-              class="style-btn"
-              :class="{ active: getSelectedItem()?.style.bold }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'bold')"
-              >B</view
-            >
-            <view
-              class="style-btn italic"
-              :class="{ active: getSelectedItem()?.style.italic }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'italic')"
-              >I</view
-            >
-            <view
-              class="style-btn"
-              :class="{ active: getSelectedItem()?.style.underline }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'underline')"
-              >U</view
-            >
-            <view
-              class="style-btn"
-              :class="{ active: getSelectedItem()?.style.lineThrough }"
-              @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'lineThrough')"
-              >S</view
-            >
-            <picker
-              :value="fontSizeIndex(getSelectedItem()?.style.fontSize)"
-              :range="fontSizes"
-              @change="e => setTextFontSize(selectedItem.blockIndex, selectedItem.itemIndex, e)">
-              <view class="style-btn size-btn">{{ getSelectedItem()?.style.fontSize || 16 }}px</view>
-            </picker>
-            <view
-              class="style-btn color-btn"
-              :style="{ backgroundColor: getSelectedItem()?.style.color || '#333' }"
-              @click="showColorPicker(selectedItem.blockIndex, selectedItem.itemIndex)"></view>
-            <view
-              class="style-btn delete-item"
-              v-if="
-                pageData.content[selectedItem.blockIndex].children.length > 1 &&
-                !isTitleItem(selectedItem.blockIndex, selectedItem.itemIndex)
-              "
-              @click="deleteTextItem(selectedItem.blockIndex, selectedItem.itemIndex)"
-              >🗑</view
-            >
+      </view>
+
+      <!-- 选项控制面板（重构后由组件统一管理草稿+确认/取消） -->
+      <OptionsControlPanel
+        v-model="configPanelVisible"
+        :settings="settings"
+        :tags="tags"
+        :morandi-colors="morandiColors"
+        :font-size-options="fontSizeOptions"
+        @save="onOptionsPanelSave"
+        @upload-bg="uploadBackgroundImage" />
+
+      <!-- 底部样式面板 -->
+      <view class="bottom-style-panel" v-if="selectedItem">
+        <!-- 文本样式面板 -->
+        <view class="style-panel-content" v-if="selectedItem.type === 'text'">
+          <view class="panel-header">
+            <view class="panel-title">文本样式</view>
+            <view class="panel-close" @click="selectedItem = null">×</view>
           </view>
-
-          <!-- 弹窗模式设置 -->
-          <view class="popup-mode-section">
-            <view class="section-header">
-              <view class="section-title">💬 弹窗模式</view>
-              <switch :checked="getSelectedItem()?.interactionType === 'popup'" @change="togglePopupMode" color="#667eea" />
+          <scroll-view class="panel-scroll-content" scroll-y>
+            <!-- 文本编辑区 -->
+            <textarea
+              class="panel-text-input"
+              v-model="getSelectedItem().value"
+              placeholder="输入文本内容..."
+              :style="getTextStyle(getSelectedItem().style)"
+              auto-height
+              :maxlength="100000" />
+            <view class="text-style-bar">
+              <view
+                class="style-btn"
+                :class="{ active: getSelectedItem()?.style.bold }"
+                @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'bold')"
+                >B</view
+              >
+              <view
+                class="style-btn italic"
+                :class="{ active: getSelectedItem()?.style.italic }"
+                @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'italic')"
+                >I</view
+              >
+              <view
+                class="style-btn"
+                :class="{ active: getSelectedItem()?.style.underline }"
+                @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'underline')"
+                >U</view
+              >
+              <view
+                class="style-btn"
+                :class="{ active: getSelectedItem()?.style.lineThrough }"
+                @click="toggleTextStyle(selectedItem.blockIndex, selectedItem.itemIndex, 'lineThrough')"
+                >S</view
+              >
+              <picker
+                :value="fontSizeIndex(getSelectedItem()?.style.fontSize)"
+                :range="fontSizes"
+                @change="e => setTextFontSize(selectedItem.blockIndex, selectedItem.itemIndex, e)">
+                <view class="style-btn size-btn">{{ getSelectedItem()?.style.fontSize || 16 }}px</view>
+              </picker>
+              <view
+                class="style-btn color-btn"
+                :style="{ backgroundColor: getSelectedItem()?.style.color || '#333' }"
+                @click="showColorPicker(selectedItem.blockIndex, selectedItem.itemIndex)"></view>
+              <view
+                class="style-btn delete-item"
+                v-if="
+                  pageData.content[selectedItem.blockIndex].children.length > 1 &&
+                  !isTitleItem(selectedItem.blockIndex, selectedItem.itemIndex)
+                "
+                @click="deleteTextItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+                >🗑</view
+              >
             </view>
-            <view class="popup-hint" v-if="getSelectedItem()?.interactionType === 'popup'">
-              <text>点击此文本将弹出完整内容，而非跳转链接</text>
-            </view>
-          </view>
 
-          <!-- 链接设置区域 -->
-          <view class="link-settings-section">
-            <view class="section-header">
-              <view class="section-title">🔗 链接设置</view>
-              <view class="link-toggle" :class="{ active: getSelectedItem()?.linkInfo }" @click="toggleTextLink()">
-                {{ getSelectedItem()?.linkInfo ? '已启用' : '未启用' }}
+            <!-- 弹窗模式设置 -->
+            <view class="popup-mode-section">
+              <view class="section-header">
+                <view class="section-title">💬 弹窗模式</view>
+                <switch :checked="getSelectedItem()?.interactionType === 'popup'" @change="togglePopupMode" color="#667eea" />
+              </view>
+              <view class="popup-hint" v-if="getSelectedItem()?.interactionType === 'popup'">
+                <text>点击此文本将弹出完整内容，而非跳转链接</text>
               </view>
             </view>
 
-            <view v-if="getSelectedItem()?.linkInfo" class="link-settings-content">
-              <!-- 链接类型选择 - 改为下拉选择器 -->
-              <view class="link-input-group">
-                <view class="input-label">链接类型</view>
-                <picker :value="linkTypeIndex" :range="linkTypes" range-key="label" @change="onLinkTypeChange">
-                  <view class="link-type-picker-btn">
-                    <text>{{ linkTypeLabel }}</text>
-                    <text class="picker-arrow">›</text>
-                  </view>
-                </picker>
+            <!-- 链接设置区域 -->
+            <view class="link-settings-section">
+              <view class="section-header">
+                <view class="section-title">🔗 链接设置</view>
+                <view class="link-toggle" :class="{ active: getSelectedItem()?.linkInfo }" @click="toggleTextLink()">
+                  {{ getSelectedItem()?.linkInfo ? '已启用' : '未启用' }}
+                </view>
               </view>
 
-              <!-- 链接图标自定义 -->
-              <view class="link-input-group">
-                <view class="input-label">链接图标</view>
-                <input
-                  class="link-input link-icon-input"
-                  v-model="getSelectedItem().linkIcon"
-                  placeholder="默认 🔗，可自定义或清空"
-                  :maxlength="10" />
-                <view class="icon-hint">留空则不显示图标</view>
-              </view>
-
-              <!-- 超链接输入 -->
-              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'url'">
-                <input
-                  class="link-input"
-                  v-model="getSelectedItem().linkInfo.url"
-                  placeholder="请输入链接地址，如 https://example.com"
-                  :maxlength="500" />
-              </view>
-
-              <!-- 关联素材选择 -->
-              <view v-if="getSelectedItem()?.linkInfo?.linkType === 'internal'" class="internal-link-section">
-                <!-- 场景选择 -->
+              <view v-if="getSelectedItem()?.linkInfo" class="link-settings-content">
+                <!-- 链接类型选择 - 改为下拉选择器 -->
                 <view class="link-input-group">
-                  <view class="input-label">素材类型</view>
-                  <picker :value="internalLinkSceneIndex" :range="internalLinkScenes" range-key="label" @change="onInternalSceneChange">
-                    <view class="scene-picker-btn">
-                      <text>{{ internalLinkSceneLabel }}</text>
+                  <view class="input-label">链接类型</view>
+                  <picker :value="linkTypeIndex" :range="linkTypes" range-key="label" @change="onLinkTypeChange">
+                    <view class="link-type-picker-btn">
+                      <text>{{ linkTypeLabel }}</text>
                       <text class="picker-arrow">›</text>
                     </view>
                   </picker>
                 </view>
 
-                <!-- 写作素材选择：笔记 -->
-                <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'chat'" class="chat-session-picker">
-                  <view class="input-label">选择笔记</view>
-                  <view class="session-picker-btn" @click="showChatSessionPicker">
-                    <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
-                    <text v-else class="placeholder">点击选择笔记</text>
-                    <text class="picker-arrow">›</text>
-                  </view>
+                <!-- 链接图标自定义 -->
+                <view class="link-input-group">
+                  <view class="input-label">链接图标</view>
+                  <input
+                    class="link-input link-icon-input"
+                    v-model="getSelectedItem().linkIcon"
+                    placeholder="默认 🔗，可自定义或清空"
+                    :maxlength="10" />
+                  <view class="icon-hint">留空则不显示图标</view>
                 </view>
-                <!-- 备忘录选择 -->
-                <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'memo'" class="chat-session-picker">
-                  <view class="input-label">选择备忘录</view>
-                  <view class="session-picker-btn" @click="showMemoPicker">
-                    <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
-                    <text v-else class="placeholder">点击选择备忘录</text>
-                    <text class="picker-arrow">›</text>
-                  </view>
+
+                <!-- 超链接输入 -->
+                <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'url'">
+                  <input
+                    class="link-input"
+                    v-model="getSelectedItem().linkInfo.url"
+                    placeholder="请输入链接地址，如 https://example.com"
+                    :maxlength="500" />
                 </view>
-              </view>
 
-              <!-- 锚点输入 -->
-              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'anchor'">
-                <view class="input-label">锚点ID（用于跳转定位）</view>
-                <input
-                  class="link-input"
-                  v-model="getSelectedItem().linkInfo.anchorId"
-                  placeholder="请输入唯一的锚点ID，如 section-1"
-                  :maxlength="50" />
-              </view>
+                <!-- 关联素材选择 -->
+                <view v-if="getSelectedItem()?.linkInfo?.linkType === 'internal'" class="internal-link-section">
+                  <!-- 场景选择 -->
+                  <view class="link-input-group">
+                    <view class="input-label">素材类型</view>
+                    <picker :value="internalLinkSceneIndex" :range="internalLinkScenes" range-key="label" @change="onInternalSceneChange">
+                      <view class="scene-picker-btn">
+                        <text>{{ internalLinkSceneLabel }}</text>
+                        <text class="picker-arrow">›</text>
+                      </view>
+                    </picker>
+                  </view>
 
-              <!-- 内容弹窗目标锚点选择 -->
-              <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'popup'">
-                <view class="input-label">⚓ 目标锚点（弹窗内容来源）</view>
-                <input
-                  class="link-input"
-                  v-model="getSelectedItem().linkInfo.targetAnchor"
-                  placeholder="输入目标容器的锚点ID，如 L2"
-                  :maxlength="50" />
-
-                <!-- 锚点快速选择列表 -->
-                <view class="anchor-suggestions" v-if="getAllAnchors.length > 0">
-                  <view class="suggestions-title">💡 可用锚点：</view>
-                  <view class="suggestions-list">
-                    <view
-                      v-for="item in getAllAnchors"
-                      :key="item.anchor"
-                      class="suggestion-item"
-                      :class="{
-                        'is-popup-target': item.isPopupTarget,
-                        'is-selected': getSelectedItem()?.linkInfo?.targetAnchor === item.anchor,
-                      }"
-                      @click="getSelectedItem().linkInfo.targetAnchor = item.anchor">
-                      <text class="anchor-id">{{ item.anchor }}</text>
-                      <text class="anchor-type">{{ item.type }}</text>
-                      <text v-if="item.isPopupTarget" class="popup-badge">弹窗源</text>
+                  <!-- 写作素材选择：笔记 -->
+                  <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'chat'" class="chat-session-picker">
+                    <view class="input-label">选择笔记</view>
+                    <view class="session-picker-btn" @click="showChatSessionPicker">
+                      <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
+                      <text v-else class="placeholder">点击选择笔记</text>
+                      <text class="picker-arrow">›</text>
+                    </view>
+                  </view>
+                  <!-- 备忘录选择 -->
+                  <view v-if="getSelectedItem()?.linkInfo?.internalScene === 'memo'" class="chat-session-picker">
+                    <view class="input-label">选择备忘录</view>
+                    <view class="session-picker-btn" @click="showMemoPicker">
+                      <text v-if="getSelectedItem()?.linkInfo?.internalTitle">{{ getSelectedItem()?.linkInfo?.internalTitle }}</text>
+                      <text v-else class="placeholder">点击选择备忘录</text>
+                      <text class="picker-arrow">›</text>
                     </view>
                   </view>
                 </view>
-                <view class="anchor-tip" v-else>
-                  <text>暂无可用锚点，请先为其他容器设置锚点ID</text>
-                </view>
-              </view>
 
-              <!-- 导航输入 -->
-              <view v-if="getSelectedItem()?.linkInfo?.linkType === 'navigation'">
-                <!-- 地图选点按钮 -->
-                <view class="location-picker-btn" @click="onSelectLocationForText">
-                  <text class="picker-icon">📍</text>
-                  <text class="picker-text">从地图选择位置</text>
-                  <text class="picker-arrow">›</text>
+                <!-- 锚点输入 -->
+                <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'anchor'">
+                  <view class="input-label">锚点ID（用于跳转定位）</view>
+                  <input
+                    class="link-input"
+                    v-model="getSelectedItem().linkInfo.anchorId"
+                    placeholder="请输入唯一的锚点ID，如 section-1"
+                    :maxlength="50" />
                 </view>
 
-                <view class="link-input-group">
-                  <view class="input-label">地点名称</view>
-                  <input class="link-input" v-model="getSelectedItem().linkInfo.address" placeholder="请输入地点名称" :maxlength="100" />
-                </view>
-                <view class="link-input-row">
-                  <view class="link-input-group half">
-                    <view class="input-label">纬度</view>
-                    <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.latitude" placeholder="如 39.908823" />
+                <!-- 内容弹窗目标锚点选择 -->
+                <view class="link-input-group" v-if="getSelectedItem()?.linkInfo?.linkType === 'popup'">
+                  <view class="input-label">⚓ 目标锚点（弹窗内容来源）</view>
+                  <input
+                    class="link-input"
+                    v-model="getSelectedItem().linkInfo.targetAnchor"
+                    placeholder="输入目标容器的锚点ID，如 L2"
+                    :maxlength="50" />
+
+                  <!-- 锚点快速选择列表 -->
+                  <view class="anchor-suggestions" v-if="getAllAnchors.length > 0">
+                    <view class="suggestions-title">💡 可用锚点：</view>
+                    <view class="suggestions-list">
+                      <view
+                        v-for="item in getAllAnchors"
+                        :key="item.anchor"
+                        class="suggestion-item"
+                        :class="{
+                          'is-popup-target': item.isPopupTarget,
+                          'is-selected': getSelectedItem()?.linkInfo?.targetAnchor === item.anchor,
+                        }"
+                        @click="getSelectedItem().linkInfo.targetAnchor = item.anchor">
+                        <text class="anchor-id">{{ item.anchor }}</text>
+                        <text class="anchor-type">{{ item.type }}</text>
+                        <text v-if="item.isPopupTarget" class="popup-badge">弹窗源</text>
+                      </view>
+                    </view>
                   </view>
-                  <view class="link-input-group half">
-                    <view class="input-label">经度</view>
-                    <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.longitude" placeholder="如 116.39747" />
+                  <view class="anchor-tip" v-else>
+                    <text>暂无可用锚点，请先为其他容器设置锚点ID</text>
+                  </view>
+                </view>
+
+                <!-- 导航输入 -->
+                <view v-if="getSelectedItem()?.linkInfo?.linkType === 'navigation'">
+                  <!-- 地图选点按钮 -->
+                  <view class="location-picker-btn" @click="onSelectLocationForText">
+                    <text class="picker-icon">📍</text>
+                    <text class="picker-text">从地图选择位置</text>
+                    <text class="picker-arrow">›</text>
+                  </view>
+
+                  <view class="link-input-group">
+                    <view class="input-label">地点名称</view>
+                    <input class="link-input" v-model="getSelectedItem().linkInfo.address" placeholder="请输入地点名称" :maxlength="100" />
+                  </view>
+                  <view class="link-input-row">
+                    <view class="link-input-group half">
+                      <view class="input-label">纬度</view>
+                      <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.latitude" placeholder="如 39.908823" />
+                    </view>
+                    <view class="link-input-group half">
+                      <view class="input-label">经度</view>
+                      <input class="link-input" type="digit" v-model="getSelectedItem().linkInfo.longitude" placeholder="如 116.39747" />
+                    </view>
                   </view>
                 </view>
               </view>
             </view>
-          </view>
-        </scroll-view>
-      </view>
-
-      <!-- 图片样式面板 -->
-      <view class="style-panel-content" v-if="selectedItem.type === 'image'">
-        <view class="panel-header">
-          <view class="panel-title">图片样式</view>
-          <view class="panel-close" @click="selectedItem = null">×</view>
+          </scroll-view>
         </view>
-        <scroll-view class="panel-scroll-content" scroll-y>
-          <!-- 图片操作区 -->
-          <view class="image-actions-bar" v-if="getSelectedItem()?.value.url">
-            <view class="action-btn" @click="previewImage(getSelectedItem().value.url)">
-              <text class="action-icon">🔍</text>
-              <text>预览图片</text>
-            </view>
-            <view class="action-btn" @click="chooseImage(selectedItem.blockIndex, selectedItem.itemIndex)">
-              <text class="action-icon">📷</text>
-              <text>更换图片</text>
-            </view>
+
+        <!-- 图片样式面板 -->
+        <view class="style-panel-content" v-if="selectedItem.type === 'image'">
+          <view class="panel-header">
+            <view class="panel-title">图片样式</view>
+            <view class="panel-close" @click="selectedItem = null">×</view>
           </view>
-          <view class="image-style-bar">
-            <view class="style-label">尺寸:</view>
-            <picker
-              :value="imageSizeModeIndex(getSelectedItem()?.style.sizeMode)"
-              :range="imageSizeModes"
-              :range-key="'label'"
-              @change="e => setImageSizeMode(selectedItem.blockIndex, selectedItem.itemIndex, e)">
-              <view class="style-btn size-mode-btn">
-                {{ getImageSizeModeLabel(getSelectedItem()?.style.sizeMode) }}
+          <scroll-view class="panel-scroll-content" scroll-y>
+            <!-- 图片操作区 -->
+            <view class="image-actions-bar" v-if="getSelectedItem()?.value.url">
+              <view class="action-btn" @click="previewImage(getSelectedItem().value.url)">
+                <text class="action-icon">🔍</text>
+                <text>预览图片</text>
               </view>
-            </picker>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedWidth'">
-              <text>宽:</text>
-              <input type="number" v-model="getSelectedItem().style.width" class="size-input" placeholder="600" />
-              <text class="unit">rpx</text>
+              <view class="action-btn" @click="chooseImage(selectedItem.blockIndex, selectedItem.itemIndex)">
+                <text class="action-icon">📷</text>
+                <text>更换图片</text>
+              </view>
             </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedHeight'">
-              <text>高:</text>
-              <input type="number" v-model="getSelectedItem().style.height" class="size-input" placeholder="400" />
-              <text class="unit">rpx</text>
+            <view class="image-style-bar">
+              <view class="style-label">尺寸:</view>
+              <picker
+                :value="imageSizeModeIndex(getSelectedItem()?.style.sizeMode)"
+                :range="imageSizeModes"
+                :range-key="'label'"
+                @change="e => setImageSizeMode(selectedItem.blockIndex, selectedItem.itemIndex, e)">
+                <view class="style-btn size-mode-btn">
+                  {{ getImageSizeModeLabel(getSelectedItem()?.style.sizeMode) }}
+                </view>
+              </picker>
+              <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedWidth'">
+                <text>宽:</text>
+                <input type="number" v-model="getSelectedItem().style.width" class="size-input" placeholder="600" />
+                <text class="unit">rpx</text>
+              </view>
+              <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'fixedHeight'">
+                <text>高:</text>
+                <input type="number" v-model="getSelectedItem().style.height" class="size-input" placeholder="400" />
+                <text class="unit">rpx</text>
+              </view>
+              <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentWidth'">
+                <text>宽:</text>
+                <input type="number" v-model="getSelectedItem().style.widthPercent" class="size-input" placeholder="80" />
+                <text class="unit">%</text>
+              </view>
+              <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentHeight'">
+                <text>高:</text>
+                <input type="number" v-model="getSelectedItem().style.heightPercent" class="size-input" placeholder="50" />
+                <text class="unit">vh</text>
+              </view>
             </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentWidth'">
-              <text>宽:</text>
-              <input type="number" v-model="getSelectedItem().style.widthPercent" class="size-input" placeholder="80" />
-              <text class="unit">%</text>
+            <view class="image-rotate-bar">
+              <view class="rotate-label">Z轴旋转 (平面): {{ getSelectedItem()?.style.rotate || 0 }}°</view>
+              <slider
+                :value="getSelectedItem()?.style.rotate || 0"
+                @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'z')"
+                min="0"
+                max="360"
+                step="1"
+                block-size="20"
+                activeColor="#1890ff"
+                backgroundColor="#e0e0e0"
+                class="rotate-slider" />
             </view>
-            <view class="size-input-group" v-if="getSelectedItem()?.style.sizeMode === 'percentHeight'">
-              <text>高:</text>
-              <input type="number" v-model="getSelectedItem().style.heightPercent" class="size-input" placeholder="50" />
-              <text class="unit">vh</text>
+            <view class="image-rotate-bar">
+              <view class="rotate-label">X轴旋转 (上下翻转): {{ getSelectedItem()?.style.rotateX || 0 }}°</view>
+              <slider
+                :value="getSelectedItem()?.style.rotateX || 0"
+                @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'x')"
+                min="0"
+                max="360"
+                step="1"
+                block-size="20"
+                activeColor="#52c41a"
+                backgroundColor="#e0e0e0"
+                class="rotate-slider" />
             </view>
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">Z轴旋转 (平面): {{ getSelectedItem()?.style.rotate || 0 }}°</view>
-            <slider
-              :value="getSelectedItem()?.style.rotate || 0"
-              @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'z')"
-              min="0"
-              max="360"
-              step="1"
-              block-size="20"
-              activeColor="#1890ff"
-              backgroundColor="#e0e0e0"
-              class="rotate-slider" />
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">X轴旋转 (上下翻转): {{ getSelectedItem()?.style.rotateX || 0 }}°</view>
-            <slider
-              :value="getSelectedItem()?.style.rotateX || 0"
-              @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'x')"
-              min="0"
-              max="360"
-              step="1"
-              block-size="20"
-              activeColor="#52c41a"
-              backgroundColor="#e0e0e0"
-              class="rotate-slider" />
-          </view>
-          <view class="image-rotate-bar">
-            <view class="rotate-label">Y轴旋转 (左右翻转): {{ getSelectedItem()?.style.rotateY || 0 }}°</view>
-            <slider
-              :value="getSelectedItem()?.style.rotateY || 0"
-              @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'y')"
-              min="0"
-              max="360"
-              step="1"
-              block-size="20"
-              activeColor="#faad14"
-              backgroundColor="#e0e0e0"
-              class="rotate-slider" />
-          </view>
-          <view class="rotate-tip">
-            <text>💡 提示：3D旋转效果在预览模式下可见，导出图片时仅支持Z轴(平面)旋转</text>
-          </view>
-          <view class="image-style-bar">
-            <view
-              class="style-btn delete-item"
-              v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
-              @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)"
-              >🗑 删除图片</view
-            >
-          </view>
-        </scroll-view>
+            <view class="image-rotate-bar">
+              <view class="rotate-label">Y轴旋转 (左右翻转): {{ getSelectedItem()?.style.rotateY || 0 }}°</view>
+              <slider
+                :value="getSelectedItem()?.style.rotateY || 0"
+                @change="e => setImageRotate(selectedItem.blockIndex, selectedItem.itemIndex, e, 'y')"
+                min="0"
+                max="360"
+                step="1"
+                block-size="20"
+                activeColor="#faad14"
+                backgroundColor="#e0e0e0"
+                class="rotate-slider" />
+            </view>
+            <view class="rotate-tip">
+              <text>💡 提示：3D旋转效果在预览模式下可见，导出图片时仅支持Z轴(平面)旋转</text>
+            </view>
+            <view class="image-style-bar">
+              <view
+                class="style-btn delete-item"
+                v-if="pageData.content[selectedItem.blockIndex].children.length > 1"
+                @click="deleteImageItem(selectedItem.blockIndex, selectedItem.itemIndex)"
+                >🗑 删除图片</view
+              >
+            </view>
+          </scroll-view>
+        </view>
       </view>
+
+      <!-- 容器控制面板（块级样式，重构后由组件统一管理草稿+确认/取消） -->
+      <BlockStyleControlPanel
+        v-model="blockStylePanelVisible"
+        :block="editingBlockIndex !== null ? pageData.content[editingBlockIndex] : null"
+        :morandi-colors="morandiColors"
+        @save="onBlockStylePanelSave" />
+
+      <!-- 媒体项设置面板（重构后由组件统一管理草稿+确认/取消） -->
+      <MediaItemSettingsPanel v-model="mediaSettingsPanelVisible" :media-item="getEditingMediaItem()" @save="onMediaItemPanelSave" />
+
+      <!-- 底部操作按钮 -->
+      <view class="footer-actions">
+        <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
+        <view class="footer-btn save" @click="saveData">保存</view>
+      </view>
+
+      <!-- 导出用的隐藏Canvas -->
+      <canvas
+        v-if="exportLoading"
+        type="2d"
+        id="exportCanvas"
+        class="export-canvas"
+        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"></canvas>
     </view>
-
-    <!-- 容器控制面板（块级样式，重构后由组件统一管理草稿+确认/取消） -->
-    <BlockStyleControlPanel
-      v-model="blockStylePanelVisible"
-      :block="editingBlockIndex !== null ? pageData.content[editingBlockIndex] : null"
-      :morandi-colors="morandiColors"
-      @save="onBlockStylePanelSave" />
-
-    <!-- 媒体项设置面板（重构后由组件统一管理草稿+确认/取消） -->
-    <MediaItemSettingsPanel v-model="mediaSettingsPanelVisible" :media-item="getEditingMediaItem()" @save="onMediaItemPanelSave" />
-
-    <!-- 底部操作按钮 -->
-    <view class="footer-actions">
-      <view class="footer-btn preview" @click="saveAndGoToDetail">预览</view>
-      <view class="footer-btn save" @click="saveData">保存</view>
-    </view>
-
-    <!-- 导出用的隐藏Canvas -->
-    <canvas
-      v-if="exportLoading"
-      type="2d"
-      id="exportCanvas"
-      class="export-canvas"
-      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"></canvas>
-  </view>
+  </PageLayout>
 </template>
 
 <script setup lang="ts">
@@ -886,7 +880,6 @@
 
   import { ref, reactive, computed, watch, onMounted } from 'vue'
   import { onLoad, onReady, onShareAppMessage } from '@dcloudio/uni-app'
-  import NavBar from '@/components/nav-bar.vue'
   import { getFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
   import type { getFilesResItems } from '@/services/apifox/NODEJSDEMO/FILES/interface'
   import OptionsControlPanel from './components/OptionsControlPanel.vue'
