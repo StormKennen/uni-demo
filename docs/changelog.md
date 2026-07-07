@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-06 [theme/dark-mode-reliable] 暗色模式可靠性修复：重构 PageLayout 将 page-meta 直接内嵌（解决嵌套组件 fragment 导致小程序端 CSS 变量注入失败）；PageLayout 改为通过 layoutStyle computed 在 .page-layout 容器内联注入全部 theme token，确保即使 page-meta 未生效、CSS 变量仍对子元素可用；theme store 在 H5 端立即调用 applyThemeToHtml（不再依赖 onLaunch 时机）；修复 markdown 页面硬编码背景色（Devin）
 - 2026-07-06 [swc/admin-list] 图鉴管理编辑优化：新增 locale 切换 Tab（默认中文），编辑表单按当前 locale 分区显示翻译字段与技能；保存逻辑重构为智能检测变更——仅中文改动发 locale:zh-CN 请求、仅英文改动发 locale:en 请求、同时改动则分两次请求，语言无关字段（星级/五行）跟随任意 locale 请求发送；新增未修改提示与保存结果 locale 标注（Devin）
 - 2026-07-06 [theme/dark-mode-fix] 暗色模式全覆盖修复：useTheme.ts 移除 setTabBarStyle MP-WEIXIN 平台限制使 H5 TabBar 同步切换；applyThemeToHtml 增强为同时注入 data-theme 属性 + documentElement.style CSS 变量双保险；首页 NavBarBase 渐变色改为响应 isDark（暗色用 --theme-surface / 亮色保留 #667eea）；我的页面 header 渐变新增 bg--dark 暗色变体；全仓批量替换 116 处 background:#fff → var(--theme-surface)、99 处浅灰背景 → var(--theme-surface-2)、294 处硬编码 color:#333/#666/#999 及 border:#eee/#ddd → 对应 theme token；popup 组件默认背景改用 var(--theme-surface)（Devin）
 - 2026-07-06 [theme/layout-fullcoverage] 夜间模式全覆盖落地 Phase 2 — 统一 PageLayout 组件驱动主题分发：升级 PageLayout（easycom）内聚 ThemeRoot + NavBar + var(--theme-bg) 页面底色容器；全仓 50 个页面接入 PageLayout（45 工具/服务页 + 3 主包页 + 1 登录页 + 1 demo 页），消灭所有手动 nav-bar/ThemeRoot 引用；pages.json 全量 navigationStyle: custom 化（webview 2 页因小程序限制保留 default）；nav-bar 默认 bgColor 改为 var(--theme-surface)；buildPageStyleVars 追加 background-color 注入（Devin）

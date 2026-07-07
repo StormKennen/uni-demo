@@ -1,7 +1,10 @@
 <script setup lang="ts">
   import { computed, useSlots } from 'vue'
   import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import ThemeRoot from '@/components/ThemeRoot.vue'
+  import { storeToRefs } from 'pinia'
+  import { useThemeStore } from '@/stores/theme'
+  import { useThemeOnPage } from '@/hooks/useTheme'
+  import { LIGHT_TOKENS, DARK_TOKENS } from '@/utils/theme'
   import NavBar from '@/components/nav-bar.vue'
 
   interface Props {
@@ -41,7 +44,7 @@
     showNav: true,
     navBack: true,
     alwaysTitle: true,
-    bgColor: 'var(--theme-bg)',
+    bgColor: '',
   })
 
   const emit = defineEmits<{
@@ -49,6 +52,10 @@
   }>()
 
   const slots = useSlots()
+
+  const themeStore = useThemeStore()
+  const { isDark } = storeToRefs(themeStore)
+  useThemeOnPage()
 
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => {
@@ -76,11 +83,24 @@
     if (props.navCustomStyle) Object.assign(s, props.navCustomStyle)
     return Object.keys(s).length ? s : undefined
   })
+
+  /** 内联 CSS 变量 + 背景色，确保即使 page-meta 未生效也能正确展示主题 */
+  const layoutStyle = computed(() => {
+    const tokens = isDark.value ? DARK_TOKENS : LIGHT_TOKENS
+    const vars: Record<string, string> = {}
+    for (const [key, value] of Object.entries(tokens)) {
+      vars[key] = value
+    }
+    vars['background-color'] = props.bgColor || tokens['--theme-bg']
+    return vars
+  })
 </script>
 
 <template>
-  <ThemeRoot />
-  <view class="page-layout" :style="{ backgroundColor: bgColor }">
+  <!-- #ifdef MP-WEIXIN -->
+  <page-meta :page-style="themeStore.pageStyle" />
+  <!-- #endif -->
+  <view class="page-layout" :style="layoutStyle">
     <NavBar
       v-if="showNav"
       :always-title="alwaysTitle"
