@@ -30,6 +30,11 @@ export const useThemeStore = defineStore('theme', () => {
     // #endif
   }
 
+  // H5 端立即应用主题变量，不依赖 onLaunch 时机
+  // #ifdef WEB
+  applyThemeToHtml(mode.value)
+  // #endif
+
   return {
     mode,
     isDark,
