@@ -192,7 +192,7 @@
 <style scoped lang="scss">
   .markdown-page {
     min-height: 100vh;
-    background: #f7f5fb;
+    background: var(--theme-bg);
   }
 
   .content {
