@@ -291,6 +291,8 @@
   }
 
   interface AdminCharacterRow extends SwcCharacterView {
+    zhName: string
+    enName: string
     elementKey: string
     aliasesPreview: string
     zhDescription: string
@@ -595,6 +597,8 @@
 
     const normalizedRow: AdminCharacterRow = {
       ...base,
+      zhName: name,
+      enName: enName || name,
       elementKey,
       aliasesPreview:
         joinAliases(aliases) || (isRecord(enSource) ? joinAliases(normalizeAliases(readRecordValue(enSource, 'aliases'))) : ''),
