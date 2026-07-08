@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-06 [swc/components] SwcCharacterCard 新增 starLayout 星级样式配置项（flat 平铺 / stacked 层叠，默认 flat）：stacked 模式下从左往右每颗星星以 margin-left -0.34em 叠压在左侧星星约 1/3 处，右侧星星在上；SwcLineup 透传该配置（Devin）
 - 2026-07-06 [swc/admin-list] 修复管理员图鉴列表未显示人物名称：AdminCharacterRow 接口缺少 zhName/enName 字段，createRowFromPreview 未初始化导致模板 row.zhName 为 undefined，列表全部显示"未命名魔灵"且 .slice() 报 TypeError（Devin）
 - 2026-07-06 [theme/dark-mode-reliable] 暗色模式可靠性修复：重构 PageLayout 将 page-meta 直接内嵌（解决嵌套组件 fragment 导致小程序端 CSS 变量注入失败）；PageLayout 改为通过 layoutStyle computed 在 .page-layout 容器内联注入全部 theme token，确保即使 page-meta 未生效、CSS 变量仍对子元素可用；theme store 在 H5 端立即调用 applyThemeToHtml（不再依赖 onLaunch 时机）；修复 markdown 页面硬编码背景色（Devin）
 - 2026-07-06 [swc/admin-list] 图鉴管理编辑优化：新增 locale 切换 Tab（默认中文），编辑表单按当前 locale 分区显示翻译字段与技能；保存逻辑重构为智能检测变更——仅中文改动发 locale:zh-CN 请求、仅英文改动发 locale:en 请求、同时改动则分两次请求，语言无关字段（星级/五行）跟随任意 locale 请求发送；新增未修改提示与保存结果 locale 标注（Devin）
