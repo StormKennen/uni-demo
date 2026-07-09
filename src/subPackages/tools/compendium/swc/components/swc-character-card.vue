@@ -40,7 +40,7 @@
         <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
       </view>
 
-      <view v-if="showStars && character.displayStars > 0" class="stars">
+      <view v-if="showStars && character.displayStars > 0" class="stars" :class="{ 'stars-stacked': starLayout === 'stacked' }">
         <text v-for="i in character.displayStars" :key="i" class="star-icon">★</text>
       </view>
 
@@ -71,6 +71,7 @@
   import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
+  type StarLayout = 'flat' | 'stacked'
 
   const props = withDefaults(
     defineProps<{
@@ -80,6 +81,7 @@
       showFamily?: boolean
       showElement?: boolean
       showStars?: boolean
+      starLayout?: StarLayout
       showOriginalStars?: boolean
       showRemove?: boolean
       showOrder?: boolean
@@ -96,6 +98,7 @@
       showFamily: false,
       showElement: true,
       showStars: true,
+      starLayout: 'flat',
       showOriginalStars: false,
       showRemove: false,
       showOrder: false,
@@ -272,6 +275,7 @@
     left: 10rpx;
     top: 10rpx;
     display: flex;
+    align-items: flex-end;
     gap: 4rpx;
     z-index: 1;
   }
@@ -280,6 +284,15 @@
     font-size: 20rpx;
     color: #fbbf24;
     text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.25);
+  }
+
+  // 层叠样式：从左往右，右侧星星叠压在左侧星星约 1/3 处
+  .stars-stacked {
+    gap: 0;
+  }
+
+  .stars-stacked .star-icon + .star-icon {
+    margin-left: -0.34em;
   }
 
   .original-stars {
