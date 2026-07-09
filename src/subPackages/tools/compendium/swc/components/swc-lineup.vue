@@ -21,6 +21,7 @@
         :show-family="false"
         :show-element="showElement"
         :show-stars="showStars"
+        :star-layout="starLayout"
         :show-original-stars="showOriginalStars"
         :show-remove="editable"
         :show-order="showOrder"
@@ -40,6 +41,7 @@
   import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
+  type StarLayout = 'flat' | 'stacked'
 
   const props = withDefaults(
     defineProps<{
@@ -55,6 +57,7 @@
       emptyText?: string
       showMemberName?: boolean
       showStars?: boolean
+      starLayout?: StarLayout
       showOriginalStars?: boolean
       showElement?: boolean
       avatarShape?: AvatarShape
@@ -74,6 +77,7 @@
       emptyText: '暂无角色',
       showMemberName: true,
       showStars: true,
+      starLayout: 'flat',
       showOriginalStars: false,
       showElement: true,
       avatarShape: 'square',
