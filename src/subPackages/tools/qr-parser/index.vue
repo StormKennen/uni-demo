@@ -46,9 +46,6 @@
 
   export default {
     name: 'QRParser',
-    components: {
-      NavBar,
-    },
     onShow() {
       reportToolVisit('qr-parser')
     },

@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-06 [tools/qr-generator,qr-parser] 修复二维码生成/解析页无法使用：PageLayout 迁移（2ab8061）移除了 nav-bar 导入却遗留 `components: { NavBar }`，导致 ReferenceError 页面崩溃（H5 显示"连接超时"）；同时 H5 端 `document.getElementById('qrcode')` 取到的是 uni-canvas 包裹层（无 getContext/toDataURL），导致生成二维码 TypeError 空白、下载/分享无效。修复：移除失效的 NavBar 组件注册；新增 resolveH5Canvas() 解析包裹层内真实 HTMLCanvasElement，供生成/下载/分享复用（Devin）
 - 2026-07-06 [swc/components] SwcCharacterCard 新增 starLayout 星级样式配置项（flat 平铺 / stacked 层叠，默认 flat）：stacked 模式下从左往右每颗星星以 margin-left -0.34em 叠压在左侧星星约 1/3 处，右侧星星在上；SwcLineup 透传该配置（Devin）
 - 2026-07-06 [swc/admin-list] 修复管理员图鉴列表未显示人物名称：AdminCharacterRow 接口缺少 zhName/enName 字段，createRowFromPreview 未初始化导致模板 row.zhName 为 undefined，列表全部显示"未命名魔灵"且 .slice() 报 TypeError（Devin）
 - 2026-07-06 [theme/dark-mode-reliable] 暗色模式可靠性修复：重构 PageLayout 将 page-meta 直接内嵌（解决嵌套组件 fragment 导致小程序端 CSS 变量注入失败）；PageLayout 改为通过 layoutStyle computed 在 .page-layout 容器内联注入全部 theme token，确保即使 page-meta 未生效、CSS 变量仍对子元素可用；theme store 在 H5 端立即调用 applyThemeToHtml（不再依赖 onLaunch 时机）；修复 markdown 页面硬编码背景色（Devin）
