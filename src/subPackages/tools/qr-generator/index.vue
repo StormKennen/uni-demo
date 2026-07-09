@@ -75,9 +75,6 @@
 
   export default {
     name: 'QRGenerator',
-    components: {
-      NavBar,
-    },
     data() {
       return {
         inputContent: '',
@@ -134,6 +131,26 @@
     },
 
     methods: {
+      // #ifdef H5
+      // uni-app H5 下 <canvas id="qrcode"> 会渲染为 <uni-canvas> 包裹层，
+      // 真实的 HTMLCanvasElement 在其内部，需解析出带 getContext 的元素
+      resolveH5Canvas() {
+        const candidates = [
+          document.getElementById('qrcode'),
+          document.querySelector('#qrcode'),
+          document.querySelector('.qr-canvas'),
+          document.querySelector('canvas[canvas-id="qrcode"]'),
+          document.querySelector('canvas'),
+        ]
+        for (const el of candidates) {
+          if (!el) continue
+          if (typeof el.getContext === 'function') return el
+          const inner = typeof el.querySelector === 'function' ? el.querySelector('canvas') : null
+          if (inner && typeof inner.getContext === 'function') return inner
+        }
+        return null
+      },
+      // #endif
       readClipboard() {
         uni.getClipboardData({
           success: res => {
@@ -223,31 +240,12 @@
           let ctx
           // #ifdef H5
           // H5环境使用原生Canvas API
-          console.log('H5环境：尝试获取Canvas元素')
-          console.log('所有Canvas元素:', document.querySelectorAll('canvas'))
-
-          // 尝试多种方式获取Canvas元素
-          let canvas =
-            document.getElementById('qrcode') ||
-            document.querySelector('#qrcode') ||
-            document.querySelector('canvas[canvas-id="qrcode"]') ||
-            document.querySelector('.qr-canvas') ||
-            document.querySelector('canvas')
-
-          console.log('Canvas元素:', canvas)
+          let canvas = this.resolveH5Canvas()
           if (!canvas) {
-            console.error('Canvas元素未找到，尝试等待DOM更新')
             // 等待DOM更新后再次尝试
             await this.$nextTick()
-            canvas =
-              document.getElementById('qrcode') ||
-              document.querySelector('#qrcode') ||
-              document.querySelector('canvas[canvas-id="qrcode"]') ||
-              document.querySelector('.qr-canvas') ||
-              document.querySelector('canvas')
-
+            canvas = this.resolveH5Canvas()
             if (!canvas) {
-              console.error('仍然无法找到Canvas元素')
               throw new Error('Canvas元素未找到')
             }
           }
@@ -392,13 +390,7 @@
 
         try {
           // #ifdef H5
-          const canvas =
-            document.getElementById('qrcode') ||
-            document.querySelector('#qrcode') ||
-            document.querySelector('canvas[canvas-id="qrcode"]') ||
-            document.querySelector('.qr-canvas') ||
-            document.querySelector('canvas')
-
+          const canvas = this.resolveH5Canvas()
           if (!canvas) {
             throw new Error('Canvas元素未找到')
           }
@@ -472,13 +464,7 @@
 
         try {
           // #ifdef H5
-          const canvas =
-            document.getElementById('qrcode') ||
-            document.querySelector('#qrcode') ||
-            document.querySelector('canvas[canvas-id="qrcode"]') ||
-            document.querySelector('.qr-canvas') ||
-            document.querySelector('canvas')
-
+          const canvas = this.resolveH5Canvas()
           if (!canvas) {
             throw new Error('Canvas元素未找到')
           }
