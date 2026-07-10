@@ -347,17 +347,26 @@
           // #endif
 
           // #ifndef H5
+          // uqrcode 的 drawCanvas 内部已调用 ctx.draw(true) 提交绘制并返回 Promise，
+          // 若再调用 ctx.draw(false) 会清空画布导致二维码空白，故直接等待其 Promise 完成
           qr.canvasContext = ctx
-          qr.drawCanvas()
-          ctx.draw(false, () => {
-            console.log('二维码绘制完成（小程序）')
-            this.qrGenerated = true
-            this.isGenerating = false
-            uni.showToast({
-              title: '二维码生成成功',
-              icon: 'success',
+          Promise.resolve(qr.drawCanvas())
+            .then(() => {
+              this.qrGenerated = true
+              this.isGenerating = false
+              uni.showToast({
+                title: '二维码生成成功',
+                icon: 'success',
+              })
             })
-          })
+            .catch(err => {
+              console.error('二维码绘制失败:', err)
+              this.isGenerating = false
+              uni.showToast({
+                title: '生成失败，请重试',
+                icon: 'none',
+              })
+            })
           // #endif
         } catch (error) {
           console.error('生成二维码失败:', error)
