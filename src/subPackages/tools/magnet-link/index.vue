@@ -44,18 +44,41 @@
             <text class="link-text" selectable>{{ link }}</text>
             <view class="link-actions">
               <text class="link-action" @click="copyOne(link)">复制</text>
-              <text class="link-action" @click="generateQr(link)">二维码</text>
+              <text class="link-action" @click="openQrSheet(link)">二维码</text>
             </view>
           </view>
         </view>
       </view>
+
+      <ToolSheet v-model="qrSheetVisible" title="二维码生成" description="当前磁力链接会直接生成二维码，你可以保存二维码或继续图片打乱。">
+        <QrGeneratorPanel
+          v-if="qrSheetVisible"
+          mode="sheet"
+          :initial-content="selectedLink"
+          :editable="false"
+          :auto-generate="true"
+          @shuffle-image="openShuffleSheet" />
+      </ToolSheet>
+
+      <ToolSheet v-model="shuffleSheetVisible" title="图片打乱" description="二维码图片已经带入，可以直接继续处理。">
+        <ImageShufflePanel
+          v-if="shuffleSheetVisible"
+          mode="sheet"
+          :initial-image="shuffleImage"
+          :auto-run="true"
+          :show-share-entry="false" />
+      </ToolSheet>
     </view>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { nextTick, reactive, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
+  import ToolSheet from '@/components/toolkit/base/tool-sheet.vue'
+  import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
+  import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
+  import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
@@ -66,6 +89,10 @@
   const replaceText = ref('')
   const processedLinks = ref<string[]>([])
   const stats = reactive({ total: 0, completed: 0, removed: 0 })
+  const qrSheetVisible = ref(false)
+  const shuffleSheetVisible = ref(false)
+  const selectedLink = ref('')
+  const shuffleImage = ref<ToolImagePayload | null>(null)
 
   const isValidMagnet = (link: string): boolean => {
     if (!link.toLowerCase().startsWith('magnet:?xt=urn:btih:')) return false
@@ -95,7 +122,7 @@
   }
 
   const processLinks = () => {
-    const lines = rawInput.value.split('\n').filter(l => l.trim())
+    const lines = rawInput.value.split('\n').filter(line => line.trim())
     stats.total = lines.length
     stats.completed = 0
     stats.removed = 0
@@ -130,10 +157,19 @@
     uni.showToast({ title: '已复制', icon: 'success' })
   }
 
-  const generateQr = (link: string) => {
-    uni.navigateTo({
-      url: `/subPackages/tools/qr-generator/index?content=${encodeURIComponent(link)}`,
-    })
+  const openQrSheet = async (link: string) => {
+    selectedLink.value = link
+    qrSheetVisible.value = false
+    await nextTick()
+    qrSheetVisible.value = true
+  }
+
+  const openShuffleSheet = async (payload: ToolImagePayload) => {
+    shuffleImage.value = payload
+    qrSheetVisible.value = false
+    shuffleSheetVisible.value = false
+    await nextTick()
+    shuffleSheetVisible.value = true
   }
 
   const clearAll = () => {
@@ -148,7 +184,7 @@
     uni.getClipboardData({
       success: res => {
         if (res.data?.trim()) {
-          rawInput.value = rawInput.value ? rawInput.value + '\n' + res.data.trim() : res.data.trim()
+          rawInput.value = rawInput.value ? `${rawInput.value}\n${res.data.trim()}` : res.data.trim()
           uni.showToast({ title: '已粘贴', icon: 'success' })
         } else {
           uni.showToast({ title: '剪贴板为空', icon: 'none' })
@@ -203,7 +239,7 @@
   }
 
   .content {
-    padding: 24rpx;
+    padding: calc(24rpx + var(--nav-height, 120rpx)) 24rpx 24rpx;
   }
 
   .section {
@@ -231,6 +267,7 @@
     line-height: 1.6;
     color: var(--theme-text);
     box-sizing: border-box;
+    background: var(--theme-surface-2);
   }
 
   .input-footer {
@@ -262,17 +299,19 @@
 
   .replace-input {
     flex: 1;
-    height: 72rpx;
+    min-width: 0;
+    height: 80rpx;
     padding: 0 20rpx;
     border: 2rpx solid var(--theme-border);
     border-radius: 12rpx;
-    font-size: 26rpx;
+    background: var(--theme-surface-2);
     color: var(--theme-text);
+    font-size: 26rpx;
   }
 
   .replace-arrow {
-    color: #8b5cf6;
     font-size: 32rpx;
+    color: #8b5cf6;
     font-weight: 700;
   }
 
@@ -284,14 +323,14 @@
 
   .action-btn {
     flex: 1;
-    height: 80rpx;
-    border-radius: 14rpx;
+    height: 84rpx;
+    border-radius: 20rpx;
+    border: none;
+    background: var(--theme-surface);
+    color: var(--theme-text);
     font-size: 28rpx;
     font-weight: 700;
-    background: #e8eef5;
-    color: #4a5568;
-    border: none;
-    line-height: 80rpx;
+    box-shadow: 0 2rpx 10rpx var(--theme-shadow-xs);
   }
 
   .action-btn.primary {
@@ -299,24 +338,25 @@
     color: #fff;
   }
 
-  .action-btn[disabled] {
+  .action-btn:disabled {
     opacity: 0.5;
+    box-shadow: none;
   }
 
   .stats-bar {
     display: flex;
-    gap: 20rpx;
-    padding: 16rpx 24rpx;
+    flex-wrap: wrap;
+    gap: 16rpx;
     margin-bottom: 24rpx;
-    border-radius: 12rpx;
-    background: var(--theme-surface);
-    font-size: 24rpx;
+    padding: 18rpx 20rpx;
+    border-radius: 16rpx;
+    background: rgba(99, 102, 241, 0.08);
     color: var(--theme-text-secondary);
-    font-weight: 700;
+    font-size: 24rpx;
   }
 
   .stat-good {
-    color: #10b981;
+    color: #0f9f6e;
   }
 
   .stat-bad {
@@ -324,57 +364,51 @@
   }
 
   .result-section {
-    max-height: 800rpx;
-    overflow-y: auto;
+    padding-bottom: 12rpx;
   }
 
   .link-item {
     display: flex;
     align-items: flex-start;
-    gap: 12rpx;
-    padding: 16rpx 0;
+    gap: 18rpx;
+    padding: 18rpx 0;
     border-bottom: 1rpx solid var(--theme-border);
   }
 
   .link-item:last-child {
-    border-bottom: none;
+    border-bottom: 0;
+    padding-bottom: 0;
   }
 
   .link-index {
-    flex: none;
-    width: 40rpx;
-    height: 40rpx;
-    border-radius: 50%;
-    background: #eef2ff;
-    color: #6366f1;
-    font-size: 22rpx;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 40rpx;
-    text-align: center;
+    width: 36rpx;
+    flex-shrink: 0;
+    font-size: 24rpx;
+    line-height: 1.8;
+    color: #8b5cf6;
+    font-weight: 700;
   }
 
   .link-text {
     flex: 1;
-    font-size: 22rpx;
+    min-width: 0;
+    font-size: 24rpx;
+    line-height: 1.7;
     color: var(--theme-text);
-    line-height: 1.5;
     word-break: break-all;
   }
 
   .link-actions {
-    flex: none;
     display: flex;
     gap: 12rpx;
+    flex-shrink: 0;
   }
 
   .link-action {
     padding: 6rpx 16rpx;
-    border-radius: 8rpx;
-    background: #eef2ff;
-    color: #6366f1;
+    border-radius: 999rpx;
+    background: rgba(99, 102, 241, 0.12);
+    color: #5b63da;
     font-size: 22rpx;
     font-weight: 700;
   }

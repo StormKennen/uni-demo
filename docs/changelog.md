@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- 2026-07-11 [tools/magnet-link,qr-generator,qr-parser,image-cipher,components/toolkit] 新增工具组件分层：封装基础弹层/卡片/操作行组件与二维码生成、二维码解析、图片打乱业务组件；磁力链接页改为二维码弹层预览并可继续图片打乱，二维码生成页改为复用业务组件并支持弹层打乱二维码图（Codex）
+- 2026-07-10 [tools/image-cipher,qr-generator,config/tools] 图片混淆工具更名为“图片打乱”并移除小程序隐藏；二维码生成页新增“选择图片去打乱”入口，支持带图跳转并自动执行一次打乱（Codex）
 - 2026-07-06 [tools/qr-generator] 修复微信小程序端二维码生成空白：uqrcodejs 的 drawCanvas 内部已调用 ctx.draw(true) 提交绘制并返回 Promise，原代码在其后又调用 ctx.draw(false) 导致清空画布（reserve=false 会清除已绘制内容），二维码渲染后立即被擦除。改为直接等待 drawCanvas() 的 Promise 完成再标记成功，不再重复 draw（Devin）
 - 2026-07-06 [tools/qr-generator,qr-parser] 修复二维码生成/解析页无法使用：PageLayout 迁移（2ab8061）移除了 nav-bar 导入却遗留 `components: { NavBar }`，导致 ReferenceError 页面崩溃（H5 显示"连接超时"）；同时 H5 端 `document.getElementById('qrcode')` 取到的是 uni-canvas 包裹层（无 getContext/toDataURL），导致生成二维码 TypeError 空白、下载/分享无效。修复：移除失效的 NavBar 组件注册；新增 resolveH5Canvas() 解析包裹层内真实 HTMLCanvasElement，供生成/下载/分享复用（Devin）
 - 2026-07-06 [swc/components] SwcCharacterCard 新增 starLayout 星级样式配置项（flat 平铺 / stacked 层叠，默认 flat）：stacked 模式下从左往右每颗星星以 margin-left -0.34em 叠压在左侧星星约 1/3 处，右侧星星在上；SwcLineup 透传该配置（Devin）

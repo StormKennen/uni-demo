@@ -124,13 +124,12 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'media',
   },
   'image-cipher': {
-    name: '图片混淆',
-    desc: '多次混淆/还原',
+    name: '图片打乱',
+    desc: '按密钥打乱/重组',
     icon: 'locked',
     gradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
     path: '/subPackages/tools/image-cipher/index',
     category: 'media',
-    unsupportedPlatforms: ['mp-weixin'],
   },
   'image-watermark': {
     name: '图片加水印',
