@@ -59,8 +59,8 @@
                   <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
                 </view>
                 <view class="tag-line">
-                  <view v-if="detail.elementName" class="tag tag-with-icon accent">
-                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="28" :font-size="24" />
+                  <view v-if="detail.elementName" class="element-badge-plain">
+                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="24" :font-size="24" :gap="8" />
                   </view>
                   <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
                   <view v-if="detail.archetype" class="tag tag-with-icon">
@@ -673,10 +673,27 @@
     }
   }
 
+  const readFieldText = (record: RawRecord, keys: string[]): string => {
+    for (const key of keys) {
+      const value = record[key]
+      if (isRecord(value)) {
+        const text = readRecordString(value, ['key', 'valueKey', 'value', 'name'])
+        if (text) return text
+      } else {
+        const text = stringifyValue(value).trim()
+        if (text) return text
+      }
+    }
+    return ''
+  }
+
   const formatAwakenLabel = (record: RawRecord, categories: NormalizedCategory[]): string => {
     const awakenCategory = categories.find(item => ['awakening', 'awaken', 'form', 'stage'].includes(item.key))
     const rawValue =
-      readRecordString(record, ['awakening', 'awaken', 'awakened', 'isAwakened', 'form', 'stage', 'state']) || awakenCategory?.value || ''
+      readFieldText(record, ['awakening', 'awaken', 'awakened', 'isAwakened', 'form', 'stage', 'state']) ||
+      awakenCategory?.valueKey ||
+      awakenCategory?.value ||
+      ''
     const lowerValue = rawValue.toLowerCase()
 
     if (['否', 'false', '0'].includes(lowerValue) || lowerValue.includes('未觉醒') || lowerValue.includes('unawaken')) {
@@ -766,7 +783,7 @@
     avatar: detail.value.avatar || seedAvatar.value,
     elementKey: detail.value.elementKey,
     elementName: detail.value.elementName,
-    formLabel: UNAWAKENED_LABEL,
+    formLabel: formatAwakenLabel({}, detail.value.categories),
     sortOrder: 0,
     isCurrent: true,
   })
@@ -970,9 +987,12 @@
     }
   }
 
+  let switchRequestToken = 0
+
   const switchAwakenForm = async (form: NormalizedFamilyMember) => {
     if (form.isCurrent || !form.id) return
 
+    const requestToken = ++switchRequestToken
     switching.value = true
     errorMessage.value = ''
     characterId.value = form.id
@@ -987,12 +1007,14 @@
         locale: selectedLocale.value,
       }
       const res = await getCompendiumsCharacter(query)
+      if (requestToken !== switchRequestToken) return
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
-      await loadLineupUsage(form.id)
+      switching.value = false
+      void loadLineupUsage(form.id)
     } catch (error) {
+      if (requestToken !== switchRequestToken) return
       errorMessage.value = typeof error === 'string' ? error : '切换形态失败，请稍后重试'
-    } finally {
       switching.value = false
     }
   }
@@ -1250,9 +1272,17 @@
     gap: 8rpx;
   }
 
-  .tag.accent {
-    color: #f16552;
-    background: #ffe6e2;
+  .element-badge-plain {
+    display: inline-flex;
+    align-items: center;
+    height: 52rpx;
+    padding: 0 18rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    font-weight: 700;
   }
 
   .tag.star-tag {
