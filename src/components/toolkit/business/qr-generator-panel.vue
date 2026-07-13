@@ -80,6 +80,7 @@
 
   const emit = defineEmits<{
     (e: 'shuffle-image', payload: ToolImagePayload): void
+    (e: 'generated', payload: ToolImagePayload): void
   }>()
 
   const instance = getCurrentInstance()
@@ -273,6 +274,9 @@
 
       qrGenerated.value = true
       uni.showToast({ title: '二维码生成成功', icon: 'success' })
+
+      const generatedImage = await exportGeneratedImage(true)
+      if (generatedImage) emit('generated', generatedImage)
     } catch (error) {
       console.error('生成二维码失败:', error)
       uni.showToast({ title: '生成失败，请重试', icon: 'none' })
@@ -289,16 +293,16 @@
     }
   }
 
-  const exportGeneratedImage = async (): Promise<ToolImagePayload | null> => {
+  const exportGeneratedImage = async (silent = false): Promise<ToolImagePayload | null> => {
     if (!qrGenerated.value) {
-      uni.showToast({ title: '请先生成二维码', icon: 'none' })
+      if (!silent) uni.showToast({ title: '请先生成二维码', icon: 'none' })
       return null
     }
 
     // #ifdef H5
     const canvas = resolveH5Canvas()
     if (!canvas) {
-      uni.showToast({ title: '图片导出失败', icon: 'none' })
+      if (!silent) uni.showToast({ title: '图片导出失败', icon: 'none' })
       return null
     }
     const dataUrl = canvas.toDataURL('image/png')
@@ -325,7 +329,7 @@
           },
           fail: error => {
             console.error('导出二维码失败:', error)
-            uni.showToast({ title: '图片导出失败', icon: 'none' })
+            if (!silent) uni.showToast({ title: '图片导出失败', icon: 'none' })
             resolve(null)
           },
         },

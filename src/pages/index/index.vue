@@ -49,7 +49,7 @@
             v-for="workflow in workflowScenes"
             :key="workflow.id"
             :class="['workflow-card', `workflow-card--${workflow.tone}`]"
-            @click="handleToolClick(workflow.primary.key, workflow.primary.tool)">
+            @click="handleWorkflowClick(workflow)">
             <view class="workflow-head">
               <text class="workflow-kicker">{{ workflow.kicker }}</text>
               <uni-icons type="right" size="14" color="rgba(255, 255, 255, 0.72)" />
@@ -91,7 +91,8 @@
   import { useToolDirectory } from '@/hooks/use-tool-directory'
 
   const { isDark } = storeToRefs(useThemeStore())
-  const { navbarBg, loggedIn, workbenchTools, platformLabel, workflowScenes, openLogin, handleToolClick } = useToolDirectory()
+  const { navbarBg, loggedIn, workbenchTools, platformLabel, workflowScenes, openLogin, handleToolClick, handleWorkflowClick } =
+    useToolDirectory()
 
   const workbenchChips = computed(() => {
     const chips = [platformLabel.value]
@@ -130,8 +131,7 @@
     min-height: 100vh;
     background:
       radial-gradient(circle at top center, rgba(0, 70, 180, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%),
-      $bg-color;
+      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%), $bg-color;
     overflow-x: hidden;
 
     /* #ifdef H5 */
@@ -142,8 +142,7 @@
   .home-page--dark {
     background:
       radial-gradient(circle at top center, rgba(56, 189, 248, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 22%),
-      $bg-color;
+      linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 22%), $bg-color;
   }
 
   .home-navbar-content {
