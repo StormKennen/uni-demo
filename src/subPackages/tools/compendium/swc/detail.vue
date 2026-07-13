@@ -59,8 +59,8 @@
                   <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
                 </view>
                 <view class="tag-line">
-                  <view v-if="detail.elementName" class="tag tag-with-icon accent">
-                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="28" :font-size="24" />
+                  <view v-if="detail.elementName" class="element-badge-plain">
+                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="24" :font-size="24" :gap="8" />
                   </view>
                   <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
                   <view v-if="detail.archetype" class="tag tag-with-icon">
@@ -1272,9 +1272,11 @@
     gap: 8rpx;
   }
 
-  .tag.accent {
-    color: #f16552;
-    background: #ffe6e2;
+  .element-badge-plain {
+    display: inline-flex;
+    align-items: center;
+    color: #4a5262;
+    font-weight: 700;
   }
 
   .tag.star-tag {
