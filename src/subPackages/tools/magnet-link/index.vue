@@ -90,7 +90,13 @@
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
-  import { updateToolFlowSession, type MagnetFlowPayload } from '@/utils/tool-flow'
+  import {
+    readToolFlowSession,
+    updateToolFlowSession,
+    type MagnetFlowPayload,
+    type ScanFlowPayload,
+    type ToolFlowId,
+  } from '@/utils/tool-flow'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/
@@ -105,15 +111,21 @@
   const selectedLink = ref('')
   const shuffleImage = ref<ToolImagePayload | null>(null)
   const isFlow = ref(false)
+  const flowId = ref<ToolFlowId | ''>('')
 
   // flow 场景默认取第一条有效链接进入下一步
   const flowLink = computed(() => processedLinks.value[0] || '')
 
   const goToQrGenerator = () => {
     const magnet = flowLink.value
-    if (!magnet) return
-    updateToolFlowSession<MagnetFlowPayload>('magnet-flow', { magnet }, 'qr-generator')
-    uni.navigateTo({ url: '/subPackages/tools/qr-generator/index?flow=magnet-flow' })
+    if (!magnet || !flowId.value) return
+    // magnet-flow / scan-flow 下一节点均为二维码生成页
+    if (flowId.value === 'scan-flow') {
+      updateToolFlowSession<ScanFlowPayload>('scan-flow', { magnet }, 'qr-generator')
+    } else {
+      updateToolFlowSession<MagnetFlowPayload>('magnet-flow', { magnet }, 'qr-generator')
+    }
+    uni.navigateTo({ url: `/subPackages/tools/qr-generator/index?flow=${flowId.value}` })
   }
 
   const isValidMagnet = (link: string): boolean => {
@@ -221,10 +233,20 @@
   let hasAutoRead = false
 
   onLoad((options: Record<string, string | undefined>) => {
-    if (options?.flow === 'magnet-flow') {
+    if (options?.flow === 'magnet-flow' || options?.flow === 'scan-flow') {
       isFlow.value = true
+      flowId.value = options.flow
       // flow 场景禁止自动读取剪贴板
       hasAutoRead = true
+    }
+    // scan-flow：从二维码解析带入原始文本，自动补全
+    if (options?.flow === 'scan-flow') {
+      const session = readToolFlowSession<ScanFlowPayload>('scan-flow')
+      const rawText = session?.payload.rawText
+      if (rawText) {
+        rawInput.value = rawText
+        processLinks()
+      }
     }
     if (options?.input) {
       rawInput.value = decodeURIComponent(options.input)

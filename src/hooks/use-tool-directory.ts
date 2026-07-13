@@ -6,7 +6,7 @@ import { getUserInfo } from '@/utils/storage'
 import { useThemeStore } from '@/stores/theme'
 import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_FOLD_STATUS, STORAGE_KEY_RECENT } from '@/config/tools'
 import type { ToolItem } from '@/config/tools'
-import { createToolFlowSession } from '@/utils/tool-flow'
+import { createToolFlowSession, type ToolFlowId, type ToolFlowStep } from '@/utils/tool-flow'
 
 export interface KeyedToolItem {
   key: string
@@ -53,10 +53,10 @@ const workflowBlueprints = [
   {
     id: 'scan-flow',
     kicker: 'SCAN TO ACTION',
-    title: '二维码解析 → 磁力补全 → 图片打乱',
+    title: '二维码解析 → 磁力补全 → 二维码生成',
     tone: 'slate' as const,
     primaryKey: 'qr-parser',
-    stepKeys: ['qr-parser', 'magnet-link', 'image-cipher'],
+    stepKeys: ['qr-parser', 'magnet-link', 'qr-generator'],
   },
   {
     id: 'media-flow',
@@ -272,13 +272,20 @@ export function useToolDirectory() {
     uni.navigateTo({ url: tool.path })
   }
 
-  // 推荐流程点击：第 1 条链（磁力链接 -> 二维码 -> 图片打乱）走页面级工作流
+  // 推荐流程入口：走页面级工作流的链路先创建 flow session 再跳转首节点
+  const flowEntryStepMap: Record<string, ToolFlowStep> = {
+    'magnet-flow': 'magnet-link',
+    'scan-flow': 'qr-parser',
+  }
+
   async function handleWorkflowClick(scene: WorkflowScene) {
     const primary = scene.primary
+    const entryStep = flowEntryStepMap[scene.id]
+    const playable = !primary.tool.disabled && !primary.tool.unsupportedPlatforms?.includes(currentPlatform.value)
 
-    if (scene.id === 'magnet-flow' && !primary.tool.disabled && !primary.tool.unsupportedPlatforms?.includes(currentPlatform.value)) {
-      createToolFlowSession('magnet-flow', 'magnet-link', {})
-      uni.navigateTo({ url: `${primary.tool.path}?flow=magnet-flow` })
+    if (entryStep && playable) {
+      createToolFlowSession(scene.id as ToolFlowId, entryStep, {})
+      uni.navigateTo({ url: `${primary.tool.path}?flow=${scene.id}` })
       return
     }
 

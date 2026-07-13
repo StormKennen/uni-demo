@@ -1,9 +1,9 @@
 import type { ToolImagePayload } from '@/components/toolkit/types'
 import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
 
-export type ToolFlowId = 'magnet-flow'
+export type ToolFlowId = 'magnet-flow' | 'scan-flow'
 
-export type ToolFlowStep = 'magnet-link' | 'qr-generator' | 'image-cipher'
+export type ToolFlowStep = 'magnet-link' | 'qr-generator' | 'image-cipher' | 'qr-parser'
 
 export interface ToolFlowSession<T = Record<string, unknown>> {
   flowId: ToolFlowId
@@ -16,6 +16,12 @@ export interface ToolFlowSession<T = Record<string, unknown>> {
 export interface MagnetFlowPayload extends Record<string, unknown> {
   magnet?: string
   qrImage?: ToolImagePayload
+}
+
+// scan-flow 链路载荷：二维码解析文本 -> 磁力链接
+export interface ScanFlowPayload extends Record<string, unknown> {
+  rawText?: string
+  magnet?: string
 }
 
 const STORAGE_PREFIX = 'tool-flow:'
