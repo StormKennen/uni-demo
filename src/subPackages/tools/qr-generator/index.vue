@@ -6,7 +6,9 @@
           mode="page"
           :initial-content="initialContent"
           :auto-generate="autoGenerate"
-          @shuffle-image="openShuffleSheet" />
+          @shuffle-image="openShuffleSheet"
+          @generated="handleGenerated" />
+        <view v-if="isFlow && flowQrImage" class="flow-bar-spacer" />
       </view>
 
       <ToolSheet v-model="shuffleSheetVisible" title="图片打乱" description="二维码已经带入，你可以直接继续打乱或重组。">
@@ -18,6 +20,13 @@
           :show-share-entry="false" />
       </ToolSheet>
     </view>
+
+    <FlowActionBar
+      v-if="isFlow && flowQrImage"
+      title="下一步：图片打乱"
+      description="将自动带入二维码图片"
+      action-text="图片打乱"
+      @action="goToImageCipher" />
   </PageLayout>
 </template>
 
@@ -27,14 +36,29 @@
   import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import ToolSheet from '@/components/toolkit/base/tool-sheet.vue'
+  import FlowActionBar from '@/components/toolkit/base/flow-action-bar.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
+  import { readToolFlowSession, updateToolFlowSession, type MagnetFlowPayload } from '@/utils/tool-flow'
 
   const initialContent = ref('')
   const autoGenerate = ref(false)
   const clipboardAutoRead = ref(false)
   const shuffleSheetVisible = ref(false)
   const shuffleImage = ref<ToolImagePayload | null>(null)
+  const isFlow = ref(false)
+  const flowQrImage = ref<ToolImagePayload | null>(null)
+
+  const handleGenerated = (payload: ToolImagePayload) => {
+    if (!isFlow.value) return
+    flowQrImage.value = payload
+  }
+
+  const goToImageCipher = () => {
+    if (!flowQrImage.value) return
+    updateToolFlowSession<MagnetFlowPayload>('magnet-flow', { qrImage: flowQrImage.value }, 'image-cipher')
+    uni.navigateTo({ url: '/subPackages/tools/image-cipher/index?flow=magnet-flow' })
+  }
 
   const openShuffleSheet = async (payload: ToolImagePayload) => {
     shuffleImage.value = payload
@@ -44,6 +68,18 @@
   }
 
   onLoad((options: Record<string, string | undefined>) => {
+    if (options?.flow === 'magnet-flow') {
+      const session = readToolFlowSession<MagnetFlowPayload>('magnet-flow')
+      const magnet = session?.payload.magnet
+      if (magnet) {
+        isFlow.value = true
+        initialContent.value = magnet
+        autoGenerate.value = true
+        // flow 场景有带入内容，不触发剪贴板提示
+        clipboardAutoRead.value = true
+        return
+      }
+    }
     if (typeof options?.content === 'string') {
       initialContent.value = decodeURIComponent(options.content)
       autoGenerate.value = true
@@ -98,5 +134,9 @@
 
   .content {
     padding: calc(32rpx + var(--nav-height, 120rpx)) 32rpx 32rpx;
+  }
+
+  .flow-bar-spacer {
+    height: 180rpx;
   }
 </style>
