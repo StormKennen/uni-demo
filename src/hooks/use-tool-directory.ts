@@ -6,6 +6,7 @@ import { getUserInfo } from '@/utils/storage'
 import { useThemeStore } from '@/stores/theme'
 import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_FOLD_STATUS, STORAGE_KEY_RECENT } from '@/config/tools'
 import type { ToolItem } from '@/config/tools'
+import { createToolFlowSession } from '@/utils/tool-flow'
 
 export interface KeyedToolItem {
   key: string
@@ -130,7 +131,9 @@ export function useToolDirectory() {
 
   const primaryHeroActions = computed<HeroAction[]>(() => {
     const preferredKeys =
-      currentPlatform.value === 'mp-weixin' ? ['magnet-link', 'compendium-swc', 'qr-generator'] : ['magnet-link', 'qr-generator', 'video-watermark']
+      currentPlatform.value === 'mp-weixin'
+        ? ['magnet-link', 'compendium-swc', 'qr-generator']
+        : ['magnet-link', 'qr-generator', 'video-watermark']
 
     return preferredKeys
       .map((key, index) => {
@@ -269,6 +272,19 @@ export function useToolDirectory() {
     uni.navigateTo({ url: tool.path })
   }
 
+  // 推荐流程点击：第 1 条链（磁力链接 -> 二维码 -> 图片打乱）走页面级工作流
+  async function handleWorkflowClick(scene: WorkflowScene) {
+    const primary = scene.primary
+
+    if (scene.id === 'magnet-flow' && !primary.tool.disabled && !primary.tool.unsupportedPlatforms?.includes(currentPlatform.value)) {
+      createToolFlowSession('magnet-flow', 'magnet-link', {})
+      uni.navigateTo({ url: `${primary.tool.path}?flow=magnet-flow` })
+      return
+    }
+
+    await handleToolClick(primary.key, primary.tool)
+  }
+
   function syncCurrentUserRole() {
     currentUserRole.value = getUserInfo()?.role || ''
   }
@@ -304,6 +320,7 @@ export function useToolDirectory() {
     primaryHeroActions,
     workflowScenes,
     workbenchTools,
+    handleWorkflowClick,
     getToolsByCategory,
     getCategorySummary,
     isFolded,

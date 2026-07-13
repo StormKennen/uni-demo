@@ -50,6 +50,8 @@
         </view>
       </view>
 
+      <view v-if="isFlow && flowLink" class="flow-bar-spacer" />
+
       <ToolSheet v-model="qrSheetVisible" title="二维码生成" description="当前磁力链接会直接生成二维码，你可以保存二维码或继续图片打乱。">
         <QrGeneratorPanel
           v-if="qrSheetVisible"
@@ -69,17 +71,26 @@
           :show-share-entry="false" />
       </ToolSheet>
     </view>
+
+    <FlowActionBar
+      v-if="isFlow && flowLink"
+      title="下一步：生成二维码"
+      description="将自动带入当前磁力链接"
+      action-text="生成二维码"
+      @action="goToQrGenerator" />
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import { nextTick, reactive, ref } from 'vue'
+  import { computed, nextTick, reactive, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import ToolSheet from '@/components/toolkit/base/tool-sheet.vue'
+  import FlowActionBar from '@/components/toolkit/base/flow-action-bar.vue'
   import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
+  import { updateToolFlowSession, type MagnetFlowPayload } from '@/utils/tool-flow'
 
   const MAGNET_PREFIX = 'magnet:?xt=urn:btih:'
   const HASH_REGEX = /^[a-fA-F0-9]{40}$|^[a-zA-Z2-7]{32}$/
@@ -93,6 +104,17 @@
   const shuffleSheetVisible = ref(false)
   const selectedLink = ref('')
   const shuffleImage = ref<ToolImagePayload | null>(null)
+  const isFlow = ref(false)
+
+  // flow 场景默认取第一条有效链接进入下一步
+  const flowLink = computed(() => processedLinks.value[0] || '')
+
+  const goToQrGenerator = () => {
+    const magnet = flowLink.value
+    if (!magnet) return
+    updateToolFlowSession<MagnetFlowPayload>('magnet-flow', { magnet }, 'qr-generator')
+    uni.navigateTo({ url: '/subPackages/tools/qr-generator/index?flow=magnet-flow' })
+  }
 
   const isValidMagnet = (link: string): boolean => {
     if (!link.toLowerCase().startsWith('magnet:?xt=urn:btih:')) return false
@@ -199,6 +221,11 @@
   let hasAutoRead = false
 
   onLoad((options: Record<string, string | undefined>) => {
+    if (options?.flow === 'magnet-flow') {
+      isFlow.value = true
+      // flow 场景禁止自动读取剪贴板
+      hasAutoRead = true
+    }
     if (options?.input) {
       rawInput.value = decodeURIComponent(options.input)
       hasAutoRead = true
@@ -240,6 +267,10 @@
 
   .content {
     padding: calc(24rpx + var(--nav-height, 120rpx)) 24rpx 24rpx;
+  }
+
+  .flow-bar-spacer {
+    height: 180rpx;
   }
 
   .section {

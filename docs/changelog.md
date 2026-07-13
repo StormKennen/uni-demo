@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-13 [utils/tool-flow,components/toolkit,home/navigation,tools/magnet-link] P1-Workflow-01 阶段一/二/三：工作流基础设施 + magnet-flow 入口接入。新增轻量 flow session 工具 `src/utils/tool-flow.ts`（create/read/update/consume/clear，走 `storage.ts` 封装，不散写 `uni.setStorageSync`）与通用底部“下一步”操作条 `flow-action-bar.vue`（固定底部、兼容安全区、纯 UI 容器）；首页第 1 条推荐流程点击改为先创建 `magnet-flow` session（step=magnet-link）再跳转磁力链接页，不影响另外两条流程；磁力链接页 flow 场景禁用剪贴板自动读取，处理出有效链接后展示“下一步：生成二维码”（默认取第一条），点击写入 `magnet` 并跳转二维码页（Devin）
 - 2026-07-12 [theme/layout] 修复微信小程序详情页主题报错：移除 `PageLayout` / `ThemeRoot` 内部组件级 `page-meta` 渲染，改为依赖页面容器内联主题变量；同时 `useTheme` 仅在 tabbar 页面调用 `setTabBarStyle`，避免非 tabbar 页（如魔灵详情）出现 `setTabBarStyle:fail not TabBar page`（Codex）
 - 2026-07-12 [swc/components,swc/list] 统一人物卡片 `swc-character-card` 调整五行展示：将五行属性图标移到人物头像右下角展示，底部 `character-name-row` 不再重复占位展示五行，仅保留人物名/家族名，图鉴列表等复用场景同步生效（Codex）
 - 2026-07-12 [home/navigation] 首页“推荐流程”由横向滚动改为竖向列表卡片，更贴近工作台类产品的单列浏览习惯；首页继续保持只展示工作台与推荐流程两块核心内容（Codex）
