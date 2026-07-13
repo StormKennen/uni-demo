@@ -5,7 +5,7 @@
 
 ## Unreleased
 
-- 2026-07-13 [swc/detail] 魔灵详情页五行属性展示与图鉴列表保持一致：去掉原红色底色标签（`.tag.accent`）包裹，改为纯 `SwcElementBadge` 图标+文字（`size/font 24`、`gap 8`，与列表筛选项一致），仅保留中性文字色（Devin）
+- 2026-07-13 [swc/detail] 魔灵详情页五行属性展示与图鉴列表保持一致：去掉原红色底色标签（`.tag.accent`），改用 `SwcElementBadge`（`size/font 24`、`gap 8`）并为外层 `.element-badge-plain` 套上与列表筛选项 `.quick-chip` 相同的浅灰药丸底色框（`--theme-surface-2` 背景、`--theme-border` 描边、`height 52rpx`、`border-radius 999rpx`）；`light` 等偏浅的属性图标在纯白背景下会显得发白，加底色框后与列表观感一致、更清晰（Devin）
 - 2026-07-13 [swc/detail] 修复魔灵详情页“切换形态”与元素切换无效：`familyMembers` 的 `element`/`awaken` 为 `{key,value}` 对象结构，`formatAwakenLabel` 仅按字符串解析导致所有同族成员被判定为“未觉醒”，`切换形态` 找不到对立形态而无响应；新增对象字段解析（复用 `key/valueKey/value/name`），当前形态兜底也改为按详情 `categories` 推导觉醒状态，使 `切换形态` 与元素圆点切换均能命中正确的觉醒/未觉醒目标；同时为切换请求加入竞态令牌并在详情返回后即收起“切换中”遮罩、阵容数据后台加载，避免连点旧请求覆盖与遮罩卡死（Devin）
 - 2026-07-12 [theme/layout] 修复微信小程序详情页主题报错：移除 `PageLayout` / `ThemeRoot` 内部组件级 `page-meta` 渲染，改为依赖页面容器内联主题变量；同时 `useTheme` 仅在 tabbar 页面调用 `setTabBarStyle`，避免非 tabbar 页（如魔灵详情）出现 `setTabBarStyle:fail not TabBar page`（Codex）
 - 2026-07-12 [swc/components,swc/list] 统一人物卡片 `swc-character-card` 调整五行展示：将五行属性图标移到人物头像右下角展示，底部 `character-name-row` 不再重复占位展示五行，仅保留人物名/家族名，图鉴列表等复用场景同步生效（Codex）

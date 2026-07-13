@@ -1275,7 +1275,13 @@
   .element-badge-plain {
     display: inline-flex;
     align-items: center;
-    color: #4a5262;
+    height: 52rpx;
+    padding: 0 18rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
     font-weight: 700;
   }
 
