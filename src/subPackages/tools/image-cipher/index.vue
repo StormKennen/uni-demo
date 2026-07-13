@@ -14,11 +14,22 @@
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
+  import { consumeToolFlowSession, type MagnetFlowPayload } from '@/utils/tool-flow'
 
   const initialImage = ref<ToolImagePayload | null>(null)
   const autoRun = ref(false)
 
   onLoad((options: Record<string, string | undefined>) => {
+    if (options?.flow === 'magnet-flow') {
+      // 链路终点：读完即删，避免返回时脏数据串页
+      const session = consumeToolFlowSession<MagnetFlowPayload>('magnet-flow')
+      const qrImage = session?.payload.qrImage
+      if (qrImage) {
+        initialImage.value = qrImage
+        autoRun.value = true
+        return
+      }
+    }
     const image = typeof options?.image === 'string' ? decodeURIComponent(options.image) : ''
     if (!image) return
     initialImage.value = { uri: image }
