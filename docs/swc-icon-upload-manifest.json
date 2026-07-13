@@ -1,0 +1,1203 @@
+{
+  "generatedAt": "2026-07-12T06:37:02.010Z",
+  "sourceBaseDir": "src/subPackages/tools/static/swc",
+  "objectKeyPrefix": "swc",
+  "total": 73,
+  "folders": {
+    "arche-types": {
+      "count": 4,
+      "files": [
+        {
+          "kind": "archetype",
+          "folder": "arche-types",
+          "iconKey": "attack",
+          "fileName": "attack.png",
+          "relativePath": "arche-types/attack.png",
+          "objectKey": "swc/arche-types/attack.png"
+        },
+        {
+          "kind": "archetype",
+          "folder": "arche-types",
+          "iconKey": "defense",
+          "fileName": "defense.png",
+          "relativePath": "arche-types/defense.png",
+          "objectKey": "swc/arche-types/defense.png"
+        },
+        {
+          "kind": "archetype",
+          "folder": "arche-types",
+          "iconKey": "hp",
+          "fileName": "hp.png",
+          "relativePath": "arche-types/hp.png",
+          "objectKey": "swc/arche-types/hp.png"
+        },
+        {
+          "kind": "archetype",
+          "folder": "arche-types",
+          "iconKey": "support",
+          "fileName": "support.png",
+          "relativePath": "arche-types/support.png",
+          "objectKey": "swc/arche-types/support.png"
+        }
+      ]
+    },
+    "elements": {
+      "count": 5,
+      "files": [
+        {
+          "kind": "element",
+          "folder": "elements",
+          "iconKey": "fire",
+          "fileName": "fire.png",
+          "relativePath": "elements/fire.png",
+          "objectKey": "swc/elements/fire.png"
+        },
+        {
+          "kind": "element",
+          "folder": "elements",
+          "iconKey": "water",
+          "fileName": "water.png",
+          "relativePath": "elements/water.png",
+          "objectKey": "swc/elements/water.png"
+        },
+        {
+          "kind": "element",
+          "folder": "elements",
+          "iconKey": "wind",
+          "fileName": "wind.png",
+          "relativePath": "elements/wind.png",
+          "objectKey": "swc/elements/wind.png"
+        },
+        {
+          "kind": "element",
+          "folder": "elements",
+          "iconKey": "light",
+          "fileName": "light.png",
+          "relativePath": "elements/light.png",
+          "objectKey": "swc/elements/light.png"
+        },
+        {
+          "kind": "element",
+          "folder": "elements",
+          "iconKey": "dark",
+          "fileName": "dark.png",
+          "relativePath": "elements/dark.png",
+          "objectKey": "swc/elements/dark.png"
+        }
+      ]
+    },
+    "buffs": {
+      "count": 22,
+      "files": [
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_attack_up",
+          "fileName": "buff_attack_up.png",
+          "relativePath": "buffs/buff_attack_up.png",
+          "objectKey": "swc/buffs/buff_attack_up.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_berserk",
+          "fileName": "buff_berserk.png",
+          "relativePath": "buffs/buff_berserk.png",
+          "objectKey": "swc/buffs/buff_berserk.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_counter",
+          "fileName": "buff_counter.png",
+          "relativePath": "buffs/buff_counter.png",
+          "objectKey": "swc/buffs/buff_counter.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_crit_down",
+          "fileName": "buff_crit_down.png",
+          "relativePath": "buffs/buff_crit_down.png",
+          "objectKey": "swc/buffs/buff_crit_down.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_crit_up",
+          "fileName": "buff_crit_up.png",
+          "relativePath": "buffs/buff_crit_up.png",
+          "objectKey": "swc/buffs/buff_crit_up.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_defence_up",
+          "fileName": "buff_defence_up.png",
+          "relativePath": "buffs/buff_defence_up.png",
+          "objectKey": "swc/buffs/buff_defence_up.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_endure",
+          "fileName": "buff_endure.png",
+          "relativePath": "buffs/buff_endure.png",
+          "objectKey": "swc/buffs/buff_endure.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_heal",
+          "fileName": "buff_heal.png",
+          "relativePath": "buffs/buff_heal.png",
+          "objectKey": "swc/buffs/buff_heal.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_immune",
+          "fileName": "buff_immune.png",
+          "relativePath": "buffs/buff_immune.png",
+          "objectKey": "swc/buffs/buff_immune.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_invinciblity",
+          "fileName": "buff_invinciblity.png",
+          "relativePath": "buffs/buff_invinciblity.png",
+          "objectKey": "swc/buffs/buff_invinciblity.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_knowledge",
+          "fileName": "buff_knowledge.png",
+          "relativePath": "buffs/buff_knowledge.png",
+          "objectKey": "swc/buffs/buff_knowledge.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_magic_reflect",
+          "fileName": "buff_magic_reflect.png",
+          "relativePath": "buffs/buff_magic_reflect.png",
+          "objectKey": "swc/buffs/buff_magic_reflect.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_manafury",
+          "fileName": "buff_manafury.png",
+          "relativePath": "buffs/buff_manafury.png",
+          "objectKey": "swc/buffs/buff_manafury.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_protect",
+          "fileName": "buff_protect.png",
+          "relativePath": "buffs/buff_protect.png",
+          "objectKey": "swc/buffs/buff_protect.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_reflect",
+          "fileName": "buff_reflect.png",
+          "relativePath": "buffs/buff_reflect.png",
+          "objectKey": "swc/buffs/buff_reflect.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_shield",
+          "fileName": "buff_shield.png",
+          "relativePath": "buffs/buff_shield.png",
+          "objectKey": "swc/buffs/buff_shield.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_soul_protect",
+          "fileName": "buff_soul_protect.png",
+          "relativePath": "buffs/buff_soul_protect.png",
+          "objectKey": "swc/buffs/buff_soul_protect.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_soul_stone",
+          "fileName": "buff_soul_stone.png",
+          "relativePath": "buffs/buff_soul_stone.png",
+          "objectKey": "swc/buffs/buff_soul_stone.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_speed",
+          "fileName": "buff_speed.png",
+          "relativePath": "buffs/buff_speed.png",
+          "objectKey": "swc/buffs/buff_speed.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_stealth",
+          "fileName": "buff_stealth.png",
+          "relativePath": "buffs/buff_stealth.png",
+          "objectKey": "swc/buffs/buff_stealth.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_threat",
+          "fileName": "buff_threat.png",
+          "relativePath": "buffs/buff_threat.png",
+          "objectKey": "swc/buffs/buff_threat.png"
+        },
+        {
+          "kind": "buff",
+          "folder": "buffs",
+          "iconKey": "buff_vampire",
+          "fileName": "buff_vampire.png",
+          "relativePath": "buffs/buff_vampire.png",
+          "objectKey": "swc/buffs/buff_vampire.png"
+        }
+      ]
+    },
+    "debuffs": {
+      "count": 22,
+      "files": [
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_attack_down",
+          "fileName": "debuff_attack_down.png",
+          "relativePath": "debuffs/debuff_attack_down.png",
+          "objectKey": "swc/debuffs/debuff_attack_down.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_block_buffs",
+          "fileName": "debuff_block_buffs.png",
+          "relativePath": "debuffs/debuff_block_buffs.png",
+          "objectKey": "swc/debuffs/debuff_block_buffs.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_block_heal",
+          "fileName": "debuff_block_heal.png",
+          "relativePath": "debuffs/debuff_block_heal.png",
+          "objectKey": "swc/debuffs/debuff_block_heal.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_bomb",
+          "fileName": "debuff_bomb.png",
+          "relativePath": "debuffs/debuff_bomb.png",
+          "objectKey": "swc/debuffs/debuff_bomb.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_brand",
+          "fileName": "debuff_brand.png",
+          "relativePath": "debuffs/debuff_brand.png",
+          "objectKey": "swc/debuffs/debuff_brand.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_cleanse_block",
+          "fileName": "debuff_cleanse_block.png",
+          "relativePath": "debuffs/debuff_cleanse_block.png",
+          "objectKey": "swc/debuffs/debuff_cleanse_block.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_deathcurse",
+          "fileName": "debuff_deathcurse.png",
+          "relativePath": "debuffs/debuff_deathcurse.png",
+          "objectKey": "swc/debuffs/debuff_deathcurse.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_defence_down",
+          "fileName": "debuff_defence_down.png",
+          "relativePath": "debuffs/debuff_defence_down.png",
+          "objectKey": "swc/debuffs/debuff_defence_down.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_dot",
+          "fileName": "debuff_dot.png",
+          "relativePath": "debuffs/debuff_dot.png",
+          "objectKey": "swc/debuffs/debuff_dot.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_freeze",
+          "fileName": "debuff_freeze.png",
+          "relativePath": "debuffs/debuff_freeze.png",
+          "objectKey": "swc/debuffs/debuff_freeze.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_glancing_hit",
+          "fileName": "debuff_glancing_hit.png",
+          "relativePath": "debuffs/debuff_glancing_hit.png",
+          "objectKey": "swc/debuffs/debuff_glancing_hit.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_irresistible",
+          "fileName": "debuff_irresistible.png",
+          "relativePath": "debuffs/debuff_irresistible.png",
+          "objectKey": "swc/debuffs/debuff_irresistible.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_mark",
+          "fileName": "debuff_mark.png",
+          "relativePath": "debuffs/debuff_mark.png",
+          "objectKey": "swc/debuffs/debuff_mark.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_oblivious",
+          "fileName": "debuff_oblivious.png",
+          "relativePath": "debuffs/debuff_oblivious.png",
+          "objectKey": "swc/debuffs/debuff_oblivious.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_provoke",
+          "fileName": "debuff_provoke.png",
+          "relativePath": "debuffs/debuff_provoke.png",
+          "objectKey": "swc/debuffs/debuff_provoke.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_seal",
+          "fileName": "debuff_seal.png",
+          "relativePath": "debuffs/debuff_seal.png",
+          "objectKey": "swc/debuffs/debuff_seal.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_silence",
+          "fileName": "debuff_silence.png",
+          "relativePath": "debuffs/debuff_silence.png",
+          "objectKey": "swc/debuffs/debuff_silence.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_sleep",
+          "fileName": "debuff_sleep.png",
+          "relativePath": "debuffs/debuff_sleep.png",
+          "objectKey": "swc/debuffs/debuff_sleep.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_slow",
+          "fileName": "debuff_slow.png",
+          "relativePath": "debuffs/debuff_slow.png",
+          "objectKey": "swc/debuffs/debuff_slow.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_stun",
+          "fileName": "debuff_stun.png",
+          "relativePath": "debuffs/debuff_stun.png",
+          "objectKey": "swc/debuffs/debuff_stun.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_suppress",
+          "fileName": "debuff_suppress.png",
+          "relativePath": "debuffs/debuff_suppress.png",
+          "objectKey": "swc/debuffs/debuff_suppress.png"
+        },
+        {
+          "kind": "debuff",
+          "folder": "debuffs",
+          "iconKey": "debuff_unrevivable",
+          "fileName": "debuff_unrevivable.png",
+          "relativePath": "debuffs/debuff_unrevivable.png",
+          "objectKey": "swc/debuffs/debuff_unrevivable.png"
+        }
+      ]
+    },
+    "leader-skills": {
+      "count": 20,
+      "files": [
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Accuracy_Arena",
+          "fileName": "leader_skill_Accuracy_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Accuracy_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Accuracy_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Power",
+          "fileName": "leader_skill_Attack_Power.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Power.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Power.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Power_Arena",
+          "fileName": "leader_skill_Attack_Power_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Power_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Power_Dungeon",
+          "fileName": "leader_skill_Attack_Power_Dungeon.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Power_Dungeon.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Dungeon.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Power_Fire",
+          "fileName": "leader_skill_Attack_Power_Fire.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Power_Fire.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Fire.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Speed",
+          "fileName": "leader_skill_Attack_Speed.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Speed.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Speed.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Attack_Speed_Arena",
+          "fileName": "leader_skill_Attack_Speed_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Attack_Speed_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Attack_Speed_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Critical_Rate",
+          "fileName": "leader_skill_Critical_Rate.png",
+          "relativePath": "leader-skills/leader_skill_Critical_Rate.png",
+          "objectKey": "swc/leader-skills/leader_skill_Critical_Rate.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Critical_Rate_Arena",
+          "fileName": "leader_skill_Critical_Rate_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Critical_Rate_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Critical_Rate_Guild",
+          "fileName": "leader_skill_Critical_Rate_Guild.png",
+          "relativePath": "leader-skills/leader_skill_Critical_Rate_Guild.png",
+          "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Guild.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Critical_Rate_Water",
+          "fileName": "leader_skill_Critical_Rate_Water.png",
+          "relativePath": "leader-skills/leader_skill_Critical_Rate_Water.png",
+          "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Water.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Critical_Rate_Wind",
+          "fileName": "leader_skill_Critical_Rate_Wind.png",
+          "relativePath": "leader-skills/leader_skill_Critical_Rate_Wind.png",
+          "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Wind.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Defense",
+          "fileName": "leader_skill_Defense.png",
+          "relativePath": "leader-skills/leader_skill_Defense.png",
+          "objectKey": "swc/leader-skills/leader_skill_Defense.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Defense_Arena",
+          "fileName": "leader_skill_Defense_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Defense_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Defense_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Defense_Fire",
+          "fileName": "leader_skill_Defense_Fire.png",
+          "relativePath": "leader-skills/leader_skill_Defense_Fire.png",
+          "objectKey": "swc/leader-skills/leader_skill_Defense_Fire.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Defense_Light",
+          "fileName": "leader_skill_Defense_Light.png",
+          "relativePath": "leader-skills/leader_skill_Defense_Light.png",
+          "objectKey": "swc/leader-skills/leader_skill_Defense_Light.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_HP_Arena",
+          "fileName": "leader_skill_HP_Arena.png",
+          "relativePath": "leader-skills/leader_skill_HP_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_HP_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_HP_Guild",
+          "fileName": "leader_skill_HP_Guild.png",
+          "relativePath": "leader-skills/leader_skill_HP_Guild.png",
+          "objectKey": "swc/leader-skills/leader_skill_HP_Guild.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Resistance_Arena",
+          "fileName": "leader_skill_Resistance_Arena.png",
+          "relativePath": "leader-skills/leader_skill_Resistance_Arena.png",
+          "objectKey": "swc/leader-skills/leader_skill_Resistance_Arena.png"
+        },
+        {
+          "kind": "leader-skill",
+          "folder": "leader-skills",
+          "iconKey": "leader_skill_Resistance_Wind",
+          "fileName": "leader_skill_Resistance_Wind.png",
+          "relativePath": "leader-skills/leader_skill_Resistance_Wind.png",
+          "objectKey": "swc/leader-skills/leader_skill_Resistance_Wind.png"
+        }
+      ]
+    }
+  },
+  "files": [
+    {
+      "kind": "archetype",
+      "folder": "arche-types",
+      "iconKey": "attack",
+      "fileName": "attack.png",
+      "relativePath": "arche-types/attack.png",
+      "objectKey": "swc/arche-types/attack.png"
+    },
+    {
+      "kind": "archetype",
+      "folder": "arche-types",
+      "iconKey": "defense",
+      "fileName": "defense.png",
+      "relativePath": "arche-types/defense.png",
+      "objectKey": "swc/arche-types/defense.png"
+    },
+    {
+      "kind": "archetype",
+      "folder": "arche-types",
+      "iconKey": "hp",
+      "fileName": "hp.png",
+      "relativePath": "arche-types/hp.png",
+      "objectKey": "swc/arche-types/hp.png"
+    },
+    {
+      "kind": "archetype",
+      "folder": "arche-types",
+      "iconKey": "support",
+      "fileName": "support.png",
+      "relativePath": "arche-types/support.png",
+      "objectKey": "swc/arche-types/support.png"
+    },
+    {
+      "kind": "element",
+      "folder": "elements",
+      "iconKey": "fire",
+      "fileName": "fire.png",
+      "relativePath": "elements/fire.png",
+      "objectKey": "swc/elements/fire.png"
+    },
+    {
+      "kind": "element",
+      "folder": "elements",
+      "iconKey": "water",
+      "fileName": "water.png",
+      "relativePath": "elements/water.png",
+      "objectKey": "swc/elements/water.png"
+    },
+    {
+      "kind": "element",
+      "folder": "elements",
+      "iconKey": "wind",
+      "fileName": "wind.png",
+      "relativePath": "elements/wind.png",
+      "objectKey": "swc/elements/wind.png"
+    },
+    {
+      "kind": "element",
+      "folder": "elements",
+      "iconKey": "light",
+      "fileName": "light.png",
+      "relativePath": "elements/light.png",
+      "objectKey": "swc/elements/light.png"
+    },
+    {
+      "kind": "element",
+      "folder": "elements",
+      "iconKey": "dark",
+      "fileName": "dark.png",
+      "relativePath": "elements/dark.png",
+      "objectKey": "swc/elements/dark.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_attack_up",
+      "fileName": "buff_attack_up.png",
+      "relativePath": "buffs/buff_attack_up.png",
+      "objectKey": "swc/buffs/buff_attack_up.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_berserk",
+      "fileName": "buff_berserk.png",
+      "relativePath": "buffs/buff_berserk.png",
+      "objectKey": "swc/buffs/buff_berserk.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_counter",
+      "fileName": "buff_counter.png",
+      "relativePath": "buffs/buff_counter.png",
+      "objectKey": "swc/buffs/buff_counter.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_crit_down",
+      "fileName": "buff_crit_down.png",
+      "relativePath": "buffs/buff_crit_down.png",
+      "objectKey": "swc/buffs/buff_crit_down.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_crit_up",
+      "fileName": "buff_crit_up.png",
+      "relativePath": "buffs/buff_crit_up.png",
+      "objectKey": "swc/buffs/buff_crit_up.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_defence_up",
+      "fileName": "buff_defence_up.png",
+      "relativePath": "buffs/buff_defence_up.png",
+      "objectKey": "swc/buffs/buff_defence_up.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_endure",
+      "fileName": "buff_endure.png",
+      "relativePath": "buffs/buff_endure.png",
+      "objectKey": "swc/buffs/buff_endure.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_heal",
+      "fileName": "buff_heal.png",
+      "relativePath": "buffs/buff_heal.png",
+      "objectKey": "swc/buffs/buff_heal.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_immune",
+      "fileName": "buff_immune.png",
+      "relativePath": "buffs/buff_immune.png",
+      "objectKey": "swc/buffs/buff_immune.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_invinciblity",
+      "fileName": "buff_invinciblity.png",
+      "relativePath": "buffs/buff_invinciblity.png",
+      "objectKey": "swc/buffs/buff_invinciblity.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_knowledge",
+      "fileName": "buff_knowledge.png",
+      "relativePath": "buffs/buff_knowledge.png",
+      "objectKey": "swc/buffs/buff_knowledge.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_magic_reflect",
+      "fileName": "buff_magic_reflect.png",
+      "relativePath": "buffs/buff_magic_reflect.png",
+      "objectKey": "swc/buffs/buff_magic_reflect.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_manafury",
+      "fileName": "buff_manafury.png",
+      "relativePath": "buffs/buff_manafury.png",
+      "objectKey": "swc/buffs/buff_manafury.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_protect",
+      "fileName": "buff_protect.png",
+      "relativePath": "buffs/buff_protect.png",
+      "objectKey": "swc/buffs/buff_protect.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_reflect",
+      "fileName": "buff_reflect.png",
+      "relativePath": "buffs/buff_reflect.png",
+      "objectKey": "swc/buffs/buff_reflect.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_shield",
+      "fileName": "buff_shield.png",
+      "relativePath": "buffs/buff_shield.png",
+      "objectKey": "swc/buffs/buff_shield.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_soul_protect",
+      "fileName": "buff_soul_protect.png",
+      "relativePath": "buffs/buff_soul_protect.png",
+      "objectKey": "swc/buffs/buff_soul_protect.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_soul_stone",
+      "fileName": "buff_soul_stone.png",
+      "relativePath": "buffs/buff_soul_stone.png",
+      "objectKey": "swc/buffs/buff_soul_stone.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_speed",
+      "fileName": "buff_speed.png",
+      "relativePath": "buffs/buff_speed.png",
+      "objectKey": "swc/buffs/buff_speed.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_stealth",
+      "fileName": "buff_stealth.png",
+      "relativePath": "buffs/buff_stealth.png",
+      "objectKey": "swc/buffs/buff_stealth.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_threat",
+      "fileName": "buff_threat.png",
+      "relativePath": "buffs/buff_threat.png",
+      "objectKey": "swc/buffs/buff_threat.png"
+    },
+    {
+      "kind": "buff",
+      "folder": "buffs",
+      "iconKey": "buff_vampire",
+      "fileName": "buff_vampire.png",
+      "relativePath": "buffs/buff_vampire.png",
+      "objectKey": "swc/buffs/buff_vampire.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_attack_down",
+      "fileName": "debuff_attack_down.png",
+      "relativePath": "debuffs/debuff_attack_down.png",
+      "objectKey": "swc/debuffs/debuff_attack_down.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_block_buffs",
+      "fileName": "debuff_block_buffs.png",
+      "relativePath": "debuffs/debuff_block_buffs.png",
+      "objectKey": "swc/debuffs/debuff_block_buffs.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_block_heal",
+      "fileName": "debuff_block_heal.png",
+      "relativePath": "debuffs/debuff_block_heal.png",
+      "objectKey": "swc/debuffs/debuff_block_heal.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_bomb",
+      "fileName": "debuff_bomb.png",
+      "relativePath": "debuffs/debuff_bomb.png",
+      "objectKey": "swc/debuffs/debuff_bomb.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_brand",
+      "fileName": "debuff_brand.png",
+      "relativePath": "debuffs/debuff_brand.png",
+      "objectKey": "swc/debuffs/debuff_brand.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_cleanse_block",
+      "fileName": "debuff_cleanse_block.png",
+      "relativePath": "debuffs/debuff_cleanse_block.png",
+      "objectKey": "swc/debuffs/debuff_cleanse_block.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_deathcurse",
+      "fileName": "debuff_deathcurse.png",
+      "relativePath": "debuffs/debuff_deathcurse.png",
+      "objectKey": "swc/debuffs/debuff_deathcurse.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_defence_down",
+      "fileName": "debuff_defence_down.png",
+      "relativePath": "debuffs/debuff_defence_down.png",
+      "objectKey": "swc/debuffs/debuff_defence_down.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_dot",
+      "fileName": "debuff_dot.png",
+      "relativePath": "debuffs/debuff_dot.png",
+      "objectKey": "swc/debuffs/debuff_dot.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_freeze",
+      "fileName": "debuff_freeze.png",
+      "relativePath": "debuffs/debuff_freeze.png",
+      "objectKey": "swc/debuffs/debuff_freeze.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_glancing_hit",
+      "fileName": "debuff_glancing_hit.png",
+      "relativePath": "debuffs/debuff_glancing_hit.png",
+      "objectKey": "swc/debuffs/debuff_glancing_hit.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_irresistible",
+      "fileName": "debuff_irresistible.png",
+      "relativePath": "debuffs/debuff_irresistible.png",
+      "objectKey": "swc/debuffs/debuff_irresistible.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_mark",
+      "fileName": "debuff_mark.png",
+      "relativePath": "debuffs/debuff_mark.png",
+      "objectKey": "swc/debuffs/debuff_mark.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_oblivious",
+      "fileName": "debuff_oblivious.png",
+      "relativePath": "debuffs/debuff_oblivious.png",
+      "objectKey": "swc/debuffs/debuff_oblivious.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_provoke",
+      "fileName": "debuff_provoke.png",
+      "relativePath": "debuffs/debuff_provoke.png",
+      "objectKey": "swc/debuffs/debuff_provoke.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_seal",
+      "fileName": "debuff_seal.png",
+      "relativePath": "debuffs/debuff_seal.png",
+      "objectKey": "swc/debuffs/debuff_seal.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_silence",
+      "fileName": "debuff_silence.png",
+      "relativePath": "debuffs/debuff_silence.png",
+      "objectKey": "swc/debuffs/debuff_silence.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_sleep",
+      "fileName": "debuff_sleep.png",
+      "relativePath": "debuffs/debuff_sleep.png",
+      "objectKey": "swc/debuffs/debuff_sleep.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_slow",
+      "fileName": "debuff_slow.png",
+      "relativePath": "debuffs/debuff_slow.png",
+      "objectKey": "swc/debuffs/debuff_slow.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_stun",
+      "fileName": "debuff_stun.png",
+      "relativePath": "debuffs/debuff_stun.png",
+      "objectKey": "swc/debuffs/debuff_stun.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_suppress",
+      "fileName": "debuff_suppress.png",
+      "relativePath": "debuffs/debuff_suppress.png",
+      "objectKey": "swc/debuffs/debuff_suppress.png"
+    },
+    {
+      "kind": "debuff",
+      "folder": "debuffs",
+      "iconKey": "debuff_unrevivable",
+      "fileName": "debuff_unrevivable.png",
+      "relativePath": "debuffs/debuff_unrevivable.png",
+      "objectKey": "swc/debuffs/debuff_unrevivable.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Accuracy_Arena",
+      "fileName": "leader_skill_Accuracy_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Accuracy_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Accuracy_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Power",
+      "fileName": "leader_skill_Attack_Power.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Power.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Power.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Power_Arena",
+      "fileName": "leader_skill_Attack_Power_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Power_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Power_Dungeon",
+      "fileName": "leader_skill_Attack_Power_Dungeon.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Power_Dungeon.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Dungeon.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Power_Fire",
+      "fileName": "leader_skill_Attack_Power_Fire.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Power_Fire.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Power_Fire.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Speed",
+      "fileName": "leader_skill_Attack_Speed.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Speed.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Speed.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Attack_Speed_Arena",
+      "fileName": "leader_skill_Attack_Speed_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Attack_Speed_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Attack_Speed_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Critical_Rate",
+      "fileName": "leader_skill_Critical_Rate.png",
+      "relativePath": "leader-skills/leader_skill_Critical_Rate.png",
+      "objectKey": "swc/leader-skills/leader_skill_Critical_Rate.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Critical_Rate_Arena",
+      "fileName": "leader_skill_Critical_Rate_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Critical_Rate_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Critical_Rate_Guild",
+      "fileName": "leader_skill_Critical_Rate_Guild.png",
+      "relativePath": "leader-skills/leader_skill_Critical_Rate_Guild.png",
+      "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Guild.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Critical_Rate_Water",
+      "fileName": "leader_skill_Critical_Rate_Water.png",
+      "relativePath": "leader-skills/leader_skill_Critical_Rate_Water.png",
+      "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Water.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Critical_Rate_Wind",
+      "fileName": "leader_skill_Critical_Rate_Wind.png",
+      "relativePath": "leader-skills/leader_skill_Critical_Rate_Wind.png",
+      "objectKey": "swc/leader-skills/leader_skill_Critical_Rate_Wind.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Defense",
+      "fileName": "leader_skill_Defense.png",
+      "relativePath": "leader-skills/leader_skill_Defense.png",
+      "objectKey": "swc/leader-skills/leader_skill_Defense.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Defense_Arena",
+      "fileName": "leader_skill_Defense_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Defense_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Defense_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Defense_Fire",
+      "fileName": "leader_skill_Defense_Fire.png",
+      "relativePath": "leader-skills/leader_skill_Defense_Fire.png",
+      "objectKey": "swc/leader-skills/leader_skill_Defense_Fire.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Defense_Light",
+      "fileName": "leader_skill_Defense_Light.png",
+      "relativePath": "leader-skills/leader_skill_Defense_Light.png",
+      "objectKey": "swc/leader-skills/leader_skill_Defense_Light.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_HP_Arena",
+      "fileName": "leader_skill_HP_Arena.png",
+      "relativePath": "leader-skills/leader_skill_HP_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_HP_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_HP_Guild",
+      "fileName": "leader_skill_HP_Guild.png",
+      "relativePath": "leader-skills/leader_skill_HP_Guild.png",
+      "objectKey": "swc/leader-skills/leader_skill_HP_Guild.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Resistance_Arena",
+      "fileName": "leader_skill_Resistance_Arena.png",
+      "relativePath": "leader-skills/leader_skill_Resistance_Arena.png",
+      "objectKey": "swc/leader-skills/leader_skill_Resistance_Arena.png"
+    },
+    {
+      "kind": "leader-skill",
+      "folder": "leader-skills",
+      "iconKey": "leader_skill_Resistance_Wind",
+      "fileName": "leader_skill_Resistance_Wind.png",
+      "relativePath": "leader-skills/leader_skill_Resistance_Wind.png",
+      "objectKey": "swc/leader-skills/leader_skill_Resistance_Wind.png"
+    }
+  ]
+}

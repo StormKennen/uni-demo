@@ -97,9 +97,6 @@
 </script>
 
 <template>
-  <!-- #ifdef MP-WEIXIN -->
-  <page-meta :page-style="themeStore.pageStyle" />
-  <!-- #endif -->
   <view class="page-layout" :style="layoutStyle">
     <NavBar
       v-if="showNav"

@@ -157,6 +157,7 @@
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
+  import { normalizeSwcArchetype } from './icon-assets'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import {
     fetchAdminCharacterOptions,
@@ -245,15 +246,7 @@
     return ''
   }
 
-  const normalizeArchetype = (value?: string): string => {
-    const text = normalizeText(value)
-    if (!text) return ''
-    if (['attack', 'atk', '攻击'].includes(text)) return 'attack'
-    if (['defense', 'def', '防御'].includes(text)) return 'defense'
-    if (['hp', 'health', '体力'].includes(text)) return 'hp'
-    if (['support', 'sup', '辅助'].includes(text)) return 'support'
-    return ''
-  }
+  const normalizeArchetype = normalizeSwcArchetype
 
   const normalizeStars = (value?: string): string => {
     const text = typeof value === 'string' ? value : ''

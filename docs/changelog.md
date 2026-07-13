@@ -5,6 +5,28 @@
 
 ## Unreleased
 
+- 2026-07-12 [theme/layout] 修复微信小程序详情页主题报错：移除 `PageLayout` / `ThemeRoot` 内部组件级 `page-meta` 渲染，改为依赖页面容器内联主题变量；同时 `useTheme` 仅在 tabbar 页面调用 `setTabBarStyle`，避免非 tabbar 页（如魔灵详情）出现 `setTabBarStyle:fail not TabBar page`（Codex）
+- 2026-07-12 [swc/components,swc/list] 统一人物卡片 `swc-character-card` 调整五行展示：将五行属性图标移到人物头像右下角展示，底部 `character-name-row` 不再重复占位展示五行，仅保留人物名/家族名，图鉴列表等复用场景同步生效（Codex）
+- 2026-07-12 [home/navigation] 首页“推荐流程”由横向滚动改为竖向列表卡片，更贴近工作台类产品的单列浏览习惯；首页继续保持只展示工作台与推荐流程两块核心内容（Codex）
+- 2026-07-12 [home/navigation] 继续精简首页为纯“工作台 + 推荐流程”结构：移除说明型 Hero、空态引导和额外解释文案，工作台直接承载最近使用；当无最近记录时自动回退展示 `视频去水印 / 二维码生成 / 魔灵召唤` 等默认常用入口，首页只保留可点击的核心动作（Codex）
+- 2026-07-12 [home/navigation,theme] 首页工作台与工具目录页补齐日间/夜间模式适配：首页 Hero 区改为亮暗双视觉方案，工具页与首页的强调色统一走主题品牌色，避免白天/夜间下出现固定深色卡片或硬编码强调色不协调（Codex）
+- 2026-07-12 [home/navigation] 首页工作台重构为更克制的“工作台 + 最近使用 + 新手起步引导”结构：移除分类速览与完整目录信息，新用户无最近记录时改为展示推荐起步入口与使用说明；`pages/tools/index` 同步收敛为纯完整工具目录页，不再承载工作台与最近使用（Codex）
+- 2026-07-12 [swc/assets,swc/components] 新增 SWC 固定图标本地缓存层：`swc-square-icon` 在 H5 继续直接走 OSS URL，微信小程序端则对 `element / archetype / buff / debuff / leader-skill` 统一走下载后保存到本地文件的缓存策略，并在缓存路径失效时自动回退远端重拉，减少图鉴/阵容等页面重复请求（Codex）
+- 2026-07-12 [swc/assets,swc/detail] SWC 方形图标资源基地址切换为 `https://lzk-web.oss-cn-beijing.aliyuncs.com/swc`，统一由组件走 OSS/CDN 取图；同时图鉴详情页五行属性展示改为复用 `SwcElementBadge`，与图鉴列表/选人列表保持一致（Codex）
+- 2026-07-12 [family-tree/h5] 恢复 `src/static/echarts.min.js` 仅供 H5 族谱树形图页面使用；微信小程序端仍通过条件编译完全移除树形图与 ECharts 依赖，避免影响 mp 包体（Codex）
+- 2026-07-12 [swc/assets] 将 SWC 方形图标资源映射升级为显式 manifest：统一固化 `kind/iconKey/fileName/folder/objectKey`，前端组件继续走统一解析，后端可直接复用同一套文件名规范上传 OSS，避免前后端各自拼接资源路径（Codex）
+- 2026-07-11 [family-tree/mp-build] 族谱树形图改为 H5 专属：小程序端仅保留列表模式，`family-tree-chart/demo` 改为 H5 才引入 ECharts，并移除分包内置 `echarts.min.js` 静态文件以缩减 `subPackages/tools` 包体（Codex）
+- 2026-07-11 [home/navigation] 首页改为轻量“工作台”视图，仅保留最近使用、快捷入口与工作流捷径；新增独立 `pages/tools/index` 作为完整工具目录页，并将底部 tab 调整为“首页 / 工具 / 设置”，同步修复 H5 tab、高频回跳白名单与分享配置（Codex）
+- 2026-07-11 [mp-build] 将 `echarts.min.js` 从主包 `src/static/` 下沉至 `src/subPackages/tools/static/` 供族谱分包使用，并移除未检出有效引用的 `src/static/font/` DIN 字体目录，继续缩减微信小程序主包体积（Codex）
+- 2026-07-11 [mp-build] 移除 `main.ts` 对 `src/static/font/dinfont.css` 的全局引入，减少微信小程序主包字体资源体积；现有全局样式中未检出该字体对应类的实际页面引用（Codex）
+- 2026-07-11 [swc/build] 为解决微信小程序包体过大，将 SWC 图标资源整体迁移至 `src/subPackages/tools/static/swc/` 分包根静态目录，并将统一图标映射改为直接返回分包静态路径，避免 `import.meta.glob` 将图片打入主包 `assets/`（Codex）
+- 2026-07-11 [swc/components,swc/assets] 新增 `src/static/image/swc/elements/` 五行属性图标目录，并将 `swc-element-badge` 底层切换为复用统一方形图标资源映射；统一图标体系现支持 `element / archetype / buff / debuff / leader-skill`（Codex）
+- 2026-07-11 [swc/components,swc/assets] 新增统一方形图标组件 `swc-square-icon` 与 SWC 图标资源映射，支持 `archetype / buff / debuff / leader-skill` 四类资源按 `kind + iconKey` 取图；图鉴列表与详情页 archetype 展示改为图标化，并统一 archetype key 归一化逻辑（Codex）
+- 2026-07-11 [swc/assets] 新增魔灵召唤人物类型图标资源 4 张（`attack/defense/hp/support`），按组件复用场景独立落盘到 `src/static/image/swc/arche-types/`（Codex）
+- 2026-07-11 [swc/assets] 从四合一参考图中裁切魔灵召唤人物类型图标 4 张（`attack/defense/hp/support`），统一落盘到 `src/static/image/swc/archetypes/` 供图鉴、阵容与映射页面复用（Codex）
+- 2026-07-11 [swc/assets] 新增魔灵召唤图鉴 debuff 状态图标资源 22 张，统一落盘到 `src/static/image/swc/debuffs/` 供图鉴、阵容与映射页面复用；源站 DOM 中 `Demon Bag` 与 `Scroll Seal` 图片地址为 `undefined`，本次未包含（Codex）
+- 2026-07-11 [swc/assets] 新增魔灵召唤图鉴 buff 状态图标资源 22 张，统一落盘到 `src/static/image/swc/buffs/` 供图鉴、阵容与映射页面复用（Codex）
+- 2026-07-11 [theme/index] 基于 taste-skill 思路重做首页为更克制的“AI 时代工具工作台”：收敛首屏信息量，改为高科技精简 Hero、连续处理带、最近处理列表与低噪声目录分组，弱化传统工具宫格感并保留原生工作流导向（Codex）
 - 2026-07-11 [tools/magnet-link,qr-generator,qr-parser,image-cipher,components/toolkit] 新增工具组件分层：封装基础弹层/卡片/操作行组件与二维码生成、二维码解析、图片打乱业务组件；磁力链接页改为二维码弹层预览并可继续图片打乱，二维码生成页改为复用业务组件并支持弹层打乱二维码图（Codex）
 - 2026-07-10 [tools/image-cipher,qr-generator,config/tools] 图片混淆工具更名为“图片打乱”并移除小程序隐藏；二维码生成页新增“选择图片去打乱”入口，支持带图跳转并自动执行一次打乱（Codex）
 - 2026-07-06 [tools/qr-generator] 修复微信小程序端二维码生成空白：uqrcodejs 的 drawCanvas 内部已调用 ctx.draw(true) 提交绘制并返回 Promise，原代码在其后又调用 ctx.draw(false) 导致清空画布（reserve=false 会清除已绘制内容），二维码渲染后立即被擦除。改为直接等待 drawCanvas() 的 Promise 完成再标记成功，不再重复 draw（Devin）

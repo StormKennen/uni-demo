@@ -198,6 +198,7 @@
   import SwcLineup from './swc-lineup.vue'
   import StateBlock from './state-block.vue'
   import StickyActionBar from './sticky-action-bar.vue'
+  import { normalizeSwcArchetype } from '../icon-assets'
   import {
     fetchAdminCharacterOptions,
     fetchCharacterOptions as fetchUserCharacterOptions,
@@ -328,15 +329,7 @@
     return ''
   }
 
-  const normalizeArchetype = (value?: string): string => {
-    const text = normalizeText(value)
-    if (!text) return ''
-    if (['attack', 'atk', '攻击'].includes(text)) return 'attack'
-    if (['defense', 'def', '防御'].includes(text)) return 'defense'
-    if (['hp', 'health', '体力'].includes(text)) return 'hp'
-    if (['support', 'sup', '辅助'].includes(text)) return 'support'
-    return ''
-  }
+  const normalizeArchetype = normalizeSwcArchetype
 
   const normalizeStars = (value?: string): string => {
     const text = typeof value === 'string' ? value : ''

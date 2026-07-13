@@ -24,6 +24,10 @@
         <text>{{ character.name.slice(0, 1) || '?' }}</text>
       </view>
 
+      <view v-if="showElement && character.elementKey" class="element-badge">
+        <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="40" :radius="8" />
+      </view>
+
       <view v-if="showOrder && order > 0" class="order-badge">
         <text>{{ order }}</text>
       </view>
@@ -50,16 +54,8 @@
     </view>
 
     <view v-if="hasInfo" class="character-info">
-      <view v-if="showElement && character.elementName" class="character-name-row">
-        <SwcElementBadge :element-key="character.elementKey" :label="character.elementName" :size="20" :font-size="20" :icon-only="true" />
-        <text v-if="showFamily && !showName" class="character-title">{{ character.familyName || '未知家族' }}</text>
-        <text v-else-if="showName" class="character-title">{{ character.name || '未知魔灵' }}</text>
-      </view>
-
-      <text v-if="showName && (!showElement || !character.elementName)" class="character-title">{{ character.name || '未知魔灵' }}</text>
-      <text v-if="showFamily && !showName && (!showElement || !character.elementName)" class="character-title">
-        {{ character.familyName || '未知家族' }}
-      </text>
+      <text v-if="showName" class="character-title">{{ character.name || '未知魔灵' }}</text>
+      <text v-if="showFamily && !showName" class="character-title">{{ character.familyName || '未知家族' }}</text>
       <text v-if="showFamily && showName" class="character-family">{{ character.familyName || '未知家族' }}</text>
     </view>
   </view>
@@ -67,7 +63,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import SwcElementBadge from './swc-element-badge.vue'
+  import SwcSquareIcon from './swc-square-icon.vue'
   import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
@@ -117,7 +113,7 @@
     (event: 'edit', character: SwcCharacterView): void
   }>()
 
-  const hasInfo = computed(() => props.showName || props.showFamily || (props.showElement && Boolean(props.character.elementName)))
+  const hasInfo = computed(() => props.showName || props.showFamily)
 
   const cardStyle = computed(() => ({
     '--avatar-size': `${props.avatarSize}rpx`,
@@ -198,9 +194,19 @@
   .remove-badge,
   .edit-badge,
   .selected-badge,
-  .original-stars {
+  .original-stars,
+  .element-badge {
     position: absolute;
     z-index: 2;
+  }
+
+  .element-badge {
+    right: 0rpx;
+    bottom: ß0rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4rpx 10rpx rgba(15, 23, 42, 0.28));
   }
 
   .order-badge {
@@ -311,13 +317,6 @@
     padding: 12rpx 14rpx 14rpx;
     display: flex;
     flex-direction: column;
-    gap: 8rpx;
-  }
-
-  .character-name-row {
-    min-width: 0;
-    display: flex;
-    align-items: center;
     gap: 8rpx;
   }
 

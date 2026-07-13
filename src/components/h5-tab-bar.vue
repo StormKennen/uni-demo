@@ -5,9 +5,13 @@
       <image class="tab-icon" :src="currentTab === 'index' ? '/static/image/index_on.png' : '/static/image/index.png'" />
       <text class="tab-text">首页</text>
     </view>
-    <view class="tab-item" :class="{ active: currentTab === 'mine' }" @click="switchTab('mine')">
-      <image class="tab-icon" :src="currentTab === 'mine' ? '/static/image/mine_on.png' : '/static/image/mine.png'" />
-      <text class="tab-text">我的</text>
+    <view class="tab-item" :class="{ active: currentTab === 'tools' }" @click="switchTab('tools')">
+      <image class="tab-icon" :src="currentTab === 'tools' ? '/static/image/mall_on.png' : '/static/image/mall.png'" />
+      <text class="tab-text">工具</text>
+    </view>
+    <view class="tab-item" :class="{ active: currentTab === 'settings' }" @click="switchTab('settings')">
+      <image class="tab-icon" :src="currentTab === 'settings' ? '/static/image/mine_on.png' : '/static/image/mine.png'" />
+      <text class="tab-text">设置</text>
     </view>
   </view>
   <!-- #endif -->
@@ -28,8 +32,10 @@
     if (pages.length > 0) {
       const currentPage = pages[pages.length - 1]
       const route = currentPage.route || ''
-      if (route.includes('mine')) {
-        currentTab.value = 'mine'
+      if (route.includes('pages/tools/')) {
+        currentTab.value = 'tools'
+      } else if (route.includes('pages/mine/')) {
+        currentTab.value = 'settings'
       } else if (route.includes('index')) {
         currentTab.value = 'index'
       }
@@ -44,7 +50,11 @@
       uni.switchTab({
         url: '/pages/index/index',
       })
-    } else if (tab === 'mine') {
+    } else if (tab === 'tools') {
+      uni.switchTab({
+        url: '/pages/tools/index',
+      })
+    } else if (tab === 'settings') {
       uni.switchTab({
         url: '/pages/mine/mine',
       })

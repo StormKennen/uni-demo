@@ -69,6 +69,12 @@ export const PAGE_SHARE_CONFIGS = {
     imageUrl: '/static/logo.png',
   },
 
+  tools: {
+    title: 'kai - 工具库',
+    path: '/pages/tools/index',
+    imageUrl: '/static/logo.png',
+  },
+
   // 商城
   // mall: {
   //   title: 'kai商城 - 优质商品推荐',

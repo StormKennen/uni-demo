@@ -1,7 +1,6 @@
 import { createSSRApp } from 'vue'
 import App from './App.vue'
 import * as Pinia from 'pinia'
-import './static/font/dinfont.css'
 import '@/static/style/global.scss'
 import '@/static/style/theme.scss'
 import '@/components/form/style.scss'

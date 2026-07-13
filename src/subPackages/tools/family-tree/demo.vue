@@ -1,6 +1,7 @@
 <template>
   <PageLayout title="家族族谱树形图（快照）" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
     <view class="family-tree-page">
+      <!-- #ifdef H5 -->
       <!-- 顶部导航栏（统一组件） -->
       <view class="chart-container">
         <LEchart
@@ -25,14 +26,24 @@
           </view>
         </view>
       </view>
+      <!-- #endif -->
+
+      <!-- #ifdef MP-WEIXIN -->
+      <view class="mp-placeholder">
+        <uni-icons type="info" size="28" color="#667eea" />
+        <text class="mp-placeholder-text">该树形图快照仅在 H5 端调试使用，小程序端不再加载图表能力。</text>
+      </view>
+      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
 
 <script setup>
+  // #ifdef H5
   import LEchart from '@/components/l-echart/l-echart.vue'
+  import * as echarts from '@/static/echarts.min.js'
+  // #endif
   import { onBeforeMount, onMounted, reactive, ref } from 'vue'
-  const echarts = require('../../../static/echarts.min')
 
   // 返回上一页：已由 nav-bar 默认行为提供
 
@@ -1832,6 +1843,9 @@
 
   // 组件能被调用必须是组件的节点已经被渲染到页面上
   onMounted(async () => {
+    // #ifndef H5
+    return
+    // #endif
     init()
     // await loadFamilyTree();
     // await loadMembers();
@@ -1844,6 +1858,23 @@
 </script>
 
 <style lang="scss" scoped>
+  .mp-placeholder {
+    margin: 32rpx 24rpx;
+    padding: 32rpx 24rpx;
+    border-radius: 24rpx;
+    background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+
+  .mp-placeholder-text {
+    font-size: 26rpx;
+    line-height: 1.6;
+    color: var(--theme-text-secondary);
+  }
+
   .family-tree-page {
     position: relative;
     min-height: 100vh;

@@ -171,7 +171,8 @@
               </view>
               <view class="meta-row family-meta-row">
                 <view v-if="character.archetype" class="meta-chip">
-                  <text>{{ character.archetype }}</text>
+                  <SwcSquareIcon kind="archetype" :icon-key="character.archetype" :size="26" :radius="6" />
+                  <text>{{ getArchetypeLabel(character.archetype) }}</text>
                 </view>
               </view>
             </view>
@@ -206,6 +207,8 @@
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
+  import SwcSquareIcon from './components/swc-square-icon.vue'
+  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
@@ -244,6 +247,11 @@
     value: string
     displayValue: string
     unit: string
+  }
+
+  const getArchetypeLabel = (value?: string): string => {
+    const normalizedKey = normalizeSwcArchetype(value)
+    return SWC_ARCHETYPE_LABEL_MAP[normalizedKey] || value || ''
   }
 
   interface PaginationLike {
@@ -1189,6 +1197,7 @@
     color: currentColor;
     display: inline-flex;
     align-items: center;
+    gap: 8rpx;
     overflow: hidden;
   }
 

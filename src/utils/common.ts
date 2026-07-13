@@ -58,6 +58,11 @@ export const hideAllTabBar = () => {
   })
   uni.setTabBarItem({
     index: 1,
+    pagePath: '/pages/tools/index',
+    visible: false
+  })
+  uni.setTabBarItem({
+    index: 2,
     pagePath: '/pages/mine/mine',
     visible: false
   })

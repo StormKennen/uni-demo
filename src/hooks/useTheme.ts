@@ -7,6 +7,18 @@ export function useTheme() {
   const store = useThemeStore()
   const { mode, isDark } = storeToRefs(store)
 
+  const TABBAR_PAGES = new Set(['pages/index/index', 'pages/tools/index', 'pages/mine/mine'])
+
+  const getCurrentPageRoute = (): string => {
+    try {
+      const pages = getCurrentPages()
+      const currentPage = pages[pages.length - 1]
+      return currentPage?.route || ''
+    } catch {
+      return ''
+    }
+  }
+
   const applyNativeChrome = (): void => {
     const frontColor = isDark.value ? '#ffffff' : '#000000'
     const bgColor = isDark.value ? DARK_TOKENS['--theme-bg'] : LIGHT_TOKENS['--theme-bg']
@@ -17,12 +29,14 @@ export function useTheme() {
       animation: { duration: 200, timingFunc: 'easeIn' },
     })
 
-    uni.setTabBarStyle({
-      color: isDark.value ? '#8993a2' : '#8993a2',
-      selectedColor: isDark.value ? '#e9ecf0' : '#121A26',
-      backgroundColor: isDark.value ? DARK_TOKENS['--theme-surface'] : LIGHT_TOKENS['--theme-surface'],
-      borderStyle: isDark.value ? 'black' : 'white',
-    })
+    if (TABBAR_PAGES.has(getCurrentPageRoute())) {
+      uni.setTabBarStyle({
+        color: isDark.value ? '#8993a2' : '#8993a2',
+        selectedColor: isDark.value ? '#e9ecf0' : '#121A26',
+        backgroundColor: isDark.value ? DARK_TOKENS['--theme-surface'] : LIGHT_TOKENS['--theme-surface'],
+        borderStyle: isDark.value ? 'black' : 'white',
+      })
+    }
   }
 
   const pickAsset = (light: string, dark: string): string => (isDark.value ? dark : light)

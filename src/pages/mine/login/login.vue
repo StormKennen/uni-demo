@@ -18,7 +18,7 @@
   } from '@/utils/storage'
   import { wxGetUserInfo } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
-  import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
+  import { PrivacyPageUrl, ProtocolPageUrl, TabsRoutes } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
 
   type LoginType = 'mobile' | 'register'
@@ -78,7 +78,7 @@
           const targetUrl = decodeURIComponent(redirectUrl.value)
           const url = { url: targetUrl }
           console.log('Auto login redirect url:', url)
-          if (targetUrl === '/pages/index/index' || targetUrl === '/pages/mine/mine') {
+          if (TabsRoutes.includes(targetUrl)) {
             return uni.switchTab(url)
           } else {
             return uni.redirectTo(url)
@@ -141,7 +141,7 @@
     setTimeout(() => {
       if (redirectUrl.value) {
         const targetUrl = decodeURIComponent(redirectUrl.value)
-        if (targetUrl === '/pages/index/index' || targetUrl === '/pages/mine/mine') {
+        if (TabsRoutes.includes(targetUrl)) {
           uni.switchTab({
             url: targetUrl,
           })

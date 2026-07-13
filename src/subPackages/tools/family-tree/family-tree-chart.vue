@@ -268,6 +268,7 @@
 
 <script setup>
   import LEchart from '@/components/l-echart/l-echart.vue'
+  import * as echarts from '@/static/echarts.min.js'
   import MemberDetail from './member-detail.vue'
   import { onBeforeMount, onMounted, reactive, ref, computed, nextTick } from 'vue'
   import { getToken } from '@/utils/storage'
@@ -277,7 +278,6 @@
     postFamiliesRelationshipsLink,
     getFamiliesMembers,
   } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
-  const echarts = require('../../../static/echarts.min')
 
   // 返回上一页：已由 nav-bar 默认行为提供
 

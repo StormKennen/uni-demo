@@ -1,88 +1,71 @@
 <template>
-  <PageLayout title="工具箱" :show-nav="false" :nav-back="false">
-    <view class="home-page">
+  <PageLayout title="工作台" :show-nav="false" :nav-back="false">
+    <view :class="['home-page', { 'home-page--dark': isDark }]">
       <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: navbarBg }">
         <template #title>
           <view class="home-navbar-content">
             <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
-            <text class="navbar-title-single">工具箱</text>
+            <view class="home-navbar-copy">
+              <text class="navbar-title-single">工作台</text>
+              <text class="navbar-subtitle">WORKBENCH</text>
+            </view>
           </view>
         </template>
       </NavBarBase>
 
-      <!-- 最近使用 -->
-      <view v-if="recentTools.length > 0" class="section">
+      <view class="section section--workbench">
         <view class="section-header">
-          <text class="section-title">最近使用</text>
-          <text class="section-subtitle">RECENT</text>
-        </view>
-        <view class="recent-grid">
-          <view v-for="item in recentTools" :key="item.key" class="recent-item" @click="handleToolClick(item.key, item.tool)">
-            <view class="recent-icon" :style="{ background: item.tool.gradient }">
-              <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
-            </view>
-            <text class="recent-name">{{ item.tool.name }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 全量分类 -->
-      <view v-for="cat in visibleCategories" :key="cat.key" class="section">
-        <view class="section-header fold-header" @click="toggleCategoryFold(cat.key)">
-          <view class="section-header-left">
-            <text class="section-title">{{ cat.name }}</text>
-            <text class="section-subtitle">{{ cat.subtitle }}</text>
-          </view>
-          <view class="fold-arrow" :class="{ folded: isFolded(cat.key) }">
-            <uni-icons type="down" size="18" color="var(--theme-text-tertiary)" />
+          <text class="section-title">工作台</text>
+          <view class="section-link" @click="openToolsTab">
+            <text class="section-link-text">全部工具</text>
+            <uni-icons type="right" size="14" color="var(--theme-text-tertiary)" />
           </view>
         </view>
 
-        <view v-if="!isFolded(cat.key)" class="category-body">
-          <!-- 网格布局 -->
-          <view v-if="cat.layout === 'grid'" class="tools-grid">
-            <view
-              v-for="item in getToolsByCategory(cat.key)"
-              :key="item.key"
-              :class="['tool-card', { disabled: item.tool.disabled }]"
-              @click="handleToolClick(item.key, item.tool)">
-              <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
-                <uni-icons :type="item.tool.icon as any" size="24" color="#fff" />
-              </view>
-              <text class="tool-name">{{ item.tool.name }}</text>
-              <text class="tool-desc">{{ item.tool.desc }}</text>
-              <view v-if="item.tool.isNew" class="new-dot" />
-              <view v-if="item.tool.badge" class="tool-badge">{{ item.tool.badge }}</view>
-            </view>
+        <view class="workbench-panel">
+          <view class="workbench-strip">
+            <text v-for="chip in workbenchChips" :key="chip" class="workbench-chip">{{ chip }}</text>
           </view>
 
-          <!-- 列表布局 -->
-          <view v-else class="tools-list">
-            <view
-              v-for="item in getToolsByCategory(cat.key)"
-              :key="item.key"
-              :class="['tool-list-item', { disabled: item.tool.disabled }]"
-              @click="handleToolClick(item.key, item.tool)">
-              <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
+          <view class="workbench-grid">
+            <view v-for="item in workbenchTools" :key="item.key" class="workbench-card" @click="handleToolClick(item.key, item.tool)">
+              <view class="workbench-icon" :style="{ background: item.tool.gradient }">
                 <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
               </view>
-              <view class="tool-content">
-                <text class="tool-name">{{ item.tool.name }}</text>
-                <text class="tool-desc">{{ item.tool.desc }}</text>
-              </view>
-              <view class="tool-status">
-                <text v-if="item.tool.requiresAuth" class="login-badge">需登录</text>
-                <text v-else-if="item.tool.disabled" class="status-dev">开发中</text>
-                <uni-icons v-else type="right" size="16" color="var(--theme-text-tertiary)" />
-              </view>
+              <text class="workbench-name">{{ item.tool.name }}</text>
+              <text class="workbench-desc">{{ item.tool.desc }}</text>
             </view>
           </view>
         </view>
       </view>
 
-      <!-- 底部 -->
+      <view class="section">
+        <view class="section-header">
+          <text class="section-title">推荐流程</text>
+        </view>
+
+        <view class="workflow-list">
+          <view
+            v-for="workflow in workflowScenes"
+            :key="workflow.id"
+            :class="['workflow-card', `workflow-card--${workflow.tone}`]"
+            @click="handleToolClick(workflow.primary.key, workflow.primary.tool)">
+            <view class="workflow-head">
+              <text class="workflow-kicker">{{ workflow.kicker }}</text>
+              <uni-icons type="right" size="14" color="rgba(255, 255, 255, 0.72)" />
+            </view>
+            <text class="workflow-title">{{ workflow.title }}</text>
+            <view class="workflow-steps">
+              <template v-for="(step, index) in workflow.steps" :key="step.key">
+                <text class="workflow-step">{{ step.tool.name }}</text>
+                <text v-if="index < workflow.steps.length - 1" class="workflow-sep">/</text>
+              </template>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <view class="footer">
-        <text class="footer-note">数据本地处理 · 保护您的隐私安全</text>
         <text class="icp-text">粤ICP备2025489016号-2</text>
       </view>
 
@@ -98,211 +81,57 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { onShow } from '@dcloudio/uni-app'
+  import { computed } from 'vue'
   import { storeToRefs } from 'pinia'
-  import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
-  import { useShare } from '@/utils/share'
-  import { getUserInfo } from '@/utils/storage'
-  import { useThemeStore } from '@/stores/theme'
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import PrivacyPopup from '@/components/privacy-popup.vue'
-  import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_RECENT, STORAGE_KEY_FOLD_STATUS } from '@/config/tools'
-  import type { ToolItem } from '@/config/tools'
-
-  declare const uni: any
+  import { useThemeStore } from '@/stores/theme'
+  import { useShare } from '@/utils/share'
+  import { useToolDirectory } from '@/hooks/use-tool-directory'
 
   const { isDark } = storeToRefs(useThemeStore())
-  const navbarBg = computed(() => (isDark.value ? 'var(--theme-surface)' : '#667eea'))
+  const { navbarBg, loggedIn, workbenchTools, platformLabel, workflowScenes, openLogin, handleToolClick } = useToolDirectory()
 
-  /** 带 key 的工具项（模板渲染用） */
-  interface KeyedToolItem {
-    key: string
-    tool: ToolItem
-  }
-
-  // ── 状态 ──
-
-  const currentUserRole = ref(getUserInfo()?.role || '')
-  const isAdmin = computed(() => currentUserRole.value === 'admin')
-  const loggedIn = ref(isUserLoggedIn())
-  const recentToolKeys = ref<string[]>([])
-  const foldStatus = ref<Record<string, boolean>>({})
-  const currentPlatform = ref<'app' | 'h5' | 'mp-weixin'>('app')
-
-  // #ifdef MP-WEIXIN
-  currentPlatform.value = 'mp-weixin'
-  // #endif
-
-  // #ifdef H5
-  currentPlatform.value = 'h5'
-  // #endif
-
-  // ── 计算属性 ──
-
-  /** 根据角色和登录状态过滤后的全量工具（带 key） */
-  const availableTools = computed<KeyedToolItem[]>(() =>
-    Object.entries(ALL_TOOLS)
-      .filter(([, t]) => {
-        if (t.adminOnly && !isAdmin.value) return false
-        if (t.requiresAuth && !loggedIn.value) return false
-        if (t.unsupportedPlatforms?.includes(currentPlatform.value)) return false
-        return true
-      })
-      .map(([key, tool]) => ({ key, tool })),
-  )
-
-  /** 可见分类（过滤掉没有工具的分类） */
-  const visibleCategories = computed(() => CATEGORIES.filter(cat => getToolsByCategory(cat.key).length > 0))
-
-  /** 最近使用的工具列表（从缓存 key 数组还原完整数据） */
-  const recentTools = computed<KeyedToolItem[]>(() => {
-    const available = new Set(availableTools.value.map(t => t.key))
-    return recentToolKeys.value.filter(k => available.has(k) && ALL_TOOLS[k]).map(k => ({ key: k, tool: ALL_TOOLS[k] }))
+  const workbenchChips = computed(() => {
+    const chips = [platformLabel.value]
+    chips.push(loggedIn.value ? '最近使用' : '默认常用')
+    return chips
   })
 
-  // ── 工具方法 ──
-
-  function getToolsByCategory(categoryKey: string): KeyedToolItem[] {
-    return availableTools.value.filter(t => t.tool.category === categoryKey)
+  function openToolsTab() {
+    uni.switchTab({
+      url: '/pages/tools/index',
+    })
   }
-
-  function isFolded(categoryKey: string): boolean {
-    return !!foldStatus.value[categoryKey]
-  }
-
-  // ── Storage 读写 ──
-
-  function loadRecentTools() {
-    try {
-      const data = uni.getStorageSync(STORAGE_KEY_RECENT)
-      recentToolKeys.value = Array.isArray(data) ? data : []
-    } catch {
-      recentToolKeys.value = []
-    }
-  }
-
-  function loadFoldStatus() {
-    try {
-      const data = uni.getStorageSync(STORAGE_KEY_FOLD_STATUS)
-      foldStatus.value = data && typeof data === 'object' ? data : {}
-    } catch {
-      foldStatus.value = {}
-    }
-  }
-
-  function saveFoldStatus() {
-    try {
-      uni.setStorageSync(STORAGE_KEY_FOLD_STATUS, foldStatus.value)
-    } catch {
-      /* 静默 */
-    }
-  }
-
-  // ── 核心逻辑 ──
-
-  /** 切换分类折叠状态 */
-  function toggleCategoryFold(categoryKey: string) {
-    foldStatus.value = {
-      ...foldStatus.value,
-      [categoryKey]: !foldStatus.value[categoryKey],
-    }
-    saveFoldStatus()
-  }
-
-  // ── 点击处理（纯跳转，不上报——子页面 onShow 会自行上报） ──
-
-  const handleToolClick = async (toolKey: string, tool: ToolItem) => {
-    if (tool.disabled) {
-      uni.showToast({ title: '功能开发中，敬请期待', icon: 'none', duration: 2000 })
-      return
-    }
-
-    if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) {
-      uni.showToast({ title: '当前平台暂不支持该功能', icon: 'none', duration: 2000 })
-      return
-    }
-
-    if (tool.isWebLink) {
-      uni.navigateTo({
-        url: `/subPackages/common/webview/h5?path=${encodeURIComponent(tool.path)}&title=${encodeURIComponent(tool.name)}`,
-      })
-      return
-    }
-
-    if (tool.requiresAuth && !isUserLoggedIn()) {
-      uni.showModal({
-        title: '需要登录',
-        content: '该功能需要登录后才能使用',
-        confirmText: '去登录',
-        cancelText: '取消',
-        success: (res: UniApp.ShowModalRes) => {
-          if (res.confirm) {
-            uni.navigateTo({
-              url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.path)}`,
-            })
-          }
-        },
-      })
-      return
-    }
-
-    uni.navigateTo({ url: tool.path })
-  }
-
-  // ── 生命周期 ──
-
-  const syncCurrentUserRole = () => {
-    currentUserRole.value = getUserInfo()?.role || ''
-  }
-
-  onMounted(() => {
-    syncCurrentUserRole()
-    loadRecentTools()
-    loadFoldStatus()
-  })
-
-  onMounted(async () => {
-    try {
-      await autoLogin()
-    } catch {
-      /* 静默 */
-    }
-  })
-
-  onShow(() => {
-    syncCurrentUserRole()
-    loggedIn.value = isUserLoggedIn()
-    loadRecentTools()
-  })
-
-  // ── 分享 ──
 
   const { onShareAppMessage, onShareTimeline } = useShare('index', {
-    title: '工具箱 - 高效实用的工具集合',
+    title: 'uni-demo · 工具工作台',
     path: '/pages/index/index',
   })
 
-  defineExpose({ onShareAppMessage, onShareTimeline })
+  defineExpose({ onShareAppMessage, onShareTimeline, openLogin })
 </script>
 
 <style lang="scss" scoped>
   $bg-color: var(--theme-bg);
   $card-bg: var(--theme-surface);
+  $card-muted: var(--theme-surface-2);
   $text-primary: var(--theme-text);
   $text-secondary: var(--theme-text-secondary);
   $text-hint: var(--theme-text-tertiary);
   $border-color: var(--theme-border);
-  $shadow-sm: 0 2rpx 12rpx var(--theme-shadow-xs);
-  $shadow-md: 0 4rpx 20rpx var(--theme-shadow-sm);
-  $radius-sm: 16rpx;
+  $brand-color: var(--theme-brand);
   $radius-md: 24rpx;
-  $radius-lg: 32rpx;
+  $radius-lg: 34rpx;
+  $shadow-card: 0 10rpx 34rpx var(--theme-shadow-xs);
 
   .home-page {
     min-height: 100vh;
-    background: $bg-color;
+    background:
+      radial-gradient(circle at top center, rgba(0, 70, 180, 0.08), transparent 30%),
+      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%),
+      $bg-color;
     overflow-x: hidden;
 
     /* #ifdef H5 */
@@ -310,299 +139,202 @@
     /* #endif */
   }
 
+  .home-page--dark {
+    background:
+      radial-gradient(circle at top center, rgba(56, 189, 248, 0.08), transparent 30%),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 22%),
+      $bg-color;
+  }
+
   .home-navbar-content {
     display: flex;
     align-items: center;
-    gap: 16rpx;
-
-    .navbar-logo {
-      width: 56rpx;
-      height: 56rpx;
-      border-radius: 12rpx;
-    }
-
-    .navbar-title-single {
-      font-size: 32rpx;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 1rpx;
-    }
+    gap: 14rpx;
   }
 
-  // ── 通用区块 ──
+  .navbar-logo {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 14rpx;
+  }
+
+  .home-navbar-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2rpx;
+  }
+
+  .navbar-title-single {
+    color: #fff;
+    font-size: 30rpx;
+    font-weight: 700;
+  }
+
+  .navbar-subtitle {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 18rpx;
+    letter-spacing: 2rpx;
+  }
+
   .section {
-    padding: 28rpx 32rpx 8rpx;
+    padding: 24rpx 24rpx 0;
+  }
+
+  .section--workbench {
+    padding-top: 24rpx;
   }
 
   .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 24rpx;
-
-    .section-title {
-      font-size: 34rpx;
-      font-weight: 600;
-      color: $text-primary;
-    }
-
-    .section-subtitle {
-      font-size: 20rpx;
-      color: $text-hint;
-      letter-spacing: 2rpx;
-    }
+    gap: 16rpx;
+    margin-bottom: 18rpx;
   }
 
-  // ── 折叠头部 ──
-  .fold-header {
-    cursor: pointer;
-
-    .section-header-left {
-      display: flex;
-      align-items: center;
-      gap: 16rpx;
-    }
+  .section-title {
+    color: $text-primary;
+    font-size: 32rpx;
+    font-weight: 700;
   }
 
-  .fold-arrow {
-    transition: transform 0.3s ease;
-  }
-
-  .fold-arrow.folded {
-    transform: rotate(-90deg);
-  }
-
-  // ── 最近使用 ──
-  .recent-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20rpx;
-  }
-
-  .recent-item {
+  .section-link {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 12rpx;
-    padding: 20rpx 8rpx;
-    border-radius: $radius-md;
-    background: $card-bg;
-    box-shadow: $shadow-sm;
-    transition: all 0.2s ease;
-
-    &:active {
-      transform: scale(0.95);
-      box-shadow: $shadow-md;
-    }
+    gap: 4rpx;
   }
 
-  .recent-icon {
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: 20rpx;
+  .section-link-text {
+    color: $text-hint;
+    font-size: 22rpx;
+  }
+
+  .workbench-panel {
+    border-radius: 32rpx;
+    background: $card-bg;
+    border: 1rpx solid $border-color;
+    box-shadow: $shadow-card;
+    padding: 22rpx;
+  }
+
+  .workbench-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10rpx;
+    margin-bottom: 18rpx;
+  }
+
+  .workbench-chip {
+    padding: 8rpx 16rpx;
+    border-radius: 999rpx;
+    background: $card-muted;
+    color: $text-secondary;
+    font-size: 20rpx;
+  }
+
+  .workbench-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14rpx;
+  }
+
+  .workbench-card {
+    min-height: 188rpx;
+    padding: 20rpx;
+    border-radius: $radius-md;
+    background: $card-muted;
+  }
+
+  .workbench-icon {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 16rpx;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .recent-name {
-    font-size: 24rpx;
-    font-weight: 500;
+  .workbench-name {
+    display: block;
+    margin-top: 18rpx;
     color: $text-primary;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
+    font-size: 28rpx;
+    font-weight: 700;
+    line-height: 1.32;
   }
 
-  // ── 分类内容区 ──
-  .category-body {
-    animation: fadeIn 0.25s ease;
+  .workbench-desc {
+    display: block;
+    margin-top: 10rpx;
+    color: $text-secondary;
+    font-size: 21rpx;
+    line-height: 1.5;
   }
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-8rpx);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  // ── 网格工具卡片 ──
-  .tools-grid {
+  .workflow-list {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24rpx;
+    gap: 14rpx;
   }
 
-  .tool-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 36rpx 24rpx;
-    background: $card-bg;
-    border-radius: $radius-md;
-    box-shadow: $shadow-sm;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-
-    &:active {
-      transform: scale(0.96);
-      box-shadow: $shadow-md;
-    }
-
-    &.disabled {
-      opacity: 0.5;
-
-      &:active {
-        transform: none;
-      }
-    }
-
-    .tool-icon-wrapper {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 20rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20rpx;
-    }
-
-    .tool-name {
-      font-size: 28rpx;
-      font-weight: 600;
-      color: $text-primary;
-      margin-bottom: 8rpx;
-    }
-
-    .tool-desc {
-      font-size: 22rpx;
-      color: $text-hint;
-    }
-
-    .new-dot {
-      position: absolute;
-      top: 16rpx;
-      right: 16rpx;
-      width: 16rpx;
-      height: 16rpx;
-      border-radius: 50%;
-      background: #ff4d4f;
-    }
-
-    .tool-badge {
-      position: absolute;
-      top: 0;
-      right: 0;
-      padding: 6rpx 16rpx;
-      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-      color: #fff;
-      font-size: 18rpx;
-      font-weight: 600;
-      border-radius: 0 $radius-md 0 $radius-sm;
-    }
+  .workflow-card {
+    padding: 24rpx 22rpx;
+    border-radius: 28rpx;
+    color: #f8fafc;
+    box-shadow: 0 16rpx 42rpx rgba(15, 23, 42, 0.14);
   }
 
-  // ── 列表工具 ──
-  .tools-list {
-    background: $card-bg;
-    border-radius: $radius-md;
-    box-shadow: $shadow-sm;
-    overflow: hidden;
+  .workflow-card--cyan {
+    background: linear-gradient(145deg, #0f766e, #06b6d4);
   }
 
-  .tool-list-item {
+  .workflow-card--slate {
+    background: linear-gradient(145deg, #334155, #0f172a);
+  }
+
+  .workflow-kicker {
+    display: block;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 18rpx;
+    letter-spacing: 2rpx;
+  }
+
+  .workflow-head {
     display: flex;
     align-items: center;
-    padding: 28rpx 32rpx;
-    border-bottom: 1rpx solid $border-color;
-    transition: background 0.2s ease;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    &:active {
-      background: var(--theme-surface-2);
-    }
-
-    &.disabled {
-      opacity: 0.6;
-
-      &:active {
-        background: transparent;
-      }
-    }
-
-    .tool-icon-wrapper.mini {
-      width: 64rpx;
-      height: 64rpx;
-      border-radius: 16rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .tool-content {
-      flex: 1;
-      margin-left: 24rpx;
-
-      .tool-name {
-        font-size: 28rpx;
-        font-weight: 500;
-        color: $text-primary;
-        display: block;
-      }
-
-      .tool-desc {
-        font-size: 22rpx;
-        color: $text-hint;
-        margin-top: 4rpx;
-        display: block;
-      }
-    }
-
-    .tool-status {
-      flex-shrink: 0;
-
-      .status-dev {
-        font-size: 22rpx;
-        color: $text-hint;
-        padding: 6rpx 16rpx;
-        background: var(--theme-surface-2);
-        border-radius: 20rpx;
-      }
-    }
-  }
-
-  .login-badge {
-    color: var(--theme-text-tertiary);
-    font-size: 22rpx;
-  }
-
-  // ── 底部 ──
-  .footer {
-    padding: 48rpx 32rpx 32rpx;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: space-between;
     gap: 12rpx;
+  }
 
-    .footer-note {
-      font-size: 24rpx;
-      color: #10b981;
-    }
+  .workflow-title {
+    display: block;
+    margin-top: 14rpx;
+    font-size: 30rpx;
+    font-weight: 700;
+    line-height: 1.35;
+  }
 
-    .icp-text {
-      font-size: 22rpx;
-      color: $text-hint;
-    }
+  .workflow-steps {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8rpx;
+    margin-top: 18rpx;
+  }
+
+  .workflow-step,
+  .workflow-sep {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 21rpx;
+  }
+
+  .footer {
+    padding: 48rpx 24rpx 34rpx;
+    display: flex;
+    justify-content: center;
+  }
+
+  .icp-text {
+    color: $text-hint;
+    font-size: 22rpx;
   }
 </style>

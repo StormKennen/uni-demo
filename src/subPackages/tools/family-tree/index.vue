@@ -6,10 +6,12 @@
       <view class="action-bar">
         <!-- 模式切换 -->
         <view class="mode-switch">
+          <!-- #ifdef H5 -->
           <view class="mode-btn" :class="{ active: viewMode === 'tree' }" @click="viewMode = 'tree'">
             <uni-icons type="staff" size="16" :color="viewMode === 'tree' ? '#fff' : '#667eea'" />
             <text class="mode-text">树形图</text>
           </view>
+          <!-- #endif -->
           <view class="mode-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
             <uni-icons type="bars" size="16" :color="viewMode === 'list' ? '#fff' : '#667eea'" />
             <text class="mode-text">列表</text>
@@ -29,10 +31,12 @@
         <FamilyTreeList ref="listRef" />
       </view>
 
+      <!-- #ifdef H5 -->
       <!-- 树形图模式 -->
       <view class="content-wrapper" v-if="viewMode === 'tree'">
         <FamilyTreeChart ref="chartRef" />
       </view>
+      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
@@ -42,14 +46,20 @@
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import FamilyTreeList from './family-tree-list.vue'
+  // #ifdef H5
   import FamilyTreeChart from './family-tree-chart.vue'
+  // #endif
   import { useShare } from '@/utils/share'
 
   // 启用分享
   useShare()
 
   // 视图模式：list 列表 | tree 树形图
-  const viewMode = ref('tree')
+  const viewMode = ref('list')
+
+  // #ifdef H5
+  viewMode.value = 'tree'
+  // #endif
 
   // 组件引用
   const listRef = ref(null)

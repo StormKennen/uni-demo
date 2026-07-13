@@ -105,7 +105,7 @@
 </script>
 
 <template>
-  <PageLayout title="我的" :show-nav="false" :nav-back="false">
+  <PageLayout title="设置" :show-nav="false" :nav-back="false">
     <view class="mine">
       <view :class="['bg', { 'bg--dark': isDark }]" />
       <view class="mine-top" hover-class="none" hover-stop-propagation="false">
@@ -143,7 +143,7 @@
 
       <!-- H5 底部导航 -->
       <!-- #ifdef H5 -->
-      <H5TabBar current="mine" />
+      <H5TabBar current="settings" />
       <!-- #endif -->
     </view>
   </PageLayout>

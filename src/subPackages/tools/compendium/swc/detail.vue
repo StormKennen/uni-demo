@@ -59,9 +59,14 @@
                   <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
                 </view>
                 <view class="tag-line">
-                  <text v-if="detail.elementName" class="tag accent">{{ detail.elementIcon }} {{ detail.elementName }}</text>
+                  <view v-if="detail.elementName" class="tag tag-with-icon accent">
+                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="28" :font-size="24" />
+                  </view>
                   <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
-                  <text v-if="detail.archetype" class="tag">{{ detail.archetype }}</text>
+                  <view v-if="detail.archetype" class="tag tag-with-icon">
+                    <SwcSquareIcon kind="archetype" :icon-key="detail.archetype" :size="28" :radius="6" />
+                    <text>{{ getArchetypeLabel(detail.archetype) }}</text>
+                  </view>
                   <text v-if="detail.family" class="tag">{{ detail.family }}</text>
                 </view>
                 <text v-if="detail.description" class="species">{{ detail.description }}</text>
@@ -233,6 +238,9 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
+  import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcSquareIcon from './components/swc-square-icon.vue'
+  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import {
@@ -264,6 +272,11 @@
     icon?: string
   }
 
+  const getArchetypeLabel = (value?: string): string => {
+    const normalizedKey = normalizeSwcArchetype(value)
+    return SWC_ARCHETYPE_LABEL_MAP[normalizedKey] || value || ''
+  }
+
   interface RawCoefficient {
     id?: string
     key?: string
@@ -279,12 +292,16 @@
   interface RawSkill {
     id?: string
     name?: string
+    nameZh?: string
+    nameEn?: string
     type?: string
     attachment?: string
     cost?: string
     cooldown?: string
     cooldownTurns?: string | number | null
     description?: string
+    descriptionZh?: string
+    descriptionEn?: string
     multiplierFormula?: string
     hitCount?: string | number | null
     coefficients?: RawCoefficient[]
@@ -383,7 +400,6 @@
     avatar: string
     elementKey: string
     elementName: string
-    elementIcon: string
     level: string
     stars: string
     archetype: string
@@ -452,7 +468,6 @@
     avatar: '',
     elementKey: '',
     elementName: '',
-    elementIcon: '',
     level: '',
     stars: '',
     archetype: '',
@@ -581,9 +596,23 @@
     return map[type] || type
   }
 
+  const readLocalizedSkillName = (skill: RawSkill): string => {
+    if (selectedLocale.value === 'zh-CN') {
+      return (skill.nameZh || skill.name || skill.nameEn || '').trim()
+    }
+    return (skill.nameEn || skill.name || skill.nameZh || '').trim()
+  }
+
+  const readLocalizedSkillDescription = (skill: RawSkill): string => {
+    if (selectedLocale.value === 'zh-CN') {
+      return (skill.descriptionZh || skill.description || skill.descriptionEn || '').trim()
+    }
+    return (skill.descriptionEn || skill.description || skill.descriptionZh || '').trim()
+  }
+
   const normalizeSkill = (skill: RawSkill, index: number): NormalizedSkill => ({
-    id: skill.id || skill.name || '',
-    name: skill.name || '',
+    id: skill.id || skill.name || skill.nameEn || skill.nameZh || '',
+    name: readLocalizedSkillName(skill),
     type: skill.type || '',
     typeText: formatSkillType(skill.type),
     orderText: String(index + 1),
@@ -591,7 +620,7 @@
     cost: skill.cost || '',
     cooldown: skill.cooldown || '',
     cooldownText: formatCooldownText(skill),
-    description: skill.description || '',
+    description: readLocalizedSkillDescription(skill),
     multiplierFormula: formatMultiplierFormula(skill),
     hitCountText: formatHitCountText(skill),
     coefficients: (skill.coefficients || []).map(normalizeCoefficient),
@@ -661,17 +690,6 @@
     return rawValue || UNAWAKENED_LABEL
   }
 
-  const getElementIcon = (elementKey: string): string => {
-    const map: Record<string, string> = {
-      fire: '火',
-      water: '水',
-      wind: '风',
-      light: '光',
-      dark: '暗',
-    }
-    return map[elementKey] || ''
-  }
-
   const normalizeFamilyMember = (source: unknown): NormalizedFamilyMember | null => {
     if (!isRecord(source)) return null
 
@@ -727,7 +745,6 @@
       avatar: normalizeUrl(res.avatar || seedAvatar.value),
       elementKey: element.key,
       elementName: element.name,
-      elementIcon: getElementIcon(element.key),
       level: res.level || '',
       stars,
       archetype: getCategoryValue(categories, 'archetype'),
@@ -1225,6 +1242,12 @@
     color: #737e8f;
     font-size: 24rpx;
     font-weight: 700;
+  }
+
+  .tag-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
   }
 
   .tag.accent {

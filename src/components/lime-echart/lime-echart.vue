@@ -24,7 +24,7 @@
 	// #ifdef VUE3
 	// #ifdef MP
 	// 由于vue3 使用vite 不支持umd格式的包，小程序依然可以使用，但需要使用require
-	const echarts = require('../../static/echarts.min');
+	const echarts = require('../../subPackages/tools/static/echarts.min');
 	// #endif
 	// #ifndef MP
 	// 由于 vue3 使用vite 不支持umd格式的包，故引入npm的包
