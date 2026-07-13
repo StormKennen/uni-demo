@@ -77,10 +77,10 @@
               <view
                 v-for="option in elementBadges"
                 :key="option.value"
-                class="element-dot"
+                class="quick-chip element-chip"
                 :class="{ active: option.value === detail.elementKey, clickable: hasElementForm(option.value) }"
-                :style="{ background: option.color }"
                 @click="onElementClick(option.value)">
+                <SwcElementBadge :element-key="option.value" :label="option.label" :size="24" :font-size="24" :gap="8" />
               </view>
             </view>
           </view>
@@ -165,7 +165,7 @@
           </view>
         </view>
 
-        <view class="lineup-section">
+        <!-- <view class="lineup-section">
           <view class="lineup-section-head">
             <view>
               <text class="lineup-section-title">参与阵容</text>
@@ -229,7 +229,7 @@
               </view>
             </view>
           </view>
-        </view>
+        </view> -->
       </view>
     </view>
   </PageLayout>
@@ -1303,29 +1303,39 @@
   .element-row {
     margin-top: 24rpx;
     display: flex;
-    gap: 20rpx;
+    gap: 16rpx;
     align-items: center;
+    flex-wrap: wrap;
   }
 
-  .element-dot {
-    width: 40rpx;
-    height: 40rpx;
-    border-radius: 50%;
-    border: 4rpx solid transparent;
-    opacity: 0.4;
+  .quick-chip {
+    min-height: 52rpx;
+    padding: 0 18rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid var(--theme-border);
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      opacity 0.2s ease;
   }
 
-  .element-dot.clickable {
-    opacity: 0.65;
+  .element-chip.clickable {
+    opacity: 0.72;
     cursor: pointer;
   }
 
-  .element-dot.active {
+  .element-chip.active {
     opacity: 1;
-    border-color: #fff;
-    box-shadow:
-      0 0 0 4rpx currentColor,
-      0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+    border-color: var(--theme-brand);
+    background: rgba(0, 70, 180, 0.08);
+    color: var(--theme-brand);
   }
 
   .awaken-btn {

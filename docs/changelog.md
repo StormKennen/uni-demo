@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- 2026-07-13 [swc/detail] 魔灵详情页元素切换入口改为复用图鉴列表同款 `SwcElementBadge` 胶囊组件展示，替换原有纯色圆点样式；保留当前切换逻辑与激活态，同时统一列表页与详情页的五行视觉表达（Codex）
 - 2026-07-13 [components/toolkit,tools/qr-generator,tools/image-cipher] P1-Workflow-01 阶段四/五/六：二维码 + 图片打乱链路接入与收口。`QrGeneratorPanel` 新增 `generated` 事件（生成成功后抛出二维码图片 payload，静默导出不打扰）；二维码生成页 flow 场景优先读取 `magnet-flow` 的 `magnet` 自动回填生成、不触发剪贴板提示，监听生成结果后展示“下一步：图片打乱”，点击写入 `qrImage` 并跳转；图片打乱页 flow 场景读取并 `consume`（读完即删）二维码图片自动带入并执行一次打乱，链路终点不再展示下一步；全链路不依赖剪贴板续传，双端兼容（Devin）
 - 2026-07-13 [utils/tool-flow,components/toolkit,home/navigation,tools/magnet-link] P1-Workflow-01 阶段一/二/三：工作流基础设施 + magnet-flow 入口接入。新增轻量 flow session 工具 `src/utils/tool-flow.ts`（create/read/update/consume/clear，走 `storage.ts` 封装，不散写 `uni.setStorageSync`）与通用底部“下一步”操作条 `flow-action-bar.vue`（固定底部、兼容安全区、纯 UI 容器）；首页第 1 条推荐流程点击改为先创建 `magnet-flow` session（step=magnet-link）再跳转磁力链接页，不影响另外两条流程；磁力链接页 flow 场景禁用剪贴板自动读取，处理出有效链接后展示“下一步：生成二维码”（默认取第一条），点击写入 `magnet` 并跳转二维码页（Devin）
 - 2026-07-13 [swc/detail] 魔灵详情页五行属性展示与图鉴列表保持一致：去掉原红色底色标签（`.tag.accent`），改用 `SwcElementBadge`（`size/font 24`、`gap 8`）并为外层 `.element-badge-plain` 套上与列表筛选项 `.quick-chip` 相同的浅灰药丸底色框（`--theme-surface-2` 背景、`--theme-border` 描边、`height 52rpx`、`border-radius 999rpx`）；`light` 等偏浅的属性图标在纯白背景下会显得发白，加底色框后与列表观感一致、更清晰（Devin）
