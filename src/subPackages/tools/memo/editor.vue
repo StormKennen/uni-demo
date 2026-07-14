@@ -951,6 +951,16 @@
       uni.hideLoading()
 
       if (memo && memo.id) {
+        // 仅创建者可编辑：分享/管理员或后端明确 canEdit=false 时转只读详情
+        if (memo.accessRole && memo.accessRole !== 'owner' && memo.canEdit !== true) {
+          uni.showToast({ title: '该备忘录为只读，仅可查看', icon: 'none' })
+          const mode = memo.accessRole === 'admin' ? 'admin' : 'private'
+          setTimeout(() => {
+            uni.redirectTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}&mode=${mode}&readonly=1` })
+          }, 800)
+          return
+        }
+
         memoName.value = memo.name || ''
         tags.value = memo.tags || []
 
@@ -962,7 +972,9 @@
     } catch (error: any) {
       uni.hideLoading()
       console.error('[editor-v2] 加载失败:', error)
-      uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+      // 非 owner 调用/资源不存在时后端统一 404，提示无权限或不存在并返回
+      uni.showToast({ title: '无权限或备忘录不存在', icon: 'none' })
+      setTimeout(() => uni.navigateBack(), 800)
     }
   }
 
