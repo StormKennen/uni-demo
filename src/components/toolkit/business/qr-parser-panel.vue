@@ -32,9 +32,25 @@
   import { ref } from 'vue'
   import ToolSectionCard from '@/components/toolkit/base/tool-section-card.vue'
 
+  export type QrParsedType = 'text' | 'url' | 'magnetCandidate'
+
+  const emit = defineEmits<{
+    (e: 'parsed', payload: { text: string; type: QrParsedType }): void
+  }>()
+
   const previewSrc = ref('')
   const parseResult = ref('')
   const parseError = ref('')
+
+  const detectParsedType = (text: string): QrParsedType => {
+    if (/magnet:|[a-fA-F0-9]{40}|[a-zA-Z2-7]{32}/i.test(text)) return 'magnetCandidate'
+    if (/^https?:\/\//i.test(text)) return 'url'
+    return 'text'
+  }
+
+  const emitParsed = (text: string) => {
+    emit('parsed', { text, type: detectParsedType(text) })
+  }
 
   const parseQRCodeFromImage = async () => {
     parseResult.value = ''
@@ -75,6 +91,7 @@
       const result = jsQR(imageData.data, width, height)
       if (result?.data) {
         parseResult.value = result.data
+        emitParsed(result.data)
         uni.showToast({ title: '解析成功', icon: 'success' })
       } else {
         parseError.value = '未识别到二维码'
@@ -106,6 +123,7 @@
       })
       if (result?.result) {
         parseResult.value = result.result
+        emitParsed(result.result)
         uni.showToast({ title: '解析成功', icon: 'success' })
       } else {
         parseError.value = '未识别到二维码'

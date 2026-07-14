@@ -39,7 +39,13 @@
   import FlowActionBar from '@/components/toolkit/base/flow-action-bar.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'
-  import { readToolFlowSession, updateToolFlowSession, type MagnetFlowPayload } from '@/utils/tool-flow'
+  import {
+    consumeToolFlowSession,
+    readToolFlowSession,
+    updateToolFlowSession,
+    type MagnetFlowPayload,
+    type ScanFlowPayload,
+  } from '@/utils/tool-flow'
 
   const initialContent = ref('')
   const autoGenerate = ref(false)
@@ -76,6 +82,17 @@
         initialContent.value = magnet
         autoGenerate.value = true
         // flow 场景有带入内容，不触发剪贴板提示
+        clipboardAutoRead.value = true
+        return
+      }
+    }
+    if (options?.flow === 'scan-flow') {
+      // scan-flow 终点：读取磁力链接自动生成后消费清理，不再展示下一步
+      const session = consumeToolFlowSession<ScanFlowPayload>('scan-flow')
+      const magnet = session?.payload.magnet
+      if (magnet) {
+        initialContent.value = magnet
+        autoGenerate.value = true
         clipboardAutoRead.value = true
         return
       }
