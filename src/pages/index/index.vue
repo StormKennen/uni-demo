@@ -23,8 +23,8 @@
 
         <view class="workbench-grid">
           <view v-for="item in workbenchTools" :key="item.key" class="tool-card" @click="handleToolClick(item.key, item.tool)">
-            <view class="tool-icon">
-              <uni-icons :type="item.tool.icon as any" size="22" color="var(--theme-text-secondary)" />
+            <view class="tool-icon" :style="{ background: toolAccent(item.tool.gradient).soft }">
+              <uni-icons :type="item.tool.icon as any" size="22" :color="toolAccent(item.tool.gradient).color" />
             </view>
             <text class="tool-name">{{ item.tool.name }}</text>
             <text class="tool-desc">{{ item.tool.desc }}</text>
@@ -83,6 +83,17 @@
   const { recentTools, workbenchTools, workflowScenes, openLogin, handleToolClick, handleWorkflowClick } = useToolDirectory()
 
   const hasRecentTools = computed(() => recentTools.value.length > 0)
+
+  // 从工具已有的 gradient 中取第一个功能识别色，派生「彩色图标 + 浅色底板」，不引入新数据字段
+  function toolAccent(gradient: string): { color: string; soft: string } {
+    const match = gradient.match(/#([0-9a-fA-F]{6})/)
+    const color = match ? `#${match[1]}` : 'var(--theme-brand)'
+    if (!match) return { color, soft: 'var(--theme-surface-2)' }
+    const r = parseInt(match[1].slice(0, 2), 16)
+    const g = parseInt(match[1].slice(2, 4), 16)
+    const b = parseInt(match[1].slice(4, 6), 16)
+    return { color, soft: `rgba(${r}, ${g}, ${b}, 0.14)` }
+  }
 
   const navbarStyle = computed(() => ({
     background: 'var(--theme-surface)',
