@@ -1,40 +1,33 @@
 <template>
   <PageLayout title="工作台" :show-nav="false" :nav-back="false">
     <view :class="['home-page', { 'home-page--dark': isDark }]">
-      <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="{ background: navbarBg }">
+      <NavBarBase :nav-back="false" custom-class="home-navbar" :custom-style="navbarStyle">
         <template #title>
           <view class="home-navbar-content">
             <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
-            <view class="home-navbar-copy">
-              <text class="navbar-title-single">工作台</text>
-              <text class="navbar-subtitle">WORKBENCH</text>
-            </view>
+            <text class="navbar-title">工作台</text>
           </view>
         </template>
       </NavBarBase>
 
       <view class="section section--workbench">
         <view class="section-header">
-          <text class="section-title">工作台</text>
+          <text class="section-title">常用工具</text>
           <view class="section-link" @click="openToolsTab">
             <text class="section-link-text">全部工具</text>
             <uni-icons type="right" size="14" color="var(--theme-text-tertiary)" />
           </view>
         </view>
 
-        <view class="workbench-panel">
-          <view class="workbench-strip">
-            <text v-for="chip in workbenchChips" :key="chip" class="workbench-chip">{{ chip }}</text>
-          </view>
+        <text v-if="!hasRecentTools" class="workbench-hint">你最近使用过的工具会显示在这里</text>
 
-          <view class="workbench-grid">
-            <view v-for="item in workbenchTools" :key="item.key" class="workbench-card" @click="handleToolClick(item.key, item.tool)">
-              <view class="workbench-icon" :style="{ background: item.tool.gradient }">
-                <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
-              </view>
-              <text class="workbench-name">{{ item.tool.name }}</text>
-              <text class="workbench-desc">{{ item.tool.desc }}</text>
+        <view class="workbench-grid">
+          <view v-for="item in workbenchTools" :key="item.key" class="tool-card" @click="handleToolClick(item.key, item.tool)">
+            <view class="tool-icon">
+              <uni-icons :type="item.tool.icon as any" size="22" color="var(--theme-text-secondary)" />
             </view>
+            <text class="tool-name">{{ item.tool.name }}</text>
+            <text class="tool-desc">{{ item.tool.desc }}</text>
           </view>
         </view>
       </view>
@@ -45,16 +38,12 @@
         </view>
 
         <view class="workflow-list">
-          <view
-            v-for="workflow in workflowScenes"
-            :key="workflow.id"
-            :class="['workflow-card', `workflow-card--${workflow.tone}`]"
-            @click="handleWorkflowClick(workflow)">
+          <view v-for="workflow in workflowScenes" :key="workflow.id" class="workflow-card" @click="handleWorkflowClick(workflow)">
             <view class="workflow-head">
-              <text class="workflow-kicker">{{ workflow.kicker }}</text>
-              <uni-icons type="right" size="14" color="rgba(255, 255, 255, 0.72)" />
+              <text class="workflow-title">{{ workflow.label }}</text>
+              <uni-icons type="right" size="14" color="var(--theme-brand)" />
             </view>
-            <text class="workflow-title">{{ workflow.title }}</text>
+            <text class="workflow-benefit">{{ workflow.benefit }}</text>
             <view class="workflow-steps">
               <template v-for="(step, index) in workflow.steps" :key="step.key">
                 <text class="workflow-step">{{ step.tool.name }}</text>
@@ -91,14 +80,14 @@
   import { useToolDirectory } from '@/hooks/use-tool-directory'
 
   const { isDark } = storeToRefs(useThemeStore())
-  const { navbarBg, loggedIn, workbenchTools, platformLabel, workflowScenes, openLogin, handleToolClick, handleWorkflowClick } =
-    useToolDirectory()
+  const { recentTools, workbenchTools, workflowScenes, openLogin, handleToolClick, handleWorkflowClick } = useToolDirectory()
 
-  const workbenchChips = computed(() => {
-    const chips = [platformLabel.value]
-    chips.push(loggedIn.value ? '最近使用' : '默认常用')
-    return chips
-  })
+  const hasRecentTools = computed(() => recentTools.value.length > 0)
+
+  const navbarStyle = computed(() => ({
+    background: 'var(--theme-surface)',
+    borderBottom: '1rpx solid var(--theme-border)',
+  }))
 
   function openToolsTab() {
     uni.switchTab({
@@ -115,34 +104,14 @@
 </script>
 
 <style lang="scss" scoped>
-  $bg-color: var(--theme-bg);
-  $card-bg: var(--theme-surface);
-  $card-muted: var(--theme-surface-2);
-  $text-primary: var(--theme-text);
-  $text-secondary: var(--theme-text-secondary);
-  $text-hint: var(--theme-text-tertiary);
-  $border-color: var(--theme-border);
-  $brand-color: var(--theme-brand);
-  $radius-md: 24rpx;
-  $radius-lg: 34rpx;
-  $shadow-card: 0 10rpx 34rpx var(--theme-shadow-xs);
-
   .home-page {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at top center, rgba(0, 70, 180, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%), $bg-color;
+    background: var(--theme-bg);
     overflow-x: hidden;
 
     /* #ifdef H5 */
     padding-bottom: 140rpx;
     /* #endif */
-  }
-
-  .home-page--dark {
-    background:
-      radial-gradient(circle at top center, rgba(56, 189, 248, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 22%), $bg-color;
   }
 
   .home-navbar-content {
@@ -152,35 +121,19 @@
   }
 
   .navbar-logo {
-    width: 56rpx;
-    height: 56rpx;
-    border-radius: 14rpx;
+    width: 52rpx;
+    height: 52rpx;
+    border-radius: 12rpx;
   }
 
-  .home-navbar-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 2rpx;
-  }
-
-  .navbar-title-single {
-    color: #fff;
-    font-size: 30rpx;
-    font-weight: 700;
-  }
-
-  .navbar-subtitle {
-    color: rgba(255, 255, 255, 0.62);
-    font-size: 18rpx;
-    letter-spacing: 2rpx;
+  .navbar-title {
+    color: var(--theme-text);
+    font-size: 32rpx;
+    font-weight: 600;
   }
 
   .section {
-    padding: 24rpx 24rpx 0;
-  }
-
-  .section--workbench {
-    padding-top: 24rpx;
+    padding: 32rpx 32rpx 0;
   }
 
   .section-header {
@@ -188,13 +141,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 16rpx;
-    margin-bottom: 18rpx;
+    margin-bottom: 20rpx;
   }
 
   .section-title {
-    color: $text-primary;
-    font-size: 32rpx;
+    color: var(--theme-text);
+    font-size: 34rpx;
     font-weight: 700;
+    letter-spacing: 0.5rpx;
   }
 
   .section-link {
@@ -204,97 +158,90 @@
   }
 
   .section-link-text {
-    color: $text-hint;
-    font-size: 22rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 24rpx;
   }
 
-  .workbench-panel {
-    border-radius: 32rpx;
-    background: $card-bg;
-    border: 1rpx solid $border-color;
-    box-shadow: $shadow-card;
-    padding: 22rpx;
-  }
-
-  .workbench-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10rpx;
-    margin-bottom: 18rpx;
-  }
-
-  .workbench-chip {
-    padding: 8rpx 16rpx;
-    border-radius: 999rpx;
-    background: $card-muted;
-    color: $text-secondary;
-    font-size: 20rpx;
+  .workbench-hint {
+    display: block;
+    margin: -6rpx 0 18rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 24rpx;
+    line-height: 1.5;
   }
 
   .workbench-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14rpx;
+    gap: 16rpx;
   }
 
-  .workbench-card {
-    min-height: 188rpx;
-    padding: 20rpx;
-    border-radius: $radius-md;
-    background: $card-muted;
+  .tool-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 184rpx;
+    padding: 24rpx;
+    border-radius: 20rpx;
+    background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+
+    &:active {
+      border-color: var(--theme-brand);
+      background: var(--theme-surface-2);
+    }
   }
 
-  .workbench-icon {
-    width: 56rpx;
-    height: 56rpx;
+  .tool-icon {
+    width: 68rpx;
+    height: 68rpx;
     border-radius: 16rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--theme-surface-2);
   }
 
-  .workbench-name {
+  .tool-name {
     display: block;
-    margin-top: 18rpx;
-    color: $text-primary;
+    margin-top: 20rpx;
+    color: var(--theme-text);
     font-size: 28rpx;
-    font-weight: 700;
-    line-height: 1.32;
+    font-weight: 600;
+    line-height: 1.3;
   }
 
-  .workbench-desc {
+  .tool-desc {
     display: block;
-    margin-top: 10rpx;
-    color: $text-secondary;
-    font-size: 21rpx;
-    line-height: 1.5;
+    margin-top: 8rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .workflow-list {
     display: grid;
-    gap: 14rpx;
+    gap: 16rpx;
   }
 
   .workflow-card {
-    padding: 24rpx 22rpx;
-    border-radius: 28rpx;
-    color: #f8fafc;
-    box-shadow: 0 16rpx 42rpx rgba(15, 23, 42, 0.14);
-  }
+    padding: 26rpx 24rpx;
+    border-radius: 20rpx;
+    background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
 
-  .workflow-card--cyan {
-    background: linear-gradient(145deg, #0f766e, #06b6d4);
-  }
-
-  .workflow-card--slate {
-    background: linear-gradient(145deg, #334155, #0f172a);
-  }
-
-  .workflow-kicker {
-    display: block;
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 18rpx;
-    letter-spacing: 2rpx;
+    &:active {
+      border-color: var(--theme-brand);
+      background: var(--theme-surface-2);
+    }
   }
 
   .workflow-head {
@@ -305,35 +252,50 @@
   }
 
   .workflow-title {
-    display: block;
-    margin-top: 14rpx;
+    color: var(--theme-text);
     font-size: 30rpx;
     font-weight: 700;
     line-height: 1.35;
+  }
+
+  .workflow-benefit {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    line-height: 1.5;
   }
 
   .workflow-steps {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8rpx;
+    gap: 10rpx;
     margin-top: 18rpx;
   }
 
-  .workflow-step,
+  .workflow-step {
+    padding: 6rpx 14rpx;
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    line-height: 1.4;
+  }
+
   .workflow-sep {
-    color: rgba(255, 255, 255, 0.82);
+    color: var(--theme-text-tertiary);
     font-size: 21rpx;
   }
 
   .footer {
-    padding: 48rpx 24rpx 34rpx;
+    padding: 56rpx 32rpx 40rpx;
     display: flex;
     justify-content: center;
   }
 
   .icp-text {
-    color: $text-hint;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 </style>
