@@ -59,6 +59,18 @@
 
         <!-- 右侧备忘录列表 -->
         <view class="memo-list-panel">
+          <!-- 数据隔离视角切换 -->
+          <view class="scope-tabs">
+            <view
+              v-for="option in scopeOptions"
+              :key="option.value"
+              class="scope-tab"
+              :class="{ active: viewScope === option.value }"
+              @click="selectScope(option.value)">
+              {{ option.label }}
+            </view>
+          </view>
+
           <!-- 搜索和筛选 -->
           <view class="search-bar">
             <input class="search-input" v-model="searchKeyword" placeholder="搜索备忘录..." @confirm="searchMemos" @input="onSearchInput" />
@@ -102,17 +114,19 @@
               </view>
             </view>
 
-            <view v-for="memo in memos" :key="memo.id" class="memo-item" @click="editMemo(memo.id)">
+            <view v-for="memo in memos" :key="memo.id" class="memo-item" @click="openMemo(memo)">
               <!-- <view class="memo-title">{{ memo.name || '-' }}</view> -->
               <view class="memo-header">
                 <view class="memo-title-row">
                   <text class="memo-name">{{ memo.name }}</text>
+                  <text v-if="memo.accessRole === 'shared'" class="access-badge shared">分享</text>
+                  <text v-else-if="memo.accessRole === 'admin'" class="access-badge admin">只读</text>
                   <!-- <text class="memo-pin" v-if="memo.is_pinned">📌</text> -->
-                  <text class="action-icon" @click.stop.prevent="togglePin(memo.id, memo.is_pinned)">
+                  <text v-if="canEditMemo(memo)" class="action-icon" @click.stop.prevent="togglePin(memo.id, memo.is_pinned)">
                     {{ memo.is_pinned ? '📌' : '📍' }}
                   </text>
                   <!-- <text class="memo-favorite" v-if="memo.is_favorite">⭐</text> -->
-                  <text class="action-icon" @click.stop.prevent="toggleFavorite(memo.id, memo.is_favorite)">
+                  <text v-if="canEditMemo(memo)" class="action-icon" @click.stop.prevent="toggleFavorite(memo.id, memo.is_favorite)">
                     {{ memo.is_favorite ? '⭐' : '☆' }}
                   </text>
                   <!-- <text class="memo-title">{{ memo.name || '-' }}</text> -->
@@ -141,7 +155,7 @@
                 <text class="memo-time">{{ formatTime(memo.updatedAt) }}</text>
                 <view class="memo-actions">
                   <!-- <text class="action-icon" @click="editMemo(memo.id)">✏️</text> -->
-                  <text class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
+                  <text v-if="canDeleteMemo(memo)" class="action-icon" @click.stop.prevent="handleDeleteMemo(memo.id)">🗑️</text>
                 </view>
               </view>
             </view>
@@ -179,6 +193,7 @@
   import {
     getMemosTags,
     getMemos,
+    getAdminMemos,
     postMemos,
     deleteMemosMemoId,
     postMemosMemoIdPin,
@@ -190,6 +205,7 @@
   import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
+  import { isAdminUser } from '@/utils/admin'
 
   onShow(() => {
     reportToolVisit('memo')
@@ -204,6 +220,8 @@
     children?: Folder[]
   }
 
+  type AccessRole = 'owner' | 'shared' | 'admin'
+
   interface Memo {
     id: string
     name: string
@@ -214,7 +232,17 @@
     is_pinned: boolean
     is_favorite: boolean
     updatedAt: number
+    created_by?: string
+    shared_with?: string[]
+    // 后端返回的权限标识（新数据隔离能力），旧数据可能缺省
+    accessRole?: AccessRole
+    canEdit?: boolean
+    canDelete?: boolean
+    canArchive?: boolean
   }
+
+  // 数据隔离视角：all=我创建的+分享给我的；owned=仅我创建的；shared=仅分享给我的；admin=全局只读（仅管理员）
+  type ViewScope = 'all' | 'owned' | 'shared' | 'admin'
 
   // 文件夹相关
   const folderTree = ref<Folder[]>([])
@@ -241,6 +269,24 @@
   const allTags = ref<string[]>([])
   const selectedTags = ref<string[]>([])
   let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+  // 数据隔离视角
+  const isAdmin = computed(() => isAdminUser())
+  const viewScope = ref<ViewScope>('all')
+  const scopeOptions = computed<{ value: ViewScope; label: string }[]>(() => {
+    const base: { value: ViewScope; label: string }[] = [
+      { value: 'all', label: '全部' },
+      { value: 'owned', label: '我创建的' },
+      { value: 'shared', label: '分享给我的' },
+    ]
+    if (isAdmin.value) base.push({ value: 'admin', label: '全局(管理员)' })
+    return base
+  })
+
+  // 是否为「新数据隔离」返回的记录（带 accessRole）；旧数据缺省时沿用旧行为（可编辑）
+  const hasAccessInfo = (memo: Memo) => !!memo.accessRole
+  const canEditMemo = (memo: Memo) => (hasAccessInfo(memo) ? memo.canEdit === true : true)
+  const canDeleteMemo = (memo: Memo) => (hasAccessInfo(memo) ? memo.canDelete === true : true)
 
   // 切换文件夹面板
   const toggleFolderPanel = () => {
@@ -414,8 +460,14 @@
         params.search = searchKeyword.value
       }
 
-      // 调用 Apifox 生成的 API
-      const res = await getMemos(params)
+      // 按视角调用不同接口：admin=全局只读；其余走用户侧列表并携带 viewScope
+      let res: any
+      if (viewScope.value === 'admin') {
+        res = await getAdminMemos(params)
+      } else {
+        params.viewScope = viewScope.value
+        res = await getMemos(params)
+      }
 
       // 处理返回数据
       if (res && res.results) {
@@ -465,10 +517,32 @@
     })
   }
 
+  // 切换数据隔离视角
+  const selectScope = (scope: ViewScope) => {
+    if (viewScope.value === scope) return
+    viewScope.value = scope
+    currentPage.value = 1
+    memos.value = []
+    hasMore.value = true
+    loadMemos()
+  }
+
   // 编辑备忘录
   const editMemo = (id: string) => {
     uni.navigateTo({
       url: `/subPackages/tools/memo/editor?id=${id}`,
+    })
+  }
+
+  // 打开备忘录：创建者进编辑页；分享/管理员进只读详情
+  const openMemo = (memo: Memo) => {
+    if (canEditMemo(memo)) {
+      editMemo(memo.id)
+      return
+    }
+    const mode = memo.accessRole === 'admin' || viewScope.value === 'admin' ? 'admin' : 'private'
+    uni.navigateTo({
+      url: `/subPackages/tools/memo/detail?id=${memo.id}&mode=${mode}&readonly=1`,
     })
   }
 
@@ -878,6 +952,28 @@
     flex-direction: column;
     background: var(--theme-surface);
 
+    .scope-tabs {
+      display: flex;
+      gap: 12rpx;
+      padding: 16rpx 24rpx;
+      border-bottom: 1rpx solid var(--theme-border);
+
+      .scope-tab {
+        padding: 8rpx 24rpx;
+        font-size: 26rpx;
+        color: var(--theme-text-secondary);
+        background: var(--theme-surface-2);
+        border: 1rpx solid var(--theme-border);
+        border-radius: 32rpx;
+
+        &.active {
+          color: #fff;
+          background: var(--theme-brand);
+          border-color: var(--theme-brand);
+        }
+      }
+    }
+
     .search-bar {
       display: flex;
       align-items: center;
@@ -1059,6 +1155,21 @@
           color: var(--theme-text-secondary);
           margin-bottom: 12rpx;
           display: block;
+        }
+
+        .access-badge {
+          margin-left: 12rpx;
+          padding: 2rpx 12rpx;
+          font-size: 20rpx;
+          line-height: 1.6;
+          border-radius: 12rpx;
+          color: var(--theme-text-secondary);
+          background: var(--theme-surface-2);
+          border: 1rpx solid var(--theme-border);
+
+          &.admin {
+            color: var(--theme-brand);
+          }
         }
 
         .memo-tags {

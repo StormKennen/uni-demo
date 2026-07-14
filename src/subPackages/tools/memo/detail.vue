@@ -21,9 +21,13 @@
         <view class="action-btn ghost" @click="shareMemo" v-if="memoData">
           <text class="icon">分享</text>
         </view>
-        <!-- 编辑按钮（仅登录用户） -->
-        <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData">
+        <!-- 编辑按钮（仅创建者；分享/管理员/只读视角隐藏） -->
+        <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData && canEditDetail">
           <text class="icon">编辑</text>
+        </view>
+        <!-- 只读标识（分享给我的 / 管理员全局查看） -->
+        <view class="action-btn ghost readonly-tag" v-else-if="memoData && (accessRole === 'shared' || accessRole === 'admin')">
+          <text class="icon">{{ accessRole === 'admin' ? '管理员只读' : '只读' }}</text>
         </view>
       </view>
 
@@ -474,7 +478,12 @@
   import { marked } from 'marked'
   import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getToken } from '@/utils/storage'
-  import { getMemosPublicDetail, getMemosMemoIdPublic } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
+  import {
+    getMemosPublicDetail,
+    getMemosMemoIdPublic,
+    getMemosMemoId,
+    getAdminMemosMemoId,
+  } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { openMapNavigation, openExternalLink } from '@/utils/map'
 
   // 获取组件实例用于 uni.createSelectorQuery()
@@ -484,6 +493,12 @@
   const memoData = ref<any>(null)
   const loading = ref(true)
   const error = ref('')
+  // 取详情来源：public=公开分享（默认，无需登录）；private=登录用户（owner/shared）；admin=管理员全局只读
+  const detailSource = ref<'public' | 'private' | 'admin'>('public')
+  // 强制只读（分享给我的 / 管理员视角进入时隐藏编辑入口）
+  const forceReadonly = ref(false)
+  // 后端返回的访问角色标识
+  const accessRole = ref<'owner' | 'shared' | 'admin' | ''>('')
 
   // 设置（从 memoData 中读取）
   // 浪漫弹窗状态
@@ -913,6 +928,15 @@
   // 检查登录状态
   const isLoggedIn = computed(() => !!getToken())
 
+  // 是否可进入编辑：强制只读 / 分享 / 管理员视角均不可编辑；
+  // 后端明确 canEdit=false 时不可编辑；公开分享（无 accessRole）沿用「登录即可编辑」旧逻辑。
+  const canEditDetail = computed(() => {
+    if (forceReadonly.value) return false
+    if (accessRole.value === 'shared' || accessRole.value === 'admin') return false
+    if (memoData.value && memoData.value.canEdit === false) return false
+    return true
+  })
+
   // 备忘录标题
   const memoTitle = computed(() => {
     if (!memoData.value) return '备忘录详情'
@@ -936,6 +960,12 @@
 
   // 页面加载
   onLoad((options: any) => {
+    if (options.mode === 'admin' || options.mode === 'private') {
+      detailSource.value = options.mode
+    }
+    if (options.readonly === '1' || options.readonly === 'true') {
+      forceReadonly.value = true
+    }
     if (options.id) {
       memoId.value = options.id
       loadMemoData()
@@ -945,16 +975,22 @@
     }
   })
 
-  // 加载备忘录数据（使用公开API，无需登录）
+  // 加载备忘录数据：默认走公开API（无需登录）；private/admin 走鉴权接口
   const loadMemoData = async () => {
     loading.value = true
     error.value = ''
     try {
-      const res = await getMemosPublicDetail({
-        id: memoId.value,
-      })
+      let res: any
+      if (detailSource.value === 'admin') {
+        res = await getAdminMemosMemoId(memoId.value)
+      } else if (detailSource.value === 'private') {
+        res = await getMemosMemoId(memoId.value)
+      } else {
+        res = await getMemosPublicDetail({ id: memoId.value })
+      }
       if (res) {
         memoData.value = res
+        accessRole.value = res.accessRole || ''
 
         // 同步导航栏标题
         uni.setNavigationBarTitle({
@@ -1004,7 +1040,12 @@
       }
     } catch (e: any) {
       console.error('加载备忘录失败:', e)
-      error.value = e.message || '加载失败，请重试'
+      // 鉴权接口下 owner/shared 均查不到（或非管理员）统一返回 404，提示无权限或不存在
+      if (detailSource.value !== 'public') {
+        error.value = '无权限或备忘录不存在'
+      } else {
+        error.value = (typeof e === 'string' ? e : e?.message) || '加载失败，请重试'
+      }
     } finally {
       loading.value = false
     }
