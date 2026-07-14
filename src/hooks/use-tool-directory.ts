@@ -25,6 +25,8 @@ export interface WorkflowScene {
   id: string
   kicker: string
   title: string
+  label: string
+  benefit: string
   tone: 'slate' | 'cyan'
   primary: KeyedToolItem
   steps: KeyedToolItem[]
@@ -46,6 +48,8 @@ const workflowBlueprints = [
     id: 'magnet-flow',
     kicker: 'TEXT TO IMAGE',
     title: '磁力链接 → 二维码 → 图片打乱',
+    label: '磁力转分享图',
+    benefit: '把磁力链接快速转成适合转发的图片',
     tone: 'cyan' as const,
     primaryKey: 'magnet-link',
     stepKeys: ['magnet-link', 'qr-generator', 'image-cipher'],
@@ -54,6 +58,8 @@ const workflowBlueprints = [
     id: 'scan-flow',
     kicker: 'SCAN TO ACTION',
     title: '二维码解析 → 磁力补全 → 二维码生成',
+    label: '扫码再加工',
+    benefit: '解析二维码后补全内容并重新生成',
     tone: 'slate' as const,
     primaryKey: 'qr-parser',
     stepKeys: ['qr-parser', 'magnet-link', 'qr-generator'],
@@ -62,6 +68,8 @@ const workflowBlueprints = [
     id: 'media-flow',
     kicker: 'FAST MEDIA',
     title: '图片压缩 → 格式转换 → 图片拼接',
+    label: '图片快处理',
+    benefit: '压缩、转换、拼接，快速整理成品图',
     tone: 'slate' as const,
     primaryKey: 'image-compress',
     stepKeys: ['image-compress', 'image-format', 'image-stitch'],
