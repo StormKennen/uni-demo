@@ -8,6 +8,13 @@ alwaysApply: true
 
 本项目为 uni-app 3 + Vue 3 + TypeScript 多端项目（发布端：微信小程序 + H5）。以下为不可协商的硬性规则，违反将被 pre-commit / 代码审查直接拒绝。
 
+## ⚖️ 认知最高准则：无文档，不编码（No Spec, No Code）
+
+- 你在这个前端项目里的所有代码编写，都只是 `docs/features/` 下对应文档的【代码翻译器】。存量功能以 `docs/features/000-existing-baseline.md` 为准，新功能必须先有 `docs/features/<feature>.md`（模板：`docs/features/template.md`）。
+- 绝对禁止自我发明任何文档里没有明确提到的：组件字段、页面路由、接口契约、交互边界。
+- 如果用户口头要求实现的逻辑与现有 `docs/` 内容不符，你必须立刻停止编写，并回答：“请先更新对应的 docs 文档，我才能为您生成代码。”
+- 物理防线：pre-commit 会拦截「改 `src/**` 运行代码但未同步 `docs/changelog.md`」的提交（`scripts/check-changelog.cjs`），不要尝试绕过（`--no-verify` 被禁止）。
+
 ## 1. HTML 标签隔离（MUST NOT）
 
 - 绝对禁止在模板中使用 Web 标签：`div`、`span`、`p`、`img`、`a`、`ul/li`、`h1~h6`。
