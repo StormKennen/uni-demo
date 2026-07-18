@@ -16,12 +16,19 @@ const staged = execSync('git diff --cached --name-only', { encoding: 'utf8' })
 
 const coreChanged = staged.filter(f => f.startsWith('src/'))
 const changelogStaged = staged.includes('docs/changelog.md')
+const docsStaged = staged.some(f => f.startsWith('docs/'))
 
 if (coreChanged.length > 0 && !changelogStaged) {
-  console.error('\n[harness] ❌ 提交被拒绝：检测到核心代码变更但未更新 docs/changelog.md')
-  console.error('[harness] 涉及的核心文件：')
+  console.error('\n❌ [Harness 拒绝提交]: 发现你修改了 uni-app 运行代码，但没有更新对应的 docs/features/ 文档或变更日志！')
+  console.error('👉 必须坚持“先改文档对齐功能，再生成/提交代码”的最高铁律。')
+  console.error('\n[harness] 涉及的运行代码文件：')
   coreChanged.forEach(f => console.error(`  - ${f}`))
-  console.error('\n[harness] 请在 docs/changelog.md 追加本次变更记录并 git add docs/changelog.md 后重试。\n')
+  if (docsStaged) {
+    console.error('\n[harness] 检测到 docs/ 有变更，但缺少 docs/changelog.md：请追加变更记录并 git add docs/changelog.md 后重试。')
+  } else {
+    console.error('\n[harness] 请同步维护 docs/features/ 对应功能文档，并在 docs/changelog.md 追加记录后 git add 重试。')
+  }
+  console.error('')
   process.exit(1)
 }
 
