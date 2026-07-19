@@ -191,6 +191,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'media',
     isNew: true,
   },
+  'pdf-toolkit': {
+    name: 'PDF 工具箱',
+    desc: '转换/合并/拆分/压缩',
+    icon: 'paperclip',
+    gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+    path: '/subPackages/tools/pdf-toolkit/index',
+    category: 'media',
+    isNew: true,
+  },
   // ── 二维码 ──
   'qr-generator': {
     name: '二维码生成',
@@ -207,6 +216,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     path: '/subPackages/tools/qr-parser/index',
     category: 'qr',
+  },
+  'code-wallet': {
+    name: '码包',
+    desc: '常用码保存/同步',
+    icon: 'scan',
+    gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+    path: '/subPackages/tools/code-wallet/index',
+    category: 'qr',
+    isNew: true,
   },
   // ── 记录 ──
   calendar: {

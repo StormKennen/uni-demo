@@ -81,6 +81,7 @@
   const emit = defineEmits<{
     (e: 'shuffle-image', payload: ToolImagePayload): void
     (e: 'generated', payload: ToolImagePayload): void
+    (e: 'generated-content', content: string): void
   }>()
 
   const instance = getCurrentInstance()
@@ -274,6 +275,7 @@
 
       qrGenerated.value = true
       uni.showToast({ title: '二维码生成成功', icon: 'success' })
+      emit('generated-content', activeContent.value)
 
       const generatedImage = await exportGeneratedImage(true)
       if (generatedImage) emit('generated', generatedImage)

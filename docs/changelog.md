@@ -5,6 +5,10 @@
 
 ## Unreleased
 
+- 2026-07-19 [tools/image-stitch] 长截图拼接增强：在保留现有 Painter/OSS 本地拼接的基础上，新增「拼接模式（普通/聊天截图/紧凑）、遮挡区域（顶部/底部/中心/四角/头像/昵称）、处理方式（自动/本地/云端）」；紧凑模式收敛导出间距、聊天模式对逐项头像/昵称与整体区域绘制遮挡层（随 `#stitch-container` 被后端海报渲染捕获）；云端兜底走 `postImageToolsStitch`（仅提交 `images/mode/masks/outputWidth/gap/backgroundColor`，`masks` 序列化为字符串），展示返回 `url` 并支持保存/复制链接；自动模式在图片数 > 8 时提示「图片较长，本地生成可能失败，是否改用云端生成？」或本地失败时引导云端，普通模式行为不回归（Devin）
+- 2026-07-19 [tools/qr-parser,tools/qr-generator,components/toolkit] 二维码解析/生成结果打通「保存到码包」：解析出内容后展示保存入口，`QrGeneratorPanel` 新增 `generated-content` 事件回传生成内容，生成页据此展示保存入口；均以 `encodeURIComponent` 编码 `content` 后 `navigateTo` 至 `code-wallet` 页并携带 `codeType=qr`（Devin）
+- 2026-07-19 [tools/code-wallet,config/tools,pages.json] 新增「码包」工具页与分包路由 `subPackages/tools/code-wallet/index`：未登录本地保存/编辑/删除/筛选（`TOOL_CODE_WALLET_LOCAL_ITEMS`，置顶优先），已登录走 CODEWALLET 生成方法云端列表/新增/编辑/删除/置顶/分页与关键字筛选，并支持「同步本地码到云端」（仅提交 `postCodeWalletItemsSyncBodyItemsItem` 支持字段）；QR 预览复用 `QrGeneratorPanel`，条形码首版展示内容+复制不新增依赖；`onLoad` 支持 `?content=&codeType=` 自动打开并回填新增表单；类型全部取自 CODEWALLET/interface（Devin）
+- 2026-07-19 [tools/pdf-toolkit,config/tools,pages.json] 新增「PDF 工具箱」工具页与分包路由 `subPackages/tools/pdf-toolkit/index`：接入 PDFTOOLKIT 生成方法完成图片转 PDF/合并/拆分/压缩，逐个 `postPdfToolkitFiles` 上传收集 `fileId` 后 `postPdfToolkitTasks` 建任务，`getPdfToolkitTasksTaskId` 每 1500ms 轮询（最多 60 次、离开页面清理 timer），展示进度/错误/结果（H5 打开 URL、mp-weixin `uni.openDocument`），并用 `getPdfToolkitTasks` 加载最近历史；因生成列表响应为 `object` 采用运行时收窄，类型取自 PDFTOOLKIT/interface（Devin）
 - 2026-07-19 [tools/watermark] 将工具入口与页面标题从“视频去水印”调整为低风险的“视频链接整理”，并移除小程序端首页工作台过滤，使入口可在工具库/工作台正常露出；页面处理逻辑保持原状，小程序端仍展示平台限制说明，H5 端保留原解析处理流程（Codex）
 - 2026-07-19 [tools/mobile-toolkit] 按 P0 移动端工具增强规格落地三项微信小程序友好能力：二维码解析结果新增类型/风险识别与复制、生成二维码、磁力补全快捷动作；新增“图片隐私清理”工具，通过重新绘制图片移除原图元信息并支持手动遮挡敏感区域；新增“文档扫描”工具，支持最多 6 页拍照/相册图片整理为文档长图并保存，PDF 导出作为后续 H5/服务端增强能力说明；同步注册工具库入口与分包路由（Codex）
 - 2026-07-18 [home/navigation,config/tools] 调整小程序端“视频去水印”入口策略：工具配置新增 `hiddenInWorkbenchPlatforms`，让 `video-watermark` 仅在工具库分类中展示，不进入首页工作台/最近使用/默认常用推荐；功能页自身仍在微信小程序端展示平台限制说明，不开放受限处理能力（Codex）

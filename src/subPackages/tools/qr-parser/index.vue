@@ -3,6 +3,9 @@
     <view class="qr-parser-page">
       <view class="content">
         <QrParserPanel @parsed="handleParsed" />
+        <view v-if="!isFlow && parsedText" class="save-wallet-row">
+          <button class="save-wallet-btn" @click="saveToCodeWallet">保存到码包</button>
+        </view>
         <view v-if="isFlow && canContinue" class="flow-bar-spacer" />
       </view>
     </view>
@@ -29,10 +32,17 @@
   const parsedText = ref('')
 
   const handleParsed = (payload: { text: string; type: QrParsedType }) => {
-    if (!isFlow.value) return
     parsedText.value = payload.text
+    if (!isFlow.value) return
     // 仅当解析出磁力/hash 特征时才允许继续链路
     canContinue.value = payload.type === 'magnetCandidate'
+  }
+
+  const saveToCodeWallet = () => {
+    if (!parsedText.value) return
+    uni.navigateTo({
+      url: `/subPackages/tools/code-wallet/index?content=${encodeURIComponent(parsedText.value)}&codeType=qr`,
+    })
   }
 
   const goToMagnetLink = () => {
@@ -78,5 +88,19 @@
 
   .flow-bar-spacer {
     height: 180rpx;
+  }
+
+  .save-wallet-row {
+    margin-top: 24rpx;
+  }
+
+  .save-wallet-btn {
+    width: 100%;
+    height: 84rpx;
+    border: none;
+    border-radius: 999rpx;
+    font-size: 28rpx;
+    color: #fff;
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   }
 </style>

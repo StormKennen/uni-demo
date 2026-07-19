@@ -162,6 +162,11 @@
                     :mode="computedDirection === 'vertical' ? 'widthFix' : 'heightFix'"
                     class="preview-thumb"
                     @load="onImageLoad" />
+                  <!-- 聊天模式逐项遮挡（头像/昵称） -->
+                  <template v-if="stitchMode === 'chat'">
+                    <view v-if="masks.includes('avatar')" class="mask-avatar" />
+                    <view v-if="masks.includes('nickname')" class="mask-nickname" />
+                  </template>
                   <!-- 上传状态遮罩 -->
                   <view v-if="uploadingImages.has(img.id)" class="upload-overlay">
                     <view class="upload-spinner" />
@@ -185,8 +190,21 @@
               </view>
             </view>
 
+            <!-- 区域遮挡层（顶部/底部/中心/四角） -->
+            <view v-if="images.length > 0 && hasRegionMask" class="mask-region-layer">
+              <view v-if="masks.includes('top')" class="mask-region top" />
+              <view v-if="masks.includes('bottom')" class="mask-region bottom" />
+              <view v-if="masks.includes('center')" class="mask-region center" />
+              <template v-if="masks.includes('corners')">
+                <view class="mask-region corner tl" />
+                <view class="mask-region corner tr" />
+                <view class="mask-region corner bl" />
+                <view class="mask-region corner br" />
+              </template>
+            </view>
+
             <!-- 空状态 -->
-            <view v-else class="empty-state">
+            <view v-else-if="images.length === 0" class="empty-state">
               <uni-icons type="image" size="60" color="#ddd" />
               <text class="empty-text">{{ pageMode === 'bot' ? '无图片数据' : '请添加图片开始拼接' }}</text>
             </view>
@@ -265,15 +283,82 @@
               </view>
             </view>
           </view>
+
+          <!-- 长截图增强：模式 / 遮挡 / 处理方式 -->
+          <view class="section">
+            <view class="section-header">
+              <text class="section-title">长截图增强</text>
+            </view>
+
+            <view class="control-item">
+              <text class="control-label">拼接模式</text>
+            </view>
+            <view class="chip-row">
+              <view
+                v-for="opt in stitchModeOptions"
+                :key="opt.value"
+                class="chip"
+                :class="{ active: stitchMode === opt.value }"
+                @click="stitchMode = opt.value">
+                {{ opt.label }}
+              </view>
+            </view>
+
+            <view class="control-item">
+              <text class="control-label">遮挡区域</text>
+            </view>
+            <view class="chip-row wrap">
+              <view
+                v-for="opt in maskOptions"
+                :key="opt.value"
+                class="chip"
+                :class="{ active: masks.includes(opt.value) }"
+                @click="toggleMask(opt.value)">
+                {{ opt.label }}
+              </view>
+            </view>
+            <view v-if="masks.length && stitchMode !== 'chat'" class="form-tip">
+              <text>提示：头像/昵称等精确遮挡建议使用聊天截图模式或云端生成</text>
+            </view>
+
+            <view class="control-item">
+              <text class="control-label">处理方式</text>
+            </view>
+            <view class="chip-row">
+              <view
+                v-for="opt in processModeOptions"
+                :key="opt.value"
+                class="chip"
+                :class="{ active: processMode === opt.value }"
+                @click="processMode = opt.value">
+                {{ opt.label }}
+              </view>
+            </view>
+            <view class="form-tip">
+              <text>自动模式在图片过多或本地生成失败时改用云端生成（云端会上传图片到服务器）</text>
+            </view>
+          </view>
+
+          <!-- 云端生成结果 -->
+          <view v-if="cloudResultUrl" class="section">
+            <view class="section-header">
+              <text class="section-title">云端生成结果</text>
+            </view>
+            <image class="cloud-result-image" :src="cloudResultUrl" mode="widthFix" />
+            <view class="cloud-result-actions">
+              <button class="cloud-btn primary" @click="saveCloudResult">保存图片</button>
+              <button class="cloud-btn" @click="copyCloudLink">复制链接</button>
+            </view>
+          </view>
         </template>
       </view>
 
       <!-- 底部操作栏 - 仅用户模式 -->
       <template v-if="pageMode === 'user'">
         <view class="bottom-bar">
-          <button class="btn-stitch" :disabled="images.length < 1 || isProcessing" @click="exportImage">
+          <button class="btn-stitch" :disabled="images.length < 1 || isProcessing" @click="handleGenerate">
             <uni-icons v-if="!isProcessing" type="download" size="18" color="#fff" />
-            <text>{{ isProcessing ? '处理中...' : '生成海报' }}</text>
+            <text>{{ isProcessing ? '处理中...' : generateBtnText }}</text>
           </button>
         </view>
       </template>
@@ -294,6 +379,8 @@
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
+  import { postImageToolsStitch } from '@/services/apifox/NODEJSDEMO/IMAGETOOLS/apifox'
+  import type { postImageToolsStitchBody } from '@/services/apifox/NODEJSDEMO/IMAGETOOLS/interface'
   import { postFiles } from '@/services/apifox/NODEJSDEMO/FILES/apifox'
   import { getOssFormData } from '../oss-upload/utils'
   import { getToken } from '@/utils/storage'
@@ -358,6 +445,52 @@
   const exportWidthInput = ref('750')
   const replaceIndex = ref(-1)
   const isRenderReady = ref(false) // 渲染就绪状态
+
+  // 拼接增强：模式 / 遮挡 / 处理方式
+  type StitchMode = 'normal' | 'chat' | 'compact'
+  type ProcessMode = 'local' | 'cloud' | 'auto'
+  type MaskKey = 'top' | 'bottom' | 'center' | 'corners' | 'avatar' | 'nickname'
+
+  const stitchMode = ref<StitchMode>('normal')
+  const processMode = ref<ProcessMode>('auto')
+  const masks = ref<MaskKey[]>([])
+  const cloudResultUrl = ref('')
+
+  const stitchModeOptions: { value: StitchMode; label: string }[] = [
+    { value: 'normal', label: '普通拼接' },
+    { value: 'chat', label: '聊天截图' },
+    { value: 'compact', label: '紧凑拼接' },
+  ]
+  const processModeOptions: { value: ProcessMode; label: string }[] = [
+    { value: 'auto', label: '自动' },
+    { value: 'local', label: '本地生成' },
+    { value: 'cloud', label: '云端生成' },
+  ]
+  const maskOptions: { value: MaskKey; label: string }[] = [
+    { value: 'top', label: '顶部' },
+    { value: 'bottom', label: '底部' },
+    { value: 'center', label: '中心' },
+    { value: 'corners', label: '四角' },
+    { value: 'avatar', label: '头像' },
+    { value: 'nickname', label: '昵称' },
+  ]
+
+  // 紧凑模式减少间距
+  const effectiveGap = computed(() => (stitchMode.value === 'compact' ? Math.min(gridGap.value, 4) : gridGap.value))
+
+  const hasRegionMask = computed(() =>
+    (['top', 'bottom', 'center', 'corners'] as MaskKey[]).some(k => masks.value.includes(k)),
+  )
+
+  const generateBtnText = computed(() => (processMode.value === 'cloud' ? '云端生成' : '生成海报'))
+
+  const toggleMask = (key: MaskKey) => {
+    const idx = masks.value.indexOf(key)
+    if (idx > -1) masks.value.splice(idx, 1)
+    else masks.value.push(key)
+  }
+
+  const CLOUD_IMAGE_THRESHOLD = 8
 
   // OSS上传相关状态
   const uploadHost = ref<string>('https://lzk-web.oss-cn-beijing.aliyuncs.com')
@@ -551,7 +684,7 @@
       layout: {
         rows,
         cols,
-        gap: gridGap.value,
+        gap: effectiveGap.value,
       },
       itemStyle: {
         width: itemWidth.value ? parseInt(itemWidth.value) : 'auto',
@@ -572,14 +705,14 @@
       backgroundColor: bgColor.value,
       padding: '16rpx',
       borderRadius: '16rpx',
-      gap: `${gridGap.value}px`,
+      gap: `${effectiveGap.value}px`,
     }
   }
 
   // Grid 单元格样式 (计算每个单元格的宽度百分比)
   const getGridItemStyle = () => {
     const cols = gridLayout.value.cols
-    const gap = gridGap.value
+    const gap = effectiveGap.value
     // 计算每个单元格的宽度：(100% - 总间距) / 列数
     // 总间距 = (列数 - 1) * gap
     const gapTotal = (cols - 1) * gap
@@ -1399,6 +1532,20 @@
       console.error('导出图片失败:', error)
       uni.hideLoading()
 
+      // 自动模式下本地生成失败，引导改用云端生成
+      if (processMode.value === 'auto') {
+        isProcessing.value = false
+        uni.showModal({
+          title: '本地生成失败',
+          content: '本地生成失败，是否改用云端生成？',
+          confirmText: '云端生成',
+          success: res => {
+            if (res.confirm) generateCloud()
+          },
+        })
+        return
+      }
+
       const errorDetail = error?.message || error?.errMsg || String(error) || '未知错误'
       uni.showModal({
         title: '导出失败',
@@ -1408,6 +1555,117 @@
     } finally {
       isProcessing.value = false
     }
+  }
+
+  // 云端拼接（长截图兜底）
+  const generateCloud = async () => {
+    if (images.value.length < 1) {
+      uni.showToast({ title: '请至少选择1张图片', icon: 'none' })
+      return
+    }
+    if (!checkLogin()) return
+    if (isProcessing.value) {
+      uni.showToast({ title: '正在处理中...', icon: 'none' })
+      return
+    }
+    try {
+      isProcessing.value = true
+      progressText.value = '云端生成中...'
+      uni.showLoading({ title: '云端生成中...', mask: true })
+
+      const body: postImageToolsStitchBody = {
+        images: images.value.map(img => img.path),
+        mode: stitchMode.value,
+        outputWidth: exportWidth.value,
+        gap: effectiveGap.value,
+        backgroundColor: bgColor.value,
+      }
+      if (masks.value.length) body.masks = JSON.stringify(masks.value)
+
+      const res = await postImageToolsStitch(body)
+      uni.hideLoading()
+      if (!res?.url) throw new Error('云端未返回结果')
+      cloudResultUrl.value = res.url
+      uni.showToast({ title: '云端生成成功', icon: 'success' })
+    } catch (error: any) {
+      uni.hideLoading()
+      const detail = error?.message || error?.errMsg || '云端生成失败'
+      uni.showToast({ title: String(detail).substring(0, 60), icon: 'none' })
+    } finally {
+      isProcessing.value = false
+    }
+  }
+
+  // 统一生成入口：按处理方式与阈值决定本地/云端
+  const handleGenerate = () => {
+    if (images.value.length < 1) {
+      uni.showToast({ title: '请至少选择1张图片', icon: 'none' })
+      return
+    }
+    if (processMode.value === 'cloud') {
+      generateCloud()
+      return
+    }
+    if (processMode.value === 'local') {
+      exportImage()
+      return
+    }
+    // auto：图片过多时提示云端，否则本地（失败再兜底云端）
+    if (images.value.length > CLOUD_IMAGE_THRESHOLD) {
+      uni.showModal({
+        title: '提示',
+        content: '图片较长，本地生成可能失败，是否改用云端生成？',
+        confirmText: '云端生成',
+        cancelText: '仍用本地',
+        success: res => {
+          if (res.confirm) generateCloud()
+          else exportImage()
+        },
+      })
+      return
+    }
+    exportImage()
+  }
+
+  const copyCloudLink = () => {
+    if (!cloudResultUrl.value) return
+    uni.setClipboardData({ data: cloudResultUrl.value, success: () => uni.showToast({ title: '链接已复制', icon: 'none' }) })
+  }
+
+  const saveCloudResult = () => {
+    if (!cloudResultUrl.value) return
+    // #ifdef H5
+    window.open(cloudResultUrl.value)
+    // #endif
+
+    // #ifndef H5
+    uni.showLoading({ title: '保存中...', mask: true })
+    uni.downloadFile({
+      url: cloudResultUrl.value,
+      success: res => {
+        if (res.statusCode !== 200) {
+          uni.hideLoading()
+          uni.showToast({ title: '下载失败', icon: 'none' })
+          return
+        }
+        uni.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => {
+            uni.hideLoading()
+            uni.showToast({ title: '已保存到相册', icon: 'success' })
+          },
+          fail: () => {
+            uni.hideLoading()
+            uni.showModal({ title: '提示', content: '保存失败，请检查相册权限', showCancel: false })
+          },
+        })
+      },
+      fail: () => {
+        uni.hideLoading()
+        uni.showToast({ title: '下载失败', icon: 'none' })
+      },
+    })
+    // #endif
   }
 
   // H5端下载图片
@@ -2164,5 +2422,142 @@
   .progress-text {
     font-size: 28rpx;
     color: var(--theme-text-secondary);
+  }
+
+  /* 长截图增强 */
+  .chip-row {
+    display: flex;
+    gap: 16rpx;
+    margin: 8rpx 0 16rpx;
+
+    &.wrap {
+      flex-wrap: wrap;
+    }
+  }
+
+  .chip {
+    padding: 12rpx 28rpx;
+    border-radius: 999rpx;
+    font-size: 26rpx;
+    color: var(--theme-text-secondary);
+    background: var(--theme-surface);
+    border: 2rpx solid var(--theme-border);
+
+    &.active {
+      color: #fff;
+      background: #0046b4;
+      border-color: #0046b4;
+    }
+  }
+
+  .cloud-result-image {
+    width: 100%;
+    border-radius: 12rpx;
+    background: var(--theme-surface);
+  }
+
+  .cloud-result-actions {
+    display: flex;
+    gap: 20rpx;
+    margin-top: 20rpx;
+  }
+
+  .cloud-btn {
+    flex: 1;
+    height: 76rpx;
+    line-height: 76rpx;
+    border-radius: 999rpx;
+    font-size: 28rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    border: 2rpx solid var(--theme-border);
+
+    &.primary {
+      color: #fff;
+      background: #0046b4;
+      border-color: #0046b4;
+    }
+  }
+
+  /* 逐项遮挡（聊天模式） */
+  .mask-avatar {
+    position: absolute;
+    top: 12rpx;
+    left: 12rpx;
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 12rpx;
+    background: #333;
+  }
+
+  .mask-nickname {
+    position: absolute;
+    top: 24rpx;
+    left: 116rpx;
+    width: 200rpx;
+    height: 40rpx;
+    border-radius: 8rpx;
+    background: #333;
+  }
+
+  /* 区域遮挡层 */
+  .mask-region-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+
+  .mask-region {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+
+    &.top {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 12%;
+    }
+
+    &.bottom {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 12%;
+    }
+
+    &.center {
+      top: 44%;
+      left: 0;
+      right: 0;
+      height: 12%;
+    }
+
+    &.corner {
+      width: 22%;
+      height: 8%;
+    }
+
+    &.tl {
+      top: 0;
+      left: 0;
+    }
+
+    &.tr {
+      top: 0;
+      right: 0;
+    }
+
+    &.bl {
+      bottom: 0;
+      left: 0;
+    }
+
+    &.br {
+      bottom: 0;
+      right: 0;
+    }
   }
 </style>

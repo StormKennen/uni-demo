@@ -7,7 +7,11 @@
           :initial-content="initialContent"
           :auto-generate="autoGenerate"
           @shuffle-image="openShuffleSheet"
-          @generated="handleGenerated" />
+          @generated="handleGenerated"
+          @generated-content="handleGeneratedContent" />
+        <view v-if="generatedContent" class="save-wallet-row">
+          <button class="save-wallet-btn" @click="saveToCodeWallet">保存到码包</button>
+        </view>
         <view v-if="isFlow && flowQrImage" class="flow-bar-spacer" />
       </view>
 
@@ -55,9 +59,22 @@
   const isFlow = ref(false)
   const flowQrImage = ref<ToolImagePayload | null>(null)
 
+  const generatedContent = ref('')
+
   const handleGenerated = (payload: ToolImagePayload) => {
     if (!isFlow.value) return
     flowQrImage.value = payload
+  }
+
+  const handleGeneratedContent = (content: string) => {
+    generatedContent.value = content
+  }
+
+  const saveToCodeWallet = () => {
+    if (!generatedContent.value) return
+    uni.navigateTo({
+      url: `/subPackages/tools/code-wallet/index?content=${encodeURIComponent(generatedContent.value)}&codeType=qr`,
+    })
   }
 
   const goToImageCipher = () => {
@@ -155,5 +172,19 @@
 
   .flow-bar-spacer {
     height: 180rpx;
+  }
+
+  .save-wallet-row {
+    margin-top: 24rpx;
+  }
+
+  .save-wallet-btn {
+    width: 100%;
+    height: 84rpx;
+    border: none;
+    border-radius: 999rpx;
+    font-size: 28rpx;
+    color: #fff;
+    background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
   }
 </style>

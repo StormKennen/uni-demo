@@ -151,6 +151,20 @@
           }
         },
         {
+          "path": "pdf-toolkit/index",
+          "style": {
+            "navigationBarTitleText": "PDF 工具箱",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "code-wallet/index",
+          "style": {
+            "navigationBarTitleText": "码包",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "qr-generator/index",
           "style": {
             "navigationBarTitleText": "二维码生成器",
