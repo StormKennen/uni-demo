@@ -257,15 +257,31 @@
 
   .tools-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14rpx;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14rpx 12rpx;
   }
 
   .tool-card {
-    min-height: 188rpx;
-    padding: 20rpx;
-    border-radius: $radius-md;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 166rpx;
+    padding: 22rpx 12rpx 18rpx;
+    border-radius: 22rpx;
     background: $card-muted;
+    border: 1rpx solid transparent;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+
+    &:active {
+      transform: scale(0.98);
+      border-color: rgba(0, 70, 180, 0.22);
+      background: $card-bg;
+    }
   }
 
   .tool-card.disabled,
@@ -275,19 +291,20 @@
 
   .tool-card-top {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12rpx;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
   }
 
   .tool-icon-wrapper {
-    width: 54rpx;
-    height: 54rpx;
-    border-radius: 16rpx;
+    width: 66rpx;
+    height: 66rpx;
+    border-radius: 20rpx;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.08);
   }
 
   .tool-icon-wrapper.mini {
@@ -297,15 +314,46 @@
   }
 
   .tool-badge {
+    position: absolute;
+    top: 12rpx;
+    right: 12rpx;
     padding: 6rpx 12rpx;
     border-radius: 999rpx;
     background: rgba(0, 70, 180, 0.12);
     color: $brand-color;
-    font-size: 18rpx;
+    font-size: 16rpx;
     font-weight: 600;
+    line-height: 1;
   }
 
-  .tool-name {
+  .tool-card .tool-name {
+    display: block;
+    width: 100%;
+    margin-top: 14rpx;
+    color: $text-primary;
+    font-size: 24rpx;
+    font-weight: 700;
+    line-height: 1.34;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool-card .tool-desc {
+    display: block;
+    width: 100%;
+    margin-top: 6rpx;
+    color: $text-secondary;
+    font-size: 19rpx;
+    line-height: 1.35;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tool-list-item .tool-name {
     display: block;
     color: $text-primary;
     font-size: 26rpx;
@@ -313,7 +361,7 @@
     line-height: 1.34;
   }
 
-  .tool-desc {
+  .tool-list-item .tool-desc {
     display: block;
     margin-top: 8rpx;
     color: $text-secondary;

@@ -7,12 +7,15 @@ export interface ToolItem {
   path: string
   category: string
   unsupportedPlatforms?: string[]
+  hiddenInWorkbenchPlatforms?: string[]
   disabled?: boolean
   badge?: string
   isNew?: boolean
   isWebLink?: boolean
   requiresAuth?: boolean
   adminOnly?: boolean
+  hiddenInDirectory?: boolean
+  recentAliasKey?: string
 }
 
 /** 分类配置 */
@@ -47,11 +50,11 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   // ── 图鉴 ──
   'compendium-swc': {
     name: '魔灵召唤',
-    desc: '魔灵图鉴/筛选/详情',
+    desc: '图鉴/兑换券/阵容',
     icon: 'star',
     gradient: 'linear-gradient(135deg, #ff7a59 0%, #f2c94c 100%)',
-    path: '/subPackages/tools/compendium/swc/list',
-    category: 'wiki',
+    path: '/subPackages/tools/compendium/swc/index',
+    category: 'entertainment',
     isNew: true,
   },
   'compendium-swc-admin': {
@@ -71,6 +74,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/compendium/swc/lineups?compendiumId=swc',
     category: 'wiki',
     isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
   },
   'compendium-lineup-mappings': {
     name: '魔灵召唤阵容映射',
@@ -80,6 +85,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
     category: 'wiki',
     isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
   },
   'summoners-war-coupons': {
     name: '魔灵兑换券',
@@ -89,6 +96,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/game-coupons/index?gameId=swc&compendiumId=swc',
     category: 'wiki',
     isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
   },
   // ── 媒体 ──
   'oss-upload': {
@@ -114,6 +123,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     path: '/subPackages/tools/image-compress/index',
     category: 'media',
+  },
+  'image-privacy': {
+    name: '图片隐私清理',
+    desc: '去元信息/遮挡敏感区',
+    icon: 'eye-slash',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%)',
+    path: '/subPackages/tools/image-privacy/index',
+    category: 'media',
+    isNew: true,
   },
   'image-format': {
     name: '图片格式转换',
@@ -149,13 +167,12 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     category: 'media',
   },
   'video-watermark': {
-    name: '视频去水印',
-    desc: '粘贴解析/保存/复制直链',
+    name: '视频链接整理',
+    desc: '提取/复制原始链接',
     icon: 'link',
     gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',
     path: '/subPackages/tools/watermark/index',
     category: 'media',
-    unsupportedPlatforms: ['mp-weixin'],
   },
   'video-gif': {
     name: '视频转GIF',
@@ -164,6 +181,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
     path: '/subPackages/tools/video-gif/index',
     category: 'media',
+  },
+  'document-scan': {
+    name: '文档扫描',
+    desc: '多页整理成长图',
+    icon: 'paperclip',
+    gradient: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
+    path: '/subPackages/tools/document-scan/index',
+    category: 'media',
+    isNew: true,
   },
   // ── 二维码 ──
   'qr-generator': {

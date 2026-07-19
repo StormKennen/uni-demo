@@ -32,14 +32,14 @@ export const SWC_GAME_COUPON_CONFIG: GameCouponConfig = {
   accountIdEmptyText: '待填写 Hive ID',
   storageKey: 'GAME_COUPON_ACCOUNTS_swc',
   backendDocPath: 'docs/summoners-war-coupon-backend.md',
-  defaultServer: 'global',
+  defaultServer: 'china',
   servers: [
-    { value: 'global', label: '国际服 Global', shortLabel: 'Global' },
-    { value: 'korea', label: '韩服 Korea', shortLabel: 'Korea' },
-    { value: 'japan', label: '日服 Japan', shortLabel: 'Japan' },
-    { value: 'china', label: '国服 China', shortLabel: 'China' },
-    { value: 'asia', label: '亚服 Asia', shortLabel: 'Asia' },
-    { value: 'europe', label: '欧服 Europe', shortLabel: 'Europe' },
+    { value: 'china', label: '国服', shortLabel: '国服' },
+    { value: 'global', label: '国际服', shortLabel: '国际服' },
+    { value: 'korea', label: '韩服', shortLabel: '韩服' },
+    { value: 'japan', label: '日服', shortLabel: '日服' },
+    { value: 'asia', label: '亚服', shortLabel: '亚服' },
+    { value: 'europe', label: '欧服', shortLabel: '欧服' },
   ],
 }
 

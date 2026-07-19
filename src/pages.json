@@ -116,6 +116,13 @@
           }
         },
         {
+          "path": "image-privacy/index",
+          "style": {
+            "navigationBarTitleText": "图片隐私清理",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-watermark/index",
           "style": {
             "navigationBarTitleText": "图片加水印",
@@ -195,7 +202,7 @@
         {
           "path": "watermark/index",
           "style": {
-            "navigationBarTitleText": "视频去水印",
+            "navigationBarTitleText": "视频链接整理",
             "navigationStyle": "custom"
           }
         },
@@ -203,6 +210,13 @@
           "path": "image-stitch/index",
           "style": {
             "navigationBarTitleText": "长图拼接",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "document-scan/index",
+          "style": {
+            "navigationBarTitleText": "文档扫描",
             "navigationStyle": "custom"
           }
         },
@@ -231,6 +245,13 @@
           "path": "pool-aim/index",
           "style": {
             "navigationBarTitleText": "台球瞄准器",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "compendium/swc/index",
+          "style": {
+            "navigationBarTitleText": "魔灵召唤",
             "navigationStyle": "custom"
           }
         },

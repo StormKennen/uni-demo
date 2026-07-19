@@ -1,13 +1,13 @@
 <template>
-  <PageLayout title="视频去水印" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
+  <PageLayout title="视频链接整理" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
     <view class="watermark-page">
-      <PlatformRestrictionNotice
+      <!-- <PlatformRestrictionNotice
         v-if="isWeixinRestricted"
-        description="根据微信小程序平台运营规范，当前平台暂不提供视频去水印功能，请前往 H5 使用。"
+        description="根据微信小程序平台规范，当前平台暂不提供视频解析处理能力，请前往 H5 使用完整工具。"
         action-text="返回首页"
-        @action="goHome" />
+        @action="goHome" /> -->
 
-      <view v-else class="main-content">
+      <view class="main-content">
         <view class="card input-card" v-if="!parsedVideoUrl">
           <textarea v-model="videoLink" class="textarea" placeholder="请在此处粘贴视频（或图集）链接。" :maxlength="-1" />
           <view class="btn-row">
@@ -62,7 +62,7 @@
   // #endif
 
   const SHARE_PATH = '/subPackages/tools/watermark/index'
-  const SHARE_TITLE = '视频去水印 · 凉白开工具箱'
+  const SHARE_TITLE = '视频链接整理 · 凉白开工具箱'
 
   const goHome = () => {
     uni.switchTab({
@@ -346,6 +346,10 @@
     font-size: 26rpx;
     color: #6b6b6b;
     text-decoration: underline;
+  }
+
+  .clickable {
+    cursor: pointer;
   }
 
   .share-entry {

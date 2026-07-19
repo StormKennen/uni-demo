@@ -253,7 +253,9 @@ export const postGameCouponsGameIdAccounts = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831028
  */
 
-export const usePostGameCouponsGameIdAccounts = (_queryOptions?: object = {}) => {
+export const usePostGameCouponsGameIdAccounts = (
+  _queryOptions?: object = {},
+) => {
   return useMutation({
     mutationFn: postGameCouponsGameIdAccounts,
     ..._queryOptions,
@@ -265,12 +267,16 @@ export const usePostGameCouponsGameIdAccounts = (_queryOptions?: object = {}) =>
  * @url GET /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831029
  */
-export const getGameIdAccountsAccountId = async (
+export const getGameCouponsAccounts = async (
   pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, {}, _config)
+  return http.get(
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+    {},
+    _config,
+  )
 }
 
 /**
@@ -280,25 +286,31 @@ export const getGameIdAccountsAccountId = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831029
  */
 
-export const useGetGameIdAccountsAccountId = (
+export const useGetGameCouponsAccounts = (
   pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
   fetchOptions: Expand<RequestInit> = {},
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, fetchOptions],
-    queryFn: () => getGameIdAccountsAccountId(gameId, fetchOptions),
+    queryKey: [
+      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+      fetchOptions,
+    ],
+    queryFn: () => getGameCouponsAccounts(pathParams, fetchOptions),
     ..._queryOptions,
   })
 }
-export const useOptionGetGameIdAccountsAccountId = (
+export const useOptionGetGameCouponsAccounts = (
   pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
   fetchOptions: Expand<RequestInit> = {},
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, fetchOptions],
-    queryFn: () => getGameIdAccountsAccountId(gameId, fetchOptions),
+    queryKey: [
+      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+      fetchOptions,
+    ],
+    queryFn: () => getGameCouponsAccounts(pathParams, fetchOptions),
     ..._queryOptions,
   })
 }
@@ -308,13 +320,17 @@ export const useOptionGetGameIdAccountsAccountId = (
  * @url PATCH /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831030
  */
-export const patchGameIdAccountsAccountId = async (
+export const patchGameCouponsAccounts = async (
   pathParams: Expand<patchGameIdAccountsAccountIdPathQuery>,
   data: Expand<patchGameIdAccountsAccountIdBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, data, _config)
+  return http.patch(
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+    data,
+    _config,
+  )
 }
 
 /**
@@ -324,11 +340,8 @@ export const patchGameIdAccountsAccountId = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831030
  */
 
-export const usePatchGameIdAccountsAccountId = (_queryOptions?: object = {}) => {
-  return useMutation({
-    mutationFn: patchGameIdAccountsAccountId,
-    ..._queryOptions,
-  })
+export const usePatchGameCouponsAccounts = (_queryOptions?: object = {}) => {
+  return useMutation({ mutationFn: patchGameCouponsAccounts, ..._queryOptions })
 }
 
 /**
@@ -336,12 +349,16 @@ export const usePatchGameIdAccountsAccountId = (_queryOptions?: object = {}) => 
  * @url DELETE /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831031
  */
-export const deleteGameIdAccountsAccountId = async (
+export const deleteGameCouponsAccounts = async (
   pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteGameIdAccountsAccountIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, {}, _config)
+  return http.delete(
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+    {},
+    _config,
+  )
 }
 
 /**
@@ -351,25 +368,31 @@ export const deleteGameIdAccountsAccountId = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831031
  */
 
-export const useDeleteGameIdAccountsAccountId = (
+export const useDeleteGameCouponsAccounts = (
   pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
   fetchOptions: Expand<RequestInit> = {},
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, fetchOptions],
-    queryFn: () => deleteGameIdAccountsAccountId(gameId, fetchOptions),
+    queryKey: [
+      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+      fetchOptions,
+    ],
+    queryFn: () => deleteGameCouponsAccounts(pathParams, fetchOptions),
     ..._queryOptions,
   })
 }
-export const useOptionDeleteGameIdAccountsAccountId = (
+export const useOptionDeleteGameCouponsAccounts = (
   pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
   fetchOptions: Expand<RequestInit> = {},
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`, fetchOptions],
-    queryFn: () => deleteGameIdAccountsAccountId(gameId, fetchOptions),
+    queryKey: [
+      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
+      fetchOptions,
+    ],
+    queryFn: () => deleteGameCouponsAccounts(pathParams, fetchOptions),
     ..._queryOptions,
   })
 }
@@ -379,12 +402,16 @@ export const useOptionDeleteGameIdAccountsAccountId = (
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/verify
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831032
  */
-export const postAccountsAccountIdVerify = async (
+export const postGameCouponsAccountsVerify = async (
   pathParams: Expand<postAccountsAccountIdVerifyPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAccountsAccountIdVerifyRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post(`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/verify`, {}, _config)
+  return http.post(
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/verify`,
+    {},
+    _config,
+  )
 }
 
 /**
@@ -394,9 +421,11 @@ export const postAccountsAccountIdVerify = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831032
  */
 
-export const usePostAccountsAccountIdVerify = (_queryOptions?: object = {}) => {
+export const usePostGameCouponsAccountsVerify = (
+  _queryOptions?: object = {},
+) => {
   return useMutation({
-    mutationFn: postAccountsAccountIdVerify,
+    mutationFn: postGameCouponsAccountsVerify,
     ..._queryOptions,
   })
 }
@@ -406,13 +435,17 @@ export const usePostAccountsAccountIdVerify = (_queryOptions?: object = {}) => {
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/auto-redeem
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831033
  */
-export const postAccountsAccountIdAutoRedeem = async (
+export const postGameCouponsAccountsAutoRedeem = async (
   pathParams: Expand<postAccountsAccountIdAutoRedeemPathQuery>,
   data: Expand<postAccountsAccountIdAutoRedeemBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAccountsAccountIdAutoRedeemRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post(`/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/auto-redeem`, data, _config)
+  return http.post(
+    `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}/auto-redeem`,
+    data,
+    _config,
+  )
 }
 
 /**
@@ -422,9 +455,11 @@ export const postAccountsAccountIdAutoRedeem = async (
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831033
  */
 
-export const usePostAccountsAccountIdAutoRedeem = (_queryOptions?: object = {}) => {
+export const usePostGameCouponsAccountsAutoRedeem = (
+  _queryOptions?: object = {},
+) => {
   return useMutation({
-    mutationFn: postAccountsAccountIdAutoRedeem,
+    mutationFn: postGameCouponsAccountsAutoRedeem,
     ..._queryOptions,
   })
 }
@@ -458,7 +493,8 @@ export const useGetGameCouponsGameIdRedeemRecords = (
 ) => {
   return useQuery({
     queryKey: [`/game-coupons/${gameId}/redeem-records`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
+    queryFn: () =>
+      getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
     ..._queryOptions,
   })
 }
@@ -470,7 +506,8 @@ export const useOptionGetGameCouponsGameIdRedeemRecords = (
 ) => {
   return queryOptions({
     queryKey: [`/game-coupons/${gameId}/redeem-records`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
+    queryFn: () =>
+      getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
     ..._queryOptions,
   })
 }
@@ -486,7 +523,11 @@ export const getGameIdRedeemRecordsSummary = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameIdRedeemRecordsSummaryRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/game-coupons/${gameId}/redeem-records/summary`, params, _config)
+  return http.get(
+    `/game-coupons/${gameId}/redeem-records/summary`,
+    params,
+    _config,
+  )
 }
 
 /**
@@ -503,7 +544,11 @@ export const useGetGameIdRedeemRecordsSummary = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/game-coupons/${gameId}/redeem-records/summary`, params, fetchOptions],
+    queryKey: [
+      `/game-coupons/${gameId}/redeem-records/summary`,
+      params,
+      fetchOptions,
+    ],
     queryFn: () => getGameIdRedeemRecordsSummary(gameId, params, fetchOptions),
     ..._queryOptions,
   })
@@ -515,7 +560,11 @@ export const useOptionGetGameIdRedeemRecordsSummary = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/game-coupons/${gameId}/redeem-records/summary`, params, fetchOptions],
+    queryKey: [
+      `/game-coupons/${gameId}/redeem-records/summary`,
+      params,
+      fetchOptions,
+    ],
     queryFn: () => getGameIdRedeemRecordsSummary(gameId, params, fetchOptions),
     ..._queryOptions,
   })

@@ -183,53 +183,79 @@
 
   .workbench-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16rpx;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14rpx;
   }
 
   .tool-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 184rpx;
-    padding: 24rpx;
-    border-radius: 20rpx;
+    align-items: center;
+    justify-content: center;
+    min-height: 168rpx;
+    padding: 22rpx 14rpx 20rpx;
+    border-radius: 22rpx;
     background: var(--theme-surface);
     border: 1rpx solid var(--theme-border);
+    box-shadow: 0 8rpx 22rpx var(--theme-shadow-xs);
     transition:
+      transform 0.2s ease,
       border-color 0.2s ease,
       background-color 0.2s ease;
 
     &:active {
+      transform: scale(0.98);
       border-color: var(--theme-brand);
       background: var(--theme-surface-2);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 28rpx;
+      right: 28rpx;
+      bottom: 0;
+      height: 4rpx;
+      border-radius: 999rpx 999rpx 0 0;
+      background: var(--theme-border);
+      opacity: 0.55;
     }
   }
 
   .tool-icon {
-    width: 68rpx;
-    height: 68rpx;
-    border-radius: 16rpx;
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 22rpx;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--theme-surface-2);
+    box-shadow: inset 0 0 0 1rpx rgba(255, 255, 255, 0.24);
   }
 
   .tool-name {
     display: block;
-    margin-top: 20rpx;
+    width: 100%;
+    margin-top: 16rpx;
     color: var(--theme-text);
-    font-size: 28rpx;
-    font-weight: 600;
+    font-size: 25rpx;
+    font-weight: 700;
     line-height: 1.3;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tool-desc {
     display: block;
-    margin-top: 8rpx;
+    width: 100%;
+    margin-top: 6rpx;
     color: var(--theme-text-tertiary);
-    font-size: 22rpx;
-    line-height: 1.4;
+    font-size: 20rpx;
+    line-height: 1.3;
+    text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

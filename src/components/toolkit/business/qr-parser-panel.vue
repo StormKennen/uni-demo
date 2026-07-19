@@ -20,6 +20,19 @@
         <text class="info-label">内容</text>
         <text class="info-value">{{ parseResult }}</text>
       </view>
+      <view v-if="parseResult" class="analysis-card" :class="`risk--${parsedAnalysis.riskLevel}`">
+        <view class="analysis-head">
+          <text class="analysis-type">{{ parsedAnalysis.typeLabel }}</text>
+          <text class="analysis-risk">{{ parsedAnalysis.riskTitle }}</text>
+        </view>
+        <text v-if="parsedAnalysis.host" class="analysis-host">{{ parsedAnalysis.host }}</text>
+        <text class="analysis-desc">{{ parsedAnalysis.riskDesc }}</text>
+      </view>
+      <view v-if="parseResult" class="quick-actions">
+        <button class="mini-btn" @click="copyResult">复制内容</button>
+        <button class="mini-btn primary" @click="generateQrFromResult">生成二维码</button>
+        <button v-if="parsedAnalysis.canGoMagnet" class="mini-btn accent" @click="goToMagnetLink">磁力补全</button>
+      </view>
       <view class="info-item" v-if="parseError">
         <text class="info-label">错误</text>
         <text class="info-value">{{ parseError }}</text>
@@ -29,10 +42,20 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import ToolSectionCard from '@/components/toolkit/base/tool-section-card.vue'
 
   export type QrParsedType = 'text' | 'url' | 'magnetCandidate'
+  type RiskLevel = 'safe' | 'warn' | 'neutral'
+
+  interface ParsedAnalysis {
+    canGoMagnet: boolean
+    host: string
+    riskDesc: string
+    riskLevel: RiskLevel
+    riskTitle: string
+    typeLabel: string
+  }
 
   const emit = defineEmits<{
     (e: 'parsed', payload: { text: string; type: QrParsedType }): void
@@ -41,6 +64,7 @@
   const previewSrc = ref('')
   const parseResult = ref('')
   const parseError = ref('')
+  const shortLinkHosts = ['t.cn', 'dwz.cn', 'suo.im', 'bit.ly', 'goo.gl', 'tinyurl.com', 'is.gd', 'cutt.ly', 'ow.ly', 'buff.ly', 'rebrand.ly']
 
   const detectParsedType = (text: string): QrParsedType => {
     if (/magnet:|[a-fA-F0-9]{40}|[a-zA-Z2-7]{32}/i.test(text)) return 'magnetCandidate'
@@ -48,8 +72,95 @@
     return 'text'
   }
 
+  const extractHost = (text: string): string => {
+    const match = text.match(/^https?:\/\/([^/?#]+)/i)
+    return match?.[1]?.toLowerCase() || ''
+  }
+
+  const parsedAnalysis = computed<ParsedAnalysis>(() => {
+    const text = parseResult.value.trim()
+    const type = detectParsedType(text)
+    const host = extractHost(text)
+    const isShortLink = shortLinkHosts.some(item => host === item || host.endsWith(`.${item}`))
+    const isIpHost = /^\d{1,3}(\.\d{1,3}){3}(:\d+)?$/.test(host)
+    const isHttp = /^http:\/\//i.test(text)
+
+    if (type === 'magnetCandidate') {
+      return {
+        canGoMagnet: true,
+        host: '',
+        riskDesc: '识别到磁力链接或 Hash 特征，可以继续补全为标准磁力链接后再生成二维码。',
+        riskLevel: 'neutral',
+        riskTitle: '可继续处理',
+        typeLabel: '磁力/Hash',
+      }
+    }
+
+    if (type === 'url') {
+      if (isShortLink) {
+        return {
+          canGoMagnet: false,
+          host,
+          riskDesc: '短链接会隐藏最终跳转地址，打开前建议确认来源可信。',
+          riskLevel: 'warn',
+          riskTitle: '谨慎打开',
+          typeLabel: '短链接',
+        }
+      }
+      if (isHttp || isIpHost) {
+        return {
+          canGoMagnet: false,
+          host,
+          riskDesc: isHttp ? '该链接不是 HTTPS，可能存在被篡改或窃听风险。' : '该链接使用 IP 地址，建议确认来源后再访问。',
+          riskLevel: 'warn',
+          riskTitle: '需要确认',
+          typeLabel: '网页链接',
+        }
+      }
+      return {
+        canGoMagnet: false,
+        host,
+        riskDesc: '这是一个普通网页链接。复制或打开前仍建议确认来源。',
+        riskLevel: 'safe',
+        riskTitle: '未发现明显风险',
+        typeLabel: '网页链接',
+      }
+    }
+
+    return {
+      canGoMagnet: false,
+      host: '',
+      riskDesc: '这是普通文本内容，适合复制、保存或重新生成二维码。',
+      riskLevel: 'neutral',
+      riskTitle: '普通文本',
+      typeLabel: '文本',
+    }
+  })
+
   const emitParsed = (text: string) => {
     emit('parsed', { text, type: detectParsedType(text) })
+  }
+
+  const copyResult = () => {
+    if (!parseResult.value) return
+    uni.setClipboardData({
+      data: parseResult.value,
+      success: () => uni.showToast({ title: '已复制', icon: 'success' }),
+    })
+  }
+
+  const generateQrFromResult = () => {
+    if (!parseResult.value) return
+    uni.navigateTo({
+      url: `/subPackages/tools/qr-generator/index?content=${encodeURIComponent(parseResult.value)}`,
+    })
+  }
+
+  const goToMagnetLink = () => {
+    if (!parseResult.value) return
+    uni.navigateTo({
+      url: `/subPackages/tools/magnet-link/index?input=${encodeURIComponent(parseResult.value)}`,
+    })
   }
 
   const parseQRCodeFromImage = async () => {
@@ -199,5 +310,94 @@
     line-height: 1.6;
     color: var(--theme-text);
     word-break: break-all;
+  }
+
+  .analysis-card {
+    margin-top: 20rpx;
+    padding: 20rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 20rpx;
+    background: var(--theme-surface-2);
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+  }
+
+  .analysis-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+  }
+
+  .analysis-type,
+  .analysis-risk {
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .analysis-type {
+    color: var(--theme-text);
+  }
+
+  .analysis-risk {
+    color: var(--theme-text-secondary);
+  }
+
+  .analysis-host,
+  .analysis-desc {
+    font-size: 24rpx;
+    line-height: 1.5;
+    color: var(--theme-text-secondary);
+    word-break: break-all;
+  }
+
+  .risk--safe {
+    border-color: rgba(7, 193, 96, 0.34);
+    background: rgba(7, 193, 96, 0.08);
+
+    .analysis-risk {
+      color: #07c160;
+    }
+  }
+
+  .risk--warn {
+    border-color: rgba(245, 158, 11, 0.38);
+    background: rgba(245, 158, 11, 0.1);
+
+    .analysis-risk {
+      color: #d97706;
+    }
+  }
+
+  .quick-actions {
+    margin-top: 20rpx;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14rpx;
+  }
+
+  .mini-btn {
+    height: 72rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 18rpx;
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mini-btn.primary {
+    border-color: rgba(102, 126, 234, 0.28);
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .mini-btn.accent {
+    border-color: rgba(240, 147, 251, 0.3);
+    color: #d946ef;
+    background: rgba(240, 147, 251, 0.1);
   }
 </style>

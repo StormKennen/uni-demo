@@ -40,7 +40,7 @@ const categorySummaryMap: Record<string, string> = {
   qr: '生成、解析和结果承接。',
   record: '个人内容与长期记录。',
   text: '文本补全、转换与分发。',
-  entertainment: '轻体验、即开即用的小功能。',
+  entertainment: '游戏聚合与轻体验入口。',
 }
 
 const workflowBlueprints = [
@@ -102,6 +102,7 @@ export function useToolDirectory() {
         if (tool.adminOnly && !isAdmin.value) return false
         if (tool.requiresAuth && !loggedIn.value) return false
         if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) return false
+        if (tool.hiddenInDirectory) return false
         return true
       })
       .map(([key, tool]) => ({ key, tool })),
@@ -116,9 +117,15 @@ export function useToolDirectory() {
 
   const visibleCategories = computed(() => CATEGORIES.filter(category => getToolsByCategory(category.key).length > 0))
 
+  function isHiddenInWorkbench(tool: ToolItem): boolean {
+    return !!tool.hiddenInWorkbenchPlatforms?.includes(currentPlatform.value)
+  }
+
   const recentTools = computed<KeyedToolItem[]>(() => {
     const available = new Set(availableTools.value.map(item => item.key))
-    return recentToolKeys.value.filter(key => available.has(key) && ALL_TOOLS[key]).map(key => ({ key, tool: ALL_TOOLS[key] }))
+    return recentToolKeys.value
+      .filter(key => available.has(key) && ALL_TOOLS[key] && !isHiddenInWorkbench(ALL_TOOLS[key]))
+      .map(key => ({ key, tool: ALL_TOOLS[key] }))
   })
 
   const platformLabel = computed(() => {
@@ -184,11 +191,15 @@ export function useToolDirectory() {
   const workbenchTools = computed<KeyedToolItem[]>(() => {
     if (recentTools.value.length > 0) return recentTools.value.slice(0, 6)
 
-    const preferred = workbenchFallbackKeys.map(key => availableToolMap.value[key]).filter((item): item is KeyedToolItem => !!item)
+    const preferred = workbenchFallbackKeys
+      .map(key => availableToolMap.value[key])
+      .filter((item): item is KeyedToolItem => !!item && !isHiddenInWorkbench(item.tool))
     if (preferred.length >= 3) return preferred.slice(0, 6)
 
     const preferredKeys = new Set(preferred.map(item => item.key))
-    const supplement = availableTools.value.filter(item => !preferredKeys.has(item.key)).slice(0, Math.max(0, 6 - preferred.length))
+    const supplement = availableTools.value
+      .filter(item => !preferredKeys.has(item.key) && !isHiddenInWorkbench(item.tool))
+      .slice(0, Math.max(0, 6 - preferred.length))
     return [...preferred, ...supplement]
   })
 
@@ -207,10 +218,24 @@ export function useToolDirectory() {
   function loadRecentTools() {
     try {
       const data = uni.getStorageSync(STORAGE_KEY_RECENT)
-      recentToolKeys.value = Array.isArray(data) ? data : []
+      recentToolKeys.value = Array.isArray(data) ? normalizeRecentToolKeys(data) : []
     } catch {
       recentToolKeys.value = []
     }
+  }
+
+  function normalizeRecentToolKeys(keys: unknown[]): string[] {
+    const result: string[] = []
+
+    keys.forEach(rawKey => {
+      if (typeof rawKey !== 'string') return
+      const tool = ALL_TOOLS[rawKey]
+      if (!tool) return
+      const key = tool.recentAliasKey && ALL_TOOLS[tool.recentAliasKey] ? tool.recentAliasKey : rawKey
+      if (!result.includes(key)) result.push(key)
+    })
+
+    return result
   }
 
   function loadFoldStatus() {
