@@ -1,7 +1,7 @@
 <template>
   <PageLayout title="魔灵召唤" :nav-back="true">
     <view class="swc-portal-page">
-      <view class="hero-section">
+      <!-- <view class="hero-section">
         <view class="hero-icon">
           <uni-icons type="star" size="28" color="#fff" />
         </view>
@@ -9,7 +9,7 @@
           <text class="hero-title">魔灵召唤</text>
           <text class="hero-subtitle">图鉴、兑换券、阵容与映射统一入口</text>
         </view>
-      </view>
+      </view> -->
 
       <view class="portal-list">
         <view v-for="entry in portalEntries" :key="entry.id" class="portal-card" @click="openEntry(entry.path)">
@@ -28,8 +28,10 @@
 </template>
 
 <script setup lang="ts">
+  import { computed, ref } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
+  import { isLineupFeatureAllowed } from '@/utils/admin'
 
   interface PortalEntry {
     id: string
@@ -41,7 +43,10 @@
     path: string
   }
 
-  const portalEntries: PortalEntry[] = [
+  const lineupEntryIds = new Set(['lineups', 'mappings'])
+  const accessRefreshKey = ref(0)
+
+  const allPortalEntries: PortalEntry[] = [
     {
       id: 'bestiary',
       title: '魔灵图鉴',
@@ -80,11 +85,17 @@
     },
   ]
 
+  const portalEntries = computed(() => {
+    const lineupFeatureAllowed = accessRefreshKey.value >= 0 && isLineupFeatureAllowed()
+    return allPortalEntries.filter(entry => !lineupEntryIds.has(entry.id) || lineupFeatureAllowed)
+  })
+
   function openEntry(path: string) {
     uni.navigateTo({ url: path })
   }
 
   onShow(() => {
+    accessRefreshKey.value += 1
     reportToolVisit('compendium-swc')
   })
 </script>

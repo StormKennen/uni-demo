@@ -1,12 +1,6 @@
 <template>
   <PageLayout title="视频链接整理" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
     <view class="watermark-page">
-      <!-- <PlatformRestrictionNotice
-        v-if="isWeixinRestricted"
-        description="根据微信小程序平台规范，当前平台暂不提供视频解析处理能力，请前往 H5 使用完整工具。"
-        action-text="返回首页"
-        @action="goHome" /> -->
-
       <view class="main-content">
         <view class="card input-card" v-if="!parsedVideoUrl">
           <textarea v-model="videoLink" class="textarea" placeholder="请在此处粘贴视频（或图集）链接。" :maxlength="-1" />
@@ -40,7 +34,6 @@
   import { ref } from 'vue'
   import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 
   const videoLink = ref('')
   const parsedVideoUrl = ref('')
@@ -48,12 +41,10 @@
   const isParsing = ref(false)
   const isDownloading = ref(false)
   const isWeixinMiniProgram = ref(false)
-  const isWeixinRestricted = ref(false)
   const isH5 = ref(false)
 
   // #ifdef MP-WEIXIN
   isWeixinMiniProgram.value = true
-  isWeixinRestricted.value = true
   uni.showShareMenu({ withShareTicket: true })
   // #endif
 
@@ -63,15 +54,6 @@
 
   const SHARE_PATH = '/subPackages/tools/watermark/index'
   const SHARE_TITLE = '视频链接整理 · 凉白开工具箱'
-
-  const goHome = () => {
-    uni.switchTab({
-      url: '/pages/index/index',
-      fail: () => {
-        uni.reLaunch({ url: '/pages/index/index' })
-      },
-    })
-  }
 
   const extractVideoUrl = (text: string) => {
     if (!text) return ''
@@ -170,13 +152,13 @@
     const directUrl = parsedVideoUrl.value.trim()
     if (!directUrl) return
 
-    isDownloading.value = true
-    uni.showLoading({ title: '视频下载中...' })
-
     const buildProxyUrl = () => {
       const base = (import.meta.env.VITE_APP_BASE_URL || '').replace(/\/$/, '')
       return base ? `${base}/video/download?url=${encodeURIComponent(directUrl)}` : ''
     }
+
+    isDownloading.value = true
+    uni.showLoading({ title: '视频下载中...' })
 
     const finalize = () => {
       isDownloading.value = false
@@ -339,6 +321,10 @@
     text-decoration: underline;
   }
 
+  .clickable {
+    cursor: pointer;
+  }
+
   .new-link {
     display: block;
     text-align: center;
@@ -346,10 +332,6 @@
     font-size: 26rpx;
     color: #6b6b6b;
     text-decoration: underline;
-  }
-
-  .clickable {
-    cursor: pointer;
   }
 
   .share-entry {

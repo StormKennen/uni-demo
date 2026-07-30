@@ -1,18 +1,16 @@
 <script setup lang="ts">
-  import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const';
-import { ref } from 'vue'
+  import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
   type Props = {}
-  const props = defineProps<Props>()
   const model = defineModel()
   const onPrivacy = () => {
     console.log('🚀 ~ onPrivacy ~ onPrivacy:')
     uni.navigateTo({
-      url: PrivacyPageUrl
+      url: PrivacyPageUrl,
     })
   }
   const onProtocol = () => {
     uni.navigateTo({
-      url: ProtocolPageUrl
+      url: ProtocolPageUrl,
     })
   }
   const onRead = () => {
@@ -25,17 +23,16 @@ import { ref } from 'vue'
   <view class="read-protocol">
     <label class="radio">
       <radio class="radio-radio" @click="onRead" :value="model" :checked="model" color="#0046B4" />
-      <text class="radio-text">我已阅读并同意
-      </text>
+      <text class="radio-text">我已阅读并同意 </text>
     </label>
-    <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+    <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户服务协议》</text>
   </view>
 </template>
 
 <style lang="scss" scoped>
   .read-protocol {
     font-size: 24rpx;
-    color: $ga-gray-6;
+    color: var(--theme-text-secondary);
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -49,11 +46,11 @@ import { ref } from 'vue'
       transform: scale(0.6);
       font-size: 24rpx;
     }
-    .radio-text{
+    .radio-text {
       margin-left: -4rpx;
     }
     .protocol {
-      color: $ga-brand-4;
+      color: var(--theme-brand);
     }
   }
 </style>

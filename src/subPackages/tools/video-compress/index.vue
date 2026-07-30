@@ -172,12 +172,11 @@
             <text class="tip-item">• 选择方式：从相册选择或从聊天记录选择</text>
             <text class="tip-item">• 压缩后的视频将自动保存到系统相册</text>
             <text class="tip-item">• 如遇问题，请尝试重启小程序或使用聊天记录模式</text>
-            <text class="tip-item">• H5 环境暂不支持本地视频压缩功能</text>
           </view>
         </view>
       </view>
 
-      <!-- H5引导弹窗 -->
+      <!-- #ifdef H5 -->
       <uni-popup ref="h5GuidePopup" type="center">
         <view class="h5-guide-modal">
           <text class="modal-title">功能提示</text>
@@ -189,6 +188,7 @@
           </view>
         </view>
       </uni-popup>
+      <!-- #endif -->
     </view>
   </PageLayout>
 </template>

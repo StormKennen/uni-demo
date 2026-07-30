@@ -5,7 +5,7 @@
         <view class="card hero-card">
           <view class="hero-copy">
             <text class="hero-title">手机资料整理成一张长图</text>
-            <text class="hero-desc">适合证件、票据、作业、纸质资料。小程序端先提供稳定的长图导出，PDF 可后续接 H5/服务端增强。</text>
+            <text class="hero-desc">适合证件、票据、作业、纸质资料。当前提供稳定的长图导出，便于保存和分享。</text>
           </view>
           <button class="primary-btn" :disabled="isGenerating || isChecking" @click="choosePages">
             {{ pages.length ? '重新选择页面' : isChecking ? '安全校验中...' : '拍照或从相册选择' }}
@@ -34,7 +34,12 @@
         <view v-if="pages.length" class="card">
           <text class="section-title">整理模式</text>
           <view class="mode-grid">
-            <view v-for="mode in modeOptions" :key="mode.value" class="mode-item" :class="{ active: scanMode === mode.value }" @click="scanMode = mode.value">
+            <view
+              v-for="mode in modeOptions"
+              :key="mode.value"
+              class="mode-item"
+              :class="{ active: scanMode === mode.value }"
+              @click="scanMode = mode.value">
               <text class="mode-title">{{ mode.label }}</text>
               <text class="mode-desc">{{ mode.desc }}</text>
             </view>
@@ -156,13 +161,13 @@
     isChecking.value = true
     try {
       const result = await checkMediaSecurity(path, 'document_scan')
-      if (!result.safe) {
-        uni.showToast({ title: '图片含违规信息', icon: 'none' })
+      if (!result.safe || result.suggestion !== 'pass') {
+        uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
         return false
       }
       return true
     } catch {
-      uni.showToast({ title: '内容安全校验失败', icon: 'none' })
+      uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
       return false
     } finally {
       isChecking.value = false

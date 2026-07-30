@@ -1,13 +1,7 @@
 <template>
   <PageLayout title="图片加水印" nav-gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
     <view class="watermark-page">
-      <PlatformRestrictionNotice
-        v-if="isWeixinRestricted"
-        description="根据微信小程序平台运营规范，当前平台暂不提供图片加水印功能，请前往 H5 使用。"
-        action-text="返回首页"
-        @action="goHome" />
-
-      <view v-else class="main-content">
+      <view class="main-content">
         <view class="card upload-card">
           <view v-if="!baseImage.src" class="upload-area" @click="selectBaseImage">
             <uni-icons type="image" size="52" color="#96a0b5" />
@@ -246,7 +240,6 @@
   import { ref, reactive, computed, getCurrentInstance } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
-  import PlatformRestrictionNotice from '@/components/platform-restriction-notice.vue'
 
   onShow(() => {
     reportToolVisit('image-watermark')
@@ -265,11 +258,6 @@
   const isGenerating = ref(false)
   const canvasWidth = ref(0)
   const canvasHeight = ref(0)
-  const isWeixinRestricted = ref(false)
-
-  // #ifdef MP-WEIXIN
-  isWeixinRestricted.value = true
-  // #endif
 
   const textWatermark = reactive({
     content: '凉白开工具箱 Water Tools',
@@ -327,15 +315,6 @@
 
   const { proxy } = getCurrentInstance() as any
 
-  const goHome = () => {
-    uni.switchTab({
-      url: '/pages/index/index',
-      fail: () => {
-        uni.reLaunch({ url: '/pages/index/index' })
-      },
-    })
-  }
-
   const setWatermarkMode = (mode: 'text' | 'image') => {
     watermarkMode.value = mode
   }
@@ -348,30 +327,77 @@
   }
 
   const selectBaseImage = () => {
-    uni.chooseImage({
-      count: 1,
-      sizeType: ['original'],
-      success: res => {
-        const temp = res.tempFilePaths[0]
-        uni.getImageInfo({
-          src: temp,
-          success: info => {
-            baseImage.src = info.path
-            baseImage.previewSrc = info.path
-            baseImage.width = info.width
-            baseImage.height = info.height
-            const tempFiles = res.tempFiles as any
-            baseImage.size = Array.isArray(tempFiles) ? tempFiles[0]?.size || 0 : tempFiles?.size || 0
-            canvasWidth.value = info.width
-            canvasHeight.value = info.height
-            generatedImage.value = ''
-          },
+    chooseSingleImage(res => {
+      const temp = res.tempFilePaths[0]
+      uni.getImageInfo({
+        src: temp,
+        success: info => {
+          baseImage.src = info.path
+          baseImage.previewSrc = info.path
+          baseImage.width = info.width
+          baseImage.height = info.height
+          const tempFiles = res.tempFiles as Array<{ size?: number }> | { size?: number } | undefined
+          baseImage.size = Array.isArray(tempFiles) ? tempFiles[0]?.size || 0 : tempFiles?.size || 0
+          canvasWidth.value = info.width
+          canvasHeight.value = info.height
+          generatedImage.value = ''
+        },
+        fail: () => {
+          uni.showToast({ title: '图片加载失败', icon: 'none' })
+        },
+      })
+    })
+  }
+
+  const chooseSingleImage = (onSelected: (res: UniApp.ChooseImageSuccessCallbackResult) => void) => {
+    ensureMiniProgramPrivacyAuthorization(() => {
+      uni.chooseImage({
+        count: 1,
+        sizeType: ['original'],
+        success: onSelected,
+        fail: err => {
+          if (err.errMsg?.includes('cancel')) return
+          uni.showToast({ title: getChooseImageErrorText(err.errMsg), icon: 'none' })
+        },
+      })
+    })
+  }
+
+  const ensureMiniProgramPrivacyAuthorization = (onReady: () => void) => {
+    // #ifndef MP-WEIXIN
+    onReady()
+    // #endif
+
+    // #ifdef MP-WEIXIN
+    if (!wx.getPrivacySetting) {
+      onReady()
+      return
+    }
+
+    wx.getPrivacySetting({
+      success: (res: { needAuthorization?: boolean }) => {
+        if (!res.needAuthorization || !wx.requirePrivacyAuthorize) {
+          onReady()
+          return
+        }
+
+        wx.requirePrivacyAuthorize({
+          success: onReady,
           fail: () => {
-            uni.showToast({ title: '图片加载失败', icon: 'none' })
+            uni.showToast({ title: '请先同意隐私协议后再选择图片', icon: 'none' })
           },
         })
       },
+      fail: onReady,
     })
+    // #endif
+  }
+
+  const getChooseImageErrorText = (errMsg = '') => {
+    if (errMsg.includes('auth deny') || errMsg.includes('authorize') || errMsg.includes('permission')) {
+      return '请授权访问相册后重试'
+    }
+    return '选择图片失败，请重试'
   }
 
   const resetAll = () => {
@@ -403,15 +429,11 @@
   }
 
   const selectWatermarkImage = () => {
-    uni.chooseImage({
-      count: 1,
-      sizeType: ['original'],
-      success: res => {
-        const temp = res.tempFilePaths[0]
-        imageWatermark.source = temp
-        imageWatermark.previewSrc = temp
-        loadWatermarkImage(temp)
-      },
+    chooseSingleImage(res => {
+      const temp = res.tempFilePaths[0]
+      imageWatermark.source = temp
+      imageWatermark.previewSrc = temp
+      loadWatermarkImage(temp)
     })
   }
 
@@ -471,6 +493,7 @@
       ctx.translate(x, y)
       ctx.rotate((textWatermark.rotation * Math.PI) / 180)
       ctx.font = `${textWatermark.fontWeight} ${textWatermark.fontSize}px sans-serif`
+      ctx.setFontSize(textWatermark.fontSize)
       ctx.setFillStyle(hexToRgba(textWatermark.color, textWatermark.opacity))
       ctx.setTextBaseline('middle')
       ctx.setTextAlign('center')
@@ -485,7 +508,9 @@
       const drawHeight = drawWidth / ratio
       ctx.save()
       ctx.globalAlpha = imageWatermark.opacity
+      ctx.setGlobalAlpha(imageWatermark.opacity)
       ctx.drawImage(watermarkImageInfo.path, x - drawWidth / 2, y - drawHeight / 2, drawWidth, drawHeight)
+      ctx.setGlobalAlpha(1)
       ctx.restore()
     }
 

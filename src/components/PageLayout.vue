@@ -6,6 +6,7 @@
   import { useThemeOnPage } from '@/hooks/useTheme'
   import { LIGHT_TOKENS, DARK_TOKENS } from '@/utils/theme'
   import NavBar from '@/components/nav-bar.vue'
+  import PrivacyPopup from '@/components/privacy-popup.vue'
 
   interface Props {
     /** 页面标题（导航栏 + 分享） */
@@ -121,6 +122,9 @@
     <view v-if="slots.footer" class="page-layout__footer">
       <slot name="footer" />
     </view>
+    <!-- #ifdef MP-WEIXIN -->
+    <PrivacyPopup />
+    <!-- #endif -->
   </view>
 </template>
 

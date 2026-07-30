@@ -105,7 +105,7 @@
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
   import { fetchAdminLineupOptions, fetchLineupRelationDetail, saveLineupRelation, type LineupOption } from '@/services/compendium-lineups'
-  import { ensureAdminAccess } from '@/utils/admin'
+  import { ensureAdminAccess, ensureLineupFeatureAccess } from '@/utils/admin'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -282,6 +282,7 @@
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     sourceLineupId.value = options.sourceLineupId || ''
 
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     if (!ensureAdminAccess(buildCurrentUrl())) return
 
     uni.setNavigationBarTitle({ title: '阵容映射关系' })

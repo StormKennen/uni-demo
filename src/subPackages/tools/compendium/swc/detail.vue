@@ -26,7 +26,7 @@
         <view v-if="switching" class="switching-overlay">
           <text>切换中...</text>
         </view>
-        <view class="locale-toolbar">
+        <!-- <view class="locale-toolbar">
           <text class="locale-toolbar-label">语言</text>
           <view class="locale-switch">
             <text
@@ -38,51 +38,88 @@
               {{ option.label }}
             </text>
           </view>
-        </view>
-        <view class="hero-card">
-          <view class="avatar-column">
-            <image v-if="detail.avatar" class="main-avatar" :src="detail.avatar" mode="aspectFill" lazy-load />
+        </view> -->
+        <view class="hero-card" :class="`hero-element-${detail.elementKey || 'neutral'}`">
+          <view class="hero-title-bar">
+            <view class="title-wrap">
+              <view class="name-line">
+                <text class="name">{{ detail.name || '未知魔灵' }}</text>
+                <!-- <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text> -->
+              </view>
+              <view class="hero-star-line">
+                <SwcStarBadge v-if="heroStarCount > 0" :count="heroStarCount" layout="flat" :size="27" />
+                <!-- <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text> -->
+              </view>
+              <view v-if="canSwitchAwaken" class="awaken-switch">
+                <view
+                  class="awaken-switch-option"
+                  :class="{ active: activeAwakenLabel === UNAWAKENED_LABEL }"
+                  @click="switchAwakenTo(UNAWAKENED_LABEL)">
+                  <text>未觉醒</text>
+                </view>
+                <view
+                  class="awaken-switch-option"
+                  :class="{ active: activeAwakenLabel === AWAKENED_LABEL }"
+                  @click="switchAwakenTo(AWAKENED_LABEL)">
+                  <text>觉醒</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- <view v-if="detail.elementName" class="hero-element-badge">
+              <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="28" :font-size="24" :gap="8" />
+            </view> -->
+          </view>
+
+          <view class="hero-portrait-panel">
+            <swiper
+              v-if="galleryItems.length"
+              class="hero-gallery"
+              :current="activeGalleryIndex"
+              :indicator-dots="galleryItems.length > 1"
+              indicator-color="rgba(255, 255, 255, 0.58)"
+              indicator-active-color="#ffffff"
+              circular
+              @change="onGalleryChange">
+              <swiper-item v-for="item in galleryItems" :key="item.id">
+                <view class="gallery-slide">
+                  <image class="main-avatar" :src="item.image" mode="aspectFit" lazy-load />
+                  <view class="gallery-caption">
+                    <text>{{ item.name }}</text>
+                  </view>
+                </view>
+              </swiper-item>
+            </swiper>
             <view v-else class="main-avatar avatar-placeholder">
               <text>{{ detail.name.slice(0, 1) || '?' }}</text>
             </view>
-            <text v-if="detail.code" class="code-text">No.{{ detail.code }}</text>
-            <view v-if="canSwitchAwaken" class="awaken-btn" @click="onAwakenToggle">
-              <text>切换形态</text>
-            </view>
           </view>
 
-          <view class="profile-column">
-            <view class="profile-head">
-              <view class="title-wrap">
-                <view class="name-line">
-                  <text class="name">{{ detail.name || '未知魔灵' }}</text>
-                  <text v-if="detail.alias" class="alias">/ {{ detail.alias }}</text>
-                </view>
-                <view class="tag-line">
-                  <view v-if="detail.elementName" class="element-badge-plain">
-                    <SwcElementBadge :element-key="detail.elementKey" :label="detail.elementName" :size="24" :font-size="24" :gap="8" />
-                  </view>
-                  <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}*</text>
-                  <view v-if="detail.archetype" class="tag tag-with-icon">
-                    <SwcSquareIcon kind="archetype" :icon-key="detail.archetype" :size="28" :radius="6" />
-                    <text>{{ getArchetypeLabel(detail.archetype) }}</text>
-                  </view>
-                  <text v-if="detail.family" class="tag">{{ detail.family }}</text>
-                </view>
-                <text v-if="detail.description" class="species">{{ detail.description }}</text>
+          <view class="hero-info-panel">
+            <view class="tag-line">
+              <view v-if="detail.archetype" class="tag tag-with-icon">
+                <SwcSquareIcon kind="archetype" :icon-key="detail.archetype" :size="26" :radius="6" />
+                <text>{{ getArchetypeLabel(detail.archetype) }}</text>
               </view>
+              <text v-if="detail.family" class="tag">{{ detail.family }}</text>
+              <!-- <text v-if="detail.stars" class="tag star-tag">{{ detail.stars }}★</text> -->
             </view>
+            <text v-if="detail.description" class="species">{{ detail.description }}</text>
+          </view>
 
-            <view class="element-row">
-              <view
-                v-for="option in elementBadges"
-                :key="option.value"
-                class="quick-chip element-chip"
-                :class="{ active: option.value === detail.elementKey, clickable: hasElementForm(option.value) }"
-                @click="onElementClick(option.value)">
-                <SwcElementBadge :element-key="option.value" :label="option.label" :size="24" :font-size="24" :gap="8" />
+          <view class="hero-actions">
+            <scroll-view v-if="availableElementBadges.length" class="element-scroll" scroll-x enable-flex>
+              <view class="element-row">
+                <view
+                  v-for="option in availableElementBadges"
+                  :key="option.value"
+                  class="quick-chip element-chip"
+                  :class="{ active: option.value === detail.elementKey, clickable: isSwitchableElement(option.value) }"
+                  @click="onElementClick(option.value)">
+                  <SwcElementBadge :element-key="option.value" :label="option.label" :size="24" :font-size="23" :gap="8" />
+                </view>
               </view>
-            </view>
+            </scroll-view>
           </view>
         </view>
 
@@ -96,7 +133,7 @@
         </view>
 
         <view v-if="activeDetailTab === 'stats'" class="stats-panel">
-          <view class="stat-list">
+          <view v-if="primaryStats.length" class="stat-list">
             <view v-for="stat in primaryStats" :key="stat.key" class="stat-row">
               <view class="stat-row-header">
                 <view class="stat-label-group">
@@ -106,8 +143,8 @@
                   <text class="stat-label">{{ stat.label }}</text>
                 </view>
                 <view class="stat-value-group">
-                  <text class="stat-value">{{ stat.value || '--' }}</text>
-                  <text class="stat-rank">{{ stat.rankLabel || '-' }}</text>
+                  <text class="stat-value">{{ stat.value }}</text>
+                  <text v-if="stat.rankLabel" class="stat-rank">{{ stat.rankLabel }}</text>
                 </view>
               </view>
               <view class="stat-bar">
@@ -116,24 +153,51 @@
             </view>
           </view>
 
-          <view class="stat-list secondary">
+          <view v-if="secondaryStats.length" class="stat-list secondary">
             <view v-for="stat in secondaryStats" :key="stat.key" class="stat-row minor">
               <view class="stat-row-header">
                 <text class="stat-label">{{ stat.label }}</text>
                 <view class="stat-value-group">
-                  <text class="stat-value">{{ stat.value || '--' }}</text>
-                  <text v-if="stat.rankLabel" class="stat-rank minor-rank">{{ stat.rankLabel }}</text>
+                  <text class="stat-value">{{ stat.value }}</text>
+                  <!-- <text v-if="stat.rankLabel" class="stat-rank minor-rank">{{ stat.rankLabel }}</text> -->
                 </view>
               </view>
             </view>
           </view>
+          <view v-if="!primaryStats.length && !secondaryStats.length" class="empty-card">暂无属性数据</view>
         </view>
 
         <view v-else-if="activeDetailTab === 'skills'" class="skill-section">
+          <view v-if="detail.skills.length" class="damage-panel">
+            <view class="damage-panel-head" @click="showDamagePanel = !showDamagePanel">
+              <view>
+                <text class="damage-panel-title">理想伤害</text>
+                <text class="damage-panel-subtitle">基础 + 绿色 = 总面板</text>
+              </view>
+              <text class="damage-panel-toggle">{{ showDamagePanel ? '收起' : '展开' }}</text>
+            </view>
+
+            <view v-if="showDamagePanel" class="damage-body">
+              <view class="damage-row damage-row-head">
+                <text>属性</text>
+                <text>基础</text>
+                <text>绿色</text>
+                <text>总计</text>
+              </view>
+              <view v-for="row in damageStatRows" :key="row.key" class="damage-row">
+                <text class="damage-label">{{ row.label }}</text>
+                <text class="damage-base">{{ row.baseText }}</text>
+                <input v-model="damageBonus[row.key]" class="damage-input" type="digit" placeholder="0" />
+                <text class="damage-total">{{ row.totalText }}</text>
+              </view>
+              <text class="damage-note">理想值，不含敌方防御、属性克制、神器与技能升级修正。</text>
+            </view>
+          </view>
+
           <view v-if="detail.skills.length === 0" class="empty-card">暂无技能数据</view>
           <view
-            v-for="skill in detail.skills"
-            :key="skill.id || skill.name"
+            v-for="(skill, skillIndex) in detail.skills"
+            :key="skillDamageKey(skill, skillIndex)"
             class="skill-card"
             :class="{ leader: skill.type === 'leader' }">
             <view class="skill-head">
@@ -162,74 +226,31 @@
                 <text class="skill-meta-value">{{ skill.cooldownText }}</text>
               </view>
             </view>
+            <view class="skill-damage-card" :class="{ muted: !isSkillDamageCalculable(skill, skillIndex) }">
+              <view class="skill-damage-head">
+                <text class="skill-damage-title">预计伤害</text>
+                <text v-if="isSkillDamageCalculable(skill, skillIndex)" class="skill-damage-hits">
+                  {{ getSkillDamageHitText(skill, skillIndex) }}
+                </text>
+              </view>
+              <view v-if="isSkillDamageCalculable(skill, skillIndex)" class="skill-damage-grid">
+                <view class="skill-damage-item">
+                  <text class="skill-damage-label">普通</text>
+                  <text class="skill-damage-value">{{ formatDamageValue(getSkillDamageResult(skill, skillIndex).totalNormal) }}</text>
+                </view>
+                <view class="skill-damage-item critical">
+                  <text class="skill-damage-label">暴击</text>
+                  <text class="skill-damage-value">{{ formatDamageValue(getSkillDamageResult(skill, skillIndex).totalCritical) }}</text>
+                </view>
+                <view class="skill-damage-item expected">
+                  <text class="skill-damage-label">期望</text>
+                  <text class="skill-damage-value">{{ formatDamageValue(getSkillDamageResult(skill, skillIndex).totalExpected) }}</text>
+                </view>
+              </view>
+              <text v-else class="skill-damage-empty">暂无可计算系数</text>
+            </view>
           </view>
         </view>
-
-        <!-- <view class="lineup-section">
-          <view class="lineup-section-head">
-            <view>
-              <text class="lineup-section-title">参与阵容</text>
-              <text class="lineup-section-subtitle">展示该魔灵参与的阵容，以及每个阵容的双向映射关系</text>
-            </view>
-          </view>
-
-          <view v-if="lineupLoading" class="empty-card">
-            <text>加载阵容中...</text>
-          </view>
-
-          <view v-else-if="lineupErrorMessage" class="empty-card">
-            <text>{{ lineupErrorMessage }}</text>
-          </view>
-
-          <view v-else class="lineup-groups">
-            <view class="lineup-group-card">
-              <view class="lineup-group-head">
-                <text class="lineup-group-title">相关阵容</text>
-                <text class="lineup-group-count">{{ lineupUsage.lineups.length }}</text>
-              </view>
-
-              <view v-if="!lineupUsage.lineups.length" class="empty-inline">暂无相关阵容</view>
-
-              <view v-for="lineup in lineupUsage.lineups" :key="lineup.id || lineup.name" class="lineup-item-card">
-                <view class="lineup-item-head">
-                  <text class="lineup-item-name">{{ lineup.name || '未命名阵容' }}</text>
-                  <text class="lineup-item-count">{{ lineup.memberCount }} 人</text>
-                </view>
-                <text class="lineup-item-type">类型：{{ lineup.type || '未设置' }}</text>
-                <text v-if="lineup.description" class="lineup-item-desc">{{ lineup.description }}</text>
-                <text class="lineup-item-relation">对应阵容：{{ getTargetSummary(lineup) }}</text>
-                <text class="lineup-item-relation">上游阵容：{{ getIncomingSummary(lineup) }}</text>
-
-                <view class="lineup-relation-metrics">
-                  <text class="lineup-relation-badge">目标 {{ lineup.targetLineupsCount }}</text>
-                  <text class="lineup-relation-badge incoming">上游 {{ lineup.sourceLineupsCount }}</text>
-                </view>
-
-                <scroll-view v-if="lineup.characters.length" class="lineup-member-scroll" scroll-x>
-                  <view class="lineup-member-row">
-                    <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="lineup-member-pill">
-                      <image v-if="member.avatar" class="lineup-member-avatar" :src="member.avatar" mode="aspectFill" />
-                      <view v-else class="lineup-member-avatar lineup-member-avatar-placeholder">
-                        <text>{{ (member.name || '?').slice(0, 1) }}</text>
-                      </view>
-                      <text class="lineup-member-name">{{ member.name || member.label || '未知魔灵' }}</text>
-                    </view>
-                  </view>
-                </scroll-view>
-
-                <view class="lineup-reaction-row">
-                  <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-                    👍 {{ lineup.likeCount }}
-                  </text>
-                  <text class="lineup-reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-                    👎 {{ lineup.dislikeCount }}
-                  </text>
-                  <text class="lineup-reaction-score">热度 {{ lineup.score }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view> -->
       </view>
     </view>
   </PageLayout>
@@ -239,17 +260,12 @@
   import { computed, ref } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcStarBadge from './components/swc-star-badge.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
   import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
+  import { calculateSkillDamage, parseNumber, type DamageStats, type SkillDamageResult } from '@/engine/swc-damage-calculator'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
-  import {
-    fetchCharacterLineupUsage,
-    reactToLineup,
-    type CharacterLineupUsage,
-    type PublicLineup,
-    type ReactionValue,
-  } from '@/services/compendium-lineups'
 
   type RawRecord = Record<string, any>
 
@@ -321,6 +337,7 @@
     alias?: string
     aliases?: string[]
     avatar?: string
+    avatarOriginal?: string
     level?: string
     stars?: string | number
     description?: string
@@ -369,6 +386,13 @@
     image: string
   }
 
+  interface GalleryItem {
+    id: string
+    name: string
+    image: string
+    type: 'avatar' | 'skin'
+  }
+
   interface NormalizedFamilyMember {
     id: string
     name: string
@@ -398,6 +422,7 @@
     alias: string
     aliases: string[]
     avatar: string
+    avatarOriginal: string
     elementKey: string
     elementName: string
     level: string
@@ -430,6 +455,22 @@
     rankLabel: string
   }
 
+  interface DamageBonusForm {
+    hp: string
+    attack: string
+    defense: string
+    speed: string
+    critRate: string
+    critDamage: string
+  }
+
+  interface DamageStatRow {
+    key: keyof DamageBonusForm
+    label: string
+    baseText: string
+    totalText: string
+  }
+
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
   const AWAKENED_LABEL = '觉醒'
@@ -451,13 +492,21 @@
   const activeDetailTab = ref<'stats' | 'skills'>('stats')
   const loading = ref(false)
   const switching = ref(false)
-  const lineupLoading = ref(false)
   const errorMessage = ref('')
-  const lineupErrorMessage = ref('')
   const characterId = ref('')
   const seedName = ref('')
   const seedAvatar = ref('')
   const selectedLocale = ref(DEFAULT_LOCALE)
+  const activeGalleryIndex = ref(0)
+  const showDamagePanel = ref(false)
+  const damageBonus = ref<DamageBonusForm>({
+    hp: '',
+    attack: '',
+    defense: '',
+    speed: '',
+    critRate: '',
+    critDamage: '',
+  })
 
   const detail = ref<CharacterDetail>({
     id: '',
@@ -466,6 +515,7 @@
     alias: '',
     aliases: [],
     avatar: '',
+    avatarOriginal: '',
     elementKey: '',
     elementName: '',
     level: '',
@@ -479,10 +529,6 @@
     skills: [],
     skins: [],
     familyMembers: [],
-  })
-
-  const lineupUsage = ref<CharacterLineupUsage>({
-    lineups: [],
   })
 
   const stringifyValue = (value: unknown): string => {
@@ -760,6 +806,7 @@
       alias: aliases[0] || res.alias || '',
       aliases,
       avatar: normalizeUrl(res.avatar || seedAvatar.value),
+      avatarOriginal: normalizeUrl(res.avatarOriginal),
       elementKey: element.key,
       elementName: element.name,
       level: res.level || '',
@@ -780,7 +827,7 @@
     id: detail.value.id || characterId.value,
     name: detail.value.name || seedName.value,
     code: detail.value.code,
-    avatar: detail.value.avatar || seedAvatar.value,
+    avatar: detailAvatarSrc.value,
     elementKey: detail.value.elementKey,
     elementName: detail.value.elementName,
     formLabel: formatAwakenLabel({}, detail.value.categories),
@@ -824,7 +871,63 @@
 
   const canSwitchAwaken = computed(() => sameElementForms.value.length > 1)
 
+  const detailAvatarSrc = computed(() => detail.value.avatarOriginal || detail.value.avatar || seedAvatar.value)
+
+  const galleryItems = computed<GalleryItem[]>(() => {
+    const items: GalleryItem[] = []
+    if (detailAvatarSrc.value) {
+      items.push({
+        id: 'avatar',
+        name: '默认头像',
+        image: detailAvatarSrc.value,
+        type: 'avatar',
+      })
+    }
+
+    detail.value.skins
+      .filter(skin => Boolean(skin.image))
+      .forEach((skin, index) => {
+        items.push({
+          id: `skin-${skin.id || index}`,
+          name: skin.name || `皮肤 ${index + 1}`,
+          image: skin.image,
+          type: 'skin',
+        })
+      })
+
+    return items
+  })
+
+  const onGalleryChange = (event: { detail?: { current?: number } }) => {
+    activeGalleryIndex.value = event.detail?.current || 0
+  }
+
+  const heroStarCount = computed(() => {
+    const parsedValue = Number.parseInt((detail.value.stars || '').replace(/\D+/g, ''), 10)
+    return Number.isFinite(parsedValue) ? parsedValue : 0
+  })
+
+  const availableElementBadges = computed(() =>
+    elementBadges.filter(
+      option => option.value === detail.value.elementKey || detail.value.familyMembers.some(member => member.elementKey === option.value),
+    ),
+  )
+
+  const isSwitchableElement = (elementKey: string): boolean =>
+    elementKey !== detail.value.elementKey && detail.value.familyMembers.some(member => member.elementKey === elementKey)
+
   const findAttribute = (keys: string[]): RawAttribute | undefined => getAttributeByKey(detail.value.attributes, keys)
+
+  const parseAttributeNumber = (attribute: RawAttribute | undefined, fallback = 0): number => {
+    if (!attribute) return fallback
+    const parsed = parseNumber(attribute.value ?? attribute.displayValue ?? '')
+    return parsed || fallback
+  }
+
+  const formatDamageNumber = (value: number, suffix = ''): string => {
+    const rounded = Math.round(value)
+    return `${rounded.toLocaleString('en-US')}${suffix}`
+  }
 
   const formatRankLabel = (attribute?: RawAttribute): string => {
     if (!attribute) return ''
@@ -842,6 +945,103 @@
     }
     return `${fallback}%`
   }
+
+  const damageBaseStats = computed<DamageStats>(() => ({
+    hp: parseAttributeNumber(findAttribute(['hp', '体力', '生命'])),
+    attack: parseAttributeNumber(findAttribute(['attack', '攻击'])),
+    defense: parseAttributeNumber(findAttribute(['defense', '防御'])),
+    speed: parseAttributeNumber(findAttribute(['speed', '速度'])),
+    critRate: parseAttributeNumber(findAttribute(['critrate', '暴击率']), 15),
+    critDamage: parseAttributeNumber(findAttribute(['critdmg', 'critdamage', '暴击伤害']), 50),
+  }))
+
+  const damageTotalStats = computed<DamageStats>(() => ({
+    hp: damageBaseStats.value.hp + parseNumber(damageBonus.value.hp),
+    attack: damageBaseStats.value.attack + parseNumber(damageBonus.value.attack),
+    defense: damageBaseStats.value.defense + parseNumber(damageBonus.value.defense),
+    speed: damageBaseStats.value.speed + parseNumber(damageBonus.value.speed),
+    critRate: damageBaseStats.value.critRate + parseNumber(damageBonus.value.critRate),
+    critDamage: damageBaseStats.value.critDamage + parseNumber(damageBonus.value.critDamage),
+  }))
+
+  const damageStatRows = computed<DamageStatRow[]>(() => [
+    {
+      key: 'hp',
+      label: '体力',
+      baseText: formatDamageNumber(damageBaseStats.value.hp),
+      totalText: formatDamageNumber(damageTotalStats.value.hp),
+    },
+    {
+      key: 'attack',
+      label: '攻击',
+      baseText: formatDamageNumber(damageBaseStats.value.attack),
+      totalText: formatDamageNumber(damageTotalStats.value.attack),
+    },
+    {
+      key: 'defense',
+      label: '防御',
+      baseText: formatDamageNumber(damageBaseStats.value.defense),
+      totalText: formatDamageNumber(damageTotalStats.value.defense),
+    },
+    {
+      key: 'speed',
+      label: '速度',
+      baseText: formatDamageNumber(damageBaseStats.value.speed),
+      totalText: formatDamageNumber(damageTotalStats.value.speed),
+    },
+    {
+      key: 'critRate',
+      label: '暴率',
+      baseText: formatDamageNumber(damageBaseStats.value.critRate, '%'),
+      totalText: formatDamageNumber(damageTotalStats.value.critRate, '%'),
+    },
+    {
+      key: 'critDamage',
+      label: '暴伤',
+      baseText: formatDamageNumber(damageBaseStats.value.critDamage, '%'),
+      totalText: formatDamageNumber(damageTotalStats.value.critDamage, '%'),
+    },
+  ])
+
+  const skillDamageKey = (skill: NormalizedSkill, index: number): string => skill.id || skill.name || String(index)
+
+  const skillDamageResults = computed(() => {
+    const resultMap = new Map<string, SkillDamageResult>()
+    detail.value.skills.forEach((skill, index) => {
+      resultMap.set(
+        skillDamageKey(skill, index),
+        calculateSkillDamage(
+          {
+            multiplierFormula: skill.multiplierFormula,
+            hitCount: skill.hitCountText,
+            coefficients: skill.coefficients,
+          },
+          damageTotalStats.value,
+        ),
+      )
+    })
+    return resultMap
+  })
+
+  const getSkillDamageResult = (skill: NormalizedSkill, index: number): SkillDamageResult =>
+    skillDamageResults.value.get(skillDamageKey(skill, index)) ||
+    calculateSkillDamage(
+      {
+        multiplierFormula: skill.multiplierFormula,
+        hitCount: skill.hitCountText,
+        coefficients: skill.coefficients,
+      },
+      damageTotalStats.value,
+    )
+
+  const isSkillDamageCalculable = (skill: NormalizedSkill, index: number): boolean => getSkillDamageResult(skill, index).calculable
+
+  const getSkillDamageHitText = (skill: NormalizedSkill, index: number): string => {
+    const result = getSkillDamageResult(skill, index)
+    return result.hitCount > 1 ? `${result.hitCount} 段合计` : '单段'
+  }
+
+  const formatDamageValue = (value: number): string => formatDamageNumber(value)
 
   const primaryStats = computed<StatItem[]>(() => {
     const hp = findAttribute(['hp', '体力', '生命'])
@@ -886,7 +1086,7 @@
         percent: calculateRankPercent(speed, 74),
         color: '#f5a623',
       },
-    ]
+    ].filter(stat => stat.value)
   })
 
   const secondaryStats = computed<SecondaryStatItem[]>(() => {
@@ -900,59 +1100,8 @@
       { key: 'resistance', label: '效果抵抗', value: formatAttributeValue(resistance), rankLabel: formatRankLabel(resistance) },
       { key: 'critDamage', label: '暴击伤害', value: formatAttributeValue(critDamage), rankLabel: formatRankLabel(critDamage) },
       { key: 'accuracy', label: '效果命中', value: formatAttributeValue(accuracy), rankLabel: formatRankLabel(accuracy) },
-    ]
+    ].filter(stat => stat.value)
   })
-
-  const formatReferenceSummary = (items: { name: string }[]): string => {
-    if (!items.length) return '暂无'
-    return items
-      .map(item => item.name)
-      .filter(Boolean)
-      .join('、')
-  }
-
-  const getTargetSummary = (lineup: PublicLineup): string => formatReferenceSummary(lineup.targetLineups)
-
-  const getIncomingSummary = (lineup: PublicLineup): string => formatReferenceSummary(lineup.incomingLineups)
-
-  const loadLineupUsage = async (targetCharacterId: string) => {
-    lineupLoading.value = true
-    lineupErrorMessage.value = ''
-
-    try {
-      lineupUsage.value = await fetchCharacterLineupUsage(targetCharacterId, {
-        locale: selectedLocale.value,
-      })
-    } catch (error) {
-      lineupUsage.value = {
-        lineups: [],
-      }
-      lineupErrorMessage.value = typeof error === 'string' ? error : '阵容数据加载失败'
-    } finally {
-      lineupLoading.value = false
-    }
-  }
-
-  const reactingLineupId = ref('')
-
-  const handleReaction = async (lineup: PublicLineup, value: ReactionValue) => {
-    if (reactingLineupId.value) return
-    reactingLineupId.value = lineup.id
-    try {
-      const result = await reactToLineup(lineup.id, value)
-      lineup.likeCount = result.likeCount
-      lineup.dislikeCount = result.dislikeCount
-      lineup.score = result.score
-      lineup.myReaction = result.myReaction
-    } catch (error) {
-      uni.showToast({
-        title: typeof error === 'string' ? error : '操作失败，请稍后重试',
-        icon: 'none',
-      })
-    } finally {
-      reactingLineupId.value = ''
-    }
-  }
 
   const changeLocale = (locale: string) => {
     if (locale === selectedLocale.value) return
@@ -968,6 +1117,7 @@
 
     loading.value = true
     errorMessage.value = ''
+    activeGalleryIndex.value = 0
 
     try {
       const query: getCompendiumsCharacterQuery = {
@@ -978,7 +1128,6 @@
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
-      await loadLineupUsage(characterId.value)
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
@@ -995,6 +1144,7 @@
     const requestToken = ++switchRequestToken
     switching.value = true
     errorMessage.value = ''
+    activeGalleryIndex.value = 0
     characterId.value = form.id
     seedName.value = form.name
     seedAvatar.value = form.avatar
@@ -1011,7 +1161,6 @@
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
       switching.value = false
-      void loadLineupUsage(form.id)
     } catch (error) {
       if (requestToken !== switchRequestToken) return
       errorMessage.value = typeof error === 'string' ? error : '切换形态失败，请稍后重试'
@@ -1019,15 +1168,10 @@
     }
   }
 
-  const onAwakenToggle = () => {
-    const targetLabel = activeAwakenLabel.value === AWAKENED_LABEL ? UNAWAKENED_LABEL : AWAKENED_LABEL
+  const switchAwakenTo = (targetLabel: string) => {
+    if (targetLabel === activeAwakenLabel.value) return
     const target = sameElementForms.value.find(member => member.formLabel === targetLabel)
     if (target) switchAwakenForm(target)
-  }
-
-  const hasElementForm = (elementKey: string): boolean => {
-    if (elementKey === detail.value.elementKey) return true
-    return detail.value.familyMembers.some(member => member.elementKey === elementKey)
   }
 
   const onElementClick = (elementKey: string) => {
@@ -1058,8 +1202,8 @@
 
   onShareAppMessage(() => ({
     title: `魔灵详情 · ${detail.value.name || '图鉴'}`,
-    imageUrl: detail.value.avatar || '',
-    path: `/subPackages/tools/compendium/swc/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detail.value.avatar)}&locale=${encodeURIComponent(selectedLocale.value)}`,
+    imageUrl: detailAvatarSrc.value || '',
+    path: `/subPackages/tools/compendium/swc/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detailAvatarSrc.value)}&locale=${encodeURIComponent(selectedLocale.value)}`,
   }))
 </script>
 
@@ -1177,26 +1321,99 @@
   }
 
   .hero-card {
-    display: grid;
-    grid-template-columns: 180rpx minmax(0, 1fr);
+    --hero-card-tint: rgba(75, 157, 244, 0.08);
+    margin: 14rpx 18rpx 0;
+    padding: 16rpx;
+    border: 2rpx solid var(--theme-border);
+    border-radius: 20rpx;
+    background: linear-gradient(180deg, var(--hero-card-tint), transparent 72%), var(--theme-surface);
+    box-shadow: 0 10rpx 24rpx var(--theme-shadow-xs);
+    overflow: hidden;
+  }
+
+  .hero-element-fire {
+    --hero-card-tint: rgba(232, 93, 85, 0.14);
+    --hero-accent: #e85d55;
+    --hero-accent-soft: rgba(232, 93, 85, 0.12);
+  }
+
+  .hero-element-water {
+    --hero-card-tint: rgba(75, 157, 244, 0.14);
+    --hero-accent: #4b9df4;
+    --hero-accent-soft: rgba(75, 157, 244, 0.12);
+  }
+
+  .hero-element-wind {
+    --hero-card-tint: rgba(42, 166, 111, 0.14);
+    --hero-accent: #2aa66f;
+    --hero-accent-soft: rgba(42, 166, 111, 0.12);
+  }
+
+  .hero-element-light {
+    --hero-card-tint: rgba(217, 154, 22, 0.16);
+    --hero-accent: #d99a16;
+    --hero-accent-soft: rgba(217, 154, 22, 0.13);
+  }
+
+  .hero-element-dark {
+    --hero-card-tint: rgba(124, 77, 255, 0.15);
+    --hero-accent: #7c4dff;
+    --hero-accent-soft: rgba(124, 77, 255, 0.13);
+  }
+
+  .hero-element-neutral {
+    --hero-card-tint: rgba(75, 157, 244, 0.08);
+    --hero-accent: #4b9df4;
+    --hero-accent-soft: rgba(75, 157, 244, 0.12);
+  }
+
+  .hero-title-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 16rpx;
-    padding: 16rpx 22rpx 18rpx;
-    background: #f4f6fb;
+    min-width: 0;
   }
 
   .avatar-column {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10rpx;
+    gap: 8rpx;
   }
 
   .main-avatar {
-    width: 150rpx;
-    height: 150rpx;
-    border: 3rpx solid #e85d55;
+    width: 100%;
+    height: 100%;
     border-radius: 18rpx;
-    background: linear-gradient(135deg, #ffe8b0, #fff4dd);
+    background: transparent;
+  }
+
+  .hero-gallery,
+  .gallery-slide {
+    width: 100%;
+    height: 100%;
+  }
+
+  .gallery-slide {
+    position: relative;
+  }
+
+  .gallery-caption {
+    position: absolute;
+    left: 16rpx;
+    bottom: 16rpx;
+    max-width: calc(100% - 32rpx);
+    padding: 6rpx 14rpx;
+    border-radius: 999rpx;
+    background: rgba(20, 27, 45, 0.52);
+    color: #fff;
+    font-size: 22rpx;
+    font-weight: 700;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .avatar-placeholder {
@@ -1209,11 +1426,11 @@
   }
 
   .code-text {
-    padding: 4rpx 14rpx;
+    padding: 3rpx 12rpx;
     border-radius: 999rpx;
-    background: var(--theme-surface);
+    background: rgba(255, 255, 255, 0.72);
     color: #667085;
-    font-size: 24rpx;
+    font-size: 21rpx;
     font-weight: 800;
   }
 
@@ -1235,34 +1452,88 @@
   .name-line {
     display: flex;
     align-items: baseline;
-    gap: 10rpx;
+    flex-wrap: wrap;
+    gap: 8rpx;
   }
 
   .name {
-    font-size: 42rpx;
+    font-size: 38rpx;
     font-weight: 800;
-    color: #141b2d;
+    color: var(--theme-text);
+    line-height: 1.18;
   }
 
   .alias {
-    font-size: 28rpx;
-    color: #9ba3b1;
+    font-size: 24rpx;
+    color: var(--theme-text-tertiary);
     font-weight: 700;
   }
 
-  .tag-line {
+  .hero-star-line {
+    margin-top: 8rpx;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    min-height: 30rpx;
+  }
+
+  .awaken-switch {
     margin-top: 12rpx;
+    width: 212rpx;
+    min-height: 48rpx;
+    padding: 4rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rpx;
+    box-sizing: border-box;
+  }
+
+  .awaken-switch-option {
+    min-width: 0;
+    border-radius: 999rpx;
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .awaken-switch-option.active {
+    background: var(--hero-accent);
+    color: #fff;
+    box-shadow: 0 6rpx 14rpx rgba(28, 39, 62, 0.12);
+  }
+
+  .hero-element-badge {
+    flex: none;
+    min-height: 50rpx;
+    padding: 0 14rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tag-line {
     display: flex;
     flex-wrap: wrap;
-    gap: 10rpx;
+    gap: 8rpx;
   }
 
   .tag {
-    padding: 4rpx 12rpx;
+    padding: 3rpx 10rpx;
     border-radius: 8rpx;
-    background: #e7ebf1;
-    color: #737e8f;
-    font-size: 24rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
     font-weight: 700;
   }
 
@@ -1275,42 +1546,77 @@
   .element-badge-plain {
     display: inline-flex;
     align-items: center;
-    height: 52rpx;
-    padding: 0 18rpx;
+    height: 46rpx;
+    padding: 0 14rpx;
     border: 1rpx solid var(--theme-border);
     border-radius: 999rpx;
     background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
-    font-size: 24rpx;
+    font-size: 22rpx;
     font-weight: 700;
   }
 
   .tag.star-tag {
     color: #d28a00;
-    background: #fff4d6;
+    background: rgba(217, 154, 22, 0.14);
   }
 
   .species {
     display: block;
     margin-top: 10rpx;
-    color: #a1a8b5;
-    font-size: 24rpx;
+    color: var(--theme-text-secondary);
+    font-size: 23rpx;
+    line-height: 1.45;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .hero-portrait-panel {
+    position: relative;
+    height: 430rpx;
+    margin-top: 16rpx;
+    padding: 10rpx;
+    border: 2rpx solid transparent;
+    border-radius: 22rpx;
+    background: transparent;
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  .hero-info-panel {
+    margin-top: 14rpx;
+    padding: 14rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .hero-actions {
+    margin-top: 12rpx;
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .element-scroll {
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
   }
 
   .element-row {
-    margin-top: 24rpx;
     display: flex;
-    gap: 16rpx;
+    gap: 10rpx;
     align-items: center;
-    flex-wrap: wrap;
+    padding-right: 8rpx;
   }
 
   .quick-chip {
-    min-height: 52rpx;
-    padding: 0 18rpx;
+    min-height: 48rpx;
+    padding: 0 14rpx;
     border-radius: 999rpx;
     border: 1rpx solid var(--theme-border);
     background: var(--theme-surface-2);
@@ -1327,48 +1633,39 @@
   }
 
   .element-chip.clickable {
-    opacity: 0.72;
+    opacity: 0.82;
     cursor: pointer;
   }
 
   .element-chip.active {
     opacity: 1;
-    border-color: var(--theme-brand);
-    background: rgba(0, 70, 180, 0.08);
-    color: var(--theme-brand);
-  }
-
-  .awaken-btn {
-    margin-top: 10rpx;
-    padding: 8rpx 16rpx;
-    border-radius: 999rpx;
-    background: linear-gradient(135deg, #4b9df4, #6c7cf4);
-    color: #fff;
-    font-size: 22rpx;
-    font-weight: 700;
-    text-align: center;
-    white-space: nowrap;
-    box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.3);
+    border-color: var(--hero-accent);
+    background: var(--hero-accent-soft);
+    color: var(--hero-accent);
+    box-shadow:
+      0 8rpx 18rpx rgba(75, 157, 244, 0.12),
+      inset 0 0 0 1rpx rgba(255, 255, 255, 0.7);
   }
 
   .detail-tabs {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    margin: 12rpx 22rpx 0;
-    border-radius: 14rpx;
-    background: #e8eef5;
-    padding: 6rpx;
-    gap: 6rpx;
+    margin: 12rpx 20rpx 0;
+    border-radius: 12rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    padding: 5rpx;
+    gap: 5rpx;
   }
 
   .detail-tab {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 68rpx;
-    border-radius: 10rpx;
-    color: #808997;
-    font-size: 28rpx;
+    height: 60rpx;
+    border-radius: 9rpx;
+    color: var(--theme-text-secondary);
+    font-size: 26rpx;
     font-weight: 700;
   }
 
@@ -1379,32 +1676,69 @@
   }
 
   .stats-panel {
-    padding-bottom: 16rpx;
+    padding: 14rpx 20rpx 20rpx;
   }
 
   .stat-list {
-    padding: 12rpx 22rpx 0;
     display: flex;
     flex-direction: column;
-    gap: 16rpx;
+    gap: 14rpx;
   }
 
   .stat-list.secondary {
-    padding-top: 16rpx;
-    padding-bottom: 8rpx;
+    margin-top: 14rpx;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10rpx;
   }
 
   .stat-row {
-    padding: 20rpx 24rpx;
+    position: relative;
+    padding: 18rpx 20rpx;
+    border: 1rpx solid rgba(148, 163, 184, 0.16);
     border-radius: 16rpx;
     background: var(--theme-surface);
-    box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
+    overflow: hidden;
+    box-shadow: 0 6rpx 16rpx rgba(40, 52, 76, 0.05);
+  }
+
+  .stat-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 18rpx;
+    bottom: 18rpx;
+    width: 6rpx;
+    border-radius: 0 999rpx 999rpx 0;
+    background: var(--theme-brand);
   }
 
   .stat-row.minor {
-    padding: 16rpx 24rpx;
-    background: #f8f9fc;
+    min-height: 94rpx;
+    padding: 14rpx 16rpx;
+    border-color: var(--theme-border);
+    background: var(--theme-surface-2);
     box-shadow: none;
+  }
+
+  .stat-row.minor::before {
+    display: none;
+  }
+
+  .stat-row.minor .stat-row-header {
+    min-height: 62rpx;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8rpx;
+  }
+
+  .stat-row.minor .stat-value-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stat-row.minor .stat-value {
+    font-size: 28rpx;
   }
 
   .stat-row-header {
@@ -1416,12 +1750,12 @@
   .stat-label-group {
     display: flex;
     align-items: center;
-    gap: 14rpx;
+    gap: 12rpx;
   }
 
   .stat-icon-circle {
-    width: 52rpx;
-    height: 52rpx;
+    width: 46rpx;
+    height: 46rpx;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1430,13 +1764,13 @@
   }
 
   .stat-icon {
-    font-size: 28rpx;
+    font-size: 25rpx;
     color: #fff;
   }
 
   .stat-label {
-    color: #4a5568;
-    font-size: 28rpx;
+    color: var(--theme-text-secondary);
+    font-size: 26rpx;
     font-weight: 700;
   }
 
@@ -1444,12 +1778,14 @@
     display: flex;
     align-items: baseline;
     gap: 10rpx;
+    min-width: 0;
   }
 
   .stat-value {
-    color: #182134;
-    font-size: 36rpx;
+    color: var(--theme-text);
+    font-size: 32rpx;
     font-weight: 800;
+    white-space: nowrap;
   }
 
   .stat-rank {
@@ -1466,7 +1802,7 @@
     margin-top: 14rpx;
     height: 8rpx;
     border-radius: 999rpx;
-    background: #edf1f6;
+    background: var(--theme-surface-2);
     overflow: hidden;
   }
 
@@ -1482,14 +1818,14 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     height: 78rpx;
     background: var(--theme-surface);
-    border-bottom: 1rpx solid #e8edf5;
+    border-bottom: 1rpx solid var(--theme-border);
   }
 
   .section-tab {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #858c99;
+    color: var(--theme-text-secondary);
     font-size: 28rpx;
     font-weight: 700;
   }
@@ -1502,7 +1838,124 @@
   .skill-section,
   .tag-section,
   .more-section {
-    padding: 16rpx 22rpx;
+    padding: 14rpx 20rpx;
+  }
+
+  .damage-panel {
+    margin-bottom: 14rpx;
+    padding: 14rpx 16rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 14rpx;
+    background: var(--theme-surface);
+    box-shadow: none;
+  }
+
+  .damage-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+  }
+
+  .damage-panel-title {
+    display: block;
+    color: var(--theme-text);
+    font-size: 27rpx;
+    font-weight: 800;
+  }
+
+  .damage-panel-subtitle {
+    display: block;
+    margin-top: 4rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 21rpx;
+  }
+
+  .damage-panel-toggle {
+    flex-shrink: 0;
+    height: 44rpx;
+    line-height: 44rpx;
+    padding: 0 16rpx;
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .damage-body {
+    margin-top: 14rpx;
+    overflow: hidden;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 12rpx;
+  }
+
+  .damage-row {
+    display: grid;
+    grid-template-columns: 1.05fr 1.15fr 1.35fr 1.15fr;
+    align-items: center;
+    gap: 8rpx;
+    min-height: 64rpx;
+    padding: 8rpx 12rpx;
+    border-top: 1rpx solid var(--theme-border);
+    background: var(--theme-surface);
+    box-sizing: border-box;
+  }
+
+  .damage-row:first-child {
+    border-top: none;
+  }
+
+  .damage-row-head {
+    min-height: 48rpx;
+    color: var(--theme-text-tertiary);
+    background: var(--theme-surface-2);
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .damage-label {
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .damage-base,
+  .damage-total {
+    min-width: 0;
+    color: var(--theme-text);
+    font-size: 24rpx;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .damage-total {
+    color: var(--theme-brand);
+    text-align: right;
+  }
+
+  .damage-input {
+    width: 100%;
+    height: 46rpx;
+    min-width: 0;
+    padding: 0 10rpx;
+    border-radius: 9rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface-2);
+    font-size: 24rpx;
+    box-sizing: border-box;
+  }
+
+  .damage-note {
+    display: block;
+    padding: 10rpx 12rpx;
+    color: var(--theme-text-tertiary);
+    background: var(--theme-surface-2);
+    border-top: 1rpx solid var(--theme-border);
+    font-size: 21rpx;
+    line-height: 1.45;
   }
 
   .language-toggle {
@@ -1511,10 +1964,11 @@
     margin-bottom: 18rpx;
     padding: 4rpx;
     border-radius: 999rpx;
-    background: #e8eef5;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    color: #808997;
+    color: var(--theme-text-secondary);
     font-size: 26rpx;
     font-weight: 700;
   }
@@ -1534,37 +1988,39 @@
   .skill-card,
   .empty-card,
   .info-card {
-    margin-bottom: 18rpx;
-    padding: 22rpx;
-    border-radius: 18rpx;
+    margin-bottom: 14rpx;
+    padding: 18rpx;
+    border-radius: 14rpx;
     background: var(--theme-surface);
-    box-shadow: 0 2rpx 12rpx rgba(34, 48, 76, 0.05);
+    border: 1rpx solid var(--theme-border);
+    box-shadow: 0 2rpx 8rpx var(--theme-shadow-xs);
   }
 
   .skill-card.leader {
-    border: 2rpx solid #ffe2a8;
-    background: linear-gradient(180deg, #fffaf0 0%, #fff 42%);
+    border: 2rpx solid rgba(217, 154, 22, 0.34);
+    background: linear-gradient(180deg, rgba(217, 154, 22, 0.12) 0%, transparent 48%), var(--theme-surface);
   }
 
   .skill-head {
     display: flex;
-    gap: 18rpx;
+    gap: 14rpx;
     align-items: center;
   }
 
   .skill-icon {
-    width: 92rpx;
-    height: 92rpx;
-    border-radius: 16rpx;
-    background: #f1f3f7;
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 14rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
   }
 
   .empty-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6f7b8d;
-    font-size: 36rpx;
+    color: var(--theme-text-secondary);
+    font-size: 32rpx;
   }
 
   .skill-title-wrap {
@@ -1575,261 +2031,149 @@
   .skill-title {
     display: flex;
     flex-wrap: wrap;
-    gap: 10rpx;
+    gap: 8rpx;
     align-items: center;
-    color: #1b2434;
-    font-size: 30rpx;
+    color: var(--theme-text);
+    font-size: 28rpx;
     font-weight: 800;
   }
 
   .skill-badge {
-    padding: 4rpx 10rpx;
+    padding: 3rpx 9rpx;
     border-radius: 8rpx;
-    background: #e8f4ff;
-    color: #2f80ed;
-    font-size: 22rpx;
+    background: rgba(0, 70, 180, 0.12);
+    color: var(--theme-brand);
+    font-size: 21rpx;
     font-weight: 700;
   }
 
   .skill-type {
     display: block;
-    margin-top: 8rpx;
-    color: #8e98a8;
-    font-size: 24rpx;
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
   }
 
   .skill-desc {
     display: block;
-    margin-top: 22rpx;
-    color: #1f2632;
-    font-size: 28rpx;
-    line-height: 1.65;
+    margin-top: 16rpx;
+    color: var(--theme-text-secondary);
+    font-size: 26rpx;
+    line-height: 1.55;
     white-space: pre-line;
   }
 
   .skill-meta-list {
-    margin-top: 18rpx;
+    margin-top: 14rpx;
     display: flex;
     flex-direction: column;
-    gap: 10rpx;
+    gap: 8rpx;
   }
 
   .skill-meta-item {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16rpx;
-    padding: 14rpx 16rpx;
-    border-radius: 12rpx;
-    background: #f5f8fc;
+    gap: 12rpx;
+    padding: 10rpx 12rpx;
+    border-radius: 10rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
   }
 
   .skill-meta-item text:first-child,
   .skill-meta-label {
     flex: none;
-    color: #667085;
-    font-size: 24rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
     font-weight: 700;
   }
 
   .skill-meta-value {
     flex: 1;
-    color: #1f2632;
-    font-size: 24rpx;
+    color: var(--theme-text);
+    font-size: 22rpx;
     font-weight: 700;
     text-align: right;
     word-break: break-word;
   }
 
-  .lineup-section {
-    padding: 8rpx 22rpx 0;
+  .skill-damage-card {
+    margin-top: 14rpx;
+    padding: 12rpx;
+    border-radius: 12rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
   }
 
-  .lineup-section-head {
-    margin-bottom: 16rpx;
+  .skill-damage-card.muted {
+    opacity: 0.78;
   }
 
-  .lineup-section-title {
-    display: block;
-    color: #1d2636;
-    font-size: 32rpx;
-    font-weight: 800;
-  }
-
-  .lineup-section-subtitle {
-    display: block;
-    margin-top: 8rpx;
-    color: #667085;
-    font-size: 24rpx;
-  }
-
-  .lineup-groups {
-    display: flex;
-    flex-direction: column;
-    gap: 18rpx;
-  }
-
-  .lineup-group-card,
-  .lineup-item-card {
-    border-radius: 18rpx;
-    background: var(--theme-surface);
-    box-shadow: 0 2rpx 12rpx rgba(40, 52, 76, 0.05);
-  }
-
-  .lineup-group-card {
-    padding: 20rpx;
-  }
-
-  .lineup-group-head,
-  .lineup-item-head {
+  .skill-damage-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16rpx;
   }
 
-  .lineup-group-title,
-  .lineup-item-name {
-    color: #172033;
-    font-size: 28rpx;
+  .skill-damage-title {
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
     font-weight: 800;
   }
 
-  .lineup-group-count,
-  .lineup-item-count {
-    padding: 6rpx 14rpx;
-    border-radius: 999rpx;
-    background: #eef2ff;
-    color: #4b9df4;
+  .skill-damage-hits {
+    flex-shrink: 0;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
-    font-weight: 800;
   }
 
-  .lineup-item-card {
-    margin-top: 16rpx;
-    padding: 18rpx;
-    background: #f8fafc;
-    box-shadow: none;
-  }
-
-  .lineup-item-type {
-    display: block;
-    margin-top: 10rpx;
-    color: #4b5563;
-    font-size: 22rpx;
-    font-weight: 700;
-  }
-
-  .lineup-item-desc,
-  .lineup-item-relation {
-    display: block;
-    margin-top: 10rpx;
-    color: #667085;
-    font-size: 24rpx;
-    line-height: 1.6;
-  }
-
-  .lineup-relation-metrics {
-    margin-top: 12rpx;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10rpx;
-  }
-
-  .lineup-relation-badge {
-    padding: 6rpx 14rpx;
-    border-radius: 999rpx;
-    background: #dbeafe;
-    color: #1d4ed8;
-    font-size: 22rpx;
-    font-weight: 700;
-  }
-
-  .lineup-relation-badge.incoming {
-    background: #f3e8ff;
-    color: #7c3aed;
-  }
-
-  .empty-inline {
-    margin-top: 14rpx;
-    color: #98a2b3;
-    font-size: 24rpx;
-  }
-
-  .lineup-member-scroll {
-    margin-top: 14rpx;
-    white-space: nowrap;
-  }
-
-  .lineup-reaction-row {
-    margin-top: 16rpx;
-    display: flex;
-    align-items: center;
-    gap: 14rpx;
-  }
-
-  .lineup-reaction-btn {
-    padding: 6rpx 18rpx;
-    border-radius: 999rpx;
-    background: #f3f5f9;
-    color: #475467;
-    font-size: 22rpx;
-    font-weight: 700;
-  }
-
-  .lineup-reaction-btn.active {
-    background: #fef3c7;
-    color: #b45309;
-  }
-
-  .lineup-reaction-score {
-    margin-left: auto;
-    color: #98a2b3;
-    font-size: 20rpx;
-    font-weight: 700;
-  }
-
-  .lineup-member-row {
-    display: inline-flex;
-    gap: 12rpx;
-    padding-bottom: 4rpx;
-  }
-
-  .lineup-member-pill {
-    width: 160rpx;
-    padding: 12rpx;
-    border-radius: 16rpx;
-    background: var(--theme-surface);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .skill-damage-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8rpx;
+    margin-top: 10rpx;
   }
 
-  .lineup-member-avatar {
-    width: 64rpx;
-    height: 64rpx;
-    border-radius: 16rpx;
-    background: #e5e7eb;
-  }
-
-  .lineup-member-avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #4b9df4;
-    font-weight: 800;
-  }
-
-  .lineup-member-name {
-    width: 100%;
-    color: #172033;
-    font-size: 22rpx;
-    font-weight: 700;
+  .skill-damage-item {
+    min-width: 0;
+    padding: 10rpx 8rpx;
+    border-radius: 10rpx;
+    background: var(--theme-surface);
     text-align: center;
+  }
+
+  .skill-damage-item.critical .skill-damage-value {
+    color: #dc2626;
+  }
+
+  .skill-damage-item.expected .skill-damage-value {
+    color: var(--theme-brand);
+  }
+
+  .skill-damage-label {
+    display: block;
+    color: var(--theme-text-tertiary);
+    font-size: 21rpx;
+  }
+
+  .skill-damage-value {
+    display: block;
+    margin-top: 4rpx;
+    color: var(--theme-text);
+    font-size: 24rpx;
+    font-weight: 800;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .skill-damage-empty {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 23rpx;
   }
 
   .coefficient-list {

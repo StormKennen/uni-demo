@@ -61,10 +61,6 @@
       <!-- #ifdef H5 -->
       <H5TabBar current="index" />
       <!-- #endif -->
-
-      <!-- #ifdef MP-WEIXIN -->
-      <PrivacyPopup />
-      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
@@ -74,7 +70,6 @@
   import { storeToRefs } from 'pinia'
   import NavBarBase from '@/components/nav-bar-base.vue'
   import H5TabBar from '@/components/h5-tab-bar.vue'
-  import PrivacyPopup from '@/components/privacy-popup.vue'
   import { useThemeStore } from '@/stores/theme'
   import { useShare } from '@/utils/share'
   import { useToolDirectory } from '@/hooks/use-tool-directory'

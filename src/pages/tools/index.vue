@@ -16,7 +16,7 @@
       <view class="section section--summary">
         <view class="summary-card">
           <text class="summary-title">工具大全</text>
-          <!-- <text class="summary-desc">{{ availableTools.length }} 个工具，按任务域归档。这里不放工作台、最近使用，只保留完整目录。</text> -->
+          <text class="summary-desc">{{ availableTools.length }} 个{{ platformLabel }}可用工具，按任务归档。</text>
         </view>
       </view>
 
@@ -93,8 +93,17 @@
   import { useShare } from '@/utils/share'
   import { useToolDirectory } from '@/hooks/use-tool-directory'
 
-  const { navbarBg, availableTools, visibleCategories, getToolsByCategory, getCategorySummary, isFolded, toggleCategoryFold, handleToolClick } =
-    useToolDirectory()
+  const {
+    navbarBg,
+    availableTools,
+    visibleCategories,
+    platformLabel,
+    getToolsByCategory,
+    getCategorySummary,
+    isFolded,
+    toggleCategoryFold,
+    handleToolClick,
+  } = useToolDirectory()
 
   const { onShareAppMessage, onShareTimeline } = useShare('tools', {
     title: 'uni-demo · 工具库',
@@ -121,8 +130,7 @@
     min-height: 100vh;
     background:
       radial-gradient(circle at top center, rgba(0, 70, 180, 0.08), transparent 30%),
-      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%),
-      $bg-color;
+      linear-gradient(180deg, rgba(0, 70, 180, 0.03), transparent 22%), $bg-color;
     overflow-x: hidden;
 
     /* #ifdef H5 */

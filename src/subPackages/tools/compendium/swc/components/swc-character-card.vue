@@ -5,6 +5,7 @@
       `card-element-${character.elementKey || 'neutral'}`,
       {
         'avatar-circle': avatarShape === 'circle',
+        bestiary: variant === 'bestiary',
         selectable,
         selected,
         removable: showRemove,
@@ -12,66 +13,110 @@
     ]"
     :style="cardStyle"
     @click="handleClick">
-    <view class="avatar-wrap" :class="{ 'avatar-wrap-circle': avatarShape === 'circle' }" :style="avatarWrapStyle">
-      <image
-        v-if="character.avatar"
-        class="avatar"
-        :class="{ circle: avatarShape === 'circle' }"
-        :src="character.avatar"
-        mode="aspectFill"
-        lazy-load />
-      <view v-else class="avatar-placeholder" :class="{ circle: avatarShape === 'circle' }">
-        <text>{{ character.name.slice(0, 1) || '?' }}</text>
+    <template v-if="variant === 'bestiary'">
+      <SwcAvatarFrame class="bestiary-avatar" :src="character.avatar" :name="character.name" :size="avatarSize" :shape="avatarShape">
+        <template v-if="showStars && character.displayStars > 0" #top-left>
+          <SwcStarBadge :count="character.displayStars" :layout="starLayout" :size="26" />
+        </template>
+
+        <template v-if="showElement && character.elementKey" #top-right>
+          <view class="bestiary-element-badge">
+            <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="38" :radius="8" />
+          </view>
+        </template>
+
+        <template v-if="showOriginalStars && character.stars" #bottom-left>
+          <view class="original-stars bestiary-original-stars">
+            <text>{{ character.stars }}★</text>
+          </view>
+        </template>
+
+        <template v-if="hasActionBadge" #bottom-right>
+          <view v-if="showRemove" class="remove-badge inline-action-badge" @click.stop="handleRemove">
+            <text>×</text>
+          </view>
+          <view v-else-if="showEdit" class="edit-badge inline-action-badge" @click.stop="handleEdit">
+            <text>✎</text>
+          </view>
+          <view v-else-if="selectable && selected" class="selected-badge inline-action-badge">
+            <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
+          </view>
+        </template>
+      </SwcAvatarFrame>
+
+      <view class="character-info bestiary-info">
+        <text class="character-title bestiary-title">{{ primaryTitle }}</text>
+        <text v-if="bestiaryMetaText" class="bestiary-meta">{{ bestiaryMetaText }}</text>
+      </view>
+    </template>
+
+    <template v-else>
+      <view class="avatar-wrap" :class="{ 'avatar-wrap-circle': avatarShape === 'circle' }" :style="avatarWrapStyle">
+        <image
+          v-if="character.avatar"
+          class="avatar"
+          :class="{ circle: avatarShape === 'circle' }"
+          :src="character.avatar"
+          mode="aspectFill"
+          lazy-load />
+        <view v-else class="avatar-placeholder" :class="{ circle: avatarShape === 'circle' }">
+          <text>{{ character.name.slice(0, 1) || '?' }}</text>
+        </view>
+
+        <view v-if="showElement && character.elementKey" class="element-badge">
+          <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="40" :radius="8" />
+        </view>
+
+        <view v-if="showOrder && order > 0" class="order-badge">
+          <text>{{ order }}</text>
+        </view>
+
+        <view v-if="showRemove" class="remove-badge" @click.stop="handleRemove">
+          <text>×</text>
+        </view>
+
+        <view v-else-if="showEdit" class="edit-badge" @click.stop="handleEdit">
+          <text>✎</text>
+        </view>
+
+        <view v-else-if="selectable && selected" class="selected-badge">
+          <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
+        </view>
+
+        <view v-if="showStars && character.displayStars > 0" class="stars" :class="{ 'stars-stacked': starLayout === 'stacked' }">
+          <text v-for="i in character.displayStars" :key="i" class="star-icon">★</text>
+        </view>
+
+        <view v-if="showOriginalStars && character.stars" class="original-stars">
+          <text>{{ character.stars }}★</text>
+        </view>
       </view>
 
-      <view v-if="showElement && character.elementKey" class="element-badge">
-        <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="40" :radius="8" />
+      <view v-if="hasInfo" class="character-info">
+        <text v-if="showName" class="character-title">{{ character.name || '未知魔灵' }}</text>
+        <text v-if="showFamily && !showName" class="character-title">{{ character.familyName || '未知家族' }}</text>
+        <text v-if="showFamily && showName" class="character-family">{{ character.familyName || '未知家族' }}</text>
       </view>
-
-      <view v-if="showOrder && order > 0" class="order-badge">
-        <text>{{ order }}</text>
-      </view>
-
-      <view v-if="showRemove" class="remove-badge" @click.stop="handleRemove">
-        <text>×</text>
-      </view>
-
-      <view v-else-if="showEdit" class="edit-badge" @click.stop="handleEdit">
-        <text>✎</text>
-      </view>
-
-      <view v-else-if="selectable && selected" class="selected-badge">
-        <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
-      </view>
-
-      <view v-if="showStars && character.displayStars > 0" class="stars" :class="{ 'stars-stacked': starLayout === 'stacked' }">
-        <text v-for="i in character.displayStars" :key="i" class="star-icon">★</text>
-      </view>
-
-      <view v-if="showOriginalStars && character.stars" class="original-stars">
-        <text>{{ character.stars }}★</text>
-      </view>
-    </view>
-
-    <view v-if="hasInfo" class="character-info">
-      <text v-if="showName" class="character-title">{{ character.name || '未知魔灵' }}</text>
-      <text v-if="showFamily && !showName" class="character-title">{{ character.familyName || '未知家族' }}</text>
-      <text v-if="showFamily && showName" class="character-family">{{ character.familyName || '未知家族' }}</text>
-    </view>
+    </template>
   </view>
 </template>
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import SwcAvatarFrame from './swc-avatar-frame.vue'
+  import SwcStarBadge from './swc-star-badge.vue'
   import SwcSquareIcon from './swc-square-icon.vue'
+  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from '../icon-assets'
   import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'
+  type CardVariant = 'default' | 'bestiary'
 
   const props = withDefaults(
     defineProps<{
       character: SwcCharacterView
+      variant?: CardVariant
       avatarShape?: AvatarShape
       showName?: boolean
       showFamily?: boolean
@@ -87,8 +132,11 @@
       selectedIndex?: number
       avatarSize?: number
       showEdit?: boolean
+      showType?: boolean
+      metricText?: string
     }>(),
     {
+      variant: 'default',
       avatarShape: 'square',
       showName: true,
       showFamily: false,
@@ -104,6 +152,8 @@
       selectedIndex: 0,
       avatarSize: 240,
       showEdit: false,
+      showType: false,
+      metricText: '',
     },
   )
 
@@ -114,6 +164,27 @@
   }>()
 
   const hasInfo = computed(() => props.showName || props.showFamily)
+
+  const hasActionBadge = computed(() => props.showRemove || props.showEdit || (props.selectable && props.selected))
+
+  const primaryTitle = computed(() => {
+    if (props.showName) return props.character.name || '未知魔灵'
+    if (props.showFamily) return props.character.familyName || '未知家族'
+    return props.character.name || props.character.familyName || '未知魔灵'
+  })
+
+  const archetypeLabel = computed(() => {
+    const normalizedKey = normalizeSwcArchetype(props.character.archetype)
+    const label = SWC_ARCHETYPE_LABEL_MAP[normalizedKey] || props.character.archetype || ''
+    return label
+  })
+
+  const bestiaryMetaText = computed(() => {
+    const parts: string[] = []
+    if (props.showType && archetypeLabel.value) parts.push(archetypeLabel.value)
+    if (props.metricText) parts.push(props.metricText)
+    return parts.join(' · ')
+  })
 
   const cardStyle = computed(() => ({
     '--avatar-size': `${props.avatarSize}rpx`,
@@ -138,22 +209,68 @@
 
 <style scoped lang="scss">
   .swc-character-card {
+    --card-tint: rgba(15, 23, 42, 0.03);
     position: relative;
     min-width: 0;
     border-radius: 18rpx;
-    background: #f7f8fb;
-    border: 2rpx solid rgba(255, 255, 255, 0.36);
+    background: linear-gradient(180deg, var(--card-tint), transparent 72%), var(--theme-surface);
+    border: 2rpx solid var(--theme-border);
     overflow: hidden;
-    color: #fff;
+    color: var(--theme-text);
     display: flex;
     flex-direction: column;
+  }
+
+  .swc-character-card.bestiary {
+    border-radius: 16rpx;
+    border-color: var(--theme-border);
+    box-shadow: 0 6rpx 16rpx var(--theme-shadow-xs);
+  }
+
+  .bestiary-avatar {
+    border-bottom: 1rpx solid var(--theme-border);
+  }
+
+  .bestiary-element-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4rpx 10rpx rgba(15, 23, 42, 0.28));
+  }
+
+  .bestiary-info {
+    padding: 10rpx 10rpx 12rpx;
+    gap: 4rpx;
+    align-items: center;
+    text-align: center;
+  }
+
+  .bestiary-title {
+    width: 100%;
+    font-size: 23rpx;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  .bestiary-meta {
+    width: 100%;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .avatar-wrap {
     position: relative;
     width: 100%;
     height: var(--avatar-size);
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.02));
+    background: linear-gradient(180deg, var(--card-tint), transparent), var(--theme-surface-2);
     overflow: hidden;
   }
 
@@ -202,7 +319,7 @@
 
   .element-badge {
     right: 0rpx;
-    bottom: ß0rpx;
+    bottom: 0rpx;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -312,6 +429,11 @@
     font-weight: 700;
   }
 
+  .inline-action-badge,
+  .bestiary-original-stars {
+    position: static;
+  }
+
   .character-info {
     min-width: 0;
     padding: 12rpx 14rpx 14rpx;
@@ -322,7 +444,7 @@
 
   .character-title {
     min-width: 0;
-    color: #172033;
+    color: var(--theme-text);
     font-size: 24rpx;
     font-weight: 800;
     line-height: 1.3;
@@ -330,7 +452,7 @@
   }
 
   .character-family {
-    color: #556174;
+    color: var(--theme-text-secondary);
     font-size: 22rpx;
     font-weight: 700;
     line-height: 1.3;
@@ -338,27 +460,27 @@
   }
 
   .card-element-fire {
-    background: linear-gradient(180deg, #fff4ea 0%, #fff 100%);
+    --card-tint: rgba(232, 93, 85, 0.14);
   }
 
   .card-element-water {
-    background: linear-gradient(180deg, #edf6ff 0%, #fff 100%);
+    --card-tint: rgba(75, 157, 244, 0.14);
   }
 
   .card-element-wind {
-    background: linear-gradient(180deg, #effaf2 0%, #fff 100%);
+    --card-tint: rgba(42, 166, 111, 0.14);
   }
 
   .card-element-light {
-    background: linear-gradient(180deg, #fff8dd 0%, #fff 100%);
+    --card-tint: rgba(217, 154, 22, 0.16);
   }
 
   .card-element-dark {
-    background: linear-gradient(180deg, #f3efff 0%, #fff 100%);
+    --card-tint: rgba(124, 77, 255, 0.15);
   }
 
   .card-element-neutral {
-    background: #f7f8fb;
+    --card-tint: rgba(15, 23, 42, 0.04);
   }
 
   .selectable {

@@ -3,92 +3,123 @@
     <view class="coupon-page">
       <!-- 头部 -->
       <view class="page-head">
-        <text class="page-title">{{ gameConfig.title }}</text>
-        <view v-if="!isLoggedIn" class="login-tip guest">
-          <text v-if="!isLoggedIn" class="login-link" @click="goLogin">登录同步 ›</text>
+        <view class="page-title-wrap">
+          <text class="page-title">{{ gameConfig.title }}</text>
+          <text class="page-subtitle">选择账号和券码后兑换</text>
+        </view>
+        <view class="login-pill" :class="{ online: isLoggedIn }" @click="!isLoggedIn && goLogin()">
+          {{ isLoggedIn ? '已登录' : '登录同步' }}
         </view>
       </view>
 
       <!-- 账号卡片 -->
-      <view class="card">
+      <view class="card account-card">
         <view class="card-head">
           <view>
             <text class="card-title">我的账号</text>
             <text class="card-subtitle">已选 {{ selectedAccounts.length }}/{{ validAccounts.length }} 个账号</text>
           </view>
-          <text class="card-tag">{{ isLoggedIn ? '云端托管' : '本机保存' }}</text>
-        </view>
-
-        <view class="auto-row featured">
-          <view class="auto-text">
-            <text class="auto-title">自动兑换托管</text>
-            <text class="auto-hint">{{ isLoggedIn ? '新码出来时自动帮你兑换' : '登录后开启，新码自动到账' }}</text>
-          </view>
-          <switch class="auto-switch" :checked="isLoggedIn && allAutoOn" color="var(--theme-brand)" @change="handleAutoSwitchChange" />
-        </view>
-
-        <!-- 添加账号表单 -->
-        <view class="add-form">
-          <picker class="server-picker add-server-picker" :range="serverLabels" :value="getServerIndex(newAccount.server)" @change="changeNewServer($event)">
-            <view class="server-chip editable">
-              <text class="server-chip-label">区服</text>
-              <text class="server-chip-value">{{ getServerShortLabel(newAccount.server) }}</text>
+          <view class="account-head-actions">
+            <view class="auto-inline">
+              <text class="auto-inline-label">托管</text>
+              <switch
+                class="auto-switch compact"
+                :checked="isLoggedIn && allAutoOn"
+                color="var(--theme-brand)"
+                @change="handleAutoSwitchChange" />
             </view>
-          </picker>
-          <input
-            class="add-input"
-            type="text"
-            :placeholder="gameConfig.accountIdPlaceholder"
-            :value="newAccount.accountId"
-            @input="newAccount.accountId = String($event.detail.value || '').trim()" />
-          <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
-            {{ addingAccount ? '...' : '添加' }}
+            <text v-if="accounts.length" class="card-toggle" @click="showAccountManager = !showAccountManager">
+              {{ showAccountManager ? '收起' : '管理' }}
+            </text>
           </view>
         </view>
 
-        <view v-if="!accounts.length" class="empty-tip">还没有账号，先添加一个吧</view>
-
-        <view v-if="accounts.length" class="account-list">
-          <view
-            v-for="(account, index) in accounts"
-            :key="account.id"
-            class="account-row"
-            :class="{ selected: isAccountSelected(account) }"
-            @click="toggleAccountSelection(account)">
-            <view class="selection-check" :class="{ checked: isAccountSelected(account) }">
-              <text v-if="isAccountSelected(account)" class="selection-check-mark">✓</text>
+        <scroll-view v-if="validAccounts.length" class="account-chip-scroll" scroll-x>
+          <view class="account-chip-row">
+            <view
+              v-for="account in validAccounts"
+              :key="account.id"
+              class="account-chip"
+              :class="{ selected: isAccountSelected(account) }"
+              @click="toggleAccountSelection(account)">
+              <text class="account-chip-name">{{ getAccountDisplayName(account) }}</text>
+              <text class="account-chip-server">{{ getServerShortLabel(account.server) }}</text>
             </view>
-            <view class="server-chip readonly">
-              <text class="server-chip-label">区服</text>
-              <text class="server-chip-value">{{ getServerShortLabel(account.server) }}</text>
-            </view>
+          </view>
+        </scroll-view>
 
-            <view class="account-main">
-              <view class="account-line">
-                <text class="account-name">{{ getAccountDisplayName(account) }}</text>
-                <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
-              </view>
-              <view v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-sub">
-                <text class="account-id-sub">{{ account.accountIdMasked || account.accountId }}</text>
-              </view>
-            </view>
+        <view v-if="!accounts.length" class="empty-tip">添加账号后即可兑换</view>
 
-            <view class="account-actions">
-              <view class="account-status-row">
-                <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
+        <view v-if="showAccountManager || !accounts.length" class="account-manager">
+          <view class="manager-note">
+            <text>{{ isLoggedIn ? '托管账号支持自动兑换，本地账号可同步。' : '本地保存，登录后可同步并托管。' }}</text>
+          </view>
+
+          <!-- 添加账号表单 -->
+          <view class="add-form">
+            <picker
+              class="server-picker add-server-picker"
+              :range="serverLabels"
+              :value="getServerIndex(newAccount.server)"
+              @change="changeNewServer($event)">
+              <view class="server-chip editable">
+                <text class="server-chip-label">区服</text>
+                <text class="server-chip-value">{{ getServerShortLabel(newAccount.server) }}</text>
               </view>
-              <view class="account-action-buttons">
-                <view
-                  v-if="isLoggedIn && !account.managed"
-                  class="mini-btn primary"
-                  :class="{ loading: account.syncing }"
-                  @click.stop="syncLocalAccount(index)">
-                  {{ account.syncing ? '同步中' : '同步云端' }}
+            </picker>
+            <input
+              class="add-input"
+              type="text"
+              :placeholder="gameConfig.accountIdPlaceholder"
+              :value="newAccount.accountId"
+              @input="updateNewAccountId" />
+            <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
+              {{ addingAccount ? '...' : '添加' }}
+            </view>
+          </view>
+
+          <view v-if="accounts.length" class="account-list">
+            <view
+              v-for="(account, index) in accounts"
+              :key="account.id"
+              class="account-row"
+              :class="{ selected: isAccountSelected(account) }"
+              @click="toggleAccountSelection(account)">
+              <view class="selection-check" :class="{ checked: isAccountSelected(account) }">
+                <text v-if="isAccountSelected(account)" class="selection-check-mark">✓</text>
+              </view>
+              <view class="server-chip readonly">
+                <text class="server-chip-label">区服</text>
+                <text class="server-chip-value">{{ getServerShortLabel(account.server) }}</text>
+              </view>
+
+              <view class="account-main">
+                <view class="account-line">
+                  <text class="account-name">{{ getAccountDisplayName(account) }}</text>
+                  <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
                 </view>
-                <view class="mini-btn" :class="{ loading: account.verifying }" @click.stop="verifyAccount(index)">
-                  {{ account.verifying ? '验证中' : '验证' }}
+                <view v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-sub">
+                  <text class="account-id-sub">{{ account.accountIdMasked || account.accountId }}</text>
                 </view>
-                <view class="mini-btn danger" @click.stop="removeAccount(index)">删除</view>
+              </view>
+
+              <view class="account-actions">
+                <view class="account-status-row">
+                  <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
+                </view>
+                <view class="account-action-buttons">
+                  <view
+                    v-if="isLoggedIn && !account.managed"
+                    class="mini-btn primary"
+                    :class="{ loading: account.syncing }"
+                    @click.stop="syncLocalAccount(index)">
+                    {{ account.syncing ? '同步中' : '同步云端' }}
+                  </view>
+                  <view class="mini-btn" :class="{ loading: account.verifying }" @click.stop="verifyAccount(index)">
+                    {{ account.verifying ? '验证中' : '验证' }}
+                  </view>
+                  <view class="mini-btn danger" @click.stop="removeAccount(index)">删除</view>
+                </view>
               </view>
             </view>
           </view>
@@ -106,7 +137,7 @@
 
         <view class="coupon-tabs">
           <view class="coupon-tab" :class="{ active: activeCouponMode === 'public' }" @click="setActiveCouponMode('public')">
-            批量兑换
+            批量券码
           </view>
           <view class="coupon-tab" :class="{ active: activeCouponMode === 'manual' }" @click="setActiveCouponMode('manual')">
             手动输入
@@ -115,90 +146,69 @@
 
         <view v-if="activeCouponMode === 'manual'" class="manual-mode-body">
           <view class="manual-row">
-            <input
-              class="manual-input"
-              type="text"
-              placeholder="输入要兑换的券码"
-              :value="manualCode"
-              @input="manualCode = String($event.detail.value || '').toUpperCase()" />
+            <input class="manual-input" type="text" placeholder="输入要兑换的券码" :value="manualCode" @input="updateManualCode" />
           </view>
-          <view class="mode-tip">
-            默认建议只勾选 1 个账号；确认是公共券码时，可在上方多选账号。
-          </view>
+          <view class="mode-tip"> 默认单账号；公共券码可多选账号。 </view>
         </view>
 
         <view v-else class="public-mode-body">
-          <view class="batch-add-row">
-            <input
-              class="manual-input"
-              type="text"
-              placeholder="输入可批量兑换的券码"
-              :value="publicCodeInput"
-              @input="publicCodeInput = String($event.detail.value || '').toUpperCase()" />
-            <view class="manual-add" :class="{ disabled: addingPublicCode }" @click="addPublicCode">
-              {{ addingPublicCode ? '添加中' : '添加' }}
-            </view>
-          </view>
-          <view class="mode-tip public-tip">
-            适合多个账号一起兑换；添加前会检查重复，成功后默认勾选。
-          </view>
           <view class="public-actions">
             <text class="public-summary">已选 {{ selectedCodes.length }}/{{ combinedCodes.length }} 个券码</text>
             <view class="coupon-actions">
               <text class="refresh-code-btn" :class="{ disabled: loadingCodes }" @click="loadCodes">
                 {{ loadingCodes ? '刷新中' : '刷新列表' }}
               </text>
-              <text class="card-toggle" @click="showCodes = !showCodes">{{ showCodes ? '收起' : '明细' }}</text>
+              <text class="card-toggle" @click="showCodeManager = !showCodeManager">{{ showCodeManager ? '收起' : '管理' }}</text>
             </view>
           </view>
           <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
-          <view v-if="showCodes && combinedCodes.length" class="code-list">
-            <view
-              v-for="item in combinedCodes"
-              :key="item.code"
-              class="code-item"
-              :class="{ selected: isCodeSelected(item) }"
-              @click="toggleCodeSelection(item)">
-              <view class="code-info">
-                <text class="code-text">{{ item.code }}</text>
-                <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
+
+          <view v-if="showCodeManager || (!loadingCodes && !combinedCodes.length)" class="code-manager">
+            <view class="batch-add-row">
+              <input class="manual-input" type="text" placeholder="输入公共券码" :value="publicCodeInput" @input="updatePublicCodeInput" />
+              <view class="manual-add" :class="{ disabled: addingPublicCode }" @click="addPublicCode">
+                {{ addingPublicCode ? '添加中' : '添加' }}
               </view>
-              <view class="code-side">
-                <view class="selection-check code-check" :class="{ checked: isCodeSelected(item) }">
-                  <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
+            </view>
+            <view class="mode-tip public-tip"> 添加后默认勾选，重复券码会自动拦截。 </view>
+            <view v-if="!combinedCodes.length && !loadingCodes" class="empty-tip">暂无批量券码，可先添加券码或切换到手动输入</view>
+            <view v-if="combinedCodes.length" class="manager-line">
+              <text class="manager-line-text">{{ showCodes ? '正在显示全部券码' : '明细默认收起，避免列表过长' }}</text>
+              <text class="card-toggle" @click="showCodes = !showCodes">{{ showCodes ? '隐藏明细' : '查看明细' }}</text>
+            </view>
+            <view v-if="showCodes && combinedCodes.length" class="code-list">
+              <view
+                v-for="item in combinedCodes"
+                :key="item.code"
+                class="code-item"
+                :class="{ selected: isCodeSelected(item) }"
+                @click="toggleCodeSelection(item)">
+                <view class="code-info">
+                  <text class="code-text">{{ item.code }}</text>
+                  <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
                 </view>
-                <text class="code-source">{{ getSourceLabel(item.source) }}</text>
+                <view class="code-side">
+                  <view class="selection-check code-check" :class="{ checked: isCodeSelected(item) }">
+                    <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
+                  </view>
+                  <text class="code-source">{{ getSourceLabel(item.source) }}</text>
+                </view>
               </view>
             </view>
           </view>
-          <view v-if="showCodes && !combinedCodes.length" class="empty-tip">暂无批量券码，可先添加券码或切换到手动输入</view>
         </view>
       </view>
 
       <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
 
-      <!-- 统计（仅登录态展示，游客模式不触发统计接口） -->
-      <view v-if="isLoggedIn && stats && !resultGroups.length" class="stats-row">
-        <view class="stat success">
-          <text class="stat-num">{{ stats.success }}</text>
-          <text class="stat-label">成功</text>
-        </view>
-        <view class="stat used">
-          <text class="stat-num">{{ stats.alreadyUsed }}</text>
-          <text class="stat-label">已使用</text>
-        </view>
-        <view class="stat failed">
-          <text class="stat-num">{{ stats.failed }}</text>
-          <text class="stat-label">失败</text>
-        </view>
-      </view>
-
       <!-- 本次兑换结果分组 -->
       <view v-if="resultGroups.length" class="card result-summary-card">
         <view class="card-head">
           <view>
-            <text class="card-title">本次兑换完成</text>
-            <text class="card-subtitle">成功 {{ resultSummary.success }} · 已使用 {{ resultSummary.alreadyUsed }} · 失败 {{ resultSummary.failed }}</text>
+            <text class="card-title">兑换完成</text>
+            <text class="card-subtitle"
+              >成功 {{ resultSummary.success }} · 已使用 {{ resultSummary.alreadyUsed }} · 失败 {{ resultSummary.failed }}</text
+            >
           </view>
           <text class="card-toggle" @click="showAllResults = !showAllResults">{{ showAllResults ? '收起' : '全部' }}</text>
         </view>
@@ -230,7 +240,7 @@
             还有 {{ failedResultItems.length - failedPreviewLimit }} 条失败项，查看全部
           </text>
         </view>
-        <view v-else class="empty-tip">没有失败项，兑换结果很好。</view>
+        <view v-else class="empty-tip">无失败项</view>
 
         <view v-if="showAllResults" class="result-list">
           <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
@@ -241,7 +251,9 @@
             <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
               <view class="result-main">
                 <text class="result-code">{{ item.code }}</text>
-                <text class="result-msg">{{ item.message || item.reward || '已返回结果' }}</text>
+                <text class="result-msg">{{
+                  translateCouponErrorMessage(item.message || item.reward || item.status || '已返回结果')
+                }}</text>
               </view>
               <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
             </view>
@@ -250,9 +262,14 @@
       </view>
 
       <!-- 兑换记录（登录态） -->
-      <view v-if="isLoggedIn" class="card">
+      <view v-if="isLoggedIn" class="card record-card">
         <view class="card-head" @click="toggleRecords">
-          <text class="card-title">兑换记录</text>
+          <view>
+            <text class="card-title">兑换记录</text>
+            <text v-if="stats && !resultGroups.length" class="card-subtitle"
+              >成功 {{ stats.success }} · 已使用 {{ stats.alreadyUsed }} · 失败 {{ stats.failed }}</text
+            >
+          </view>
           <text class="card-toggle">{{ showRecords ? '收起' : '查看' }}</text>
         </view>
         <view v-if="showRecords" class="record-body">
@@ -338,11 +355,18 @@
     compendium_id?: string
   }
 
+  interface UniValueEvent extends Event {
+    detail?: {
+      value?: unknown
+    }
+  }
+
   const maxAccounts = 5
   const gameConfig = ref<GameCouponConfig>(getGameCouponConfig())
   const accounts = ref<AccountVM[]>([])
   const newAccount = ref<{ server: string; accountId: string }>({ server: 'china', accountId: '' })
   const addingAccount = ref(false)
+  const showAccountManager = ref(false)
 
   const remoteCodes = ref<getGameCouponsGameIdCodesResCodes[]>([])
   const manualCode = ref('')
@@ -355,6 +379,7 @@
   const addingPublicCode = ref(false)
   const codeLoadError = ref('')
   const showCodes = ref(false)
+  const showCodeManager = ref(false)
 
   const redeeming = ref(false)
   const redeemError = ref('')
@@ -421,7 +446,7 @@
         .map((item, resultIndex) => ({
           key: `${group.account?.id || groupIndex}-${item.code}-${resultIndex}`,
           code: String(item.code || '未知券码'),
-          message: item.message || item.reward || '兑换失败',
+          message: translateCouponErrorMessage(item.message || item.reward || item.status || '兑换失败'),
           status: String(item.status || 'failed'),
           statusLabel: getStatusLabel(item.status),
         })),
@@ -432,13 +457,7 @@
 
   const redeemActionText = computed(() => {
     if (redeeming.value) return '兑换中…'
-    if (activeCouponMode.value === 'manual') {
-      if (!manualCode.value.trim()) return '输入券码后兑换'
-      if (selectedAccounts.value.length > 1) return `兑换到 ${selectedAccounts.value.length} 个账号`
-      return '立即兑换'
-    }
-    if (selectedAccounts.value.length === 1 && selectedCodes.value.length === 1) return '兑换这个券码'
-    return '批量兑换'
+    return '兑换'
   })
 
   const redeemDockTitle = computed(() => {
@@ -449,17 +468,18 @@
   })
 
   const redeemHintText = computed(() => {
+    if (!selectedAccounts.value.length) return '先选择要兑换的账号'
     if (activeCouponMode.value === 'manual') {
-      if (selectedAccounts.value.length > 1) return '会把输入的券码兑换到已勾选账号'
-      return '默认单账号兑换，可在上方多选账号'
+      if (!manualCode.value.trim()) return '输入券码后即可兑换'
+      return `将兑换到 ${selectedAccounts.value.length} 个账号`
     }
-    if (selectedAccounts.value.length === 1 && selectedCodes.value.length === 1) return '单账号单券码兑换'
-    return '仅兑换已勾选的账号和券码'
+    if (!selectedCodes.value.length) return '先选择要兑换的券码'
+    return `将兑换 ${selectedCodes.value.length} 个券码`
   })
 
   const couponModeSubtitle = computed(() => {
     if (activeCouponMode.value === 'manual') return `手动输入 · 已选 ${selectedAccounts.value.length}/${validAccounts.value.length} 个账号`
-    return `批量兑换 · 已选 ${selectedCodes.value.length}/${combinedCodes.value.length} 个券码`
+    return `批量券码 · 已选 ${selectedCodes.value.length}/${combinedCodes.value.length} 个券码`
   })
 
   /* ----------------------------- 工具 ----------------------------- */
@@ -596,6 +616,22 @@
 
   function toast(title: string) {
     uni.showToast({ title, icon: 'none' })
+  }
+
+  function getEventValue(event: Event) {
+    return String((event as UniValueEvent).detail?.value || '')
+  }
+
+  function updateNewAccountId(event: Event) {
+    newAccount.value.accountId = getEventValue(event).trim()
+  }
+
+  function updateManualCode(event: Event) {
+    manualCode.value = getEventValue(event).toUpperCase()
+  }
+
+  function updatePublicCodeInput(event: Event) {
+    publicCodeInput.value = getEventValue(event).toUpperCase()
   }
 
   /* ----------------------------- 登录跳转 ----------------------------- */
@@ -892,7 +928,7 @@
         })
         account.nickname = res.nickname
         account.status = res.available ? 'active' : 'invalid'
-        toast(res.available ? `验证成功：${res.nickname || '有效账号'}` : res.message || '账号无效')
+        toast(res.available ? `验证成功：${res.nickname || '有效账号'}` : translateCouponErrorMessage(res.message || '账号无效'))
         saveLocalAccounts()
       }
     } catch (err) {
@@ -925,13 +961,13 @@
     }
   }
 
-  function handleAutoSwitchChange(event: { detail: { value: boolean } }) {
+  function handleAutoSwitchChange(event: Event) {
     if (!isLoggedIn.value) {
       goLogin()
       return
     }
 
-    const target = Boolean(event.detail.value)
+    const target = Boolean((event as UniValueEvent).detail?.value)
     if (target !== allAutoOn.value) {
       toggleAllAuto()
     }
@@ -972,11 +1008,7 @@
     addingPublicCode.value = true
     codeLoadError.value = ''
     try {
-      await postGameIdCodesManual(
-        gameConfig.value.gameId,
-        { compendium_id: gameConfig.value.compendiumId },
-        { code, source: 'manual' },
-      )
+      await postGameIdCodesManual(gameConfig.value.gameId, { compendium_id: gameConfig.value.compendiumId }, { code, source: 'manual' })
       publicCodeInput.value = ''
       try {
         await loadCodes()
@@ -1057,9 +1089,7 @@
       return
     }
     const codesToRedeem =
-      activeCouponMode.value === 'manual'
-        ? [{ code: manualCode.value.trim().toUpperCase(), source: 'manual' }]
-        : selectedCodes.value
+      activeCouponMode.value === 'manual' ? [{ code: manualCode.value.trim().toUpperCase(), source: 'manual' }] : selectedCodes.value
 
     if (activeCouponMode.value === 'manual' && !codesToRedeem[0].code) {
       redeemError.value = '请输入一次性兑换码'
@@ -1122,10 +1152,50 @@
   /* ----------------------------- 错误处理 ----------------------------- */
 
   function errMsg(err: unknown, fallback: string) {
-    if (typeof err === 'string') return err
-    if (err instanceof Error) return err.message
-    if (err && typeof err === 'object' && 'message' in err) return String((err as { message: unknown }).message)
+    if (typeof err === 'string') return translateCouponErrorMessage(err)
+    if (err instanceof Error) return translateCouponErrorMessage(err.message)
+    if (err && typeof err === 'object' && 'message' in err)
+      return translateCouponErrorMessage(String((err as { message: unknown }).message))
     return fallback
+  }
+
+  function translateCouponErrorMessage(message?: unknown): string {
+    const raw = String(message || '').trim()
+    if (!raw) return '兑换失败'
+    const normalized = raw.toLowerCase().replace(/[_-]+/g, ' ')
+    const compact = normalized.replace(/\s+/g, ' ')
+    const exactMap: Record<string, string> = {
+      success: '兑换成功',
+      already_used: '该券码已使用',
+      'already used': '该券码已使用',
+      invalid_coupon: '券码无效或已过期',
+      'invalid coupon': '券码无效或已过期',
+      invalid_id: '账号 ID 无效',
+      'invalid id': '账号 ID 无效',
+      failed: '兑换失败',
+      pending: '等待兑换',
+      redeeming: '兑换中',
+      'coupon already used': '该券码已使用',
+      'coupon expired': '券码已过期',
+      'coupon not found': '券码不存在',
+      'invalid account': '账号无效',
+      'invalid hive id': 'Hive ID 无效',
+      'account not found': '账号不存在',
+      'server error': '服务器异常，请稍后重试',
+      'network error': '网络异常，请稍后重试',
+      unauthorized: '登录已过期，请重新登录',
+      forbidden: '无权执行该操作',
+    }
+    if (exactMap[raw] || exactMap[compact]) return exactMap[raw] || exactMap[compact]
+    if (/already.*used|used.*coupon/.test(compact)) return '该券码已使用'
+    if (/invalid.*coupon|coupon.*invalid/.test(compact)) return '券码无效或已过期'
+    if (/expired/.test(compact)) return '券码已过期'
+    if (/not found|not exist/.test(compact)) return '券码或账号不存在'
+    if (/invalid.*(id|account|hive)/.test(compact)) return '账号 ID 无效'
+    if (/timeout|timed out/.test(compact)) return '请求超时，请稍后重试'
+    if (/network|fetch/.test(compact)) return '网络异常，请稍后重试'
+    if (/server|internal/.test(compact)) return '服务器异常，请稍后重试'
+    return raw
   }
 
   /* ----------------------------- 初始化 ----------------------------- */
@@ -1186,37 +1256,62 @@
 
   .coupon-page {
     min-height: 100vh;
-    padding: 32rpx 28rpx 220rpx;
+    padding: 24rpx 24rpx 220rpx;
     background: $page-bg;
     box-sizing: border-box;
   }
 
   /* 头部 */
   .page-head {
-    margin-bottom: 28rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .page-title-wrap {
+    min-width: 0;
+    flex: 1;
   }
 
   .page-title {
     display: block;
-    font-size: 40rpx;
+    font-size: 36rpx;
     font-weight: 700;
     color: $text-primary;
+    line-height: 1.25;
   }
 
   .page-subtitle {
     display: block;
-    margin-top: 8rpx;
-    font-size: 24rpx;
-    color: $text-secondary;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    color: $text-hint;
     line-height: 1.5;
+  }
+
+  .login-pill {
+    flex-shrink: 0;
+    padding: 10rpx 18rpx;
+    border-radius: 999rpx;
+    color: $accent;
+    background: rgba(79, 110, 242, 0.1);
+    font-size: 23rpx;
+    font-weight: 600;
+
+    &.online {
+      color: $success;
+      background: rgba(22, 163, 74, 0.1);
+    }
   }
 
   /* 卡片 */
   .card {
-    margin-bottom: 24rpx;
-    padding: 24rpx;
+    margin-bottom: 16rpx;
+    padding: 20rpx;
     background: $card-bg;
-    border-radius: 20rpx;
+    border-radius: 14rpx;
     border: 1rpx solid $border;
   }
 
@@ -1224,12 +1319,13 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16rpx;
+    gap: 16rpx;
+    margin-bottom: 14rpx;
   }
 
   .card-title {
     display: block;
-    font-size: 28rpx;
+    font-size: 27rpx;
     font-weight: 600;
     color: $text-primary;
   }
@@ -1251,6 +1347,7 @@
   }
 
   .card-toggle {
+    flex-shrink: 0;
     font-size: 24rpx;
     color: $accent;
 
@@ -1259,8 +1356,116 @@
     }
   }
 
+  .account-card .card-head {
+    align-items: flex-start;
+  }
+
+  .account-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    flex-shrink: 0;
+  }
+
+  .auto-inline {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    color: $text-secondary;
+  }
+
+  .auto-inline-label {
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+
+  .auto-switch.compact {
+    transform: scale(0.72);
+    transform-origin: right center;
+  }
+
+  .account-chip-scroll {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .account-chip-row {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 12rpx;
+    min-width: 100%;
+  }
+
+  .account-chip {
+    display: flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 58rpx;
+    padding: 0 18rpx;
+    color: $text-secondary;
+    background: $field-bg;
+    border: 1rpx solid $border;
+    border-radius: 999rpx;
+    box-sizing: border-box;
+
+    &.selected {
+      color: $accent;
+      border-color: rgba(79, 110, 242, 0.42);
+      background: rgba(79, 110, 242, 0.08);
+    }
+  }
+
+  .account-chip-name {
+    max-width: 330rpx;
+    min-width: 0;
+    font-size: 25rpx;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .account-chip-server {
+    flex-shrink: 0;
+    margin-left: 10rpx;
+    padding-left: 10rpx;
+    font-size: 22rpx;
+    color: inherit;
+    opacity: 0.72;
+    border-left: 1rpx solid rgba(148, 163, 184, 0.6);
+  }
+
+  .account-manager,
+  .code-manager {
+    margin-top: 18rpx;
+    padding-top: 18rpx;
+    border-top: 1rpx solid $border;
+  }
+
+  .manager-note {
+    margin-bottom: 14rpx;
+    font-size: 23rpx;
+    line-height: 1.45;
+    color: $text-hint;
+  }
+
+  .manager-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    margin-bottom: 14rpx;
+  }
+
+  .manager-line-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 23rpx;
+    color: $text-hint;
+  }
+
   .empty-tip {
-    padding: 24rpx 0;
+    padding: 20rpx 0;
     font-size: 24rpx;
     color: $text-hint;
     text-align: center;
@@ -1489,6 +1694,10 @@
     border: 1rpx solid $border;
   }
 
+  .account-manager .add-form {
+    margin-top: 0;
+  }
+
   .add-input {
     flex: 1;
     height: 64rpx;
@@ -1602,7 +1811,7 @@
     display: flex;
     gap: 8rpx;
     padding: 6rpx;
-    margin-bottom: 18rpx;
+    margin-bottom: 14rpx;
     background: $field-bg;
     border-radius: 16rpx;
     border: 1rpx solid $border;
@@ -1610,9 +1819,9 @@
 
   .coupon-tab {
     flex: 1;
-    height: 64rpx;
-    line-height: 64rpx;
-    font-size: 26rpx;
+    height: 60rpx;
+    line-height: 60rpx;
+    font-size: 25rpx;
     font-weight: 600;
     color: $text-secondary;
     text-align: center;
@@ -1695,18 +1904,16 @@
   }
 
   .mode-tip {
-    padding: 14rpx 18rpx;
-    font-size: 24rpx;
+    padding: 8rpx 12rpx;
+    font-size: 22rpx;
     line-height: 1.45;
-    color: $warning;
-    background: rgba(217, 119, 6, 0.1);
+    color: $text-hint;
+    background: $field-bg;
     border-radius: 12rpx;
   }
 
   .public-tip {
-    margin-bottom: 16rpx;
-    color: $text-secondary;
-    background: rgba(79, 110, 242, 0.08);
+    margin-bottom: 14rpx;
   }
 
   .code-list {
@@ -1775,7 +1982,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 18rpx;
-    margin-bottom: 16rpx;
+    margin-bottom: 0;
   }
 
   .public-summary {
@@ -1794,7 +2001,7 @@
     display: flex;
     align-items: center;
     gap: 20rpx;
-    padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
+    padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
     background: $card-bg;
     border-top: 1rpx solid $border;
     box-shadow: 0 -12rpx 32rpx rgba(15, 23, 42, 0.08);
@@ -1824,10 +2031,10 @@
   }
 
   .dock-btn {
-    flex: 0 0 240rpx;
-    width: 240rpx;
-    height: 80rpx;
-    line-height: 80rpx;
+    flex: 0 0 212rpx;
+    width: 212rpx;
+    height: 76rpx;
+    line-height: 76rpx;
     margin: 0;
     font-size: 26rpx;
     border-radius: 18rpx;

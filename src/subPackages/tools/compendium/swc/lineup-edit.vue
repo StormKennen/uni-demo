@@ -116,7 +116,7 @@
     type UserLineupDetail,
     updateUserLineup,
   } from '@/services/compendium-lineups'
-  import { ensureLoginAccess } from '@/utils/admin'
+  import { ensureLineupFeatureAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
@@ -285,7 +285,7 @@
     lineupId.value = options.lineupId || ''
     selectedLocale.value = options.locale || DEFAULT_LOCALE
 
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
 
     removeStorageSync(PICKER_RESULT_KEY)
     uni.setNavigationBarTitle({ title: isEditMode.value ? '编辑阵容' : '新建阵容' })

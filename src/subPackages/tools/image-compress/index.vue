@@ -144,24 +144,48 @@
     }
 
     // #ifdef MP-WEIXIN
-    // 微信小程序需要先检查隐私授权
-    if (wx.getPrivacySetting) {
-      wx.getPrivacySetting({
-        success: (res: any) => {
-          console.log('隐私设置状态:', res)
-          doChooseImage()
-        },
-        fail: () => {
-          doChooseImage()
-        },
-      })
-    } else {
-      doChooseImage()
-    }
+    ensureMiniProgramPrivacyAuthorization(doChooseImage)
     // #endif
 
     // #ifndef MP-WEIXIN
     doChooseImage()
+    // #endif
+  }
+
+  const ensureMiniProgramPrivacyAuthorization = (onReady: () => void) => {
+    // #ifndef MP-WEIXIN
+    onReady()
+    // #endif
+
+    // #ifdef MP-WEIXIN
+    if (!wx.getPrivacySetting) {
+      onReady()
+      return
+    }
+
+    wx.getPrivacySetting({
+      success: (res: { needAuthorization?: boolean }) => {
+        if (!res.needAuthorization || !wx.requirePrivacyAuthorize) {
+          onReady()
+          return
+        }
+
+        wx.requirePrivacyAuthorize({
+          success: () => {
+            onReady()
+          },
+          fail: () => {
+            uni.showToast({
+              title: '请先同意隐私协议后再选择图片',
+              icon: 'none',
+            })
+          },
+        })
+      },
+      fail: () => {
+        onReady()
+      },
+    })
     // #endif
   }
 
@@ -170,6 +194,34 @@
     if (isCheckingSecurity.value) {
       return
     }
+
+    // #ifdef MP-WEIXIN
+    if (typeof wx !== 'undefined' && typeof wx.chooseMedia === 'function') {
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: ['album'],
+        success: async (res: { tempFiles?: Array<{ tempFilePath?: string; size?: number }> }) => {
+          const file = res.tempFiles?.[0]
+          const tempFilePath = file?.tempFilePath
+          if (!tempFilePath) {
+            uni.showToast({ title: '未获取到图片文件', icon: 'none' })
+            return
+          }
+
+          const passed = await validateSelectedImageSecurity(tempFilePath)
+          if (!passed) {
+            return
+          }
+          applySelectedImage(tempFilePath, file?.size)
+        },
+        fail: (err: { errMsg?: string }) => {
+          handleChooseImageFail(err)
+        },
+      })
+      return
+    }
+    // #endif
 
     uni.chooseImage({
       count: 1,
@@ -181,38 +233,62 @@
         if (!passed) {
           return
         }
-        applySelectedImage(tempFilePath)
+        applySelectedImage(tempFilePath, res.tempFiles?.[0]?.size)
       },
-      fail: (err: any) => {
-        console.error('选择图片失败:', err)
-        if (err.errMsg && err.errMsg.includes('cancel')) {
-          return
-        }
-        uni.showToast({
-          title: '选择图片失败',
-          icon: 'none',
-        })
-      },
+      fail: handleChooseImageFail,
     })
   }
 
-  const applySelectedImage = (tempFilePath: string) => {
+  const handleChooseImageFail = (err: { errMsg?: string }) => {
+    console.error('选择图片失败:', err)
+    if (err.errMsg && err.errMsg.includes('cancel')) {
+      return
+    }
+    uni.showToast({
+      title: getChooseImageErrorText(err.errMsg),
+      icon: 'none',
+      duration: 3000,
+    })
+  }
+
+  const getChooseImageErrorText = (errMsg = '') => {
+    if (errMsg.includes('auth deny') || errMsg.includes('authorize') || errMsg.includes('permission')) {
+      return '请授权访问相册后重试'
+    }
+    if (errMsg.includes('fail')) {
+      return '选择图片失败，请重试'
+    }
+    return '选择图片失败，请重试'
+  }
+
+  const applySelectedImage = (tempFilePath: string, fallbackSize = 0) => {
+    originalImage.value = tempFilePath
+    compressedImage.value = ''
+    compressedSize.value = 0
+    originalSize.value = fallbackSize
+    originalDimensions.value = ''
+
     uni.getFileInfo({
       filePath: tempFilePath,
       success: (fileInfo: any) => {
         originalSize.value = fileInfo.size
-        originalImage.value = tempFilePath
-
-        uni.getImageInfo({
-          src: tempFilePath,
-          success: (imageInfo: any) => {
-            originalDimensions.value = `${imageInfo.width} × ${imageInfo.height}`
-          },
-        })
-
-        convertToFile(tempFilePath)
+      },
+      fail: (err: any) => {
+        console.warn('获取图片文件大小失败:', err)
       },
     })
+
+    uni.getImageInfo({
+      src: tempFilePath,
+      success: (imageInfo: any) => {
+        originalDimensions.value = `${imageInfo.width} × ${imageInfo.height}`
+      },
+      fail: (err: any) => {
+        console.warn('获取图片尺寸失败:', err)
+      },
+    })
+
+    convertToFile(tempFilePath)
   }
 
   const validateSelectedImageSecurity = async (filePath: string): Promise<boolean> => {

@@ -100,7 +100,6 @@ export function useToolDirectory() {
     Object.entries(ALL_TOOLS)
       .filter(([, tool]) => {
         if (tool.adminOnly && !isAdmin.value) return false
-        if (tool.requiresAuth && !loggedIn.value) return false
         if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) return false
         if (tool.hiddenInDirectory) return false
         return true

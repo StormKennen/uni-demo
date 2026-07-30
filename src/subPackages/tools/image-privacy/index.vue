@@ -160,13 +160,13 @@
     isChecking.value = true
     try {
       const result = await checkMediaSecurity(path, 'image_privacy')
-      if (!result.safe) {
-        uni.showToast({ title: '图片含违规信息', icon: 'none' })
+      if (!result.safe || result.suggestion !== 'pass') {
+        uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
         return false
       }
       return true
     } catch {
-      uni.showToast({ title: '内容安全校验失败', icon: 'none' })
+      uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
       return false
     } finally {
       isChecking.value = false
@@ -200,7 +200,8 @@
 
     if (selectedMasks.value.includes('top')) drawMask(ctx, 0, 0, width, band)
     if (selectedMasks.value.includes('bottom')) drawMask(ctx, 0, height - band, width, band)
-    if (selectedMasks.value.includes('center')) drawMask(ctx, Math.round((width - centerW) / 2), Math.round((height - centerH) / 2), centerW, centerH)
+    if (selectedMasks.value.includes('center'))
+      drawMask(ctx, Math.round((width - centerW) / 2), Math.round((height - centerH) / 2), centerW, centerH)
     if (selectedMasks.value.includes('corners')) {
       const size = Math.round(Math.min(width, height) * 0.18)
       drawMask(ctx, 0, 0, size, size)

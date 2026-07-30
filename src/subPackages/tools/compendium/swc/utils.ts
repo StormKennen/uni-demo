@@ -59,14 +59,14 @@ export const parseBirthStars = (starsText: string, awakenText: string): number =
     return 0
   }
 
-  const awakenValue = (awakenText || '').toLowerCase()
-  if (!awakenValue) return starsValue
-  if (awakenValue.includes('unawaken') || awakenValue.includes('未觉醒') || awakenValue.includes('觉醒前')) {
-    return starsValue
-  }
-  if (awakenValue.includes('awaken') || awakenValue.includes('觉醒')) {
-    return Math.max(starsValue - 1, 0)
-  }
+  // const awakenValue = (awakenText || '').toLowerCase()
+  // if (!awakenValue) return starsValue
+  // if (awakenValue.includes('unawaken') || awakenValue.includes('未觉醒') || awakenValue.includes('觉醒前')) {
+  //   return starsValue
+  // }
+  // if (awakenValue.includes('awaken') || awakenValue.includes('觉醒')) {
+  //   return Math.max(starsValue - 1, 0)
+  // }
   return starsValue
 }
 

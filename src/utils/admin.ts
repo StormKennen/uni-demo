@@ -2,6 +2,14 @@ import { getToken, getUserInfo } from '@/utils/storage'
 
 export const isAdminUser = (): boolean => getUserInfo()?.role === 'admin'
 
+export const LINEUP_FEATURE_ALLOWED_PHONES = ['13025460560', '13025460562'] as const
+
+const lineupFeatureAllowedPhoneSet = new Set<string>(LINEUP_FEATURE_ALLOWED_PHONES)
+
+const normalizePhone = (phone: unknown): string => String(phone || '').replace(/\D/g, '')
+
+export const isLineupFeatureAllowed = (): boolean => lineupFeatureAllowedPhoneSet.has(normalizePhone(getUserInfo()?.phone))
+
 /** 登录即可访问；未登录跳登录页（带回跳地址）。 */
 export const ensureLoginAccess = (redirectUrl: string): boolean => {
   if (!getToken()) {
@@ -10,6 +18,21 @@ export const ensureLoginAccess = (redirectUrl: string): boolean => {
     })
     return false
   }
+  return true
+}
+
+export const ensureLineupFeatureAccess = (redirectUrl: string): boolean => {
+  if (!ensureLoginAccess(redirectUrl)) return false
+
+  if (!isLineupFeatureAllowed()) {
+    uni.showToast({
+      title: '该功能暂未开放',
+      icon: 'none',
+      duration: 1800,
+    })
+    return false
+  }
+
   return true
 }
 

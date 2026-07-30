@@ -1,7 +1,7 @@
 <template>
   <PageLayout title="魔灵 wiki-图鉴" :nav-back="true">
     <view class="compendium-page">
-      <view class="locale-toolbar">
+      <!-- <view class="locale-toolbar">
         <text class="locale-toolbar-label">语言</text>
         <view class="locale-switch">
           <text
@@ -13,44 +13,47 @@
             {{ option.label }}
           </text>
         </view>
-      </view>
+      </view> -->
 
       <view class="filter-shell">
-        <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
-          <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
+        <view class="filter-primary">
+          <scroll-view class="filter-scroll element-scroll" scroll-x enable-flex>
+            <view class="filter-chip-row element-chip-row">
+              <view
+                v-for="option in elementOptions"
+                :key="option.value"
+                class="quick-chip element-chip"
+                :class="{ selected: option.value === selectedElement }"
+                @click="selectFilter('element', option.value)">
+                <SwcElementBadge
+                  v-if="option.value !== ALL_VALUE"
+                  :element-key="option.value"
+                  :label="option.label"
+                  :size="24"
+                  :font-size="24"
+                  :gap="8" />
+                <text v-else>{{ option.label }}</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="filter-summary-row">
           <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
             <view class="filter-tags-row">
               <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
             </view>
           </scroll-view>
-          <text v-else class="filter-hint">点击展开筛选</text>
-          <text class="filter-expand-arrow">▼</text>
+          <text v-else class="filter-hint">默认展示觉醒魔灵，按星级排序</text>
+          <view class="filter-actions">
+            <text v-if="hasActiveFilters" class="filter-reset" @click="resetFilters">重置</text>
+            <text class="filter-more-btn" :class="{ active: filterExpanded }" @click="filterExpanded = !filterExpanded">
+              {{ filterExpanded ? '收起' : '更多筛选' }}
+            </text>
+          </view>
         </view>
 
-        <view v-else class="filter-expanded">
-          <view class="filter-section">
-            <text class="filter-label">属性</text>
-            <scroll-view class="filter-scroll" scroll-x enable-flex>
-              <view class="filter-chip-row">
-                <view
-                  v-for="option in elementOptions"
-                  :key="option.value"
-                  class="quick-chip element-chip"
-                  :class="{ selected: option.value === selectedElement }"
-                  @click="selectFilter('element', option.value)">
-                  <SwcElementBadge
-                    v-if="option.value !== ALL_VALUE"
-                    :element-key="option.value"
-                    :label="option.label"
-                    :size="24"
-                    :font-size="24"
-                    :gap="8" />
-                  <text v-else>{{ option.label }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
-
+        <view v-if="filterExpanded" class="filter-expanded">
           <view class="filter-section">
             <text class="filter-label">形态</text>
             <scroll-view class="filter-scroll" scroll-x enable-flex>
@@ -113,10 +116,6 @@
                 </view>
               </view>
             </scroll-view>
-          </view>
-
-          <view class="filter-collapse-bar" @click="filterExpanded = false">
-            <text class="filter-collapse-text">收起筛选 ▲</text>
           </view>
         </view>
       </view>
@@ -184,14 +183,17 @@
           v-for="character in characters"
           :key="character.characterId"
           class="character-card"
+          variant="bestiary"
           :character="character"
-          :show-name="false"
-          :show-family="true"
+          :show-name="true"
+          :show-family="false"
           :show-element="true"
           :show-stars="true"
+          star-layout="stacked"
           :show-original-stars="false"
           :show-edit="isAdmin"
-          :avatar-size="260"
+          :show-type="selectedType !== ALL_VALUE"
+          :avatar-size="224"
           @click="goToDetail"
           @edit="goToEdit" />
       </view>
@@ -320,7 +322,7 @@
     // { label: '浏览热度', value: 'popularity' },
   ]
 
-  const filterExpanded = ref(true)
+  const filterExpanded = ref(false)
   const selectedLocale = ref(DEFAULT_LOCALE)
   const selectedElement = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
@@ -343,16 +345,20 @@
       selectedElement.value !== ALL_VALUE ||
       selectedStar.value !== ALL_VALUE ||
       selectedType.value !== ALL_VALUE ||
-      selectedSort.value !== ALL_VALUE,
+      selectedAwaken.value !== 'awakened' ||
+      selectedSort.value !== DEFAULT_SORT_FIELD ||
+      selectedSortOrder.value !== DEFAULT_SORT_ORDER,
   )
 
   const activeFilterTags = computed<string[]>(() => {
     const tags: string[] = []
-    const awakenLabel = awakenOptions.find(o => o.value === selectedAwaken.value)?.label
-    if (awakenLabel) tags.push(awakenLabel)
     if (selectedElement.value !== ALL_VALUE) {
       const label = elementOptions.find(o => o.value === selectedElement.value)?.label
       if (label) tags.push(label)
+    }
+    if (selectedAwaken.value !== 'awakened') {
+      const awakenLabel = awakenOptions.find(o => o.value === selectedAwaken.value)?.label
+      if (awakenLabel) tags.push(awakenLabel)
     }
     if (selectedType.value !== ALL_VALUE) {
       const label = typeOptions.find(o => o.value === selectedType.value)?.label
@@ -362,9 +368,9 @@
       const label = starOptions.find(o => o.value === selectedStar.value)?.label
       if (label) tags.push(label)
     }
-    if (selectedSort.value !== DEFAULT_SORT_FIELD) {
+    if (selectedSort.value !== DEFAULT_SORT_FIELD || selectedSortOrder.value !== DEFAULT_SORT_ORDER) {
       const label = sortOptions.find(o => o.value === selectedSort.value)?.label
-      if (label) tags.push(`排序:${label}`)
+      if (label) tags.push(`排序:${label}${selectedSortOrder.value === 'desc' ? '↓' : '↑'}`)
     }
     return tags
   })
@@ -658,8 +664,10 @@
     selectedElement.value = ALL_VALUE
     selectedStar.value = ALL_VALUE
     selectedType.value = ALL_VALUE
-    selectedSort.value = ALL_VALUE
+    selectedAwaken.value = 'awakened'
+    selectedSort.value = DEFAULT_SORT_FIELD
     selectedSortOrder.value = DEFAULT_SORT_ORDER
+    filterExpanded.value = false
     refreshCharacters()
   }
 
@@ -773,7 +781,19 @@
     z-index: 10;
     background: var(--theme-surface);
     border-bottom: 1rpx solid var(--theme-border);
-    box-shadow: 0 8rpx 22rpx rgba(30, 42, 64, 0.06);
+    box-shadow: 0 6rpx 16rpx var(--theme-shadow-xs);
+  }
+
+  .filter-primary {
+    padding: 14rpx 0 10rpx 24rpx;
+  }
+
+  .filter-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    min-height: 56rpx;
+    padding: 0 18rpx 12rpx 24rpx;
   }
 
   .filter-collapsed {
@@ -803,17 +823,18 @@
   .filter-tags-row {
     display: flex;
     align-items: center;
-    gap: 10rpx;
+    gap: 8rpx;
   }
 
   .filter-tag {
     flex: none;
-    height: 44rpx;
-    line-height: 44rpx;
-    padding: 0 16rpx;
+    height: 40rpx;
+    line-height: 40rpx;
+    padding: 0 14rpx;
     border-radius: 999rpx;
-    background: var(--theme-surface-2);
-    color: #4b9df4;
+    border: 1rpx solid rgba(0, 70, 180, 0.18);
+    background: rgba(0, 70, 180, 0.1);
+    color: var(--theme-brand);
     font-size: 22rpx;
     font-weight: 700;
   }
@@ -821,7 +842,14 @@
   .filter-hint {
     flex: 1;
     color: var(--theme-text-tertiary);
-    font-size: 24rpx;
+    font-size: 22rpx;
+  }
+
+  .filter-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
   }
 
   .filter-expand-arrow {
@@ -831,7 +859,9 @@
   }
 
   .filter-expanded {
-    padding-top: 8rpx;
+    padding-top: 10rpx;
+    border-top: 1rpx solid var(--theme-border);
+    background: var(--theme-surface);
   }
 
   .filter-collapse-bar {
@@ -863,21 +893,39 @@
   }
 
   .filter-reset {
-    height: 44rpx;
-    line-height: 44rpx;
-    padding: 0 18rpx;
+    height: 46rpx;
+    line-height: 46rpx;
+    padding: 0 16rpx;
     border-radius: 999rpx;
     background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
-    font-size: 24rpx;
+    border: 1rpx solid var(--theme-border);
+    font-size: 22rpx;
     font-weight: 700;
+  }
+
+  .filter-more-btn {
+    height: 46rpx;
+    line-height: 46rpx;
+    padding: 0 18rpx;
+    border-radius: 999rpx;
+    background: var(--theme-brand);
+    color: #fff;
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .filter-more-btn.active {
+    background: var(--theme-surface-2);
+    color: var(--theme-brand);
+    border: 1rpx solid rgba(0, 70, 180, 0.24);
   }
 
   .filter-section {
     display: flex;
     align-items: center;
     gap: 12rpx;
-    padding: 0 0 14rpx 24rpx;
+    padding: 0 0 12rpx 24rpx;
   }
 
   .family-mode-tip {
@@ -903,14 +951,18 @@
   .filter-chip-row {
     display: flex;
     align-items: center;
-    gap: 12rpx;
+    gap: 10rpx;
     padding-right: 24rpx;
+  }
+
+  .element-chip-row {
+    gap: 12rpx;
   }
 
   .quick-chip {
     flex: none;
-    height: 52rpx;
-    padding: 0 20rpx;
+    height: 48rpx;
+    padding: 0 18rpx;
     border: 1rpx solid var(--theme-border);
     border-radius: 999rpx;
     background: var(--theme-surface-2);
@@ -918,24 +970,51 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10rpx;
-    font-size: 24rpx;
+    gap: 8rpx;
+    font-size: 23rpx;
     font-weight: 700;
   }
 
   .quick-chip.selected {
-    border-color: var(--theme-text);
-    background: var(--theme-text);
+    border-color: rgba(0, 70, 180, 0.42);
+    background: rgba(0, 70, 180, 0.14);
+    color: var(--theme-brand);
+    box-shadow: inset 0 0 0 1rpx rgba(0, 70, 180, 0.1);
+  }
+
+  .quick-chip.selected text {
+    color: var(--theme-brand);
+  }
+
+  .quick-chip.selected:not(.element-chip) {
+    color: var(--theme-brand);
+  }
+
+  .quick-chip.selected:not(.element-chip) text {
+    color: var(--theme-brand);
+  }
+
+  .element-chip.selected {
+    border-color: rgba(0, 70, 180, 0.42);
+    background: rgba(0, 70, 180, 0.14);
+    color: var(--theme-text);
+  }
+
+  .element-chip.selected text {
+    color: var(--theme-text);
+  }
+
+  .quick-chip.selected:active {
+    opacity: 0.86;
+  }
+
+  .quick-chip.selected.all-chip {
     color: #fff;
   }
 
   .element-chip {
     padding-left: 18rpx;
     padding-right: 18rpx;
-  }
-
-  .element-chip.selected {
-    color: #fff;
   }
 
   .character-grid {

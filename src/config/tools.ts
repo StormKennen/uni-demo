@@ -156,7 +156,6 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
     path: '/subPackages/tools/image-watermark/index',
     category: 'media',
-    unsupportedPlatforms: ['mp-weixin'],
   },
   'video-compress': {
     name: '视频压缩',
@@ -181,6 +180,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
     path: '/subPackages/tools/video-gif/index',
     category: 'media',
+    unsupportedPlatforms: ['mp-weixin'],
   },
   'document-scan': {
     name: '文档扫描',

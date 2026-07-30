@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox'
   import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface'
-  import PrivacyPopup from '@/components/privacy-popup.vue'
 
   import { ref } from 'vue'
   import LoginHeaderText from '../components/login-header-text.vue'
@@ -11,12 +10,10 @@
     setToken,
     setRefreshToken,
     setWxUserInfo,
-    setWxEncryptedData,
     setUserInfo,
     setTokenExpiresAt,
     setRefreshTokenExpiresAt,
   } from '@/utils/storage'
-  import { wxGetUserInfo } from '@/utils/wxLogin'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl, TabsRoutes } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
@@ -30,6 +27,7 @@
   const redirectUrl = ref('')
   const wechatLoginLoading = ref(false)
   const isMpWeixin = ref(false)
+  const pendingAgreementAction = ref<'' | 'wechat'>('')
 
   // #ifdef MP-WEIXIN
   isMpWeixin.value = true
@@ -170,13 +168,23 @@
 
   const onConfirmRead = () => {
     isRead.value = true
+    const action = pendingAgreementAction.value
+    pendingAgreementAction.value = ''
     console.log('🚀 ~ onConfirmRead ~ isRead:', isRead.value)
+    if (action === 'wechat') {
+      wechatQuickLogin()
+    }
   }
 
-  const ensureAgreementConfirmed = () => {
+  const onCancelRead = () => {
+    pendingAgreementAction.value = ''
+  }
+
+  const ensureAgreementConfirmed = (action: '' | 'wechat' = '') => {
     if (isRead.value) {
       return true
     }
+    pendingAgreementAction.value = action
     readDialogRef.value?.open()
     return false
   }
@@ -197,6 +205,12 @@
 
   /** 手机号登录 */
   const mobileLogin = async () => {
+    if (!isRead.value) {
+      pendingAgreementAction.value = ''
+      readDialogRef.value?.open()
+      return
+    }
+
     if (!mobileNumber.value || !password.value) {
       uni.showToast({
         title: '请输入手机号和密码！',
@@ -206,16 +220,6 @@
     }
     try {
       uni.showLoading()
-
-      // #ifdef MP-WEIXIN
-      // 尝试获取微信用户信息，但不阻塞登录流程
-      try {
-        const wxUserInfo = await wxGetUserInfo()
-        console.log('🚀 ~ mobileLogin ~ userInfo:', wxUserInfo)
-      } catch (e) {
-        console.log('获取微信用户信息失败，继续登录流程')
-      }
-      // #endif
 
       const loginParams = {
         phone: mobileNumber.value,
@@ -267,7 +271,7 @@
   }
 
   const wechatQuickLogin = async () => {
-    if (!ensureAgreementConfirmed()) {
+    if (!ensureAgreementConfirmed('wechat')) {
       return
     }
 
@@ -317,6 +321,7 @@
   /** 用户注册 */
   const userRegister = async () => {
     if (!isRead.value) {
+      pendingAgreementAction.value = ''
       readDialogRef.value?.open()
       return
     }
@@ -337,31 +342,10 @@
     try {
       uni.showLoading()
 
-      let userName = '用户'
-
-      // #ifdef MP-WEIXIN
-      // 获取微信用户信息
-      const wxUserInfo = await wxGetUserInfo()
-      console.log('🚀 ~ userRegister ~ wxUserInfo:', wxUserInfo)
-
-      // 存储微信加密数据到本地，便于后续使用
-      if (wxUserInfo.iv) {
-        setWxEncryptedData({
-          cloudID: wxUserInfo.cloudID,
-          encryptedData: wxUserInfo.encryptedData,
-          iv: wxUserInfo.iv,
-          signature: wxUserInfo.signature,
-          rawData: wxUserInfo.rawData,
-          userInfo: wxUserInfo.userInfo || {},
-        })
-      }
-      userName = wxUserInfo.userInfo?.nickName || '用户'
-      // #endif
-
       // 使用标准注册API
       const registerParams = {
         phone: mobileNumber.value,
-        name: userName,
+        name: '用户',
         password: password.value,
       }
 
@@ -558,15 +542,12 @@
             <radio class="radio-radio" @click="onRead" :checked="isRead" color="#0046B4" />
             <text class="radio-text">我已阅读并同意</text>
           </label>
-          <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户协议》</text>
+          <text @click="onPrivacy" class="protocol">《隐私政策》</text>和<text class="protocol" @click="onProtocol">《用户服务协议》</text>
         </view>
       </view>
       <view class="">
-        <ReadDialog ref="readDialogRef" :confirm="onConfirmRead" />
+        <ReadDialog ref="readDialogRef" :confirm="onConfirmRead" :cancel="onCancelRead" />
       </view>
-      <!-- #ifdef MP-WEIXIN -->
-      <PrivacyPopup />
-      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
@@ -579,7 +560,7 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background: linear-gradient(180deg, #d5dfff 0.06%, #eff3ff 26%, var(--theme-surface) 49%, var(--theme-surface) 100%);
+    background: var(--theme-bg);
     padding-bottom: env(safe-area-inset-bottom);
 
     .btn {
@@ -604,10 +585,9 @@
       flex-direction: column;
       margin-top: 20rpx;
       padding: 24rpx 24rpx 32rpx;
-      // border-radius: 32rpx;
-      // background: rgba(255, 255, 255, 0.94);
-      // box-shadow: 0 20rpx 48rpx rgba(34, 60, 120, 0.12);
-      // backdrop-filter: blur(12rpx);
+      border-radius: 24rpx;
+      background: var(--theme-surface);
+      border: 1rpx solid var(--theme-border);
     }
 
     .auth-card__content {
@@ -621,7 +601,8 @@
       padding: 8rpx;
       margin-bottom: 28rpx;
       border-radius: 999rpx;
-      background: #eef3ff;
+      background: var(--theme-surface-2);
+      border: 1rpx solid var(--theme-border);
     }
 
     .auth-tab {
@@ -629,15 +610,15 @@
       line-height: 72rpx;
       text-align: center;
       border-radius: 999rpx;
-      color: $ga-gray-7;
+      color: var(--theme-text-secondary);
       font-size: 28rpx;
       font-weight: 600;
     }
 
     .auth-tab.active {
       background: var(--theme-surface);
-      color: $ga-brand-4;
-      box-shadow: 0 8rpx 20rpx rgba(0, 70, 180, 0.12);
+      color: var(--theme-brand);
+      box-shadow: 0 8rpx 20rpx var(--theme-shadow-xs);
     }
 
     .mobile {
@@ -648,7 +629,8 @@
       }
 
       :deep(.uni-input-input) {
-        caret-color: #0046b4;
+        color: var(--theme-text);
+        caret-color: var(--theme-brand);
       }
 
       :deep(.uni-easyinput) {
@@ -659,6 +641,7 @@
         min-height: 96rpx;
         border-radius: 24rpx;
         background: transparent !important;
+        color: var(--theme-text);
       }
 
       :deep(.uni-easyinput__content-input) {
@@ -672,7 +655,7 @@
         min-height: 96rpx;
         margin-bottom: 24rpx;
         padding: 0 24rpx;
-        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border: 1rpx solid var(--theme-border);
         border-radius: 24rpx;
         background: var(--theme-surface-2);
         font-size: 28rpx;
@@ -682,7 +665,7 @@
         min-height: 96rpx;
         margin-bottom: 24rpx;
         padding: 0 24rpx;
-        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border: 1rpx solid var(--theme-border);
         border-radius: 24rpx;
         background: var(--theme-surface-2);
         font-size: 28rpx;
@@ -691,7 +674,7 @@
       .mobile-confirm-password {
         min-height: 96rpx;
         padding: 0 24rpx;
-        border: 2rpx solid rgba(0, 70, 180, 0.08);
+        border: 1rpx solid var(--theme-border);
         border-radius: 24rpx;
         background: var(--theme-surface-2);
         font-size: 28rpx;
@@ -700,7 +683,7 @@
       .change-register,
       .change-login {
         margin: 24rpx 0 32rpx;
-        color: $ga-brand-4;
+        color: var(--theme-brand);
         font-size: 26rpx;
         text-align: center;
         cursor: pointer;
@@ -710,7 +693,7 @@
         .btn-login,
         .btn-register {
           background: $ga-brand-4;
-          color: $ga-gray-0;
+          color: #fff;
           box-shadow: 0 16rpx 30rpx rgba(0, 70, 180, 0.18);
         }
       }
@@ -741,7 +724,7 @@
           left: 0;
           width: 100%;
           height: 2rpx;
-          background: rgba(0, 70, 180, 0.08);
+          background: var(--theme-border);
           transform: translateY(-50%);
         }
       }
@@ -751,9 +734,9 @@
         z-index: 1;
         display: inline-block;
         padding: 0 20rpx;
-        color: $ga-gray-6;
+        color: var(--theme-text-tertiary);
         font-size: 24rpx;
-        background: rgba(255, 255, 255, 0.94);
+        background: var(--theme-surface);
       }
 
       .btn-wechat {
@@ -765,14 +748,14 @@
       .quick-login-tip {
         display: block;
         margin-top: 16rpx;
-        color: $ga-gray-6;
+        color: var(--theme-text-tertiary);
         font-size: 24rpx;
         line-height: 1.6;
         text-align: center;
       }
 
       .quick-login-link {
-        color: $ga-brand-4;
+        color: var(--theme-brand);
         font-size: 26rpx;
         font-weight: 500;
       }
@@ -800,7 +783,7 @@
     }
 
     .wechat-auth__switch {
-      color: $ga-brand-4;
+      color: var(--theme-brand);
       font-size: 26rpx;
       font-weight: 500;
     }
@@ -813,7 +796,7 @@
 
   .read-protocol {
     font-size: 24rpx;
-    color: $ga-gray-6;
+    color: var(--theme-text-secondary);
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -838,7 +821,7 @@
     }
 
     .protocol {
-      color: $ga-brand-4;
+      color: var(--theme-brand);
     }
   }
 </style>

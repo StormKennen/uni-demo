@@ -1,193 +1,205 @@
 <template>
   <PageLayout title="魔灵召唤阵容">
     <view class="lineup-page">
-      <view class="hero-banner">
-        <view>
-          <text class="hero-title">魔灵召唤阵容</text>
-          <text class="hero-subtitle">{{
-            isAdmin ? '管理阵容类型与映射关系，支持一个阵容对应多个目标阵容。' : '浏览大家分享的阵容，登录后可发布并管理自己的阵容。'
-          }}</text>
-        </view>
-        <text v-if="isAdmin" class="hero-badge">ADMIN</text>
-      </view>
-
-      <view class="mapping-entry" @click="goMappings()">
-        <view class="mapping-entry-main">
-          <text class="mapping-entry-title">阵容映射</text>
-          <text class="mapping-entry-desc">查看「源阵容 → 目标阵容」的容器化映射，支持新增与容器内点赞点踩</text>
-        </view>
-        <text class="mapping-entry-arrow">›</text>
-      </view>
-
-      <view class="toolbar-card">
-        <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
-
-        <view class="filter-group">
-          <text class="filter-label">类型</text>
-          <view class="chip-row">
-            <text
-              v-for="option in lineupTypeOptions"
-              :key="option.value"
-              class="chip"
-              :class="{ active: selectedType === option.value }"
-              @click="selectType(option.value)">
-              {{ option.label }}
-            </text>
-          </view>
-        </view>
-
-        <view v-if="isAdmin" class="filter-group">
-          <text class="filter-label">状态</text>
-          <view class="chip-row">
-            <text
-              v-for="option in LINEUP_FILTER_STATUS_OPTIONS"
-              :key="option.value"
-              class="chip"
-              :class="{ active: selectedStatus === option.value }"
-              @click="selectStatus(option.value)">
-              {{ option.label }}
-            </text>
-          </view>
-        </view>
-
-        <view class="filter-group">
-          <view class="filter-head" @click="toggleCharacterFilter">
-            <text class="filter-label">
-              人物精准筛选{{ selectedCharacterFilters.length ? ` · 已选 ${selectedCharacterFilters.length}` : '' }}
-            </text>
-            <text class="filter-toggle">{{ characterFilterExpanded ? '收起' : '展开' }}</text>
-          </view>
-
-          <view v-if="characterFilterExpanded" class="filter-body">
-            <view class="filter-head">
-              <text class="filter-helper">
-                {{
-                  selectedCharacterFilters.length ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选` : '未选择人物，默认不过滤'
-                }}
-              </text>
-              <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
-            </view>
-
-            <SwcLineup
-              v-if="selectedCharacterFilters.length"
-              class="selected-avatar-list"
-              :characters="selectedCharacterViews"
-              :columns="5"
-              editable
-              :show-member-name="false"
-              :show-stars="false"
-              :show-element="true"
-              :avatar-size="92"
-              @remove="removeCharacterFilter" />
-
-            <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
-              <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
-            </view>
-          </view>
-        </view>
-
-        <view v-if="isAdmin" class="action-row">
-          <button class="toolbar-btn" @click="goRelations()">克制关系</button>
-        </view>
-      </view>
-
-      <StateBlock v-if="loading && !lineups.length" class="state-block" text="加载阵容中..." />
-
       <StateBlock
-        v-else-if="errorMessage && !lineups.length"
+        v-if="accessChecked && !hasLineupFeatureAccess"
         class="state-block"
-        :text="errorMessage"
-        action-text="重新加载"
+        text="该功能暂未开放"
+        action-text="返回"
         theme="amber"
-        @action="refreshList" />
+        @action="goBack" />
 
-      <view v-else class="content">
-        <view class="summary-row">
-          <text class="summary-text">共 {{ pagination.total }} 条阵容</text>
-          <text class="summary-text">{{
-            isAdmin
-              ? `当前 ${selectedTypeLabel} / ${selectedStatusLabel} / ${selectedCharacterLabel}`
-              : `当前 ${selectedTypeLabel} / ${selectedCharacterLabel}`
-          }}</text>
+      <template v-else>
+        <view class="hero-banner">
+          <view>
+            <text class="hero-title">魔灵召唤阵容</text>
+            <text class="hero-subtitle">{{
+              isAdmin ? '管理阵容类型与映射关系，支持一个阵容对应多个目标阵容。' : '浏览大家分享的阵容，登录后可发布并管理自己的阵容。'
+            }}</text>
+          </view>
+          <text v-if="isAdmin" class="hero-badge">ADMIN</text>
         </view>
 
-        <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
-
-        <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
-          <view class="lineup-head">
-            <view class="lineup-title-wrap">
-              <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
-              <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
-              <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
-            </view>
-            <text class="lineup-count">{{ lineup.memberCount }} 人</text>
+        <view class="mapping-entry" @click="goMappings()">
+          <view class="mapping-entry-main">
+            <text class="mapping-entry-title">阵容映射</text>
+            <text class="mapping-entry-desc">查看「源阵容 → 目标阵容」的容器化映射，支持新增与容器内点赞点踩</text>
           </view>
+          <text class="mapping-entry-arrow">›</text>
+        </view>
 
-          <text v-if="lineup.description" class="lineup-desc">{{ lineup.description }}</text>
+        <view class="toolbar-card">
+          <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
 
-          <view v-if="isAdmin" class="metric-row">
-            <view class="metric-item">
-              <text class="metric-label">成员</text>
-              <text class="metric-value">{{ lineup.memberCount }}</text>
-            </view>
-            <view class="metric-item">
-              <text class="metric-label">目标阵容</text>
-              <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
-            </view>
-            <view class="metric-item">
-              <text class="metric-label">上游阵容</text>
-              <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
+          <view class="filter-group">
+            <text class="filter-label">类型</text>
+            <view class="chip-row">
+              <text
+                v-for="option in lineupTypeOptions"
+                :key="option.value"
+                class="chip"
+                :class="{ active: selectedType === option.value }"
+                @click="selectType(option.value)">
+                {{ option.label }}
+              </text>
             </view>
           </view>
 
-          <scroll-view v-if="lineup.characters.length" class="member-scroll" scroll-x>
-            <view class="member-row">
-              <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="member-pill">
-                <image v-if="member.avatar" class="member-avatar" :src="member.avatar" mode="aspectFill" />
-                <view v-else class="member-avatar member-avatar-placeholder">
-                  <text>{{ (member.name || '?').slice(0, 1) }}</text>
-                </view>
-                <view class="member-meta">
-                  <text class="member-name">{{ member.name || member.label || '未知魔灵' }}</text>
-                  <text class="member-extra">{{ member.elementName || member.familyName || '--' }}</text>
-                </view>
+          <view v-if="isAdmin" class="filter-group">
+            <text class="filter-label">状态</text>
+            <view class="chip-row">
+              <text
+                v-for="option in LINEUP_FILTER_STATUS_OPTIONS"
+                :key="option.value"
+                class="chip"
+                :class="{ active: selectedStatus === option.value }"
+                @click="selectStatus(option.value)">
+                {{ option.label }}
+              </text>
+            </view>
+          </view>
+
+          <view class="filter-group">
+            <view class="filter-head" @click="toggleCharacterFilter">
+              <text class="filter-label">
+                人物精准筛选{{ selectedCharacterFilters.length ? ` · 已选 ${selectedCharacterFilters.length}` : '' }}
+              </text>
+              <text class="filter-toggle">{{ characterFilterExpanded ? '收起' : '展开' }}</text>
+            </view>
+
+            <view v-if="characterFilterExpanded" class="filter-body">
+              <view class="filter-head">
+                <text class="filter-helper">
+                  {{
+                    selectedCharacterFilters.length
+                      ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选`
+                      : '未选择人物，默认不过滤'
+                  }}
+                </text>
+                <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
+              </view>
+
+              <SwcLineup
+                v-if="selectedCharacterFilters.length"
+                class="selected-avatar-list"
+                :characters="selectedCharacterViews"
+                :columns="5"
+                editable
+                :show-member-name="false"
+                :show-stars="false"
+                :show-element="true"
+                :avatar-size="92"
+                @remove="removeCharacterFilter" />
+
+              <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
+                <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
               </view>
             </view>
-          </scroll-view>
-
-          <view class="reaction-row">
-            <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-              <text>👍 {{ lineup.likeCount }}</text>
-            </view>
-            <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-              <text>👎 {{ lineup.dislikeCount }}</text>
-            </view>
-            <text class="reaction-score">热度 {{ lineup.score }}</text>
           </view>
 
-          <view v-if="canManageLineup(lineup) || isAdmin" class="card-actions">
-            <button v-if="canManageLineup(lineup)" class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
-            <button v-if="isAdmin" class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
-            <button
-              v-if="canManageLineup(lineup)"
-              class="card-btn danger"
-              size="mini"
-              :loading="deletingId === lineup.id"
-              @click="confirmDelete(lineup.id)">
-              删除
-            </button>
+          <view v-if="isAdmin" class="action-row">
+            <button class="toolbar-btn" @click="goRelations()">克制关系</button>
           </view>
         </view>
 
-        <view v-if="pagination.hasNext" class="load-more">
-          <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
-        </view>
-      </view>
+        <StateBlock v-if="loading && !lineups.length" class="state-block" text="加载阵容中..." />
 
-      <view class="fab" @click="goCreate">
-        <text class="fab-icon">+</text>
-        <text class="fab-text">{{ isLoggedIn ? '新增阵容' : '登录发布' }}</text>
-      </view>
+        <StateBlock
+          v-else-if="errorMessage && !lineups.length"
+          class="state-block"
+          :text="errorMessage"
+          action-text="重新加载"
+          theme="amber"
+          @action="refreshList" />
+
+        <view v-else class="content">
+          <view class="summary-row">
+            <text class="summary-text">共 {{ pagination.total }} 条阵容</text>
+            <text class="summary-text">{{
+              isAdmin
+                ? `当前 ${selectedTypeLabel} / ${selectedStatusLabel} / ${selectedCharacterLabel}`
+                : `当前 ${selectedTypeLabel} / ${selectedCharacterLabel}`
+            }}</text>
+          </view>
+
+          <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
+
+          <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
+            <view class="lineup-head">
+              <view class="lineup-title-wrap">
+                <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
+                <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
+                <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
+              </view>
+              <text class="lineup-count">{{ lineup.memberCount }} 人</text>
+            </view>
+
+            <text v-if="lineup.description" class="lineup-desc">{{ lineup.description }}</text>
+
+            <view v-if="isAdmin" class="metric-row">
+              <view class="metric-item">
+                <text class="metric-label">成员</text>
+                <text class="metric-value">{{ lineup.memberCount }}</text>
+              </view>
+              <view class="metric-item">
+                <text class="metric-label">目标阵容</text>
+                <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
+              </view>
+              <view class="metric-item">
+                <text class="metric-label">上游阵容</text>
+                <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
+              </view>
+            </view>
+
+            <scroll-view v-if="lineup.characters.length" class="member-scroll" scroll-x>
+              <view class="member-row">
+                <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="member-pill">
+                  <image v-if="member.avatar" class="member-avatar" :src="member.avatar" mode="aspectFill" />
+                  <view v-else class="member-avatar member-avatar-placeholder">
+                    <text>{{ (member.name || '?').slice(0, 1) }}</text>
+                  </view>
+                  <view class="member-meta">
+                    <text class="member-name">{{ member.name || member.label || '未知魔灵' }}</text>
+                    <text class="member-extra">{{ member.elementName || member.familyName || '--' }}</text>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+
+            <view class="reaction-row">
+              <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+                <text>👍 {{ lineup.likeCount }}</text>
+              </view>
+              <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+                <text>👎 {{ lineup.dislikeCount }}</text>
+              </view>
+              <text class="reaction-score">热度 {{ lineup.score }}</text>
+            </view>
+
+            <view v-if="canManageLineup(lineup) || isAdmin" class="card-actions">
+              <button v-if="canManageLineup(lineup)" class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
+              <button v-if="isAdmin" class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
+              <button
+                v-if="canManageLineup(lineup)"
+                class="card-btn danger"
+                size="mini"
+                :loading="deletingId === lineup.id"
+                @click="confirmDelete(lineup.id)">
+                删除
+              </button>
+            </view>
+          </view>
+
+          <view v-if="pagination.hasNext" class="load-more">
+            <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
+          </view>
+        </view>
+
+        <view class="fab" @click="goCreate">
+          <text class="fab-icon">+</text>
+          <text class="fab-text">{{ isLoggedIn ? '新增阵容' : '登录发布' }}</text>
+        </view>
+      </template>
     </view>
   </PageLayout>
 </template>
@@ -208,7 +220,7 @@
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
   import SwcLineup from './components/swc-lineup.vue'
-  import { canManageLineup, ensureLoginAccess, isAdminUser } from '@/utils/admin'
+  import { canManageLineup, ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
   import {
     ALL_VALUE,
     getLineupTypeToneClass,
@@ -254,6 +266,8 @@
   const deletingId = ref('')
   const reactingId = ref('')
   const characterFilterExpanded = ref(false)
+  const accessChecked = ref(false)
+  const hasLineupFeatureAccess = ref(false)
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
   const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
@@ -318,31 +332,37 @@
   }
 
   const goCreate = () => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
   const goEdit = (lineupId: string) => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
   const goMappings = () => {
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
   const goRelations = (sourceLineupId = '') => {
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (sourceLineupId) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId)}`)
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}`,
     })
+  }
+
+  const goBack = () => {
+    uni.navigateBack()
   }
 
   const confirmDelete = (lineupId: string) => {
@@ -398,6 +418,7 @@
 
   onShow(() => {
     reportToolVisit('compendium-lineups')
+    if (!hasLineupFeatureAccess.value) return
     loadLineupTypes()
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
@@ -412,16 +433,25 @@
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     applyRouteQuery(options)
 
+    hasLineupFeatureAccess.value = ensureLineupFeatureAccess(buildCurrentUrl())
+    accessChecked.value = true
+    if (!hasLineupFeatureAccess.value) return
+
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })
     loadLineupTypes()
     refreshList()
   })
 
   onPullDownRefresh(() => {
+    if (!hasLineupFeatureAccess.value) {
+      uni.stopPullDownRefresh()
+      return
+    }
     refreshList()
   })
 
   onReachBottom(() => {
+    if (!hasLineupFeatureAccess.value) return
     loadMore()
   })
 </script>
@@ -430,7 +460,7 @@
   .lineup-page {
     min-height: 100vh;
     background: var(--theme-bg);
-    color: #172033;
+    color: var(--theme-text);
     padding-bottom: 180rpx;
   }
 
@@ -474,8 +504,9 @@
   .state-block {
     margin: 0 24rpx 20rpx;
     background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
     border-radius: 24rpx;
-    box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+    box-shadow: 0 10rpx 30rpx var(--theme-shadow-xs);
   }
 
   .mapping-entry {
@@ -549,7 +580,7 @@
     display: block;
     margin-bottom: 12rpx;
     font-size: 24rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-weight: 700;
   }
 
@@ -560,7 +591,7 @@
   .filter-helper {
     display: block;
     margin-top: 12rpx;
-    color: #667085;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
     font-weight: 700;
   }
@@ -574,8 +605,9 @@
   .chip {
     padding: 12rpx 22rpx;
     border-radius: 999rpx;
-    background: #eef2f7;
-    color: #667085;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    border: 1rpx solid var(--theme-border);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -617,7 +649,7 @@
   }
 
   .summary-text {
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -630,7 +662,7 @@
   .empty-block {
     padding: 48rpx 28rpx;
     text-align: center;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 28rpx;
   }
 
@@ -654,7 +686,7 @@
   .lineup-name {
     font-size: 32rpx;
     font-weight: 800;
-    color: #172033;
+    color: var(--theme-text);
   }
 
   .lineup-count,
@@ -692,14 +724,14 @@
   }
 
   .lineup-count {
-    background: #f3f5f9;
-    color: #475467;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
   }
 
   .lineup-desc {
     display: block;
     margin-top: 16rpx;
-    color: #475467;
+    color: var(--theme-text-secondary);
     font-size: 26rpx;
     line-height: 1.7;
   }
@@ -712,19 +744,20 @@
     flex: 1;
     padding: 18rpx;
     border-radius: 18rpx;
-    background: #f8fafc;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
   }
 
   .metric-label {
     display: block;
-    color: #667085;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 
   .metric-value {
     display: block;
     margin-top: 6rpx;
-    color: #111827;
+    color: var(--theme-text);
     font-size: 30rpx;
     font-weight: 800;
   }
@@ -744,7 +777,8 @@
     width: 240rpx;
     padding: 14rpx;
     border-radius: 18rpx;
-    background: #f8fafc;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
     display: flex;
     align-items: center;
     gap: 12rpx;
@@ -754,7 +788,7 @@
     width: 60rpx;
     height: 60rpx;
     border-radius: 16rpx;
-    background: #e5e7eb;
+    background: var(--theme-border);
     flex-shrink: 0;
   }
 
@@ -780,14 +814,14 @@
   }
 
   .member-name {
-    color: #172033;
+    color: var(--theme-text);
     font-size: 24rpx;
     font-weight: 700;
   }
 
   .member-extra {
     margin-top: 6rpx;
-    color: #667085;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
   }
 
@@ -815,8 +849,9 @@
     min-height: 64rpx;
     padding: 0 28rpx;
     border-radius: 999rpx;
-    background: #f3f5f9;
-    color: #475467;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    border: 1rpx solid var(--theme-border);
     font-size: 26rpx;
     font-weight: 700;
   }
@@ -832,7 +867,7 @@
 
   .reaction-score {
     margin-left: auto;
-    color: #98a2b3;
+    color: var(--theme-text-tertiary);
     font-size: 22rpx;
     font-weight: 700;
   }
@@ -850,7 +885,7 @@
   .filter-toggle {
     flex-shrink: 0;
     font-size: 24rpx;
-    color: #b45309;
+    color: var(--theme-brand);
     font-weight: 700;
   }
 

@@ -151,22 +151,14 @@
 
 <style lang="scss">
   .mine {
-    // width: 750rpx;
-    background: none;
+    min-height: 100vh;
+    background: var(--theme-bg);
 
     /* #ifdef H5 */
     padding-bottom: 120rpx; // 为底部导航留出空间
     /* #endif */
     .bg {
-      position: absolute;
-      z-index: -1;
-      width: 750rpx;
-      height: 400rpx;
-      background: linear-gradient(180deg, #cce3ff 0%, rgba(204, 227, 255, 0) 100%);
-
-      &--dark {
-        background: linear-gradient(180deg, #1a2a3d 0%, rgba(26, 42, 61, 0) 100%);
-      }
+      display: none;
     }
     .mine-top {
       height: 400rpx;

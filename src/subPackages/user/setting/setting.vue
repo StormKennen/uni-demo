@@ -9,8 +9,8 @@
   const isLogut = ref(!getToken())
   const appBaseInfo = uni.getAppBaseInfo()
   const list = ref([
-    { icon: '/static/image/mine/protocol.svg', name: '用户条款', to: ProtocolPageUrl },
-    { icon: '/static/image/mine/privacy.svg', name: '隐私协议', to: PrivacyPageUrl },
+    { icon: '/static/image/mine/protocol.svg', name: '用户服务协议', to: ProtocolPageUrl },
+    { icon: '/static/image/mine/privacy.svg', name: '隐私政策', to: PrivacyPageUrl },
     { icon: '/static/image/mine/version.svg', name: `版本号${appBaseInfo.appVersion}` },
   ])
   const confirmDialogRef = ref(null)
@@ -63,26 +63,27 @@
 
 <style lang="scss" scoped>
   .setting {
-    // padding: 0 42rpx 32rpx 32rpx;
     position: relative;
-    height: 100%;
-    width: 750rpx;
+    min-height: 100vh;
+    width: 100%;
     box-sizing: border-box;
-    background: var(--theme-surface);
+    background: var(--theme-bg);
     .list {
-      padding: 0 42rpx 32rpx 32rpx;
+      padding: 20rpx 32rpx 32rpx;
     }
     .bottom {
       position: absolute;
       bottom: 48rpx;
-      padding: 0 40rpx 48rpx 40rpx;
+      left: 0;
+      right: 0;
+      padding: 0 40rpx 48rpx;
     }
     .btn {
-      border-radius: 6rpx;
+      border-radius: 16rpx;
       font-size: 32rpx;
       font-weight: 500;
-      background: $ga-brand-4;
-      color: $ga-gray-0;
+      background: var(--theme-brand);
+      color: #fff;
       width: 670rpx;
       box-sizing: border-box;
       &::after {

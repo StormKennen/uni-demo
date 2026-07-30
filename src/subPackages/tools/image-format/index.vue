@@ -53,7 +53,7 @@
 
           <view class="warning" v-if="targetFormat === 'webp' && !isH5">
             <uni-icons type="info" size="20" color="#fb8c00" />
-            <text>小程序暂不支持导出 WebP，请改用 PNG / JPG 或前往 H5 访问。</text>
+            <text>小程序暂不支持导出 WebP，请改用 PNG / JPG。</text>
           </view>
 
           <button class="primary-btn" :loading="isConverting" @click="convertImage">开始转换</button>
@@ -125,7 +125,7 @@
   const formatOptions = computed<FormatOption[]>(() => [
     { value: 'png', label: 'PNG', tip: '透明背景，体积较大', supported: true },
     { value: 'jpg', label: 'JPG', tip: '照片常用，支持压缩', supported: true },
-    { value: 'webp', label: 'WebP', tip: isH5.value ? '浏览器优选，小体积' : 'H5 可用', supported: isH5.value },
+    { value: 'webp', label: 'WebP', tip: isH5.value ? '浏览器优选，小体积' : '小程序暂不可用', supported: isH5.value },
   ])
 
   const canCopyPath = computed(() => convertedImage.src.startsWith('http') || convertedImage.src.startsWith('data:'))
@@ -189,7 +189,7 @@
       return
     }
     if (targetFormat.value === 'webp' && !isH5.value) {
-      uni.showToast({ title: '请在 H5 环境导出 WebP', icon: 'none' })
+      uni.showToast({ title: '小程序暂不支持导出 WebP', icon: 'none' })
       return
     }
     isConverting.value = true

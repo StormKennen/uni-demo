@@ -89,7 +89,7 @@
     type ReactionValue,
     type UserLineupSummary,
   } from '@/services/compendium-lineups'
-  import { ensureLoginAccess } from '@/utils/admin'
+  import { ensureLineupFeatureAccess } from '@/utils/admin'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -163,7 +163,7 @@
 
   const openEdit = () => {
     if (!mapping.value) return
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     editName.value = mapping.value.name
     editDescription.value = mapping.value.description
     editVisible.value = true
@@ -193,7 +193,7 @@
   }
 
   const openPicker = (kind: ContainerKind) => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     const container = containerByKind(kind)
     pickerTarget.value = kind
     pickerExcludeIds.value = container ? container.items.map(item => item.lineupId) : []
@@ -232,7 +232,7 @@
 
   const handleReact = async (payload: { containerId: string; itemId: string; lineupId: string; value: ReactionValue }) => {
     if (reactingItemId.value) return
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     reactingItemId.value = payload.itemId
     try {
       const result = await reactToContainerLineup(mappingId.value, payload.containerId, payload.lineupId, payload.value)
@@ -263,6 +263,7 @@
       errorMessage.value = '缺少映射标识'
       return
     }
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     loadDetail()
   })
 </script>
@@ -271,7 +272,7 @@
   .mapping-detail-page {
     min-height: 100vh;
     background: var(--theme-bg);
-    color: #172033;
+    color: var(--theme-text);
     padding-bottom: 60rpx;
   }
 
@@ -319,9 +320,10 @@
     margin: 24rpx;
     padding: 48rpx 28rpx;
     text-align: center;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 28rpx;
     background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
     border-radius: 24rpx;
   }
 
@@ -340,6 +342,7 @@
   .edit-panel {
     width: 100%;
     background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
     border-radius: 28rpx;
     padding: 32rpx;
     box-sizing: border-box;
@@ -355,7 +358,7 @@
   .field-label {
     display: block;
     margin: 16rpx 0 12rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -365,9 +368,10 @@
     width: 100%;
     padding: 20rpx;
     border-radius: 18rpx;
-    background: #f8fafc;
+    background: var(--theme-surface-2);
     font-size: 26rpx;
-    color: #172033;
+    color: var(--theme-text);
+    border: 1rpx solid var(--theme-border);
     box-sizing: border-box;
   }
 
@@ -391,8 +395,8 @@
   }
 
   .footer-btn.ghost {
-    background: #eef2f7;
-    color: #475467;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
   }
 
   .footer-btn.primary {

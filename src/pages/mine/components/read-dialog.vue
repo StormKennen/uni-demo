@@ -3,6 +3,7 @@
   import { ref } from 'vue'
   type Props = {
     confirm: () => void
+    cancel?: () => void
   }
   const props = defineProps<Props>()
   const change = () => {
@@ -17,6 +18,7 @@
     popup.value?.close()
   }
   const onCancel = () => {
+    props.cancel?.()
     popup.value?.close()
   }
   const onPrivacy = () => {
@@ -37,16 +39,12 @@
 
 <template>
   <view class="read-dialog">
-    <uni-popup ref="popup" background-color="#fff" border-radius="12rpx" @change="change">
+    <uni-popup ref="popup" background-color="transparent" border-radius="12rpx" @change="change">
       <view class="popup-content">
         <view class="top" hover-class="none" hover-stop-propagation="false">
-          <text class="">
-            请先阅读并同意<text @click="onPrivacy" class="protocol">《隐私政策》</text>
-          </text>
+          <text class=""> 请先阅读并同意<text @click="onPrivacy" class="protocol">《隐私政策》</text> </text>
           <br />
-          <text class="">
-            和<text class="protocol" @click="onProtocol">《用户协议》</text>
-          </text>
+          <text class=""> 和<text class="protocol" @click="onProtocol">《用户服务协议》</text> </text>
         </view>
         <view class="bottom" hover-class="none" hover-stop-propagation="false">
           <button class="btn cancel-btn" @click="onCancel">返回</button>
@@ -60,7 +58,7 @@
 <style lang="scss" scoped>
   .read-dialog {
     .protocol {
-      color: $ga-brand-4;
+      color: var(--theme-brand);
       font-size: 30rpx;
       font-weight: 500;
     }
@@ -69,9 +67,13 @@
       width: 606rpx;
       height: 344rpx;
       box-sizing: border-box;
+      border: 1rpx solid var(--theme-border);
+      border-radius: 18rpx;
+      background: var(--theme-surface);
       .top {
         text-align: center;
         font-size: 30rpx;
+        color: var(--theme-text);
       }
       .bottom {
         display: flex;
@@ -90,12 +92,12 @@
           }
         }
         .cancel-btn {
-          background: $ga-gray-2;
-          color: $ga-gray-8;
+          background: var(--theme-surface-2);
+          color: var(--theme-text-secondary);
         }
         .agree-btn {
-          background: $ga-brand-4;
-          color: $ga-gray-0;
+          background: var(--theme-brand);
+          color: #fff;
         }
       }
     }

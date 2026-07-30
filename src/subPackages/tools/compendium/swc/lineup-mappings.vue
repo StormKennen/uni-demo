@@ -1,86 +1,96 @@
 <template>
   <PageLayout title="魔灵召唤阵容映射">
     <view class="mapping-page">
-      <view class="hero-banner">
-        <view>
-          <text class="hero-title">魔灵召唤阵容映射</text>
-          <text class="hero-subtitle">
-            浏览「源阵容 → 目标阵容」的容器化映射，点击查看详情。{{ isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。' }}
-          </text>
-        </view>
-        <text v-if="isAdmin" class="hero-badge">ADMIN</text>
-      </view>
-
-      <StateBlock v-if="loading && !mappings.length" class="state-block" text="加载映射中..." />
-
       <StateBlock
-        v-else-if="errorMessage && !mappings.length"
+        v-if="accessChecked && !hasLineupFeatureAccess"
         class="state-block"
-        :text="errorMessage"
-        action-text="重新加载"
+        text="该功能暂未开放"
+        action-text="返回"
         theme="teal"
-        @action="refreshList" />
+        @action="goBack" />
 
-      <view v-else class="content">
-        <view class="summary-row">
-          <text class="summary-text">共 {{ pagination.total }} 个映射</text>
+      <template v-else>
+        <view class="hero-banner">
+          <view>
+            <text class="hero-title">魔灵召唤阵容映射</text>
+            <text class="hero-subtitle">
+              浏览「源阵容 → 目标阵容」的容器化映射，点击查看详情。{{ isLoggedIn ? '登录用户可创建映射。' : '登录后可创建映射。' }}
+            </text>
+          </view>
+          <text v-if="isAdmin" class="hero-badge">ADMIN</text>
         </view>
 
-        <StateBlock v-if="!mappings.length" class="empty-block" text="暂无阵容映射，快去创建一个吧" />
+        <StateBlock v-if="loading && !mappings.length" class="state-block" text="加载映射中..." />
 
-        <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card" @click="goDetail(mapping.id)">
-          <view class="mapping-main">
-            <text class="mapping-name">{{ mapping.name || '未命名映射' }}</text>
-            <text class="mapping-desc">{{ mapping.description || '暂无描述' }}</text>
-            <view class="mapping-meta">
-              <text class="meta-chip">源 {{ mapping.sourceContainer.items.length }}</text>
-              <text class="meta-chip">目标 {{ mapping.targetContainer.items.length }}</text>
+        <StateBlock
+          v-else-if="errorMessage && !mappings.length"
+          class="state-block"
+          :text="errorMessage"
+          action-text="重新加载"
+          theme="teal"
+          @action="refreshList" />
+
+        <view v-else class="content">
+          <view class="summary-row">
+            <text class="summary-text">共 {{ pagination.total }} 个映射</text>
+          </view>
+
+          <StateBlock v-if="!mappings.length" class="empty-block" text="暂无阵容映射，快去创建一个吧" />
+
+          <view v-for="mapping in mappings" :key="mapping.id" class="mapping-card" @click="goDetail(mapping.id)">
+            <view class="mapping-main">
+              <text class="mapping-name">{{ mapping.name || '未命名映射' }}</text>
+              <text class="mapping-desc">{{ mapping.description || '暂无描述' }}</text>
+              <view class="mapping-meta">
+                <text class="meta-chip">源 {{ mapping.sourceContainer.items.length }}</text>
+                <text class="meta-chip">目标 {{ mapping.targetContainer.items.length }}</text>
+              </view>
+            </view>
+            <view class="mapping-tail">
+              <button
+                v-if="isAdmin"
+                class="card-btn danger"
+                size="mini"
+                :loading="deletingId === mapping.id"
+                @click.stop="confirmDelete(mapping.id)">
+                删除
+              </button>
+              <text class="mapping-arrow">›</text>
             </view>
           </view>
-          <view class="mapping-tail">
-            <button
-              v-if="isAdmin"
-              class="card-btn danger"
-              size="mini"
-              :loading="deletingId === mapping.id"
-              @click.stop="confirmDelete(mapping.id)">
-              删除
-            </button>
-            <text class="mapping-arrow">›</text>
+
+          <view v-if="pagination.hasNext" class="load-more">
+            <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
           </view>
         </view>
 
-        <view v-if="pagination.hasNext" class="load-more">
-          <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
+        <view class="fab" @click="openCreate">
+          <text class="fab-icon">+</text>
+          <text class="fab-text">{{ isLoggedIn ? '创建映射' : '登录创建' }}</text>
         </view>
-      </view>
 
-      <view class="fab" @click="openCreate">
-        <text class="fab-icon">+</text>
-        <text class="fab-text">{{ isLoggedIn ? '创建映射' : '登录创建' }}</text>
-      </view>
+        <view v-if="createVisible" class="modal-mask" @click="closeCreate">
+          <view class="create-panel" @click.stop>
+            <text class="create-title">创建阵容映射</text>
 
-      <view v-if="createVisible" class="modal-mask" @click="closeCreate">
-        <view class="create-panel" @click.stop>
-          <text class="create-title">创建阵容映射</text>
+            <text class="field-label">映射名称</text>
+            <input v-model="createName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
 
-          <text class="field-label">映射名称</text>
-          <input v-model="createName" class="name-input" placeholder="请输入映射名称" maxlength="60" />
+            <text class="field-label">映射描述</text>
+            <textarea
+              v-model="createDescription"
+              class="desc-input"
+              placeholder="例如：防守阵容 → 进攻反制（最长 500 字，可选）"
+              maxlength="500"
+              auto-height />
 
-          <text class="field-label">映射描述</text>
-          <textarea
-            v-model="createDescription"
-            class="desc-input"
-            placeholder="例如：防守阵容 → 进攻反制（最长 500 字，可选）"
-            maxlength="500"
-            auto-height />
-
-          <view class="create-actions">
-            <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
-            <button class="footer-btn primary" size="mini" :loading="creating" @click="submitCreate"> 确认创建 </button>
+            <view class="create-actions">
+              <button class="footer-btn ghost" size="mini" @click="closeCreate">取消</button>
+              <button class="footer-btn primary" size="mini" :loading="creating" @click="submitCreate"> 确认创建 </button>
+            </view>
           </view>
         </view>
-      </view>
+      </template>
     </view>
   </PageLayout>
 </template>
@@ -98,7 +108,7 @@
     type PaginationState,
   } from '@/services/compendium-lineups'
   import { getToken } from '@/utils/storage'
-  import { ensureLoginAccess, isAdminUser } from '@/utils/admin'
+  import { ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -111,6 +121,8 @@
   const loadingMore = ref(false)
   const errorMessage = ref('')
   const deletingId = ref('')
+  const accessChecked = ref(false)
+  const hasLineupFeatureAccess = ref(false)
 
   const createVisible = ref(false)
   const createName = ref('')
@@ -168,10 +180,14 @@
   }
 
   const openCreate = () => {
-    if (!ensureLoginAccess(buildCurrentUrl())) return
+    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     createName.value = ''
     createDescription.value = ''
     createVisible.value = true
+  }
+
+  const goBack = () => {
+    uni.navigateBack()
   }
 
   const closeCreate = () => {
@@ -225,11 +241,16 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    hasLineupFeatureAccess.value = ensureLineupFeatureAccess(buildCurrentUrl())
+    accessChecked.value = true
+    if (!hasLineupFeatureAccess.value) return
+
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容映射' })
     refreshList()
   })
 
   onReachBottom(() => {
+    if (!hasLineupFeatureAccess.value) return
     loadMore()
   })
 </script>
@@ -238,7 +259,7 @@
   .mapping-page {
     min-height: 100vh;
     background: var(--theme-bg);
-    color: #172033;
+    color: var(--theme-text);
     padding-bottom: 180rpx;
   }
 
@@ -281,15 +302,16 @@
   .state-block {
     margin: 0 24rpx 20rpx;
     background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
     border-radius: 24rpx;
-    box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.06);
+    box-shadow: 0 10rpx 30rpx var(--theme-shadow-xs);
   }
 
   .state-block,
   .empty-block {
     padding: 48rpx 28rpx;
     text-align: center;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 28rpx;
   }
 
@@ -298,7 +320,7 @@
   }
 
   .summary-text {
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -319,13 +341,13 @@
     display: block;
     font-size: 30rpx;
     font-weight: 800;
-    color: #172033;
+    color: var(--theme-text);
   }
 
   .mapping-desc {
     display: block;
     margin-top: 8rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     line-height: 1.6;
   }
@@ -355,7 +377,7 @@
   .mapping-arrow {
     font-size: 44rpx;
     font-weight: 300;
-    color: #cbd5e1;
+    color: var(--theme-text-tertiary);
     line-height: 1;
   }
 
@@ -418,6 +440,7 @@
   .create-panel {
     width: 100%;
     background: var(--theme-surface);
+    border: 1rpx solid var(--theme-border);
     border-radius: 28rpx;
     padding: 32rpx;
     box-sizing: border-box;
@@ -427,14 +450,14 @@
     display: block;
     font-size: 32rpx;
     font-weight: 800;
-    color: #172033;
+    color: var(--theme-text);
     margin-bottom: 20rpx;
   }
 
   .field-label {
     display: block;
     margin: 16rpx 0 12rpx;
-    color: #667085;
+    color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 700;
   }
@@ -444,9 +467,10 @@
     width: 100%;
     padding: 20rpx;
     border-radius: 18rpx;
-    background: #f8fafc;
+    background: var(--theme-surface-2);
     font-size: 26rpx;
-    color: #172033;
+    color: var(--theme-text);
+    border: 1rpx solid var(--theme-border);
     box-sizing: border-box;
   }
 
@@ -470,8 +494,8 @@
   }
 
   .footer-btn.ghost {
-    background: #eef2f7;
-    color: #475467;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
   }
 
   .footer-btn.primary {
