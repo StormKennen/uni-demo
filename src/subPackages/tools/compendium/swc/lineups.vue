@@ -206,7 +206,7 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onShow, onPullDownRefresh, onReachBottom } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import {
     deleteUserLineup,
@@ -231,6 +231,7 @@
   } from './lineup-meta'
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
   import { toSwcCharacterView } from './utils'
+  import { buildSwcLineupsShare } from './share'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -397,6 +398,16 @@
     return typeof error === 'string' ? error : fallback
   }
 
+  const buildShareQuery = () => ({
+    compendiumId: COMPENDIUM_CODE,
+    locale: selectedLocale.value,
+    type: selectedType.value !== ALL_VALUE ? selectedType.value : undefined,
+    status: isAdmin.value && selectedStatus.value !== ALL_VALUE ? selectedStatus.value : undefined,
+    characterIds: selectedCharacterFilters.value.length
+      ? selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean).join(',')
+      : undefined,
+  })
+
   const handleReaction = async (lineup: UserLineupSummary, value: ReactionValue) => {
     if (reactingId.value) return
     reactingId.value = lineup.id
@@ -454,6 +465,11 @@
     if (!hasLineupFeatureAccess.value) return
     loadMore()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => buildSwcLineupsShare(buildShareQuery()).app)
+  onShareTimeline(() => buildSwcLineupsShare(buildShareQuery()).timeline)
+  // #endif
 </script>
 
 <style scoped lang="scss">

@@ -97,7 +97,7 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onShow, onReachBottom } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import StateBlock from './components/state-block.vue'
   import { reportToolVisit } from '@/utils/tracker'
   import {
@@ -109,6 +109,7 @@
   } from '@/services/compendium-lineups'
   import { getToken } from '@/utils/storage'
   import { ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
+  import { buildSwcLineupMappingsShare } from './share'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -134,6 +135,11 @@
 
   const buildCurrentUrl = (): string =>
     `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`
+
+  const buildShareQuery = () => ({
+    compendiumId: COMPENDIUM_CODE,
+    locale: selectedLocale.value,
+  })
 
   const loadPage = async (page: number) => {
     const result = await fetchLineupMappings({ compendiumId: COMPENDIUM_CODE, page, limit: PAGE_SIZE })
@@ -253,6 +259,11 @@
     if (!hasLineupFeatureAccess.value) return
     loadMore()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => buildSwcLineupMappingsShare(buildShareQuery()).app)
+  onShareTimeline(() => buildSwcLineupMappingsShare(buildShareQuery()).timeline)
+  // #endif
 </script>
 
 <style scoped lang="scss">

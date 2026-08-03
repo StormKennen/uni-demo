@@ -330,13 +330,23 @@
   }
 
   .primary-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 94rpx;
+    padding: 0 28rpx;
     border: none;
     border-radius: 24rpx;
     background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
     color: #fff;
     font-size: 30rpx;
     font-weight: 700;
+    line-height: 1.2;
+    box-sizing: border-box;
+
+    &::after {
+      border: none;
+    }
   }
 
   .section-head {
@@ -359,6 +369,9 @@
   }
 
   .ghost-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 70rpx;
     padding: 0 26rpx;
     border: 1rpx solid var(--theme-border);
@@ -366,6 +379,12 @@
     background: var(--theme-surface-2);
     color: var(--theme-text);
     font-size: 26rpx;
+    line-height: 1.2;
+    box-sizing: border-box;
+
+    &::after {
+      border: none;
+    }
   }
 
   .page-strip {

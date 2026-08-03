@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
   import { ref } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import StateBlock from './components/state-block.vue'
   import LineupSelectModal from './components/lineup-select-modal.vue'
   import ContainerSection from './components/lineup-mapping-container-section.vue'
@@ -90,6 +90,7 @@
     type UserLineupSummary,
   } from '@/services/compendium-lineups'
   import { ensureLineupFeatureAccess } from '@/utils/admin'
+  import { buildSwcLineupMappingDetailShare } from './share'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -266,6 +267,26 @@
     if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     loadDetail()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(
+    () =>
+      buildSwcLineupMappingDetailShare({
+        mappingId: mappingId.value,
+        name: mapping.value?.name,
+        locale: selectedLocale.value,
+      }).app,
+  )
+
+  onShareTimeline(
+    () =>
+      buildSwcLineupMappingDetailShare({
+        mappingId: mappingId.value,
+        name: mapping.value?.name,
+        locale: selectedLocale.value,
+      }).timeline,
+  )
+  // #endif
 </script>
 
 <style scoped lang="scss">

@@ -195,3 +195,33 @@ export const resolveSwcSquareIcon = (kind: SwcSquareIconKind, iconKey?: string):
   if (!fileName) return ''
   return joinCdnAssetPath(SWC_ICON_FOLDER_MAP[kind], fileName)
 }
+
+export type SwcLeaderSkillInput = {
+  attribute?: string
+  amount?: number | string | null
+  area?: string
+  element?: string
+}
+
+/** 按 swarfarm 规则拼接队长技能图标地址（后续可切换为 OSS） */
+export const buildLeaderSkillIconUrl = (input?: SwcLeaderSkillInput | null): string => {
+  const attribute = typeof input?.attribute === 'string' ? input.attribute.trim() : ''
+  if (!attribute) return ''
+
+  const attr = attribute.replace(/\s+/g, '_')
+  const area = typeof input?.area === 'string' ? input.area.trim() : ''
+  const element = typeof input?.element === 'string' ? input.element.trim() : ''
+
+  let suffix = ''
+  if (area === 'Element' && element) suffix = `_${element}`
+  else if (area && area !== 'General') suffix = `_${area}`
+
+  // return `https://swarfarm.com/static/herders/images/skills/leader/leader_skill_${attr}${suffix}.png`
+  return `https://lzk-web.oss-cn-beijing.aliyuncs.com/swc/leader-skills/leader_skill_${attr}${suffix}.png`
+}
+
+export const formatLeaderSkillAmountText = (amount?: number | string | null): string => {
+  if (amount === null || amount === undefined || amount === '') return ''
+  return `${amount}%`
+}
+

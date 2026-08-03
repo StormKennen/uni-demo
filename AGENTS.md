@@ -45,3 +45,18 @@ docs/                      design docs — source of truth; changelog.md is comm
 - `<script setup lang="ts">` Composition API only; no `any`; typed props/emits.
 - Prettier: no semi, single quotes, printWidth 140; lint-staged formats staged files.
 - Chinese for user-facing copy and comments where surrounding code does so; English identifiers.
+
+
+## Architecture refactor
+
+The long-term architecture refactor plan is documented in:
+
+- docs/architecture/ARCHITECTURE_REFACTOR_PLAN.md
+
+Before executing an architecture phase:
+
+1. Read the complete plan.
+2. Only execute the phase explicitly requested by the user.
+3. Do not begin subsequent phases automatically.
+4. Do not modify src/services/**.
+5. Complete validation and report results before stopping.

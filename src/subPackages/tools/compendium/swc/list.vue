@@ -216,6 +216,7 @@
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getUserInfo } from '@/utils/storage'
+  import { buildSwcListShare } from './share'
 
   type FilterKey = 'element' | 'star' | 'type' | 'sort' | 'awaken'
   type SortOrder = 'asc' | 'desc'
@@ -671,6 +672,25 @@
     refreshCharacters()
   }
 
+  const buildShareQuery = () => ({
+    locale: selectedLocale.value,
+    element: selectedElement.value !== ALL_VALUE ? selectedElement.value : undefined,
+    star: selectedStar.value !== ALL_VALUE ? selectedStar.value : undefined,
+    type: selectedType.value !== ALL_VALUE ? selectedType.value : undefined,
+    awaken: selectedAwaken.value !== 'awakened' ? selectedAwaken.value : undefined,
+    sort: selectedSort.value !== DEFAULT_SORT_FIELD ? selectedSort.value : undefined,
+    sortOrder: selectedSortOrder.value !== DEFAULT_SORT_ORDER ? selectedSortOrder.value : undefined,
+  })
+
+  const applyShareQuery = (options: Record<string, string | undefined>) => {
+    selectedElement.value = options.element || ALL_VALUE
+    selectedStar.value = options.star || ALL_VALUE
+    selectedType.value = options.type || ALL_VALUE
+    selectedAwaken.value = options.awaken || 'awakened'
+    selectedSort.value = options.sort || DEFAULT_SORT_FIELD
+    selectedSortOrder.value = options.sortOrder === 'asc' ? 'asc' : DEFAULT_SORT_ORDER
+  }
+
   const isAdmin = computed(() => getUserInfo()?.role === 'admin')
 
   const goToDetail = (character: SwcCharacterView) => {
@@ -703,6 +723,7 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    applyShareQuery(options)
     uni.setNavigationBarTitle({ title: '魔灵召唤' })
     fetchCharacters(true)
   })
@@ -716,15 +737,9 @@
   })
 
   // #ifdef MP-WEIXIN
-  onShareAppMessage(() => ({
-    title: '魔灵召唤 · 凉白开工具箱',
-    path: `/subPackages/tools/compendium/swc/list?locale=${encodeURIComponent(selectedLocale.value)}`,
-  }))
+  onShareAppMessage(() => buildSwcListShare(buildShareQuery()).app)
 
-  onShareTimeline(() => ({
-    title: '魔灵召唤 · 凉白开工具箱',
-    query: `locale=${encodeURIComponent(selectedLocale.value)}`,
-  }))
+  onShareTimeline(() => buildSwcListShare(buildShareQuery()).timeline)
   // #endif
 </script>
 

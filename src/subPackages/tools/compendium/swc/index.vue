@@ -29,9 +29,10 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onShow } from '@dcloudio/uni-app'
+  import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import { isLineupFeatureAllowed } from '@/utils/admin'
+  import { buildSwcHomeShare } from './share'
 
   interface PortalEntry {
     id: string
@@ -98,6 +99,11 @@
     accessRefreshKey.value += 1
     reportToolVisit('compendium-swc')
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => buildSwcHomeShare().app)
+  onShareTimeline(() => buildSwcHomeShare().timeline)
+  // #endif
 </script>
 
 <style scoped lang="scss">

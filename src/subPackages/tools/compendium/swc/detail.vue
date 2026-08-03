@@ -201,7 +201,12 @@
             class="skill-card"
             :class="{ leader: skill.type === 'leader' }">
             <view class="skill-head">
-              <image v-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
+              <SwcLeaderSkillIcon
+                v-if="skill.leaderSkill && skill.leaderSkillIcon"
+                :leader-skill="skill.leaderSkill"
+                :size="80"
+              />
+              <image v-else-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
               <view v-else class="skill-icon empty-icon">{{ skill.type === 'leader' ? 'L' : skill.orderText }}</view>
               <view class="skill-title-wrap">
                 <view class="skill-title">
@@ -258,11 +263,18 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onPullDownRefresh, onShareAppMessage } from '@dcloudio/uni-app'
+  import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
+  import SwcLeaderSkillIcon from './components/swc-leader-skill-icon.vue'
   import SwcStarBadge from './components/swc-star-badge.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
-  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
+  import {
+    SWC_ARCHETYPE_LABEL_MAP,
+    buildLeaderSkillIconUrl,
+    normalizeSwcArchetype,
+    type SwcLeaderSkillInput,
+  } from './icon-assets'
+  import { buildSwcDetailShare } from './share'
   import { calculateSkillDamage, parseNumber, type DamageStats, type SkillDamageResult } from '@/engine/swc-damage-calculator'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
@@ -321,6 +333,7 @@
     multiplierFormula?: string
     hitCount?: string | number | null
     coefficients?: RawCoefficient[]
+    leaderSkill?: SwcLeaderSkillInput | null
   }
 
   interface RawSkin {
@@ -369,6 +382,8 @@
     multiplierFormula: string
     hitCountText: string
     coefficients: NormalizedCoefficient[]
+    leaderSkill: SwcLeaderSkillInput | null
+    leaderSkillIcon: string
   }
 
   interface NormalizedCategory {
@@ -656,21 +671,38 @@
     return (skill.descriptionEn || skill.description || skill.descriptionZh || '').trim()
   }
 
-  const normalizeSkill = (skill: RawSkill, index: number): NormalizedSkill => ({
-    id: skill.id || skill.name || skill.nameEn || skill.nameZh || '',
-    name: readLocalizedSkillName(skill),
-    type: skill.type || '',
-    typeText: formatSkillType(skill.type),
-    orderText: String(index + 1),
-    attachment: normalizeUrl(skill.attachment),
-    cost: skill.cost || '',
-    cooldown: skill.cooldown || '',
-    cooldownText: formatCooldownText(skill),
-    description: readLocalizedSkillDescription(skill),
-    multiplierFormula: formatMultiplierFormula(skill),
-    hitCountText: formatHitCountText(skill),
-    coefficients: (skill.coefficients || []).map(normalizeCoefficient),
-  })
+  const normalizeLeaderSkill = (leaderSkill?: SwcLeaderSkillInput | null): SwcLeaderSkillInput | null => {
+    if (!leaderSkill || typeof leaderSkill !== 'object') return null
+    const attribute = typeof leaderSkill.attribute === 'string' ? leaderSkill.attribute.trim() : ''
+    if (!attribute) return null
+    return {
+      attribute,
+      amount: leaderSkill.amount,
+      area: typeof leaderSkill.area === 'string' ? leaderSkill.area.trim() : leaderSkill.area,
+      element: typeof leaderSkill.element === 'string' ? leaderSkill.element.trim() : leaderSkill.element,
+    }
+  }
+
+  const normalizeSkill = (skill: RawSkill, index: number): NormalizedSkill => {
+    const leaderSkill = normalizeLeaderSkill(skill.leaderSkill)
+    return {
+      id: skill.id || skill.name || skill.nameEn || skill.nameZh || '',
+      name: readLocalizedSkillName(skill),
+      type: skill.type || '',
+      typeText: formatSkillType(skill.type),
+      orderText: String(index + 1),
+      attachment: normalizeUrl(skill.attachment),
+      cost: skill.cost || '',
+      cooldown: skill.cooldown || '',
+      cooldownText: formatCooldownText(skill),
+      description: readLocalizedSkillDescription(skill),
+      multiplierFormula: formatMultiplierFormula(skill),
+      hitCountText: formatHitCountText(skill),
+      coefficients: (skill.coefficients || []).map(normalizeCoefficient),
+      leaderSkill,
+      leaderSkillIcon: buildLeaderSkillIconUrl(leaderSkill),
+    }
+  }
 
   const normalizeSkin = (skin: RawSkin): NormalizedSkin => ({
     id: skin.id || skin.name || '',
@@ -878,7 +910,7 @@
     if (detailAvatarSrc.value) {
       items.push({
         id: 'avatar',
-        name: '默认头像',
+        name: '',
         image: detailAvatarSrc.value,
         type: 'avatar',
       })
@@ -1200,11 +1232,27 @@
     loadDetail()
   })
 
-  onShareAppMessage(() => ({
-    title: `魔灵详情 · ${detail.value.name || '图鉴'}`,
-    imageUrl: detailAvatarSrc.value || '',
-    path: `/subPackages/tools/compendium/swc/detail?characterId=${encodeURIComponent(characterId.value)}&name=${encodeURIComponent(detail.value.name)}&avatar=${encodeURIComponent(detailAvatarSrc.value)}&locale=${encodeURIComponent(selectedLocale.value)}`,
-  }))
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(
+    () =>
+      buildSwcDetailShare({
+        characterId: characterId.value,
+        name: detail.value.name,
+        avatar: detailAvatarSrc.value,
+        locale: selectedLocale.value,
+      }).app,
+  )
+
+  onShareTimeline(
+    () =>
+      buildSwcDetailShare({
+        characterId: characterId.value,
+        name: detail.value.name,
+        avatar: detailAvatarSrc.value,
+        locale: selectedLocale.value,
+      }).timeline,
+  )
+  // #endif
 </script>
 
 <style scoped lang="scss">
@@ -1524,6 +1572,7 @@
 
   .tag-line {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 8rpx;
   }

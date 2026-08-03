@@ -132,11 +132,12 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/image-privacy/index',
     category: 'media',
     isNew: true,
+    hiddenInDirectory: true,
   },
   'image-format': {
     name: '图片格式转换',
     desc: 'JPG / PNG / WebP',
-    icon: 'color-palette',
+    icon: 'image',
     gradient: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
     path: '/subPackages/tools/image-format/index',
     category: 'media',
@@ -152,10 +153,11 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   'image-watermark': {
     name: '图片加水印',
     desc: '文字/贴纸叠加',
-    icon: 'brush',
+    icon: 'compose',
     gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
     path: '/subPackages/tools/image-watermark/index',
     category: 'media',
+    hiddenInDirectory: true,
   },
   'video-compress': {
     name: '视频压缩',
@@ -190,6 +192,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/document-scan/index',
     category: 'media',
     isNew: true,
+    hiddenInDirectory: true,
   },
   'pdf-toolkit': {
     name: 'PDF 工具箱',
@@ -199,6 +202,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/pdf-toolkit/index',
     category: 'media',
     isNew: true,
+    // 内容未完整落地前，先隐藏入口，避免审核/用户进入半成品页
+    hiddenInDirectory: true,
   },
   // ── 二维码 ──
   'qr-generator': {
@@ -265,7 +270,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   markdown: {
     name: 'Markdown 转 HTML',
     desc: 'Markdown 一键预览/导出',
-    icon: 'document',
+    icon: 'font',
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     path: '/subPackages/tools/markdown/index',
     category: 'text',

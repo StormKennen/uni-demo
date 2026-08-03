@@ -358,6 +358,37 @@ Content-Type: application/json
 - 魔灵召唤官方 Web Coupon 文档指向 `/tp/coupon/api`，需要 AppCenter Bearer Token，Token 必须只保存在后端密钥系统；
 - 如临时复用 `q.suisuiaa.fun`，也必须由后端代理并做超时、重试、错误映射。
 
+## 接口 6：获取兑换记录
+
+```http
+GET /game-coupons/{game_id}/redeem-records?compendium_id=swc&limit=5&page=1&sortBy=redeemedAt:desc
+Authorization: Bearer <token>
+```
+
+兑换记录仅返回当前登录用户自己的数据。`reward` 是执行兑换时保存的奖励快照，表示券码配置的预期奖励，不代表官方实际到账清单。
+
+```json
+{
+  "results": [
+    {
+      "id": "record-id",
+      "server": "china",
+      "accountIdMasked": "123****789",
+      "couponCode": "SIGNUPSWC26NOW",
+      "reward": "能量x100 + 神秘卷轴x5",
+      "resultStatus": "success",
+      "resultCode": "official_100",
+      "resultMessage": "兑换成功",
+      "redeemedAt": "2026-07-30T06:20:00.000Z"
+    }
+  ],
+  "page": 1,
+  "limit": 5,
+  "totalPages": 1,
+  "totalResults": 1
+}
+```
+
 ## 前端新增其它游戏的方式
 
 1. 在 `src/config/game-coupons.ts` 新增游戏配置：

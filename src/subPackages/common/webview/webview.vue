@@ -126,10 +126,18 @@
     if (option.type === 'privacy' || option.type === 'protocol') {
       return option.type
     }
-    if (option.title?.includes('隐私')) {
+    const title = option.title || ''
+    if (title.includes('隐私') || title.includes('政策')) {
       return 'privacy'
     }
-    if (option.title?.includes('用户')) {
+    // 兼容微信后台服务名（如“凉白开工具箱 小程序提供服务”）以及常见协议标题
+    if (
+      title.includes('用户') ||
+      title.includes('服务') ||
+      title.includes('协议') ||
+      title.includes('提供服务') ||
+      title.includes('工具箱')
+    ) {
       return 'protocol'
     }
     return ''
@@ -149,12 +157,24 @@
   onLoad(option => {
     console.log('🚀 ~ webview onLoad ~ option:', option)
     const _option = option || ({} as Option)
-    const resolvedAgreementType = resolveAgreementType(_option)
+    const hasExternalUrl = Boolean(_option.url || _option.decodeUrl)
+    let resolvedAgreementType = resolveAgreementType(_option)
+
+    // 无外部网页地址时一律展示协议内容，兼容微信审核后台各种入口（无参数 / 仅服务名标题）
+    if (!resolvedAgreementType && !hasExternalUrl) {
+      resolvedAgreementType = 'protocol'
+    }
+
     if (resolvedAgreementType) {
       setupAgreementPage(resolvedAgreementType)
     }
 
-    pageTitle.value = _option.title || (isAgreementPage.value ? agreementTitle.value : '网页浏览')
+    // 协议页强制使用标准标题，避免被微信后台服务名覆盖后看起来像空白
+    if (isAgreementPage.value) {
+      pageTitle.value = agreementTitle.value
+    } else {
+      pageTitle.value = _option.title || '网页浏览'
+    }
     uni.setNavigationBarTitle({
       title: pageTitle.value,
     })

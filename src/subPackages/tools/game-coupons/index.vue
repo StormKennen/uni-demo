@@ -1,305 +1,287 @@
 <template>
-  <PageLayout title="游戏兑换券">
+  <PageLayout :title="gameConfig.title">
     <view class="coupon-page">
-      <!-- 头部 -->
-      <view class="page-head">
-        <view class="page-title-wrap">
-          <text class="page-title">{{ gameConfig.title }}</text>
-          <text class="page-subtitle">选择账号和券码后兑换</text>
-        </view>
-        <view class="login-pill" :class="{ online: isLoggedIn }" @click="!isLoggedIn && goLogin()">
-          {{ isLoggedIn ? '已登录' : '登录同步' }}
-        </view>
-      </view>
-
-      <!-- 账号卡片 -->
-      <view class="card account-card">
-        <view class="card-head">
-          <view>
-            <text class="card-title">我的账号</text>
-            <text class="card-subtitle">已选 {{ selectedAccounts.length }}/{{ validAccounts.length }} 个账号</text>
+      <view class="coupon-main">
+        <!-- 未登录提示：内嵌文案，不挡内容预览 -->
+        <view v-if="!isLoggedIn" class="login-tip-card" @click="goLogin">
+          <view class="login-tip-copy">
+            <text class="login-tip-title">登录后可兑换</text>
+            <text class="login-tip-desc">下方操作已禁用，登录后可添加账号并批量兑换</text>
           </view>
-          <view class="account-head-actions">
-            <view class="auto-inline">
-              <text class="auto-inline-label">托管</text>
-              <switch
-                class="auto-switch compact"
-                :checked="isLoggedIn && allAutoOn"
-                color="var(--theme-brand)"
-                @change="handleAutoSwitchChange" />
-            </view>
-            <text v-if="accounts.length" class="card-toggle" @click="showAccountManager = !showAccountManager">
-              {{ showAccountManager ? '收起' : '管理' }}
-            </text>
-          </view>
+          <text class="login-tip-action">去登录</text>
         </view>
 
-        <scroll-view v-if="validAccounts.length" class="account-chip-scroll" scroll-x>
-          <view class="account-chip-row">
-            <view
-              v-for="account in validAccounts"
-              :key="account.id"
-              class="account-chip"
-              :class="{ selected: isAccountSelected(account) }"
-              @click="toggleAccountSelection(account)">
-              <text class="account-chip-name">{{ getAccountDisplayName(account) }}</text>
-              <text class="account-chip-server">{{ getServerShortLabel(account.server) }}</text>
+        <!-- 1. 账号 -->
+        <view class="card checkout-card">
+          <view class="step-head">
+            <text class="step-index">1</text>
+            <view class="step-copy">
+              <text class="step-title">兑换到账号</text>
+              <text class="step-desc">{{ accountStepDesc }}</text>
             </view>
           </view>
-        </scroll-view>
 
-        <view v-if="!accounts.length" class="empty-tip">添加账号后即可兑换</view>
-
-        <view v-if="showAccountManager || !accounts.length" class="account-manager">
-          <view class="manager-note">
-            <text>{{ isLoggedIn ? '托管账号支持自动兑换，本地账号可同步。' : '本地保存，登录后可同步并托管。' }}</text>
-          </view>
-
-          <!-- 添加账号表单 -->
-          <view class="add-form">
-            <picker
-              class="server-picker add-server-picker"
-              :range="serverLabels"
-              :value="getServerIndex(newAccount.server)"
-              @change="changeNewServer($event)">
-              <view class="server-chip editable">
-                <text class="server-chip-label">区服</text>
-                <text class="server-chip-value">{{ getServerShortLabel(newAccount.server) }}</text>
+          <!-- 新用户：直接加号 -->
+          <view v-if="!validAccounts.length" class="onboarding-panel">
+            <text class="onboarding-title">先添加游戏账号</text>
+            <text class="onboarding-desc">填写 {{ gameConfig.accountIdLabel }} 后即可兑换礼包码</text>
+            <view class="add-form" :class="{ disabled: !isLoggedIn }">
+              <picker
+                class="server-picker add-server-picker"
+                :disabled="!isLoggedIn"
+                :range="serverLabels"
+                :value="getServerIndex(newAccount.server)"
+                @change="changeNewServer($event)">
+                <view class="server-chip editable">
+                  <text class="server-chip-value">{{ getServerShortLabel(newAccount.server) }}</text>
+                </view>
+              </picker>
+              <input
+                class="add-input"
+                type="text"
+                :disabled="!isLoggedIn"
+                :placeholder="gameConfig.accountIdPlaceholder"
+                :value="newAccount.accountId"
+                @input="updateNewAccountId" />
+              <view class="add-btn" :class="{ disabled: addingAccount || !isLoggedIn }" @click="addAccount">
+                {{ addingAccount ? '...' : '添加' }}
               </view>
-            </picker>
+            </view>
+          </view>
+
+          <!-- 已有账号：当前账号 + 管理 -->
+          <view v-else class="current-account-wrap">
+            <view class="current-account" :class="{ disabled: !isLoggedIn }" @click="isLoggedIn && (showAccountManager = !showAccountManager)">
+              <view class="current-account-main">
+                <text class="current-account-name">{{ getAccountDisplayName(primaryAccount) }}</text>
+                <text class="current-account-meta">
+                  {{ getServerShortLabel(primaryAccount?.server || '') }}
+                  <text v-if="selectedAccounts.length > 1"> · 已选 {{ selectedAccounts.length }} 个账号</text>
+                  <text v-else> · 点管理可多选账号</text>
+                </text>
+              </view>
+              <text class="current-account-action">{{ showAccountManager ? '收起' : validAccounts.length > 1 ? '切换' : '管理' }}</text>
+            </view>
+
+            <view v-if="showAccountManager" class="account-manager">
+              <view class="manager-tip">点选账号作为兑换目标，可多选批量兑换</view>
+              <view class="account-list">
+                <view
+                  v-for="(account, index) in accounts"
+                  :key="account.id"
+                  class="account-row"
+                  :class="{ selected: isAccountSelected(account), disabled: !isLoggedIn }"
+                  @click="toggleAccountSelection(account)">
+                  <view class="selection-check" :class="{ checked: isAccountSelected(account) }">
+                    <text v-if="isAccountSelected(account)" class="selection-check-mark">✓</text>
+                  </view>
+                  <view class="account-main">
+                    <view class="account-line">
+                      <text class="account-name">{{ getAccountDisplayName(account) }}</text>
+                      <text class="server-inline">{{ getServerShortLabel(account.server) }}</text>
+                      <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
+                    </view>
+                    <text v-if="account.accountIdMasked || account.accountId" class="account-id-sub">
+                      {{ account.accountIdMasked || account.accountId }}
+                    </text>
+                  </view>
+                  <view class="account-action-buttons">
+                    <view
+                      v-if="isLoggedIn && !account.managed"
+                      class="mini-btn primary"
+                      :class="{ loading: account.syncing, disabled: !isLoggedIn }"
+                      @click.stop="syncLocalAccount(index)">
+                      {{ account.syncing ? '同步中' : '同步' }}
+                    </view>
+                    <view class="mini-btn danger" :class="{ disabled: !isLoggedIn }" @click.stop="removeAccount(index)">删除</view>
+                  </view>
+                </view>
+              </view>
+
+              <view class="add-form compact" :class="{ disabled: !isLoggedIn }">
+                <picker
+                  class="server-picker add-server-picker"
+                  :disabled="!isLoggedIn"
+                  :range="serverLabels"
+                  :value="getServerIndex(newAccount.server)"
+                  @change="changeNewServer($event)">
+                  <view class="server-chip editable">
+                    <text class="server-chip-value">{{ getServerShortLabel(newAccount.server) }}</text>
+                  </view>
+                </picker>
+                <input
+                  class="add-input"
+                  type="text"
+                  :disabled="!isLoggedIn"
+                  :placeholder="gameConfig.accountIdPlaceholder"
+                  :value="newAccount.accountId"
+                  @input="updateNewAccountId" />
+                <view class="add-btn" :class="{ disabled: addingAccount || !isLoggedIn }" @click="addAccount">
+                  {{ addingAccount ? '...' : '添加' }}
+                </view>
+              </view>
+
+              <view v-if="managedAccounts.length" class="auto-row">
+                <text class="auto-row-label">自动兑换托管</text>
+                <switch
+                  class="auto-switch compact"
+                  :checked="isLoggedIn && allAutoOn"
+                  :disabled="!isLoggedIn"
+                  color="var(--theme-brand)"
+                  @change="handleAutoSwitchChange" />
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 2. 券码（默认全选，支持多选批量兑换） -->
+        <view class="card checkout-card">
+          <view class="step-head">
+            <text class="step-index">2</text>
+            <view class="step-copy">
+              <text class="step-title">选择券码</text>
+              <text class="step-desc">{{ codeStepDesc }}</text>
+            </view>
+          </view>
+
+          <view class="code-add-row" :class="{ disabled: !isLoggedIn }">
             <input
-              class="add-input"
+              class="code-input-lg compact"
               type="text"
-              :placeholder="gameConfig.accountIdPlaceholder"
-              :value="newAccount.accountId"
-              @input="updateNewAccountId" />
-            <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
-              {{ addingAccount ? '...' : '添加' }}
+              placeholder="粘贴新券码并添加"
+              :disabled="!isLoggedIn"
+              :value="codeInput"
+              @input="updateCodeInput" />
+            <view class="add-btn code-add-btn" :class="{ disabled: !isLoggedIn || addingPublicCode || redeeming }" @click="addPublicCode">
+              {{ addingPublicCode ? '...' : '添加' }}
             </view>
           </view>
 
-          <view v-if="accounts.length" class="account-list">
-            <view
-              v-for="(account, index) in accounts"
-              :key="account.id"
-              class="account-row"
-              :class="{ selected: isAccountSelected(account) }"
-              @click="toggleAccountSelection(account)">
-              <view class="selection-check" :class="{ checked: isAccountSelected(account) }">
-                <text v-if="isAccountSelected(account)" class="selection-check-mark">✓</text>
-              </view>
-              <view class="server-chip readonly">
-                <text class="server-chip-label">区服</text>
-                <text class="server-chip-value">{{ getServerShortLabel(account.server) }}</text>
-              </view>
-
-              <view class="account-main">
-                <view class="account-line">
-                  <text class="account-name">{{ getAccountDisplayName(account) }}</text>
-                  <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
-                </view>
-                <view v-if="account.nickname && (account.accountIdMasked || account.accountId)" class="account-sub">
-                  <text class="account-id-sub">{{ account.accountIdMasked || account.accountId }}</text>
-                </view>
-              </view>
-
-              <view class="account-actions">
-                <view class="account-status-row">
-                  <text class="status-badge" :class="getStatusBadgeClass(account.status)">{{ getStatusBadgeText(account.status) }}</text>
-                </view>
-                <view class="account-action-buttons">
-                  <view
-                    v-if="isLoggedIn && !account.managed"
-                    class="mini-btn primary"
-                    :class="{ loading: account.syncing }"
-                    @click.stop="syncLocalAccount(index)">
-                    {{ account.syncing ? '同步中' : '同步云端' }}
-                  </view>
-                  <view class="mini-btn" :class="{ loading: account.verifying }" @click.stop="verifyAccount(index)">
-                    {{ account.verifying ? '验证中' : '验证' }}
-                  </view>
-                  <view class="mini-btn danger" @click.stop="removeAccount(index)">删除</view>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 券码区 -->
-      <view class="card codes-card">
-        <view class="card-head">
-          <view>
-            <text class="card-title">券码</text>
-            <text class="card-subtitle">{{ couponModeSubtitle }}</text>
-          </view>
-        </view>
-
-        <view class="coupon-tabs">
-          <view class="coupon-tab" :class="{ active: activeCouponMode === 'public' }" @click="setActiveCouponMode('public')">
-            批量券码
-          </view>
-          <view class="coupon-tab" :class="{ active: activeCouponMode === 'manual' }" @click="setActiveCouponMode('manual')">
-            手动输入
-          </view>
-        </view>
-
-        <view v-if="activeCouponMode === 'manual'" class="manual-mode-body">
-          <view class="manual-row">
-            <input class="manual-input" type="text" placeholder="输入要兑换的券码" :value="manualCode" @input="updateManualCode" />
-          </view>
-          <view class="mode-tip"> 默认单账号；公共券码可多选账号。 </view>
-        </view>
-
-        <view v-else class="public-mode-body">
-          <view class="public-actions">
-            <text class="public-summary">已选 {{ selectedCodes.length }}/{{ combinedCodes.length }} 个券码</text>
-            <view class="coupon-actions">
-              <text class="refresh-code-btn" :class="{ disabled: loadingCodes }" @click="loadCodes">
-                {{ loadingCodes ? '刷新中' : '刷新列表' }}
-              </text>
-              <text class="card-toggle" @click="showCodeManager = !showCodeManager">{{ showCodeManager ? '收起' : '管理' }}</text>
-            </view>
-          </view>
           <view v-if="codeLoadError" class="inline-error">{{ codeLoadError }}</view>
 
-          <view v-if="showCodeManager || (!loadingCodes && !combinedCodes.length)" class="code-manager">
-            <view class="batch-add-row">
-              <input class="manual-input" type="text" placeholder="输入公共券码" :value="publicCodeInput" @input="updatePublicCodeInput" />
-              <view class="manual-add" :class="{ disabled: addingPublicCode }" @click="addPublicCode">
-                {{ addingPublicCode ? '添加中' : '添加' }}
+          <view v-if="combinedCodes.length" class="quick-codes">
+            <view class="quick-head">
+              <text class="quick-title">已选 {{ selectedCodes.length }}/{{ combinedCodes.length }}</text>
+              <view class="quick-actions">
+                <text class="quick-link" :class="{ disabled: !isLoggedIn }" @click="selectAllCodesByUser">全选</text>
+                <text class="quick-link" :class="{ disabled: !isLoggedIn }" @click="clearSelectedCodes">清空</text>
+                <text class="quick-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
+                  {{ loadingCodes ? '刷新中' : '刷新' }}
+                </text>
               </view>
             </view>
-            <view class="mode-tip public-tip"> 添加后默认勾选，重复券码会自动拦截。 </view>
-            <view v-if="!combinedCodes.length && !loadingCodes" class="empty-tip">暂无批量券码，可先添加券码或切换到手动输入</view>
-            <view v-if="combinedCodes.length" class="manager-line">
-              <text class="manager-line-text">{{ showCodes ? '正在显示全部券码' : '明细默认收起，避免列表过长' }}</text>
-              <text class="card-toggle" @click="showCodes = !showCodes">{{ showCodes ? '隐藏明细' : '查看明细' }}</text>
-            </view>
-            <view v-if="showCodes && combinedCodes.length" class="code-list">
+            <view class="quick-list">
               <view
-                v-for="item in combinedCodes"
+                v-for="item in visibleCodes"
                 :key="item.code"
-                class="code-item"
-                :class="{ selected: isCodeSelected(item) }"
+                class="quick-chip"
+                :class="{ active: isCodeSelected(item), disabled: !isLoggedIn }"
                 @click="toggleCodeSelection(item)">
-                <view class="code-info">
-                  <text class="code-text">{{ item.code }}</text>
-                  <text v-if="item.reward" class="code-reward">{{ item.reward }}</text>
+                <view class="selection-check code-check" :class="{ checked: isCodeSelected(item) }">
+                  <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
                 </view>
-                <view class="code-side">
-                  <view class="selection-check code-check" :class="{ checked: isCodeSelected(item) }">
-                    <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
-                  </view>
-                  <text class="code-source">{{ getSourceLabel(item.source) }}</text>
+                <view class="quick-chip-main">
+                  <text class="quick-code">{{ item.code }}</text>
+                  <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
                 </view>
               </view>
             </view>
+            <text v-if="combinedCodes.length > codePreviewLimit" class="list-toggle" @click="showAllCodes = !showAllCodes">
+              {{ showAllCodes ? '收起' : `更多 ${combinedCodes.length - codePreviewLimit} 个` }}
+            </text>
           </view>
+          <view v-else-if="!loadingCodes" class="empty-tip soft">暂无可用券码，可先粘贴添加</view>
         </view>
-      </view>
 
-      <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
+        <view v-if="redeemError" class="inline-error">{{ redeemError }}</view>
 
-      <!-- 本次兑换结果分组 -->
-      <view v-if="resultGroups.length" class="card result-summary-card">
-        <view class="card-head">
-          <view>
-            <text class="card-title">兑换完成</text>
-            <text class="card-subtitle"
-              >成功 {{ resultSummary.success }} · 已使用 {{ resultSummary.alreadyUsed }} · 失败 {{ resultSummary.failed }}</text
+        <!-- 轻量结果 -->
+        <view v-if="resultGroups.length" class="card result-lite-card">
+          <view class="result-lite-head">
+            <text class="result-lite-title">本次结果</text>
+            <text class="result-lite-summary"
+              >成功 {{ resultSummary.success }} · 已用 {{ resultSummary.alreadyUsed }} · 失败 {{ resultSummary.failed }}</text
             >
           </view>
-          <text class="card-toggle" @click="showAllResults = !showAllResults">{{ showAllResults ? '收起' : '全部' }}</text>
-        </view>
-
-        <view class="result-stats-row">
-          <view class="stat success">
-            <text class="stat-num">{{ resultSummary.success }}</text>
-            <text class="stat-label">成功</text>
-          </view>
-          <view class="stat used">
-            <text class="stat-num">{{ resultSummary.alreadyUsed }}</text>
-            <text class="stat-label">已使用</text>
-          </view>
-          <view class="stat failed">
-            <text class="stat-num">{{ resultSummary.failed }}</text>
-            <text class="stat-label">失败</text>
-          </view>
-        </view>
-
-        <view v-if="failedResultItems.length" class="failed-preview">
-          <view v-for="item in failedPreviewItems" :key="item.key" class="result-row">
-            <view class="result-main">
-              <text class="result-code">{{ item.code }}</text>
-              <text class="result-msg">{{ item.message }}</text>
-            </view>
-            <text class="result-status" :class="item.status">{{ item.statusLabel }}</text>
-          </view>
-          <text v-if="failedResultItems.length > failedPreviewLimit && !showAllResults" class="result-more" @click="showAllResults = true">
-            还有 {{ failedResultItems.length - failedPreviewLimit }} 条失败项，查看全部
-          </text>
-        </view>
-        <view v-else class="empty-tip">无失败项</view>
-
-        <view v-if="showAllResults" class="result-list">
-          <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
-            <view class="result-head">
-              <text class="result-account">{{ groupTitle(group) }}</text>
-              <text class="result-count">{{ group.success }} 成功</text>
-            </view>
-            <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
+          <view v-if="failedPreviewItems.length" class="failed-preview">
+            <view v-for="item in failedPreviewItems" :key="item.key" class="result-row">
               <view class="result-main">
                 <text class="result-code">{{ item.code }}</text>
-                <text class="result-msg">{{
-                  translateCouponErrorMessage(item.message || item.reward || item.status || '已返回结果')
-                }}</text>
+                <text class="result-msg">{{ item.message }}</text>
               </view>
-              <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
+              <text class="result-status" :class="item.status">{{ item.statusLabel }}</text>
+            </view>
+          </view>
+          <text v-if="failedResultItems.length > failedPreviewLimit" class="result-more" @click="showAllResults = !showAllResults">
+            {{ showAllResults ? '收起明细' : `查看全部失败 ${failedResultItems.length} 条` }}
+          </text>
+          <view v-if="showAllResults" class="result-list">
+            <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
+              <view class="result-head">
+                <text class="result-account">{{ groupTitle(group) }}</text>
+                <text class="result-count">{{ group.success }} 成功</text>
+              </view>
+              <view v-for="(item, ri) in group.results || []" :key="`${gi}-${item.code}-${ri}`" class="result-row">
+                <view class="result-main">
+                  <text class="result-code">{{ item.code }}</text>
+                  <text class="result-msg">{{
+                    translateCouponErrorMessage(item.message || item.reward || item.status || '已返回结果')
+                  }}</text>
+                </view>
+                <text class="result-status" :class="item.status">{{ getStatusLabel(item.status) }}</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
 
-      <!-- 兑换记录（登录态） -->
-      <view v-if="isLoggedIn" class="card record-card">
-        <view class="card-head" @click="toggleRecords">
-          <view>
-            <text class="card-title">兑换记录</text>
-            <text v-if="stats && !resultGroups.length" class="card-subtitle"
-              >成功 {{ stats.success }} · 已使用 {{ stats.alreadyUsed }} · 失败 {{ stats.failed }}</text
-            >
-          </view>
-          <text class="card-toggle">{{ showRecords ? '收起' : '查看' }}</text>
+        <!-- 记录入口 -->
+        <view v-if="isLoggedIn" class="records-entry" @click="showRecords = !showRecords">
+          <text class="records-entry-title">兑换记录</text>
+          <text class="records-entry-meta">{{ recordSummaryText }} · {{ showRecords ? '收起' : '查看' }}</text>
         </view>
-        <view v-if="showRecords" class="record-body">
-          <view v-if="!records.length" class="empty-tip">暂无兑换记录</view>
-          <view v-for="record in records" :key="record.id" class="record-row">
-            <view class="record-main">
-              <text class="record-code">{{ record.couponCode }}</text>
-              <text class="record-sub">{{ record.accountIdMasked }} · {{ getServerShortLabel(record.server || '') }}</text>
+
+        <view v-if="isLoggedIn && showRecords" class="card record-card">
+          <view class="record-body">
+            <view v-if="recordsLoading && !records.length" class="empty-tip">正在加载兑换记录…</view>
+            <view v-else-if="!records.length" class="empty-tip">暂无兑换记录</view>
+            <view v-for="record in visibleRecords" :key="record.id" class="record-row">
+              <view class="record-main">
+                <text class="record-code">{{ record.couponCode || '未知券码' }}</text>
+                <text class="record-sub">{{ formatRecordServer(record.server) }} · {{ formatRecordTime(record.redeemedAt) }}</text>
+              </view>
+              <text class="result-status" :class="record.resultStatus">{{ getStatusLabel(record.resultStatus) }}</text>
             </view>
-            <text class="result-status" :class="record.resultStatus">{{ getStatusLabel(record.resultStatus) }}</text>
+            <view v-if="recordTotal > recordPreviewLimit" class="record-footer">
+              <text v-if="recordsExpanded" class="record-footer-action muted" @click="collapseRecords">收起</text>
+              <text
+                v-if="!recordsExpanded || hasMoreRecords"
+                class="record-footer-action"
+                :class="{ disabled: recordsLoading }"
+                @click="expandOrLoadMoreRecords">
+                {{ recordLoadMoreText }}
+              </text>
+            </view>
           </view>
+        </view>
+
+        <view class="redeem-dock">
+          <view class="redeem-dock-copy">
+            <text class="redeem-dock-title">{{ redeemDockTitle }}</text>
+            <text class="redeem-dock-hint">{{ redeemHintText }}</text>
+          </view>
+          <button class="redeem-btn dock-btn" :disabled="cashierRedeemDisabled" @click="startCashierRedeem">
+            {{ redeemActionText }}
+          </button>
         </view>
       </view>
 
-      <view class="redeem-dock">
-        <view class="redeem-dock-copy">
-          <text class="redeem-dock-title">{{ redeemDockTitle }}</text>
-          <text class="redeem-dock-hint">{{ redeemHintText }}</text>
-        </view>
-        <button class="redeem-btn dock-btn" :disabled="redeemDisabled" @click="startRedeem">
-          {{ redeemActionText }}
-        </button>
-      </view>
     </view>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { onLoad, onShow } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import { getGameCouponConfig } from './config'
   import type { GameCouponConfig } from './config'
   import {
@@ -309,7 +291,6 @@
     getGameCouponsGameIdCodes,
     getGameCouponsGameIdProfile,
     getGameCouponsGameIdRedeemRecords,
-    getGameIdRedeemRecordsSummary,
     postGameCouponsAccountsAutoRedeem,
     postGameCouponsAccountsVerify,
     postGameCouponsGameIdAccounts,
@@ -325,11 +306,10 @@
   } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
   import { checkLoginStatus } from '@/utils/autoLogin'
   import { reportToolVisit } from '@/utils/tracker'
+  import { buildSwcCouponsShare } from '@/subPackages/tools/compendium/swc/share'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
   type AccountStatus = 'active' | 'invalid' | 'pending' | 'disabled'
-  type CouponMode = 'manual' | 'public'
-
   interface AccountVM {
     /** 托管账号为后端 ObjectId，游客为本地临时 ID */
     id: string
@@ -367,19 +347,17 @@
   const newAccount = ref<{ server: string; accountId: string }>({ server: 'china', accountId: '' })
   const addingAccount = ref(false)
   const showAccountManager = ref(false)
+  const showRecords = ref(false)
 
   const remoteCodes = ref<getGameCouponsGameIdCodesResCodes[]>([])
-  const manualCode = ref('')
-  const publicCodeInput = ref('')
-  const activeCouponMode = ref<CouponMode>('public')
-  const manualSelectedAccountIds = ref<string[]>([])
-  const publicSelectedAccountIds = ref<string[]>([])
+  const codeInput = ref('')
+  const selectedAccountIds = ref<string[]>([])
   const selectedCodeKeys = ref<string[]>([])
   const loadingCodes = ref(false)
   const addingPublicCode = ref(false)
   const codeLoadError = ref('')
-  const showCodes = ref(false)
-  const showCodeManager = ref(false)
+  const showAllCodes = ref(false)
+  const codePreviewLimit = 5
 
   const redeeming = ref(false)
   const redeemError = ref('')
@@ -389,8 +367,12 @@
   const failedPreviewLimit = 3
 
   const records = ref<getGameCouponsGameIdRedeemRecordsResResults[]>([])
-  const summary = ref<getGameIdRedeemRecordsSummaryRes | null>(null)
-  const showRecords = ref(false)
+  const recordsLoading = ref(false)
+  const recordsExpanded = ref(false)
+  const recordPage = ref(1)
+  const recordTotal = ref(0)
+  const recordTotalPages = ref(0)
+  const recordPreviewLimit = 5
 
   const isLoggedIn = ref(false)
   const initialized = ref(false)
@@ -413,25 +395,52 @@
 
   const validAccounts = computed(() => accounts.value.filter(account => account.managed || account.accountId.trim().length > 0))
 
-  const activeSelectedAccountIds = computed(() =>
-    activeCouponMode.value === 'manual' ? manualSelectedAccountIds.value : publicSelectedAccountIds.value,
-  )
+  const selectedAccounts = computed(() => validAccounts.value.filter(account => selectedAccountIds.value.includes(account.id)))
 
-  const selectedAccounts = computed(() => validAccounts.value.filter(account => activeSelectedAccountIds.value.includes(account.id)))
+  const primaryAccount = computed(() => selectedAccounts.value[0] || validAccounts.value[0] || null)
 
   const selectedCodes = computed(() => combinedCodes.value.filter(item => selectedCodeKeys.value.includes(getCodeKey(item))))
 
-  const redeemDisabled = computed(() => {
-    if (redeeming.value || selectedAccounts.value.length === 0) return true
-    if (activeCouponMode.value === 'manual') return !manualCode.value.trim()
-    return selectedCodes.value.length === 0
+  const visibleCodes = computed(() => (showAllCodes.value ? combinedCodes.value : combinedCodes.value.slice(0, codePreviewLimit)))
+
+  const hasRedeemableCodes = computed(() => selectedCodes.value.length > 0 || Boolean(codeInput.value.trim()))
+
+  const cashierRedeemDisabled = computed(() => {
+    if (!isLoggedIn.value || redeeming.value) return true
+    if (!selectedAccounts.value.length) return true
+    return !hasRedeemableCodes.value
+  })
+
+  const accountStepDesc = computed(() => {
+    if (!validAccounts.value.length) return '新用户先添加一个账号'
+    if (selectedAccounts.value.length > 1) return `将批量兑到 ${selectedAccounts.value.length} 个账号`
+    return '默认当前账号；管理里可多选批量兑'
+  })
+
+  const codeStepDesc = computed(() => {
+    if (!combinedCodes.value.length) return '可用券码加载后会默认全选'
+    return `可用券码默认全选，可取消勾选 · 已选 ${selectedCodes.value.length} 个`
   })
 
   const managedAccounts = computed(() => accounts.value.filter(account => account.managed))
 
   const allAutoOn = computed(() => managedAccounts.value.length > 0 && managedAccounts.value.every(account => account.autoRedeemEnabled))
 
-  const stats = computed(() => summary.value || redeemSummary.value)
+  const visibleRecords = computed(() => (recordsExpanded.value ? records.value : records.value.slice(0, recordPreviewLimit)))
+
+  const hasMoreRecords = computed(() => recordPage.value < recordTotalPages.value)
+
+  const recordSummaryText = computed(() => {
+    if (recordsLoading.value && !records.value.length) return '正在加载最近记录'
+    if (!recordTotal.value) return '最近 5 条'
+    return `最近 5 条 · 共 ${recordTotal.value} 条`
+  })
+
+  const recordLoadMoreText = computed(() => {
+    if (recordsLoading.value) return '加载中…'
+    if (!recordsExpanded.value) return `查看更多（${recordTotal.value - recordPreviewLimit}）`
+    return '加载更多'
+  })
 
   const resultSummary = computed(() => ({
     success: redeemSummary.value?.success || 0,
@@ -457,29 +466,29 @@
 
   const redeemActionText = computed(() => {
     if (redeeming.value) return '兑换中…'
+    if (!validAccounts.value.length) return '先添加账号'
+    if (!hasRedeemableCodes.value) return '选择券码'
     return '兑换'
   })
 
   const redeemDockTitle = computed(() => {
+    if (!validAccounts.value.length) return '添加账号后开始'
     if (!selectedAccounts.value.length) return '请选择账号'
-    if (activeCouponMode.value === 'manual') return manualCode.value.trim() ? '一次性券码' : '请输入兑换码'
-    if (!selectedCodes.value.length) return '请选择券码'
-    return `${selectedAccounts.value.length} 个账号 · ${selectedCodes.value.length} 个券码`
+    const codeCount = Math.max(selectedCodes.value.length, codeInput.value.trim() ? 1 : 0)
+    // 若有输入且未在已选列表中，总数按合并后估算
+    const input = codeInput.value.trim().toUpperCase()
+    const mergedCount =
+      selectedCodes.value.length +
+      (input && !selectedCodes.value.some(item => getCodeKey(item) === input) ? 1 : 0)
+    if (!mergedCount) return '请选择或添加券码'
+    return `${selectedAccounts.value.length} 个账号 · ${mergedCount} 个券码`
   })
 
   const redeemHintText = computed(() => {
-    if (!selectedAccounts.value.length) return '先选择要兑换的账号'
-    if (activeCouponMode.value === 'manual') {
-      if (!manualCode.value.trim()) return '输入券码后即可兑换'
-      return `将兑换到 ${selectedAccounts.value.length} 个账号`
-    }
-    if (!selectedCodes.value.length) return '先选择要兑换的券码'
-    return `将兑换 ${selectedCodes.value.length} 个券码`
-  })
-
-  const couponModeSubtitle = computed(() => {
-    if (activeCouponMode.value === 'manual') return `手动输入 · 已选 ${selectedAccounts.value.length}/${validAccounts.value.length} 个账号`
-    return `批量券码 · 已选 ${selectedCodes.value.length}/${combinedCodes.value.length} 个券码`
+    if (!validAccounts.value.length) return '新用户请先完成账号添加'
+    if (!selectedAccounts.value.length) return '在账号管理里点选目标账号'
+    if (!hasRedeemableCodes.value) return '可用券码默认全选，也可粘贴添加'
+    return '将按「账号 × 券码」批量提交兑换'
   })
 
   /* ----------------------------- 工具 ----------------------------- */
@@ -512,7 +521,8 @@
     return gameConfig.value.storageKey
   }
 
-  function getAccountDisplayName(account: AccountVM) {
+  function getAccountDisplayName(account?: AccountVM | null) {
+    if (!account) return gameConfig.value.accountIdEmptyText
     return account.nickname || account.accountIdMasked || account.accountId || gameConfig.value.accountIdEmptyText
   }
 
@@ -541,17 +551,22 @@
   }
 
   function selectDefaultAccounts() {
-    const ids = validAccounts.value.map(account => account.id)
-    publicSelectedAccountIds.value = ids
-    manualSelectedAccountIds.value = ids[0] ? [ids[0]] : []
+    // 批量兑换场景：默认全选账号
+    selectedAccountIds.value = validAccounts.value.map(account => account.id)
   }
 
   function selectAllCodes() {
+    // 数据加载默认全选不强制登录；用户点击全选时才校验
     selectedCodeKeys.value = combinedCodes.value.map(item => getCodeKey(item))
   }
 
+  function selectAllCodesByUser() {
+    if (!ensureLogin()) return
+    selectAllCodes()
+  }
+
   function isAccountSelected(account: AccountVM) {
-    return activeSelectedAccountIds.value.includes(account.id)
+    return selectedAccountIds.value.includes(account.id)
   }
 
   function isCodeSelected(item: getGameCouponsGameIdCodesResCodes) {
@@ -559,34 +574,42 @@
   }
 
   function toggleAccountSelection(account: AccountVM) {
+    if (!ensureLogin()) return
     if (!account.managed && !account.accountId.trim()) return
-    const selected = new Set(activeSelectedAccountIds.value)
+    const selected = new Set(selectedAccountIds.value)
     if (selected.has(account.id)) selected.delete(account.id)
     else selected.add(account.id)
-    const next = validAccounts.value.map(item => item.id).filter(id => selected.has(id))
-    if (activeCouponMode.value === 'manual') {
-      manualSelectedAccountIds.value = next
-    } else {
-      publicSelectedAccountIds.value = next
-    }
+    selectedAccountIds.value = validAccounts.value.map(item => item.id).filter(id => selected.has(id))
   }
 
   function normalizeAccountSelections() {
     const ids = validAccounts.value.map(account => account.id)
-    publicSelectedAccountIds.value = ids.filter(id => publicSelectedAccountIds.value.includes(id))
-    manualSelectedAccountIds.value = ids.filter(id => manualSelectedAccountIds.value.includes(id))
-    if (ids.length && !manualSelectedAccountIds.value.length) {
-      manualSelectedAccountIds.value = [ids[0]]
+    selectedAccountIds.value = ids.filter(id => selectedAccountIds.value.includes(id))
+    if (ids.length && !selectedAccountIds.value.length) {
+      selectedAccountIds.value = [...ids]
     }
   }
 
-  function setActiveCouponMode(mode: CouponMode) {
-    activeCouponMode.value = mode
-    redeemError.value = ''
-    normalizeAccountSelections()
+  function clearSelectedCodes() {
+    if (!ensureLogin()) return
+    selectedCodeKeys.value = []
+  }
+
+  function buildCodesToRedeem(): getGameCouponsGameIdCodesResCodes[] {
+    const map = new Map<string, getGameCouponsGameIdCodesResCodes>()
+    selectedCodes.value.forEach(item => {
+      const key = getCodeKey(item)
+      if (key) map.set(key, { ...item, code: key })
+    })
+    const input = codeInput.value.trim().toUpperCase()
+    if (input && !map.has(input)) {
+      map.set(input, { code: input, source: 'manual' })
+    }
+    return Array.from(map.values())
   }
 
   function toggleCodeSelection(item: getGameCouponsGameIdCodesResCodes) {
+    if (!ensureLogin()) return
     const key = getCodeKey(item)
     if (!key) return
     const selected = new Set(selectedCodeKeys.value)
@@ -626,13 +649,10 @@
     newAccount.value.accountId = getEventValue(event).trim()
   }
 
-  function updateManualCode(event: Event) {
-    manualCode.value = getEventValue(event).toUpperCase()
+  function updateCodeInput(event: Event) {
+    codeInput.value = getEventValue(event).toUpperCase()
   }
 
-  function updatePublicCodeInput(event: Event) {
-    publicCodeInput.value = getEventValue(event).toUpperCase()
-  }
 
   /* ----------------------------- 登录跳转 ----------------------------- */
 
@@ -644,8 +664,20 @@
     return `/subPackages/tools/game-coupons/index?${params.join('&')}`
   }
 
+  function buildShareQuery() {
+    return {
+      gameId: gameConfig.value.gameId,
+      compendiumId: gameConfig.value.compendiumId,
+    }
+  }
+
   function goLogin() {
     uni.navigateTo({ url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}` })
+  }
+
+  function ensureLogin() {
+    // 未登录不自动跳转，仅由顶部「去登录」入口主动跳转
+    return isLoggedIn.value
   }
 
   /* ----------------------------- 本地账号缓存 ----------------------------- */
@@ -797,7 +829,7 @@
   async function enterLoggedInMode() {
     const synced = await autoSyncLocalAccounts()
     await loadManagedAccounts()
-    loadSummary()
+    loadRecords(true)
     if (synced > 0) toast(`已自动同步 ${synced} 个本地账号到云端`)
   }
 
@@ -807,6 +839,7 @@
   }
 
   async function addAccount() {
+    if (!ensureLogin()) return
     if (accounts.value.length >= maxAccounts) {
       toast(`最多保存 ${maxAccounts} 个账号`)
       return
@@ -818,35 +851,24 @@
     }
     const server = newAccount.value.server || getDefaultServer()
 
-    if (isLoggedIn.value) {
-      addingAccount.value = true
-      try {
-        await postGameCouponsGameIdAccounts(
-          gameConfig.value.gameId,
-          { compendium_id: gameConfig.value.compendiumId },
-          { account_id: accountId, server: server as ServerValue },
-        )
-        await loadManagedAccounts()
-        newAccount.value.accountId = ''
-      } catch (err) {
-        toast(errMsg(err, '添加账号失败'))
-      } finally {
-        addingAccount.value = false
-      }
-      return
+    addingAccount.value = true
+    try {
+      await postGameCouponsGameIdAccounts(
+        gameConfig.value.gameId,
+        { compendium_id: gameConfig.value.compendiumId },
+        { account_id: accountId, server: server as ServerValue },
+      )
+      await loadManagedAccounts()
+      newAccount.value.accountId = ''
+    } catch (err) {
+      toast(errMsg(err, '添加账号失败'))
+    } finally {
+      addingAccount.value = false
     }
-
-    accounts.value.push({ id: localId(), managed: false, server, accountId })
-    const createdId = accounts.value[accounts.value.length - 1].id
-    publicSelectedAccountIds.value = [...publicSelectedAccountIds.value, createdId]
-    if (!manualSelectedAccountIds.value.length) {
-      manualSelectedAccountIds.value = [createdId]
-    }
-    newAccount.value.accountId = ''
-    saveLocalAccounts()
   }
 
   function removeAccount(index: number) {
+    if (!ensureLogin()) return
     const account = accounts.value[index]
     if (!account) return
     const name = account.nickname || account.accountIdMasked || account.accountId || gameConfig.value.accountIdLabel
@@ -869,8 +891,7 @@
       try {
         await deleteGameCouponsAccounts({ gameId: gameConfig.value.gameId, accountId: account.id })
         accounts.value.splice(index, 1)
-        publicSelectedAccountIds.value = publicSelectedAccountIds.value.filter(id => id !== account.id)
-        manualSelectedAccountIds.value = manualSelectedAccountIds.value.filter(id => id !== account.id)
+        selectedAccountIds.value = selectedAccountIds.value.filter(id => id !== account.id)
         normalizeAccountSelections()
         toast('已删除')
       } catch (err) {
@@ -880,8 +901,7 @@
     }
 
     accounts.value.splice(index, 1)
-    publicSelectedAccountIds.value = publicSelectedAccountIds.value.filter(id => id !== account.id)
-    manualSelectedAccountIds.value = manualSelectedAccountIds.value.filter(id => id !== account.id)
+    selectedAccountIds.value = selectedAccountIds.value.filter(id => id !== account.id)
     normalizeAccountSelections()
     if (isLoggedIn.value) {
       // 登录态下删除的是未同步的本地账号，需同步从缓存移除
@@ -962,10 +982,7 @@
   }
 
   function handleAutoSwitchChange(event: Event) {
-    if (!isLoggedIn.value) {
-      goLogin()
-      return
-    }
+    if (!ensureLogin()) return
 
     const target = Boolean((event as UniValueEvent).detail?.value)
     if (target !== allAutoOn.value) {
@@ -993,15 +1010,17 @@
   }
 
   async function addPublicCode() {
-    if (addingPublicCode.value) return
+    if (addingPublicCode.value || redeeming.value) return
+    if (!ensureLogin()) return
 
-    const code = publicCodeInput.value.trim().toUpperCase()
+    const code = codeInput.value.trim().toUpperCase()
     if (!code) {
       toast('请输入要添加的券码')
       return
     }
     if (combinedCodes.value.some(item => getCodeKey(item) === code)) {
-      toast('券码已存在，请直接勾选兑换')
+      selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
+      toast('券码已存在，已帮你勾选')
       return
     }
 
@@ -1009,7 +1028,7 @@
     codeLoadError.value = ''
     try {
       await postGameIdCodesManual(gameConfig.value.gameId, { compendium_id: gameConfig.value.compendiumId }, { code, source: 'manual' })
-      publicCodeInput.value = ''
+      codeInput.value = ''
       try {
         await loadCodes()
       } catch {
@@ -1019,12 +1038,49 @@
         remoteCodes.value = [...remoteCodes.value, { code, source: 'manual' }]
       }
       selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
-      showCodes.value = true
-      toast('已添加并加入批量兑换')
+      showAllCodes.value = true
+      toast('已添加并勾选')
     } catch (err) {
       toast(errMsg(err, '券码添加失败'))
     } finally {
       addingPublicCode.value = false
+    }
+  }
+
+  async function startCashierRedeem() {
+    if (!ensureLogin()) return
+    if (redeeming.value) return
+    if (!validAccounts.value.length) {
+      showAccountManager.value = true
+      redeemError.value = `请先添加一个${gameConfig.value.accountIdLabel}`
+      toast(redeemError.value)
+      return
+    }
+    if (!selectedAccounts.value.length) {
+      showAccountManager.value = true
+      redeemError.value = '请选择要兑换的账号'
+      toast(redeemError.value)
+      return
+    }
+    const codesToRedeem = buildCodesToRedeem()
+    if (!codesToRedeem.length) {
+      redeemError.value = '请选择券码，或粘贴后点添加'
+      toast(redeemError.value)
+      return
+    }
+
+    redeeming.value = true
+    redeemError.value = ''
+    try {
+      const result = await redeemAccountsAndCodes(selectedAccounts.value, codesToRedeem)
+      if (result.failed === 0) {
+        codeInput.value = ''
+      }
+    } catch (err) {
+      redeemError.value = errMsg(err, '兑换请求失败')
+      toast(redeemError.value)
+    } finally {
+      redeeming.value = false
     }
   }
 
@@ -1060,8 +1116,7 @@
         total: successCount + alreadyUsedCount + failedCount,
       }
       if (isLoggedIn.value) {
-        loadSummary()
-        if (showRecords.value) loadRecords()
+        loadRecords(true)
       }
       uni.hideLoading()
       uni.showModal({
@@ -1077,76 +1132,74 @@
     }
   }
 
-  async function startRedeem() {
-    // 防止未请求完成时重复点击
-    if (redeeming.value) return
-    if (!validAccounts.value.length) {
-      redeemError.value = `请至少添加并填写一个${gameConfig.value.accountIdLabel}`
-      return
-    }
-    if (!selectedAccounts.value.length) {
-      redeemError.value = '请选择要兑换的账号'
-      return
-    }
-    const codesToRedeem =
-      activeCouponMode.value === 'manual' ? [{ code: manualCode.value.trim().toUpperCase(), source: 'manual' }] : selectedCodes.value
-
-    if (activeCouponMode.value === 'manual' && !codesToRedeem[0].code) {
-      redeemError.value = '请输入一次性兑换码'
-      return
-    }
-    if (activeCouponMode.value === 'public' && !combinedCodes.value.length) {
-      redeemError.value = '暂无批量券码，请刷新、添加或切换到手动输入'
-      return
-    }
-    if (activeCouponMode.value === 'public' && !selectedCodes.value.length) {
-      redeemError.value = '请选择要批量兑换的券码'
-      return
-    }
-
-    redeeming.value = true
-    redeemError.value = ''
-    try {
-      const result = await redeemAccountsAndCodes(selectedAccounts.value, codesToRedeem)
-      if (activeCouponMode.value === 'manual' && result.failed === 0) {
-        manualCode.value = ''
-      }
-    } catch (err) {
-      redeemError.value = errMsg(err, '兑换请求失败')
-      toast(redeemError.value)
-    } finally {
-      redeeming.value = false
-    }
-  }
-
   /* ----------------------------- 记录与统计 ----------------------------- */
 
-  async function loadSummary() {
-    try {
-      summary.value = await getGameIdRedeemRecordsSummary(gameConfig.value.gameId, {
-        compendium_id: gameConfig.value.compendiumId,
-      })
-    } catch {
-      /* 统计失败忽略 */
+  async function loadRecords(reset = false) {
+    if (recordsLoading.value) return
+    if (reset) {
+      recordPage.value = 1
+      recordTotalPages.value = 0
+      recordTotal.value = 0
     }
-  }
-
-  async function loadRecords() {
+    const requestedPage = recordPage.value
+    recordsLoading.value = true
     try {
       const res = await getGameCouponsGameIdRedeemRecords(gameConfig.value.gameId, {
         compendium_id: gameConfig.value.compendiumId,
-        limit: 20,
+        limit: recordPreviewLimit,
+        page: recordPage.value,
         sortBy: 'redeemedAt:desc',
       })
-      records.value = res.results || []
+      const nextRecords = res.results || []
+      records.value = reset ? nextRecords : [...records.value, ...nextRecords]
+      recordTotal.value = res.totalResults || records.value.length
+      recordTotalPages.value = res.totalPages || 1
     } catch (err) {
+      if (!reset && requestedPage > 1) recordPage.value = requestedPage - 1
       toast(errMsg(err, '获取记录失败'))
+    } finally {
+      recordsLoading.value = false
     }
   }
 
-  function toggleRecords() {
-    showRecords.value = !showRecords.value
-    if (showRecords.value && !records.value.length) loadRecords()
+  async function expandOrLoadMoreRecords() {
+    if (recordsLoading.value) return
+    recordsExpanded.value = true
+    if (!hasMoreRecords.value) return
+    recordPage.value += 1
+    await loadRecords()
+  }
+
+  function collapseRecords() {
+    recordsExpanded.value = false
+  }
+
+
+  function getRecordReward(record: getGameCouponsGameIdRedeemRecordsResResults) {
+    if (record.reward) return record.reward
+    const couponCode = String(record.couponCode || '').toUpperCase()
+    return combinedCodes.value.find(item => getCodeKey(item) === couponCode)?.reward || ''
+  }
+
+  function getRecordReason(record: getGameCouponsGameIdRedeemRecordsResResults) {
+    if (record.resultStatus === 'success') return ''
+    return translateCouponErrorMessage(record.resultMessage || record.resultStatus)
+  }
+
+  function formatRecordServer(server?: string) {
+    return server ? getServerShortLabel(server) : '区服未知'
+  }
+
+  function formatRecordTime(value?: string) {
+    if (!value) return '时间未知'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    const pad = (part: number) => String(part).padStart(2, '0')
+    const now = new Date()
+    const sameYear = date.getFullYear() === now.getFullYear()
+    const datePart = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+    const timePart = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+    return sameYear ? `${datePart} ${timePart}` : `${date.getFullYear()}-${datePart} ${timePart}`
   }
 
   /* ----------------------------- 错误处理 ----------------------------- */
@@ -1212,12 +1265,11 @@
     if (initialized.value) return
     initialized.value = true
     refreshLoginState()
+    // 未登录也拉券码列表，便于遮罩下预览页面能力
+    loadCodes()
     if (isLoggedIn.value) {
       enterLoggedInMode()
-    } else {
-      loadLocalAccounts()
     }
-    loadCodes()
   }
 
   onLoad(options => {
@@ -1232,12 +1284,18 @@
     if (!initialized.value) return
     if (isLoggedIn.value && !wasLoggedIn) {
       enterLoggedInMode()
+      loadCodes()
     }
   })
 
   onMounted(() => {
     initializePage()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => buildSwcCouponsShare(buildShareQuery()).app)
+  onShareTimeline(() => buildSwcCouponsShare(buildShareQuery()).timeline)
+  // #endif
 </script>
 
 <style lang="scss" scoped>
@@ -1255,56 +1313,388 @@
   $error: #dc2626;
 
   .coupon-page {
+    position: relative;
     min-height: 100vh;
     padding: 24rpx 24rpx 220rpx;
     background: $page-bg;
     box-sizing: border-box;
   }
 
-  /* 头部 */
-  .page-head {
+  .login-tip-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20rpx;
-    margin-bottom: 20rpx;
+    gap: 16rpx;
+    margin-bottom: 16rpx;
+    padding: 22rpx 20rpx;
+    border-radius: 14rpx;
+    background: rgba(79, 110, 242, 0.08);
+    border: 1rpx solid rgba(79, 110, 242, 0.16);
   }
 
-  .page-title-wrap {
+  .login-tip-copy {
     min-width: 0;
     flex: 1;
   }
 
-  .page-title {
+  .login-tip-title {
     display: block;
-    font-size: 36rpx;
+    font-size: 28rpx;
     font-weight: 700;
     color: $text-primary;
-    line-height: 1.25;
+    line-height: 1.3;
   }
 
-  .page-subtitle {
+  .login-tip-desc {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 22rpx;
+    line-height: 1.45;
+    color: $text-secondary;
+  }
+
+  .login-tip-action {
+    flex-shrink: 0;
+    padding: 12rpx 22rpx;
+    border-radius: 999rpx;
+    font-size: 24rpx;
+    font-weight: 600;
+    color: #fff;
+    background: $accent;
+  }
+
+
+  .checkout-card {
+    padding: 24rpx;
+  }
+
+  .step-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .step-index {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 12rpx;
+    background: rgba(79, 110, 242, 0.12);
+    color: $accent;
+    font-size: 24rpx;
+    font-weight: 700;
+    line-height: 40rpx;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .step-copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .step-title {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+    line-height: 1.3;
+  }
+
+  .step-desc {
+    display: block;
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: $text-hint;
+    line-height: 1.4;
+  }
+
+  .onboarding-panel {
+    padding: 8rpx 0 0;
+  }
+
+  .onboarding-title {
+    display: block;
+    font-size: 28rpx;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .onboarding-desc {
+    display: block;
+    margin: 8rpx 0 18rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
+    line-height: 1.45;
+  }
+
+  .current-account {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    padding: 20rpx 18rpx;
+    border-radius: 14rpx;
+    background: $field-bg;
+    border: 1rpx solid $border;
+  }
+
+  .current-account-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .current-account-name {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .current-account-meta {
     display: block;
     margin-top: 6rpx;
     font-size: 22rpx;
     color: $text-hint;
-    line-height: 1.5;
   }
 
-  .login-pill {
+  .current-account-action {
     flex-shrink: 0;
-    padding: 10rpx 18rpx;
-    border-radius: 999rpx;
-    color: $accent;
-    background: rgba(79, 110, 242, 0.1);
-    font-size: 23rpx;
+    font-size: 24rpx;
     font-weight: 600;
+    color: $accent;
+  }
 
-    &.online {
-      color: $success;
-      background: rgba(22, 163, 74, 0.1);
+  .account-manager {
+    margin-top: 16rpx;
+  }
+
+  .manager-tip {
+    margin-bottom: 12rpx;
+    font-size: 22rpx;
+    color: $text-hint;
+  }
+
+  .server-inline {
+    margin-left: 8rpx;
+    font-size: 22rpx;
+    color: $text-hint;
+    font-weight: 500;
+  }
+
+  .add-form.compact {
+    margin-top: 16rpx;
+  }
+
+  .auto-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16rpx;
+    padding-top: 12rpx;
+    border-top: 1rpx solid $border;
+  }
+
+  .auto-row-label {
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+
+
+  .code-add-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .code-input-lg.compact {
+    height: 80rpx;
+    font-size: 28rpx;
+  }
+
+  .code-add-btn {
+    flex-shrink: 0;
+    // min-width: 120rpx;
+    height: 80rpx;
+    line-height: 80rpx;
+  }
+
+  .quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+
+  .quick-link {
+    font-size: 22rpx;
+    color: $accent;
+  }
+
+  .quick-chip {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+
+    &.disabled {
+      opacity: 0.55;
+      pointer-events: none;
     }
   }
+
+  .current-account.disabled,
+  .account-row.disabled,
+  .add-form.disabled,
+  .code-add-row.disabled,
+  .quick-link.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .mini-btn.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .quick-chip-main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+  }
+
+  .code-check {
+    width: 34rpx;
+    height: 34rpx;
+    border-radius: 10rpx;
+  }
+
+  .code-input-lg {
+    width: 100%;
+    height: 88rpx;
+    padding: 0 24rpx;
+    box-sizing: border-box;
+    font-size: 30rpx;
+    font-weight: 600;
+    letter-spacing: 1rpx;
+    color: $text-primary;
+    background: $field-bg;
+    border-radius: 16rpx;
+    border: 1rpx solid $border;
+  }
+
+  .quick-codes {
+    margin-top: 18rpx;
+  }
+
+  .quick-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12rpx;
+  }
+
+  .quick-title {
+    font-size: 24rpx;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+
+  .quick-refresh {
+    font-size: 22rpx;
+    color: $accent;
+
+    &.disabled {
+      opacity: 0.5;
+    }
+  }
+
+  .quick-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10rpx;
+  }
+
+  .quick-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+    padding: 16rpx 18rpx;
+    border-radius: 12rpx;
+    background: $field-bg;
+    border: 1rpx solid transparent;
+
+    &.active {
+      border-color: rgba(79, 110, 242, 0.45);
+      background: rgba(79, 110, 242, 0.08);
+    }
+  }
+
+  .quick-code {
+    font-size: 26rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .quick-reward {
+    max-width: 45%;
+    font-size: 22rpx;
+    color: $text-hint;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .empty-tip.soft {
+    margin-top: 14rpx;
+  }
+
+  .result-lite-card {
+    padding: 20rpx;
+  }
+
+  .result-lite-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+    margin-bottom: 12rpx;
+  }
+
+  .result-lite-title {
+    font-size: 27rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+
+  .result-lite-summary {
+    font-size: 22rpx;
+    color: $text-hint;
+  }
+
+  .records-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8rpx 0 16rpx;
+    padding: 18rpx 8rpx;
+  }
+
+  .records-entry-title {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .records-entry-meta {
+    font-size: 22rpx;
+    color: $text-hint;
+  }
+
 
   /* 卡片 */
   .card {
@@ -1807,31 +2197,8 @@
     margin-bottom: 16rpx;
   }
 
-  .coupon-tabs {
-    display: flex;
-    gap: 8rpx;
-    padding: 6rpx;
+  .code-input-panel {
     margin-bottom: 14rpx;
-    background: $field-bg;
-    border-radius: 16rpx;
-    border: 1rpx solid $border;
-  }
-
-  .coupon-tab {
-    flex: 1;
-    height: 60rpx;
-    line-height: 60rpx;
-    font-size: 25rpx;
-    font-weight: 600;
-    color: $text-secondary;
-    text-align: center;
-    border-radius: 12rpx;
-
-    &.active {
-      color: #fff;
-      background: $accent;
-      box-shadow: 0 8rpx 18rpx rgba(79, 110, 242, 0.16);
-    }
   }
 
   .coupon-actions {
@@ -1855,22 +2222,10 @@
     }
   }
 
-  .manual-mode-body,
-  .public-mode-body {
-    margin-top: 2rpx;
-  }
-
-  .manual-row {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    margin-bottom: 12rpx;
-  }
-
   .batch-add-row {
     display: flex;
     align-items: center;
-    gap: 12rpx;
+    gap: 10rpx;
     margin-bottom: 12rpx;
   }
 
@@ -1884,23 +2239,33 @@
     border-radius: 12rpx;
   }
 
-  .manual-add {
+  .manual-add,
+  .manual-once {
     flex-shrink: 0;
-    min-width: 112rpx;
+    min-width: 96rpx;
     height: 64rpx;
-    padding: 0 22rpx;
+    padding: 0 16rpx;
     line-height: 64rpx;
-    font-size: 24rpx;
+    font-size: 23rpx;
     font-weight: 600;
-    color: #fff;
     text-align: center;
-    background: $accent;
     border-radius: 12rpx;
-    box-shadow: 0 8rpx 18rpx rgba(79, 110, 242, 0.16);
 
     &.disabled {
       opacity: 0.6;
     }
+  }
+
+  .manual-add {
+    color: #fff;
+    background: $accent;
+    box-shadow: 0 8rpx 18rpx rgba(79, 110, 242, 0.16);
+  }
+
+  .manual-once {
+    color: $accent;
+    background: rgba(79, 110, 242, 0.1);
+    border: 1rpx solid rgba(79, 110, 242, 0.18);
   }
 
   .mode-tip {
@@ -1912,14 +2277,11 @@
     border-radius: 12rpx;
   }
 
-  .public-tip {
-    margin-bottom: 14rpx;
-  }
-
   .code-list {
     display: flex;
     flex-direction: column;
     gap: 10rpx;
+    margin-top: 14rpx;
   }
 
   .code-item {
@@ -1975,6 +2337,14 @@
   .code-check {
     margin-top: 0;
     margin-bottom: 4rpx;
+  }
+
+  .list-toggle {
+    display: block;
+    padding: 18rpx 0 2rpx;
+    font-size: 24rpx;
+    color: $accent;
+    text-align: center;
   }
 
   .public-actions {
@@ -2200,16 +2570,45 @@
   }
 
   /* 记录 */
+  .record-card-head {
+    align-items: center;
+  }
+
+  .record-detail-switch {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 4rpx;
+  }
+
+  .record-detail-label {
+    font-size: 22rpx;
+    color: $text-secondary;
+  }
+
+  .record-switch {
+    transform: scale(0.72);
+    transform-origin: right center;
+  }
+
   .record-body {
-    margin-top: 8rpx;
+    margin-top: 4rpx;
   }
 
   .record-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 18rpx;
+    min-height: 86rpx;
     padding: 14rpx 0;
     border-top: 1rpx solid $border;
+
+    &.detailed {
+      display: block;
+      min-height: 0;
+      padding: 20rpx 0;
+    }
   }
 
   .record-main {
@@ -2227,6 +2626,111 @@
     display: block;
     margin-top: 4rpx;
     font-size: 22rpx;
+    color: $text-hint;
+  }
+
+  .record-detail-head,
+  .record-code-line,
+  .record-detail-line,
+  .record-footer {
+    display: flex;
+    align-items: center;
+  }
+
+  .record-detail-head,
+  .record-code-line {
+    justify-content: space-between;
+    gap: 18rpx;
+  }
+
+  .record-status-title {
+    font-size: 24rpx;
+    font-weight: 600;
+    color: $text-secondary;
+
+    &.success {
+      color: $success;
+    }
+
+    &.already_used {
+      color: $warning;
+    }
+
+    &.invalid_coupon,
+    &.invalid_id,
+    &.failed {
+      color: $error;
+    }
+  }
+
+  .record-time,
+  .record-server {
+    flex-shrink: 0;
+    font-size: 22rpx;
+    color: $text-hint;
+  }
+
+  .record-code-line {
+    margin-top: 10rpx;
+  }
+
+  .record-code-line .record-code {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .record-detail-line {
+    align-items: flex-start;
+    gap: 16rpx;
+    margin-top: 10rpx;
+    font-size: 23rpx;
+    line-height: 1.5;
+  }
+
+  .record-detail-key {
+    flex-shrink: 0;
+    width: 96rpx;
+    color: $text-hint;
+  }
+
+  .record-detail-value {
+    flex: 1;
+    min-width: 0;
+    color: $text-secondary;
+    overflow-wrap: anywhere;
+
+    &.reason {
+      color: $error;
+    }
+  }
+
+  .record-footer {
+    justify-content: center;
+    gap: 32rpx;
+    padding-top: 18rpx;
+    border-top: 1rpx solid $border;
+  }
+
+  .record-footer-action,
+  .record-footer-done {
+    font-size: 24rpx;
+  }
+
+  .record-footer-action {
+    color: $accent;
+
+    &.muted {
+      color: $text-secondary;
+    }
+
+    &.disabled {
+      opacity: 0.56;
+    }
+  }
+
+  .record-footer-done {
     color: $text-hint;
   }
 </style>

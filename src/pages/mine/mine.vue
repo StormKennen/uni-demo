@@ -61,22 +61,15 @@
     { icon: '/static/image/mine/setting.svg', name: '设置', to: '/subPackages/user/setting/setting', needToken: true },
   ])
 
-  // 动态计算显示的列表项
-  const displayList = computed(() => {
-    const baseList = [...list.value]
+  // 动态计算显示的列表项（退出登录单独放在夜间模式下方）
+  const displayList = computed(() => [...list.value])
 
-    // 如果已登录，添加登出选项
-    if (token.value) {
-      baseList.push({
-        icon: '/static/image/mine/logout.svg',
-        name: '退出登录',
-        action: 'logout',
-        needToken: true,
-      })
-    }
-
-    return baseList
-  })
+  const logoutItem = {
+    icon: '/static/image/mine/logout.svg',
+    name: '退出登录',
+    action: 'logout',
+    needToken: true,
+  }
 
   // 处理列表项点击事件
   const handleItemClick = item => {
@@ -138,6 +131,9 @@
               <switch :checked="isDark" color="#0046b4" @change="handleThemeChange" />
             </view>
           </view>
+        </view>
+        <view v-if="token" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+          <MineListItem :data="logoutItem" @click="handleItemClick(logoutItem)" />
         </view>
       </view>
 

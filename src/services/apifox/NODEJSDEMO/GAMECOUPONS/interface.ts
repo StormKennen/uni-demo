@@ -168,12 +168,7 @@ export interface postGameCouponsGameIdRedeemResAccountResultsResults {
   /** 奖励描述 */
   reward?: string
   /** 兑换结果：success | already_used | invalid_coupon | invalid_id | failed */
-  status?:
-    | 'success'
-    | 'already_used'
-    | 'invalid_coupon'
-    | 'invalid_id'
-    | 'failed'
+  status?: 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed'
 }
 
 /** 单账号兑换结果汇总 */
@@ -496,6 +491,8 @@ export interface getGameCouponsGameIdRedeemRecordsResResults {
   couponCode?: string
   /** 记录 ID */
   id?: string
+  /** 兑换时保存的券码奖励快照 */
+  reward?: string
   /** 兑换执行时间 */
   redeemedAt?: string
   /** 官方原始返回码标识（如 official_100, official_303） */
@@ -503,14 +500,7 @@ export interface getGameCouponsGameIdRedeemRecordsResResults {
   /** 结果消息（可能为官方原文或系统翻译） */
   resultMessage?: string
   /** 兑换结果状态：success | already_used | invalid_coupon | invalid_id | failed */
-  resultStatus?:
-    | 'success'
-    | 'already_used'
-    | 'invalid_coupon'
-    | 'invalid_id'
-    | 'failed'
-    | 'pending'
-    | 'redeeming'
+  resultStatus?: 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed' | 'pending' | 'redeeming'
   /** 兑换时使用的区服 */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
 }

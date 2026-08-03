@@ -100,12 +100,13 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import LineupPickerPanel from './components/lineup-picker-panel.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
   import { fetchAdminLineupOptions, fetchLineupRelationDetail, saveLineupRelation, type LineupOption } from '@/services/compendium-lineups'
   import { ensureAdminAccess, ensureLineupFeatureAccess } from '@/utils/admin'
+  import { buildSwcLineupRelationsShare } from './share'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -132,6 +133,12 @@
     if (sourceLineupId.value) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId.value)}`)
     return `/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}`
   }
+
+  const buildShareQuery = () => ({
+    compendiumId: COMPENDIUM_CODE,
+    locale: selectedLocale.value,
+    sourceLineupId: sourceLineupId.value || undefined,
+  })
 
   const isTargetSelected = (lineupId: string): boolean => selectedTargets.value.some(item => item.id === lineupId)
 
@@ -288,6 +295,11 @@
     uni.setNavigationBarTitle({ title: '阵容映射关系' })
     loadInitialData()
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => buildSwcLineupRelationsShare(buildShareQuery()).app)
+  onShareTimeline(() => buildSwcLineupRelationsShare(buildShareQuery()).timeline)
+  // #endif
 </script>
 
 <style scoped lang="scss">

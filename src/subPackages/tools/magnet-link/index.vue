@@ -376,14 +376,25 @@
 
   .action-btn {
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 84rpx;
+    min-width: 0;
+    padding: 0 16rpx;
     border-radius: 20rpx;
     border: none;
     background: var(--theme-surface);
     color: var(--theme-text);
     font-size: 28rpx;
     font-weight: 700;
+    line-height: 1.2;
+    box-sizing: border-box;
     box-shadow: 0 2rpx 10rpx var(--theme-shadow-xs);
+
+    &::after {
+      border: none;
+    }
   }
 
   .action-btn.primary {
