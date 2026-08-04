@@ -1,49 +1,43 @@
-// .eslintrc.js
-
 module.exports = {
-  root: true, // 停止向上查找父级目录中的配置文件
+  root: true,
+  ignorePatterns: ['src/services/**', 'node_modules/**', 'dist/**', '__MACOSX/**'],
   env: {
     browser: true,
     es2021: true,
     node: true,
   },
   globals: {
-    uni: 'writable'
+    uni: 'writable',
   },
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:vue/vue3-essential',
     'plugin:prettier/recommended',
-    'prettier', // eslint-config-prettier 的缩写
+    'prettier',
   ],
   overrides: [
     {
       env: {
-        node: true
+        node: true,
       },
       files: ['.eslintrc.{js,cjs}'],
       parserOptions: {
-        sourceType: 'script'
-      }
-    }
+        sourceType: 'script',
+      },
+    },
   ],
-  parser: 'vue-eslint-parser', // 指定要使用的解析器
-  // 给解析器传入一些其他的配置参数
+  parser: 'vue-eslint-parser',
   parserOptions: {
-    ecmaVersion: 'latest', // 支持的es版本
+    ecmaVersion: 'latest',
     parser: '@typescript-eslint/parser',
-    sourceType: 'module', // 模块类型，默认为script，我们设置为module
+    sourceType: 'module',
   },
-  plugins: ['@typescript-eslint', 'vue', 'prettier'], // eslint-plugin- 可以省略
+  plugins: ['@typescript-eslint', 'import', 'vue', 'prettier'],
   rules: {
     'vue/multi-word-component-names': 'off',
-    // 使用单引号
-    quotes: ['error', 'single'],
     quotes: ['error', 'single'],
     semi: [1, 'never'],
-    // 'no-unused-vars': ['error', { vars: 'all' }],
-    // 'no-console': 'warn',
     'block-spacing': ['error', 'always'],
     'no-trailing-spaces': 'error',
     'object-curly-spacing': ['error', 'always'],
@@ -57,7 +51,6 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 0,
     '@typescript-eslint/explicit-module-boundary-types': 0,
     '@typescript-eslint/triple-slash-reference': 0,
-    // 取消对CRLF和LF的检查
     'linebreak-style': [0, 'error', 'windows'],
   },
 }

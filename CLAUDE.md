@@ -10,7 +10,9 @@ uni-app 3 + Vue 3 + TypeScript 多端项目（H5 + 微信小程序），工具�
 
 ```bash
 pnpm install / pnpm dev:h5 / pnpm dev:mp-weixin
-pnpm lint          # eslint --fix
+pnpm lint          # ESLint 只读检查（排除 src/services/**）
+pnpm lint:fix      # 仅修复手写源码
+pnpm check:generated-boundary # 只读检查生成区差异
 pnpm type-check    # vue-tsc --noEmit
 pnpm test:tomato   # vitest（engine 算法）
 ```
@@ -25,8 +27,9 @@ pnpm test:tomato   # vitest（engine 算法）
 - MUST：双端兼容（H5 + mp-weixin），平台差异用 `// #ifdef` 条件编译；`window`/`document` 只允许在 `#ifdef WEB` 或 `src/utilsH5/` 中出现。
 - MUST NOT：未经授权新增依赖；修改 vite.config.ts / manifest.json / .env.\* / 部署脚本；裸 `uni.request`；硬编码密钥/域名。
 - MUST NOT：直接推 main/dev；`--no-verify` 绕过 hooks。
+- MUST NOT：手工修改或格式化由 Apifox 管理的 `src/services/**`。
 - 完成前必须跑通 `pnpm lint` 与 `pnpm type-check`。
 
 ## 风格
 
-`<script setup lang="ts">`、禁 `any`、props/emits 显式类型；Prettier 无分号/单引号/printWidth 140（lint-staged 自动格式化）；用户可见文案用中文，标识符用英文。
+`<script setup lang="ts">`、禁 `any`、props/emits 显式类型；Prettier 无分号/单引号/printWidth 140（lint-staged 仅自动格式化生成区以外的手写文件）；用户可见文案用中文，标识符用英文。

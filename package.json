@@ -2,7 +2,9 @@
   "name": "uni-preset-vue",
   "version": "0.0.0",
   "scripts": {
-    "lint": "eslint --fix --ext .js,.vue,ts src",
+    "lint": "eslint --ext .js,.ts,.vue src",
+    "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
+    "check:generated-boundary": "node scripts/check-generated-boundary.mjs",
     "dev:custom": "uni -p",
     "dev:h5": "uni",
     "dev:h5:ssr": "uni --ssr",
@@ -114,13 +116,5 @@
     "vitest": "^1.6.0",
     "vue-eslint-parser": "^9.4.3",
     "vue-tsc": "^1.0.24"
-  },
-  "lint-staged": {
-    "src/**/*.{ts,vue}": [
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
   }
 }

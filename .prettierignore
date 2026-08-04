@@ -4,10 +4,14 @@ scripts/
 commitlint.config.js
 babel.config.js
 node_modules/
+node_modules/**
 ios/
 android/
 libs/
 dist
+dist/**
+__MACOSX/**
+src/services/**
 src/uni_modules/*
 src/unpackage/*
 src/uniCloud-aliyun/*

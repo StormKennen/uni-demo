@@ -12,7 +12,9 @@ uni-app 3 + Vue 3 + TypeScript multi-platform app (H5 + WeChat Mini Program), a 
 pnpm install          # pnpm ONLY (never npm/yarn)
 pnpm dev:h5           # H5 dev server
 pnpm dev:mp-weixin    # WeChat Mini Program dev build (open dist with WeChat DevTools)
-pnpm lint             # eslint --fix (config: eslintrc.js)
+pnpm lint             # read-only ESLint check (excludes src/services/**)
+pnpm lint:fix         # ESLint autofix for handwritten source only
+pnpm check:generated-boundary # read-only generated-region diff check
 pnpm type-check       # vue-tsc --noEmit
 pnpm test:tomato      # vitest for src/engine/tomato-cipher
 pnpm build:h5 / build:mp-weixin
@@ -24,7 +26,7 @@ pnpm build:h5 / build:mp-weixin
 src/pages/                 main package pages (index, mine only)
 src/subPackages/tools/<x>/ tool pages (register in src/pages.json + src/config/tools.ts)
 src/components/            global components (PascalCase or ga-* prefix)
-src/services/              http.ts wrapper + per-domain *.api.ts; NEVER raw uni.request
+src/services/              Apifox-generated boundary; never hand-edit or format
 src/stores/                pinia stores (persistedstate)
 src/utils/ | src/utilsH5/  cross-platform utils | H5-only utils
 src/engine/                pure algorithm modules (no uni APIs, vitest-tested)
@@ -39,13 +41,13 @@ docs/                      design docs — source of truth; changelog.md is comm
 - No edits to `vite.config.ts` / `manifest.json` / `.env.*` / deploy scripts unless the task explicitly asks.
 - Every page/component must work on BOTH H5 and mp-weixin; platform code behind `// #ifdef` guards.
 - No hardcoded secrets/domains; use `import.meta.env.VITE_*`.
+- `src/services/**` is managed by Apifox; lint, formatting, and architecture work MUST NOT modify it.
 
 ## Style
 
 - `<script setup lang="ts">` Composition API only; no `any`; typed props/emits.
-- Prettier: no semi, single quotes, printWidth 140; lint-staged formats staged files.
+- Prettier: no semi, single quotes, printWidth 140; lint-staged formats staged handwritten files and excludes `src/services/**`.
 - Chinese for user-facing copy and comments where surrounding code does so; English identifiers.
-
 
 ## Architecture refactor
 
@@ -58,5 +60,5 @@ Before executing an architecture phase:
 1. Read the complete plan.
 2. Only execute the phase explicitly requested by the user.
 3. Do not begin subsequent phases automatically.
-4. Do not modify src/services/**.
+4. Do not modify `src/services/**`.
 5. Complete validation and report results before stopping.

@@ -9,7 +9,7 @@ globs: 'src/**/*.{ts,vue,scss}'
 
 - 统一 `<script setup lang="ts">` Composition API，禁止 Options API 新代码。
 - 禁止 `any`；props/emits 必须显式类型声明；公共类型放 `src/types/`。
-- 代码风格由 Prettier 托管（无分号、单引号、printWidth 140、trailingComma all），提交时 lint-staged 自动格式化。
+- 代码风格由 Prettier 托管（无分号、单引号、printWidth 140、trailingComma all），提交时 lint-staged 自动格式化生成区以外的手写文件。
 
 ## 跨端兼容（H5 + 微信小程序）
 
@@ -19,8 +19,8 @@ globs: 'src/**/*.{ts,vue,scss}'
 
 ## 请求层
 
-- 一律通过 `src/services/http.ts` 封装发起请求（自动携带 Token/平台头/token 刷新），禁止裸 `uni.request`。
-- 按业务域拆分 `src/services/<domain>.api.ts`，返回值类型在 `interface.d.ts` 或就近声明。
+- 一律通过既有请求层发起请求，禁止裸 `uni.request`。
+- `src/services/**` 由 Apifox 管理，禁止手工修改、增加代码或自动格式化。
 - baseURL 等环境差异走 `import.meta.env.VITE_*`（.env.development/.env.test/.env.production）。
 
 ## 状态管理
@@ -35,4 +35,4 @@ globs: 'src/**/*.{ts,vue,scss}'
 
 ## 校验命令
 
-- `pnpm lint`（eslint --fix）、`pnpm type-check`（vue-tsc --noEmit）；引擎算法改动跑 `pnpm test:tomato`。
+- `pnpm lint`（只读检查）、`pnpm lint:fix`（仅修复手写源码）、`pnpm type-check`（vue-tsc --noEmit）；引擎算法改动跑 `pnpm test:tomato`。
