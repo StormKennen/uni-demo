@@ -1,0 +1,643 @@
+{
+  "sourceStatic": {
+    "totalBytes": 1415211,
+    "fileCount": 86,
+    "largest30": [
+      {
+        "file": "static/echarts.min.js",
+        "bytes": 517186
+      },
+      {
+        "file": "static/image/home/cooking.jpg",
+        "bytes": 321556
+      },
+      {
+        "file": "static/image/hsbc-info@3x.png",
+        "bytes": 116742
+      },
+      {
+        "file": "static/style/animate.min.scss",
+        "bytes": 71752
+      },
+      {
+        "file": "static/image/hsbc-info.png",
+        "bytes": 70560
+      },
+      {
+        "file": "static/image/hsbc-info@2x.png",
+        "bytes": 62853
+      },
+      {
+        "file": "static/image/order/pic_01.png",
+        "bytes": 58891
+      },
+      {
+        "file": "static/image/home/ai_person_2.png",
+        "bytes": 29910
+      },
+      {
+        "file": "static/ecStat.min.js",
+        "bytes": 16061
+      },
+      {
+        "file": "static/image/no-data.png",
+        "bytes": 9703
+      },
+      {
+        "file": "static/image/home/ai_person_1.png",
+        "bytes": 9130
+      },
+      {
+        "file": "static/image/files/png.png",
+        "bytes": 7641
+      },
+      {
+        "file": "static/image/files/jpg.png",
+        "bytes": 7635
+      },
+      {
+        "file": "static/image/files/bmp.png",
+        "bytes": 7343
+      },
+      {
+        "file": "static/image/files/ppt.png",
+        "bytes": 7304
+      },
+      {
+        "file": "static/image/files/word.png",
+        "bytes": 7239
+      },
+      {
+        "file": "static/image/files/tiff.png",
+        "bytes": 7121
+      },
+      {
+        "file": "static/image/files/pdf.png",
+        "bytes": 6302
+      },
+      {
+        "file": "static/uni.webview.1.5.5.js",
+        "bytes": 6146
+      },
+      {
+        "file": "static/image/logo.png",
+        "bytes": 5951
+      },
+      {
+        "file": "static/image/hsbc-info-bg.svg",
+        "bytes": 4971
+      },
+      {
+        "file": "static/uvue.html",
+        "bytes": 4698
+      },
+      {
+        "file": "static/style/global.scss",
+        "bytes": 4685
+      },
+      {
+        "file": "static/image/files/hetong.png",
+        "bytes": 3869
+      },
+      {
+        "file": "static/logo.png",
+        "bytes": 3760
+      },
+      {
+        "file": "static/image/empty.svg",
+        "bytes": 2227
+      },
+      {
+        "file": "static/image/error.png",
+        "bytes": 1510
+      },
+      {
+        "file": "static/image/mine.png",
+        "bytes": 1487
+      },
+      {
+        "file": "static/image/close.png",
+        "bytes": 1466
+      },
+      {
+        "file": "static/image/mall.png",
+        "bytes": 1410
+      }
+    ],
+    "unreferencedLarge": [
+      {
+        "file": "static/image/home/cooking.jpg",
+        "bytes": 321556
+      },
+      {
+        "file": "static/image/hsbc-info@3x.png",
+        "bytes": 116742
+      },
+      {
+        "file": "static/style/animate.min.scss",
+        "bytes": 71752
+      },
+      {
+        "file": "static/image/hsbc-info.png",
+        "bytes": 70560
+      },
+      {
+        "file": "static/image/hsbc-info@2x.png",
+        "bytes": 62853
+      },
+      {
+        "file": "static/image/order/pic_01.png",
+        "bytes": 58891
+      }
+    ]
+  },
+  "builds": {
+    "h5": {
+      "exists": true,
+      "generatedAt": "2026-08-04T01:55:08.203Z",
+      "totalBytes": 3781832,
+      "fileCount": 256,
+      "largest30": [
+        {
+          "file": "assets/echarts.min.B-Dv-SM2.js",
+          "bytes": 526472
+        },
+        {
+          "file": "static/echarts.min.js",
+          "bytes": 517186
+        },
+        {
+          "file": "assets/index-BT7MMyaq.js",
+          "bytes": 393450
+        },
+        {
+          "file": "static/image/home/cooking.jpg",
+          "bytes": 321556
+        },
+        {
+          "file": "static/image/hsbc-info@3x.png",
+          "bytes": 116742
+        },
+        {
+          "file": "static/style/animate.min.scss",
+          "bytes": 71752
+        },
+        {
+          "file": "static/image/hsbc-info.png",
+          "bytes": 70560
+        },
+        {
+          "file": "assets/utils.BPgAUcxT.js",
+          "bytes": 69406
+        },
+        {
+          "file": "assets/subPackages-tools-memo-editor.DZB2Fet0.js",
+          "bytes": 68675
+        },
+        {
+          "file": "static/image/hsbc-info@2x.png",
+          "bytes": 62853
+        },
+        {
+          "file": "static/image/order/pic_01.png",
+          "bytes": 58891
+        },
+        {
+          "file": "assets/editor-core-demo-SchemaEditorDemo.Cv1GeWn8.js",
+          "bytes": 43817
+        },
+        {
+          "file": "assets/marked.esm.CPrSqo4Z.js",
+          "bytes": 42081
+        },
+        {
+          "file": "assets/qr-generator-panel.5qu5MC7N.js",
+          "bytes": 40798
+        },
+        {
+          "file": "assets/subPackages-tools-family-tree-index.heKUTVNO.js",
+          "bytes": 39776
+        },
+        {
+          "file": "assets/uniicons-DN59BOw4.ttf",
+          "bytes": 35824
+        },
+        {
+          "file": "assets/subPackages-tools-memo-detail.X3u5D-3Z.js",
+          "bytes": 34143
+        },
+        {
+          "file": "assets/editor-DtFIDX6q.css",
+          "bytes": 33945
+        },
+        {
+          "file": "assets/uni.1b63df7d.css",
+          "bytes": 30855
+        },
+        {
+          "file": "static/image/home/ai_person_2.png",
+          "bytes": 29910
+        },
+        {
+          "file": "assets/subPackages-tools-game-coupons-index.CQXabmSX.js",
+          "bytes": 27263
+        },
+        {
+          "file": "assets/detail-DT6QH1eI.css",
+          "bytes": 25849
+        },
+        {
+          "file": "assets/subPackages-tools-image-stitch-index.CMdWlbl1.js",
+          "bytes": 25664
+        },
+        {
+          "file": "assets/index-2zECCZUF.css",
+          "bytes": 25337
+        },
+        {
+          "file": "assets/subPackages-tools-compendium-swc-detail.Cx4DT0Yk.js",
+          "bytes": 25178
+        },
+        {
+          "file": "assets/subPackages-tools-family-tree-demo.h8R-zbjp.js",
+          "bytes": 24103
+        },
+        {
+          "file": "assets/index-D5HXx8C1.css",
+          "bytes": 23075
+        },
+        {
+          "file": "assets/subPackages-tools-pool-aim-index.BbR1GyZ5.js",
+          "bytes": 22842
+        },
+        {
+          "file": "assets/subPackages-tools-compendium-swc-admin-list.HFqFgmca.js",
+          "bytes": 21516
+        },
+        {
+          "file": "assets/index-DDyxZYoD.css",
+          "bytes": 20875
+        }
+      ],
+      "echarts": [
+        {
+          "file": "assets/echarts.min.B-Dv-SM2.js",
+          "bytes": 526472
+        },
+        {
+          "file": "static/echarts.min.js",
+          "bytes": 517186
+        },
+        {
+          "file": "static/ecStat.min.js",
+          "bytes": 16061
+        },
+        {
+          "file": "assets/echarts-D-HyGLgZ.css",
+          "bytes": 233
+        }
+      ],
+      "familyTree": [
+        {
+          "file": "assets/subPackages-tools-family-tree-index.heKUTVNO.js",
+          "bytes": 39776
+        },
+        {
+          "file": "assets/subPackages-tools-family-tree-demo.h8R-zbjp.js",
+          "bytes": 24103
+        }
+      ],
+      "duplicateFiles": []
+    },
+    "mpWeixin": {
+      "exists": true,
+      "generatedAt": "2026-08-04T01:55:29.357Z",
+      "totalBytes": 2951852,
+      "fileCount": 616,
+      "largest30": [
+        {
+          "file": "static/echarts.min.js",
+          "bytes": 517186
+        },
+        {
+          "file": "static/image/home/cooking.jpg",
+          "bytes": 321556
+        },
+        {
+          "file": "common/vendor.js",
+          "bytes": 253470
+        },
+        {
+          "file": "static/image/hsbc-info@3x.png",
+          "bytes": 116742
+        },
+        {
+          "file": "static/style/animate.min.scss",
+          "bytes": 71752
+        },
+        {
+          "file": "static/image/hsbc-info.png",
+          "bytes": 70560
+        },
+        {
+          "file": "static/image/hsbc-info@2x.png",
+          "bytes": 62853
+        },
+        {
+          "file": "static/image/order/pic_01.png",
+          "bytes": 58891
+        },
+        {
+          "file": "node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons.wxss",
+          "bytes": 54560
+        },
+        {
+          "file": "static/image/home/ai_person_2.png",
+          "bytes": 29910
+        },
+        {
+          "file": "subPackages/tools/memo/detail.js",
+          "bytes": 25488
+        },
+        {
+          "file": "subPackages/tools/memo/detail.wxss",
+          "bytes": 24292
+        },
+        {
+          "file": "subPackages/tools/game-coupons/index.wxss",
+          "bytes": 22059
+        },
+        {
+          "file": "subPackages/tools/image-stitch/index.js",
+          "bytes": 20665
+        },
+        {
+          "file": "subPackages/tools/pool-aim/index.js",
+          "bytes": 18801
+        },
+        {
+          "file": "subPackages/tools/game-coupons/index.js",
+          "bytes": 18439
+        },
+        {
+          "file": "subPackages/tools/compendium/swc/detail.wxss",
+          "bytes": 17897
+        },
+        {
+          "file": "static/ecStat.min.js",
+          "bytes": 16061
+        },
+        {
+          "file": "subPackages/tools/compendium/swc/detail.js",
+          "bytes": 15823
+        },
+        {
+          "file": "subPackages/tools/memo/editor.js",
+          "bytes": 15605
+        },
+        {
+          "file": "subPackages/tools/compendium/swc/admin-list.js",
+          "bytes": 14816
+        },
+        {
+          "file": "subPackages/tools/memo/editor.wxss",
+          "bytes": 13362
+        },
+        {
+          "file": "subPackages/tools/image-stitch/index.wxml",
+          "bytes": 11792
+        },
+        {
+          "file": "subPackages/tools/memo/editor.wxml",
+          "bytes": 11703
+        },
+        {
+          "file": "subPackages/tools/memo/list.wxss",
+          "bytes": 11424
+        },
+        {
+          "file": "subPackages/tools/memo/detail.wxml",
+          "bytes": 11358
+        },
+        {
+          "file": "subPackages/tools/image-stitch/index.wxss",
+          "bytes": 11038
+        },
+        {
+          "file": "subPackages/tools/compendium/swc/list.wxss",
+          "bytes": 10656
+        },
+        {
+          "file": "subPackages/tools/compendium/swc/list.js",
+          "bytes": 10359
+        },
+        {
+          "file": "subPackages/tools/code-wallet/index.js",
+          "bytes": 10099
+        }
+      ],
+      "echarts": [
+        {
+          "file": "static/echarts.min.js",
+          "bytes": 517186
+        },
+        {
+          "file": "static/ecStat.min.js",
+          "bytes": 16061
+        }
+      ],
+      "familyTree": [
+        {
+          "file": "subPackages/tools/family-tree/demo.wxss",
+          "bytes": 8327
+        },
+        {
+          "file": "subPackages/tools/family-tree/family-tree-list.wxss",
+          "bytes": 6178
+        },
+        {
+          "file": "subPackages/tools/family-tree/family-tree-list.wxml",
+          "bytes": 4454
+        },
+        {
+          "file": "subPackages/tools/family-tree/family-tree-list.js",
+          "bytes": 3870
+        },
+        {
+          "file": "subPackages/tools/family-tree/member-detail.wxml",
+          "bytes": 3739
+        },
+        {
+          "file": "subPackages/tools/family-tree/member-detail.js",
+          "bytes": 3435
+        },
+        {
+          "file": "subPackages/tools/family-tree/member-detail.wxss",
+          "bytes": 3010
+        },
+        {
+          "file": "subPackages/tools/family-tree/demo.js",
+          "bytes": 1963
+        },
+        {
+          "file": "subPackages/tools/family-tree/index.js",
+          "bytes": 1427
+        },
+        {
+          "file": "subPackages/tools/family-tree/index.wxss",
+          "bytes": 1365
+        },
+        {
+          "file": "subPackages/tools/family-tree/index.wxml",
+          "bytes": 966
+        },
+        {
+          "file": "subPackages/tools/family-tree/demo.wxml",
+          "bytes": 478
+        },
+        {
+          "file": "subPackages/tools/family-tree/index.json",
+          "bytes": 280
+        },
+        {
+          "file": "subPackages/tools/family-tree/demo.json",
+          "bytes": 234
+        },
+        {
+          "file": "subPackages/tools/family-tree/family-tree-list.json",
+          "bytes": 173
+        },
+        {
+          "file": "subPackages/tools/family-tree/member-detail.json",
+          "bytes": 133
+        }
+      ],
+      "duplicateFiles": [],
+      "packages": [
+        {
+          "package": "main",
+          "bytes": 1943826
+        },
+        {
+          "package": "subPackages/tools",
+          "bytes": 924500
+        },
+        {
+          "package": "editor-core",
+          "bytes": 69497
+        },
+        {
+          "package": "subPackages/common",
+          "bytes": 11049
+        },
+        {
+          "package": "subPackages/user",
+          "bytes": 2980
+        }
+      ],
+      "rootStaticBytes": 1415211,
+      "toolDomainBreakdown": [
+        {
+          "domain": "subPackages/tools/compendium",
+          "bytes": 259962
+        },
+        {
+          "domain": "subPackages/tools/memo",
+          "bytes": 195065
+        },
+        {
+          "domain": "subPackages/tools/calendar",
+          "bytes": 64143
+        },
+        {
+          "domain": "subPackages/tools/game-coupons",
+          "bytes": 50972
+        },
+        {
+          "domain": "subPackages/tools/image-stitch",
+          "bytes": 43735
+        },
+        {
+          "domain": "subPackages/tools/family-tree",
+          "bytes": 40032
+        },
+        {
+          "domain": "subPackages/tools/oss-upload",
+          "bytes": 34309
+        },
+        {
+          "domain": "subPackages/tools/pool-aim",
+          "bytes": 32482
+        },
+        {
+          "domain": "subPackages/tools/chat",
+          "bytes": 28193
+        },
+        {
+          "domain": "subPackages/tools/code-wallet",
+          "bytes": 22282
+        },
+        {
+          "domain": "subPackages/tools/video-compress",
+          "bytes": 20909
+        },
+        {
+          "domain": "subPackages/tools/pdf-toolkit",
+          "bytes": 20274
+        },
+        {
+          "domain": "subPackages/tools/image-watermark",
+          "bytes": 18458
+        },
+        {
+          "domain": "subPackages/tools/image-compress",
+          "bytes": 12850
+        },
+        {
+          "domain": "subPackages/tools/magnet-link",
+          "bytes": 11373
+        },
+        {
+          "domain": "subPackages/tools/document-scan",
+          "bytes": 10156
+        },
+        {
+          "domain": "subPackages/tools/image-format",
+          "bytes": 10092
+        },
+        {
+          "domain": "subPackages/tools/image-privacy",
+          "bytes": 9616
+        },
+        {
+          "domain": "subPackages/tools/video-gif",
+          "bytes": 8850
+        },
+        {
+          "domain": "subPackages/tools/markdown",
+          "bytes": 7013
+        },
+        {
+          "domain": "subPackages/tools/watermark",
+          "bytes": 6871
+        },
+        {
+          "domain": "subPackages/tools/schema-demo",
+          "bytes": 6759
+        },
+        {
+          "domain": "subPackages/tools/qr-generator",
+          "bytes": 4961
+        },
+        {
+          "domain": "subPackages/tools/qr-parser",
+          "bytes": 3166
+        },
+        {
+          "domain": "subPackages/tools/image-cipher",
+          "bytes": 1977
+        }
+      ]
+    }
+  }
+}

@@ -136,76 +136,6 @@ export interface getCompendiumsConfigResGame {
 }
 
 /**
- * @description Compendiums/获取人物列表--接口请求Query参数
- * @url GET /compendiums/characters
- */
-export interface getCompendiumsCharactersQuery {
-  compendiumId: string
-  /** 关键词模糊搜索，命中人物英文主名称、各语言译名（中文名等）、别名、人物编码、简介；名称匹配跨全部语言，不受 locale 限制。 */
-  keyword?: string
-  /** 国际化语言参数，例如 en、zh-CN。仅用于结果展示本地化，不影响名称搜索范围；未提供或未找到翻译时自动回退英文。 */
-  locale?: string
-  /** 已废弃，请改用 categories[element] */
-  element?: string
-  /** 已废弃，请改用 categories[<分类key>] */
-  speciesType?: string
-  /** 已废弃，请改用 categories[family] */
-  family?: string
-  /** 按任意动态分类 key 聚合，例如 family。设置后每个分类选项只返回一个代表人物， 分页总数表示分组数量；不设置时仍返回普通人物列表。 */
-  groupBy?: string
-  /** 选择代表人物时优先比较的人物字段或动态属性 key。默认使用该图鉴按 sortOrder 排在最前的 rankable 属性；没有可排名属性时使用 level。 */
-  representativeSortBy?: string
-  /** 代表人物主排序方向，默认 desc。 */
-  representativeSortOrder?: string
-  /** 主排序值相同时，用哪个动态分类决定代表人物，例如 element。 未设置时按该图鉴所有非分组分类的 definition/option sortOrder 依次比较。 */
-  representativeCategory?: string
-  /** representativeCategory 的选项优先级，逗号分隔，可传 key 或 name， 例如 dark,light,fire,wind,water。未设置时使用 CategoryOption.sortOrder。 */
-  representativeCategoryOrder?: string
-
-  attribute?: string
-
-  minValue?: number
-
-  maxValue?: number
-  /** 普通模式按人物字段或动态属性排序；聚合模式按代表人物排序。 聚合模式可传 stars、attack 等动态属性，也可传 group 按分组选项排序。 若传入当前图鉴未配置的排序 key，将回退为 group 排序并正常返回数据。 */
-  sortBy?: string
-
-  sortOrder?: string
-
-  page?: number
-
-  pageSize?: number
-}
-
-/**
- * @description Compendiums/获取人物列表--接口返回值
- * @url GET /compendiums/characters
- */
-export interface getCompendiumsCharactersRes {
-  items?: any[]
-  pagination?: getCompendiumsCharactersResPagination
-}
-
-/** getCompendiumsCharactersResPagination */
-export interface getCompendiumsCharactersResPagination {
-  /** 是否有下一页 */
-  hasNext?: boolean
-  hasNextPage?: boolean
-  /** 是否有上一页 */
-  hasPrev?: boolean
-  hasPrevPage?: boolean
-  /** 每页数量 */
-  limit?: number
-  /** 当前页码 */
-  page?: number
-  /** 总记录数 */
-  total?: number
-  /** 总页数 */
-  totalPages?: number
-  totalResults?: number
-}
-
-/**
  * @description Compendiums/获取人物详情（含技能和排名）--接口请求Query参数
  * @url GET /compendiums/character
  */
@@ -411,4 +341,74 @@ export interface getCompendiumsCompareResItem {
   skins?: getCompendiumsCompareResItemSkins[]
   sortOrder?: number
   status?: 'enabled' | 'disabled'
+}
+
+/**
+ * @description Compendiums/获取人物列表--接口请求Query参数
+ * @url GET /compendiums/characters
+ */
+export interface getCompendiumsCharactersQuery {
+  compendiumId: string
+  /** 关键词模糊搜索，命中人物英文主名称、各语言译名（中文名等）、别名、人物编码、简介；名称匹配跨全部语言，不受 locale 限制。 */
+  keyword?: string
+  /** 国际化语言参数，例如 en、zh-CN。仅用于结果展示本地化，不影响名称搜索范围；未提供或未找到翻译时自动回退英文。 */
+  locale?: string
+  /** 已废弃，请改用 categories[element] */
+  element?: string
+  /** 已废弃，请改用 categories[<分类key>] */
+  speciesType?: string
+  /** 已废弃，请改用 categories[family] */
+  family?: string
+  /** 按任意动态分类 key 聚合，例如 family。设置后每个分类选项只返回一个代表人物， 分页总数表示分组数量；不设置时仍返回普通人物列表。 */
+  groupBy?: string
+  /** 选择代表人物时优先比较的人物字段或动态属性 key。默认使用该图鉴按 sortOrder 排在最前的 rankable 属性；没有可排名属性时使用 level。 */
+  representativeSortBy?: string
+  /** 代表人物主排序方向，默认 desc。 */
+  representativeSortOrder?: string
+  /** 主排序值相同时，用哪个动态分类决定代表人物，例如 element。 未设置时按该图鉴所有非分组分类的 definition/option sortOrder 依次比较。 */
+  representativeCategory?: string
+  /** representativeCategory 的选项优先级，按稳定 valueKey 逗号分隔， 例如 dark,light,fire,wind,water。未设置时使用 CategoryOption.sortOrder。 */
+  representativeCategoryOrder?: string
+
+  attribute?: string
+
+  minValue?: number
+
+  maxValue?: number
+  /** 普通列表支持多字段排序：`stars:desc,code:desc`（逗号分隔，左高优先；可写 field 或 field:asc|desc）。 兼容旧写法：`sortBy=stars` + `sortOrder=desc`。 可排序字段含 stars/hp/attack 等属性缓存列，以及 name/code/level/sortOrder/createdAt/updatedAt/_id。 聚合模式（groupBy）仍按代表人物规则排序，可传 stars、attack、group 等；未配置 key 时回退 group。 */
+  sortBy?: string
+  /** 全局默认方向；当 sortBy 某段未写 :asc|:desc 时使用。多字段建议在 sortBy 内显式写方向。 */
+  sortOrder?: string
+
+  page?: number
+
+  pageSize?: number
+}
+
+/**
+ * @description Compendiums/获取人物列表--接口返回值
+ * @url GET /compendiums/characters
+ */
+export interface getCompendiumsCharactersRes {
+  items?: any[]
+  pagination?: getCompendiumsCharactersResPagination
+}
+
+/** getCompendiumsCharactersResPagination */
+export interface getCompendiumsCharactersResPagination {
+  /** 是否有下一页 */
+  hasNext?: boolean
+  hasNextPage?: boolean
+  /** 是否有上一页 */
+  hasPrev?: boolean
+  hasPrevPage?: boolean
+  /** 每页数量 */
+  limit?: number
+  /** 当前页码 */
+  page?: number
+  /** 总记录数 */
+  total?: number
+  /** 总页数 */
+  totalPages?: number
+  totalResults?: number
 }

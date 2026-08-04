@@ -6,6 +6,10 @@
 
 ## Unreleased
 
+- 2026-08-03 [tools/compendium-swc] 人物列表形态筛选新增 Boss 选项，选中后按 categories[entry_type]=boss 查询（Codex）
+
+- 2026-08-03 [tools/compendium-swc] 人物列表排序改为多字段 sortBy（如 stars:desc,code:desc），不再拆分 sortOrder 传参（Codex）
+
 - 2026-08-01 [tools/game-coupons] 未登录时业务按钮统一置灰禁用，仅顶部「去登录」可跳转，取消操作内自动拉起登录（Codex）
 
 - 2026-08-01 [mine,tools/game-coupons] 设置页退出登录移到夜间模式下方；兑换券取消未登录全屏遮罩，改为步骤前登录提示条，关键操作统一 ensureLogin 校验（Codex）

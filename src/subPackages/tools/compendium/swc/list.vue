@@ -225,6 +225,7 @@
     'categories[awaken]'?: string
     'categories[element]'?: string
     'categories[archetype]'?: string
+    'categories[entry_type]'?: string
   }
 
   interface FilterOption {
@@ -306,6 +307,7 @@
   const awakenOptions: FilterOption[] = [
     { label: '觉醒', value: 'awakened' },
     { label: '未觉醒', value: 'unawakened' },
+    { label: 'Boss', value: 'boss' },
   ]
 
   const sortOptions: FilterOption[] = [
@@ -534,7 +536,13 @@
       locale: selectedLocale.value,
       page: page.value,
       pageSize: PAGE_SIZE,
-      'categories[awaken]': selectedAwaken.value,
+    }
+
+    // 形态筛选：Boss 走 entry_type，其余走 awaken
+    if (selectedAwaken.value === 'boss') {
+      query['categories[entry_type]'] = 'boss'
+    } else {
+      query['categories[awaken]'] = selectedAwaken.value
     }
 
     // if (isFamilyMode.value) {
@@ -551,23 +559,22 @@
 
     if (selectedStar.value !== ALL_VALUE) {
       query.attribute = 'stars'
-      query.minValue = Number(selectedStar.value) + 1
-      query.maxValue = Number(selectedStar.value) + 1
+      query.minValue = Number(selectedStar.value)
+      query.maxValue = Number(selectedStar.value)
     }
 
     if (isFamilyMode.value && selectedSort.value === ALL_VALUE) {
-      query.sortBy = 'group'
-      query.sortOrder = 'asc'
+      // 家族聚合模式：按分组
+      query.sortBy = 'group:asc'
     } else {
-      const [sortBy, sortOrder] = getSortParams(selectedSort.value, selectedSortOrder.value)
-      query.sortBy = sortBy
-      query.sortOrder = sortOrder
+      // 普通列表支持多字段排序：`stars:desc,code:desc`（方向写在 sortBy 内）
+      query.sortBy = buildCharactersSortBy(selectedSort.value, selectedSortOrder.value)
     }
 
     return query
   }
 
-  const getSortParams = (value: string, order: SortOrder): [string, SortOrder] => {
+  const getSortField = (value: string): string => {
     const map: Record<string, string> = {
       [ALL_VALUE]: DEFAULT_SORT_FIELD,
       stars: 'stars',
@@ -582,8 +589,14 @@
       second_awaken: 'secondAwakenPriority',
       popularity: 'viewCount',
     }
-    const sortBy = map[value] || DEFAULT_SORT_FIELD
-    return [sortBy, value === ALL_VALUE ? DEFAULT_SORT_ORDER : order]
+    return map[value] || DEFAULT_SORT_FIELD
+  }
+
+  /** 人物列表排序：主字段方向 + code 稳定次排序，例如 stars:desc,code:desc */
+  const buildCharactersSortBy = (value: string, order: SortOrder): string => {
+    const field = getSortField(value)
+    const direction: SortOrder = value === ALL_VALUE ? DEFAULT_SORT_ORDER : order
+    return `${field}:${direction},code:desc`
   }
 
   const fetchCharacters = async (reset = false) => {

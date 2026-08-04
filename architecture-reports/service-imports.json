@@ -1,0 +1,796 @@
+{
+  "counts": {
+    "imports": 78,
+    "files": 50,
+    "apifoxGeneratedImports": 61,
+    "apifoxGeneratedFiles": 34,
+    "apifoxDtoImports": 17,
+    "apifoxDtoFiles": 17
+  },
+  "byDomain": [
+    {
+      "domain": "compendium",
+      "count": 23
+    },
+    {
+      "domain": "memo",
+      "count": 13
+    },
+    {
+      "domain": "oss-upload",
+      "count": 6
+    },
+    {
+      "domain": "calendar",
+      "count": 4
+    },
+    {
+      "domain": "image-stitch",
+      "count": 4
+    },
+    {
+      "domain": "family-tree",
+      "count": 3
+    },
+    {
+      "domain": "utils",
+      "count": 3
+    },
+    {
+      "domain": "root-components",
+      "count": 2
+    },
+    {
+      "domain": "editor-core",
+      "count": 2
+    },
+    {
+      "domain": "main:mine",
+      "count": 2
+    },
+    {
+      "domain": "stores",
+      "count": 2
+    },
+    {
+      "domain": "chat",
+      "count": 2
+    },
+    {
+      "domain": "code-wallet",
+      "count": 2
+    },
+    {
+      "domain": "game-coupons",
+      "count": 2
+    },
+    {
+      "domain": "pdf-toolkit",
+      "count": 2
+    },
+    {
+      "domain": "pool-aim",
+      "count": 2
+    },
+    {
+      "domain": "document-scan",
+      "count": 1
+    },
+    {
+      "domain": "image-compress",
+      "count": 1
+    },
+    {
+      "domain": "image-privacy",
+      "count": 1
+    },
+    {
+      "domain": "watermark",
+      "count": 1
+    }
+  ],
+  "directImports": [
+    {
+      "file": "src/components/FolderPicker.vue",
+      "line": 3,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "root-components",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/components/FolderPicker.vue",
+      "line": 4,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/interface",
+      "domain": "root-components",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/editor-core/components/ResourcePicker.vue",
+      "line": 114,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "editor-core",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/editor-core/components/ResourcePicker.vue",
+      "line": 115,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/interface",
+      "domain": "editor-core",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 2,
+      "specifier": "@/services/apifox/NODEJSDEMO/AUTH/apifox",
+      "domain": "main:mine",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 3,
+      "specifier": "@/services/apifox/NODEJSDEMO/AUTH/interface",
+      "domain": "main:mine",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/stores/mall.ts",
+      "line": 2,
+      "specifier": "@/services/apifox/3903128/shangPinXiangGuan/yinHeZhenXuan/apifox",
+      "domain": "stores",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/stores/mall.ts",
+      "line": 3,
+      "specifier": "@/services/apifox/3903128/shangPinXiangGuan/yinHeZhenXuan/interface",
+      "domain": "stores",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 461,
+      "specifier": "@/services/apifox/NODEJSDEMO/PAINTER/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 467,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 878,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 879,
+      "specifier": "@/services/apifox/NODEJSDEMO/GEMINI/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 883,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 884,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/interface",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "line": 178,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "line": 177,
+      "specifier": "@/services/apifox/NODEJSDEMO/CALENDAR/apifox",
+      "domain": "calendar",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "line": 178,
+      "specifier": "@/services/apifox/NODEJSDEMO/PAINTER/apifox",
+      "domain": "calendar",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "line": 201,
+      "specifier": "@/services/apifox/NODEJSDEMO/CALENDAR/apifox",
+      "domain": "calendar",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "line": 139,
+      "specifier": "@/services/apifox/NODEJSDEMO/CALENDAR/apifox",
+      "domain": "calendar",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "line": 118,
+      "specifier": "@/services/apifox/NODEJSDEMO/GEMINI/apifox",
+      "domain": "chat",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "line": 109,
+      "specifier": "@/services/apifox/NODEJSDEMO/GEMINI/apifox",
+      "domain": "chat",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "line": 160,
+      "specifier": "@/services/apifox/NODEJSDEMO/CODEWALLET/apifox",
+      "domain": "code-wallet",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "line": 167,
+      "specifier": "@/services/apifox/NODEJSDEMO/CODEWALLET/interface",
+      "domain": "code-wallet",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "line": 237,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "line": 238,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "line": 243,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "line": 162,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/character-picker-panel.vue",
+      "line": 202,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/lineup-mapping-container-section.vue",
+      "line": 65,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/lineup-picker-panel.vue",
+      "line": 49,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/lineup-select-modal.vue",
+      "line": 74,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/composables/use-admin-lineup-list.ts",
+      "line": 2,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "line": 279,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "line": 280,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/edit.vue",
+      "line": 105,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/edit.vue",
+      "line": 106,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/edit.vue",
+      "line": 107,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-edit.vue",
+      "line": 110,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+      "line": 80,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "line": 103,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-meta.ts",
+      "line": 1,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+      "line": 107,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 211,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "line": 216,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "line": 217,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface",
+      "domain": "compendium",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/utils.ts",
+      "line": 1,
+      "specifier": "@/services/compendium-lineups",
+      "domain": "compendium",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "line": 81,
+      "specifier": "@/services/security",
+      "domain": "document-scan",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "line": 275,
+      "specifier": "@/services/apifox/NODEJSDEMO/FAMILIES/apifox",
+      "domain": "family-tree",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-list.vue",
+      "line": 135,
+      "specifier": "@/services/apifox/NODEJSDEMO/FAMILIES/apifox",
+      "domain": "family-tree",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/member-detail.vue",
+      "line": 110,
+      "specifier": "@/services/apifox/NODEJSDEMO/FAMILIES/apifox",
+      "domain": "family-tree",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "line": 287,
+      "specifier": "@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox",
+      "domain": "game-coupons",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "line": 300,
+      "specifier": "@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox",
+      "domain": "game-coupons",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "line": 108,
+      "specifier": "@/services/security",
+      "domain": "image-compress",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "line": 72,
+      "specifier": "@/services/security",
+      "domain": "image-privacy",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 381,
+      "specifier": "@/services/apifox/NODEJSDEMO/PAINTER/apifox",
+      "domain": "image-stitch",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 382,
+      "specifier": "@/services/apifox/NODEJSDEMO/IMAGETOOLS/apifox",
+      "domain": "image-stitch",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 383,
+      "specifier": "@/services/apifox/NODEJSDEMO/IMAGETOOLS/interface",
+      "domain": "image-stitch",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 384,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "image-stitch",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/components/editor-core/components/ResourcePicker.vue",
+      "line": 87,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/components/editor-core/components/ResourcePicker.vue",
+      "line": 88,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/interface",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 475,
+      "specifier": "@/services/apifox/NODEJSDEMO/PAINTER/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 481,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "line": 379,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "line": 193,
+      "specifier": "@/services/apifox/NODEJSDEMO/MEMOS/apifox",
+      "domain": "memo",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "line": 2,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "oss-upload",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "line": 3,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/interface",
+      "domain": "oss-upload",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 2,
+      "specifier": "@/services/apifox/NODEJSDEMO/FILES/apifox",
+      "domain": "oss-upload",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 5,
+      "specifier": "@/services/apifox/NODEJSDEMO/oSS/apifox",
+      "domain": "oss-upload",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 10,
+      "specifier": "@/services/oss",
+      "domain": "oss-upload",
+      "apifoxGenerated": false,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/utils.ts",
+      "line": 5,
+      "specifier": "@/services/apifox/NODEJSDEMO/oSS/apifox",
+      "domain": "oss-upload",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "line": 135,
+      "specifier": "@/services/apifox/NODEJSDEMO/PDFTOOLKIT/apifox",
+      "domain": "pdf-toolkit",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "line": 141,
+      "specifier": "@/services/apifox/NODEJSDEMO/PDFTOOLKIT/interface",
+      "domain": "pdf-toolkit",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "line": 177,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox",
+      "domain": "pool-aim",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "line": 178,
+      "specifier": "@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface",
+      "domain": "pool-aim",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "line": 33,
+      "specifier": "@/services/apifox/NODEJSDEMO/VIDEO/apifox",
+      "domain": "watermark",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/utils/autoLogin.ts",
+      "line": 13,
+      "specifier": "@/services/apifox/NODEJSDEMO/AUTH/apifox",
+      "domain": "utils",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "line": 1,
+      "specifier": "@/services/apifox/NODEJSDEMO/AUTH/apifox",
+      "domain": "utils",
+      "apifoxGenerated": true,
+      "apifoxDto": false,
+      "typeOnly": false
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "line": 2,
+      "specifier": "@/services/apifox/NODEJSDEMO/AUTH/interface",
+      "domain": "utils",
+      "apifoxGenerated": true,
+      "apifoxDto": true,
+      "typeOnly": true
+    }
+  ]
+}

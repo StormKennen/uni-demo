@@ -1,0 +1,6127 @@
+{
+  "counts": {
+    "occurrences": 1023,
+    "files": 99,
+    "unguardedDirectApis": 68,
+    "unguardedDirectApiFiles": 20
+  },
+  "byCapability": [
+    {
+      "capability": "canvas",
+      "count": 281
+    },
+    {
+      "capability": "condition:H5",
+      "count": 141
+    },
+    {
+      "capability": "share",
+      "count": 112
+    },
+    {
+      "capability": "condition:MP-WEIXIN",
+      "count": 98
+    },
+    {
+      "capability": "document.*",
+      "count": 79
+    },
+    {
+      "capability": "window.*",
+      "count": 69
+    },
+    {
+      "capability": "clipboard",
+      "count": 49
+    },
+    {
+      "capability": "file:choose",
+      "count": 43
+    },
+    {
+      "capability": "wx.*",
+      "count": 41
+    },
+    {
+      "capability": "file:save",
+      "count": 29
+    },
+    {
+      "capability": "privacy",
+      "count": 24
+    },
+    {
+      "capability": "navigator.*",
+      "count": 22
+    },
+    {
+      "capability": "image:save",
+      "count": 16
+    },
+    {
+      "capability": "auth",
+      "count": 10
+    },
+    {
+      "capability": "getCurrentPages",
+      "count": 7
+    },
+    {
+      "capability": "location.*",
+      "count": 2
+    }
+  ],
+  "byDomain": [
+    {
+      "domain": "memo",
+      "count": 228
+    },
+    {
+      "domain": "root-components",
+      "count": 172
+    },
+    {
+      "domain": "engine",
+      "count": 52
+    },
+    {
+      "domain": "utils",
+      "count": 44
+    },
+    {
+      "domain": "compendium",
+      "count": 41
+    },
+    {
+      "domain": "image-compress",
+      "count": 41
+    },
+    {
+      "domain": "image-stitch",
+      "count": 38
+    },
+    {
+      "domain": "calendar",
+      "count": 35
+    },
+    {
+      "domain": "video-compress",
+      "count": 34
+    },
+    {
+      "domain": "pool-aim",
+      "count": 33
+    },
+    {
+      "domain": "utilsH5",
+      "count": 27
+    },
+    {
+      "domain": "image-format",
+      "count": 26
+    },
+    {
+      "domain": "image-watermark",
+      "count": 25
+    },
+    {
+      "domain": "video-gif",
+      "count": 22
+    },
+    {
+      "domain": "family-tree",
+      "count": 19
+    },
+    {
+      "domain": "oss-upload",
+      "count": 19
+    },
+    {
+      "domain": "watermark",
+      "count": 17
+    },
+    {
+      "domain": "document-scan",
+      "count": 16
+    },
+    {
+      "domain": "image-privacy",
+      "count": 16
+    },
+    {
+      "domain": "main:mine",
+      "count": 13
+    },
+    {
+      "domain": "pdf-toolkit",
+      "count": 12
+    },
+    {
+      "domain": "js",
+      "count": 9
+    },
+    {
+      "domain": "markdown",
+      "count": 7
+    },
+    {
+      "domain": "App.vue",
+      "count": 6
+    },
+    {
+      "domain": "appDebug",
+      "count": 6
+    },
+    {
+      "domain": "main:index",
+      "count": 6
+    },
+    {
+      "domain": "main:tools",
+      "count": 6
+    },
+    {
+      "domain": "qr-generator",
+      "count": 6
+    },
+    {
+      "domain": "webview",
+      "count": 5
+    },
+    {
+      "domain": "chat",
+      "count": 5
+    },
+    {
+      "domain": "game-coupons",
+      "count": 5
+    },
+    {
+      "domain": "image-cipher",
+      "count": 5
+    },
+    {
+      "domain": "qr-parser",
+      "count": 5
+    },
+    {
+      "domain": "main.ts",
+      "count": 4
+    },
+    {
+      "domain": "services",
+      "count": 4
+    },
+    {
+      "domain": "stores",
+      "count": 4
+    },
+    {
+      "domain": "magnet-link",
+      "count": 4
+    },
+    {
+      "domain": "hooks",
+      "count": 3
+    },
+    {
+      "domain": "editor-core",
+      "count": 2
+    },
+    {
+      "domain": "code-wallet",
+      "count": 1
+    }
+  ],
+  "bySymbol": [
+    {
+      "symbol": "canvas",
+      "count": 223
+    },
+    {
+      "symbol": "#ifdef H5",
+      "count": 116
+    },
+    {
+      "symbol": "#ifdef MP-WEIXIN",
+      "count": 98
+    },
+    {
+      "symbol": "onShareAppMessage",
+      "count": 57
+    },
+    {
+      "symbol": "onShareTimeline",
+      "count": 53
+    },
+    {
+      "symbol": "document.createElement",
+      "count": 33
+    },
+    {
+      "symbol": "document.body",
+      "count": 28
+    },
+    {
+      "symbol": "#ifdef WEB",
+      "count": 25
+    },
+    {
+      "symbol": "setClipboardData",
+      "count": 25
+    },
+    {
+      "symbol": "Canvas",
+      "count": 21
+    },
+    {
+      "symbol": "canvasToTempFilePath",
+      "count": 21
+    },
+    {
+      "symbol": "window.open",
+      "count": 20
+    },
+    {
+      "symbol": "clipboard",
+      "count": 19
+    },
+    {
+      "symbol": "uni.chooseImage",
+      "count": 18
+    },
+    {
+      "symbol": "window.location",
+      "count": 17
+    },
+    {
+      "symbol": "navigator.clipboard",
+      "count": 16
+    },
+    {
+      "symbol": "uni.saveImageToPhotosAlbum",
+      "count": 16
+    },
+    {
+      "symbol": "createCanvasContext",
+      "count": 14
+    },
+    {
+      "symbol": "getPrivacySetting",
+      "count": 14
+    },
+    {
+      "symbol": "uni.downloadFile",
+      "count": 14
+    },
+    {
+      "symbol": "wx.chooseMedia",
+      "count": 14
+    },
+    {
+      "symbol": "wx.getPrivacySetting",
+      "count": 14
+    },
+    {
+      "symbol": "URL.createObjectURL",
+      "count": 8
+    },
+    {
+      "symbol": "getCurrentPages(",
+      "count": 7
+    },
+    {
+      "symbol": "uni.openSetting",
+      "count": 7
+    },
+    {
+      "symbol": "navigator.userAgent",
+      "count": 6
+    },
+    {
+      "symbol": "wx.chooseMessageFile",
+      "count": 6
+    },
+    {
+      "symbol": "getClipboardData",
+      "count": 5
+    },
+    {
+      "symbol": "uni.chooseVideo",
+      "count": 5
+    },
+    {
+      "symbol": "window.android",
+      "count": 5
+    },
+    {
+      "symbol": "openPrivacyContract",
+      "count": 4
+    },
+    {
+      "symbol": "requirePrivacyAuthorize",
+      "count": 4
+    },
+    {
+      "symbol": "uni.chooseFile",
+      "count": 4
+    },
+    {
+      "symbol": "uni.chooseMessageFile",
+      "count": 4
+    },
+    {
+      "symbol": "uni.openDocument",
+      "count": 4
+    },
+    {
+      "symbol": "window.addEventListener",
+      "count": 4
+    },
+    {
+      "symbol": "window.dsBridge",
+      "count": 4
+    },
+    {
+      "symbol": "window.removeEventListener",
+      "count": 4
+    },
+    {
+      "symbol": "wx.requirePrivacyAuthorize",
+      "count": 4
+    },
+    {
+      "symbol": "document.documentElement",
+      "count": 3
+    },
+    {
+      "symbol": "uni.saveFile",
+      "count": 3
+    },
+    {
+      "symbol": "document.getElementById",
+      "count": 2
+    },
+    {
+      "symbol": "document.getElementsByTagName",
+      "count": 2
+    },
+    {
+      "symbol": "document.head",
+      "count": 2
+    },
+    {
+      "symbol": "document.removeEventListener",
+      "count": 2
+    },
+    {
+      "symbol": "location.href",
+      "count": 2
+    },
+    {
+      "symbol": "OffscreenCanvas",
+      "count": 2
+    },
+    {
+      "symbol": "onNeedPrivacyAuthorization",
+      "count": 2
+    },
+    {
+      "symbol": "showShareMenu",
+      "count": 2
+    },
+    {
+      "symbol": "uni.chooseMedia",
+      "count": 2
+    },
+    {
+      "symbol": "uni.login",
+      "count": 2
+    },
+    {
+      "symbol": "window._dsf",
+      "count": 2
+    },
+    {
+      "symbol": "window._dsInit",
+      "count": 2
+    },
+    {
+      "symbol": "window.devicePixelRatio",
+      "count": 2
+    },
+    {
+      "symbol": "window.scrollX",
+      "count": 2
+    },
+    {
+      "symbol": "window.scrollY",
+      "count": 2
+    },
+    {
+      "symbol": "wx.chooseLocation",
+      "count": 2
+    },
+    {
+      "symbol": "wx.createCanvasContext",
+      "count": 2
+    },
+    {
+      "symbol": "wx.getFileSystemManager",
+      "count": 2
+    },
+    {
+      "symbol": "wx.onNeedPrivacyAuthorization",
+      "count": 2
+    },
+    {
+      "symbol": "wx.openPrivacyContract",
+      "count": 2
+    },
+    {
+      "symbol": "document.addEventListener",
+      "count": 1
+    },
+    {
+      "symbol": "document.cookie",
+      "count": 1
+    },
+    {
+      "symbol": "document.elementFromPoint",
+      "count": 1
+    },
+    {
+      "symbol": "document.pdf",
+      "count": 1
+    },
+    {
+      "symbol": "document.querySelector",
+      "count": 1
+    },
+    {
+      "symbol": "document.querySelectorAll",
+      "count": 1
+    },
+    {
+      "symbol": "document.title",
+      "count": 1
+    },
+    {
+      "symbol": "uni.getUserInfo",
+      "count": 1
+    },
+    {
+      "symbol": "window._dsaf",
+      "count": 1
+    },
+    {
+      "symbol": "window._dsbridge",
+      "count": 1
+    },
+    {
+      "symbol": "window._dswk",
+      "count": 1
+    },
+    {
+      "symbol": "window.atob",
+      "count": 1
+    },
+    {
+      "symbol": "window.dscb",
+      "count": 1
+    },
+    {
+      "symbol": "wx.canvasToTempFilePath",
+      "count": 1
+    },
+    {
+      "symbol": "wx.env",
+      "count": 1
+    },
+    {
+      "symbol": "wx.getImageInfo",
+      "count": 1
+    }
+  ],
+  "unguardedDirectApis": [
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/components/share-app.vue",
+      "line": 32,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.atob",
+      "file": "src/components/share-app.vue",
+      "line": 32,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/components/share-app.vue",
+      "line": 34,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/components/share-app.vue",
+      "line": 38,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/components/share-app.vue",
+      "line": 44,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.location",
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "line": 448,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.clipboard",
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "line": 450,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.getElementById",
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "line": 126,
+      "domain": "root-components",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.getImageInfo",
+      "file": "src/engine/tomato-cipher/adapters/weapp/WeappAdapter.ts",
+      "line": 59,
+      "domain": "engine",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.createCanvasContext",
+      "file": "src/engine/tomato-cipher/adapters/weapp/WeappAdapter.ts",
+      "line": 83,
+      "domain": "engine",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.canvasToTempFilePath",
+      "file": "src/engine/tomato-cipher/adapters/weapp/WeappAdapter.ts",
+      "line": 91,
+      "domain": "engine",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.createCanvasContext",
+      "file": "src/engine/tomato-cipher/core/CipherFactory.ts",
+      "line": 89,
+      "domain": "engine",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.getFileSystemManager",
+      "file": "src/engine/tomato-cipher/utils/metadataIO.ts",
+      "line": 9,
+      "domain": "engine",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.dscb",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsbridge",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dswk",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsaf",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsf",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsInit",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsInit",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window._dsf",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 3,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.userAgent",
+      "file": "src/js/dsbridge-3.1.4.js",
+      "line": 1,
+      "domain": "js",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/subPackages/common/webview/webview.vue",
+      "line": 219,
+      "domain": "webview",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.querySelector",
+      "file": "src/subPackages/common/webview/webview.vue",
+      "line": 226,
+      "domain": "webview",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1920,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1931,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1936,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1954,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1971,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1981,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1991,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 2004,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 2014,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 2024,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.userAgent",
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1870,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 2844,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 3036,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "line": 514,
+      "domain": "calendar",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.env",
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "line": 903,
+      "domain": "family-tree",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "wx.*",
+      "symbol": "wx.getFileSystemManager",
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "line": 905,
+      "domain": "family-tree",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "line": 886,
+      "domain": "family-tree",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "line": 415,
+      "domain": "image-compress",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.elementFromPoint",
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 629,
+      "domain": "image-stitch",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.querySelectorAll",
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 631,
+      "domain": "image-stitch",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 1683,
+      "domain": "image-stitch",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2008,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2019,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2024,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2042,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2059,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2069,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2079,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2092,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2102,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.body",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2112,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.userAgent",
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 1958,
+      "domain": "memo",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.pdf",
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "line": 320,
+      "domain": "pdf-toolkit",
+      "guards": [
+        "MP-WEIXIN"
+      ],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.location",
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "line": 1475,
+      "domain": "pool-aim",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.clipboard",
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "line": 1477,
+      "domain": "pool-aim",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.location",
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "line": 218,
+      "domain": "watermark",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.clipboard",
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "line": 219,
+      "domain": "watermark",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "navigator.*",
+      "symbol": "navigator.clipboard",
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "line": 220,
+      "domain": "watermark",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/utils/loadFile.ts",
+      "line": 5,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.head",
+      "file": "src/utils/loadFile.ts",
+      "line": 30,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.createElement",
+      "file": "src/utils/loadFile.ts",
+      "line": 35,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "document.*",
+      "symbol": "document.head",
+      "file": "src/utils/loadFile.ts",
+      "line": 44,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/utils/upload/cdpOss.ts",
+      "line": 79,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    },
+    {
+      "capability": "window.*",
+      "symbol": "window.open",
+      "file": "src/utils/upload/cdpOss.ts",
+      "line": 107,
+      "domain": "utils",
+      "guards": [],
+      "compliantContext": false
+    }
+  ],
+  "usageGroups": [
+    {
+      "file": "src/App.vue",
+      "domain": "App.vue",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        45,
+        142
+      ],
+      "symbols": [
+        "#ifdef WEB",
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/App.vue",
+      "domain": "App.vue",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        90,
+        107
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/App.vue",
+      "domain": "App.vue",
+      "capability": "share",
+      "count": 2,
+      "lines": [
+        2,
+        126
+      ],
+      "symbols": [
+        "onShareAppMessage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/appDebug/debug.vue",
+      "domain": "appDebug",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        74
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/appDebug/debug.vue",
+      "domain": "appDebug",
+      "capability": "file:choose",
+      "count": 4,
+      "lines": [
+        28,
+        41,
+        54,
+        64
+      ],
+      "symbols": [
+        "uni.chooseImage",
+        "uni.chooseFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/appDebug/debug.vue",
+      "domain": "appDebug",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        76
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/download-popup/download-popup.vue",
+      "domain": "root-components",
+      "capability": "file:save",
+      "count": 1,
+      "lines": [
+        111
+      ],
+      "symbols": [
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/ga-select/ga-select.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        349,
+        456
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        2
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "domain": "root-components",
+      "capability": "getCurrentPages",
+      "count": 1,
+      "lines": [
+        31
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/canvas.js",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 10,
+      "lines": [
+        78,
+        80,
+        120,
+        126,
+        155,
+        157,
+        354,
+        355,
+        388,
+        391
+      ],
+      "symbols": [
+        "OffscreenCanvas",
+        "canvas",
+        "Canvas",
+        "createCanvasContext"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/canvas.js",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        206,
+        214,
+        227
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.uvue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 3,
+      "lines": [
+        139,
+        141,
+        251
+      ],
+      "symbols": [
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.uvue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        13,
+        80,
+        165
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.uvue",
+      "domain": "root-components",
+      "capability": "window.*",
+      "count": 6,
+      "lines": [
+        219,
+        220,
+        221,
+        237,
+        238,
+        239
+      ],
+      "symbols": [
+        "window.addEventListener",
+        "window.removeEventListener"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 23,
+      "lines": [
+        4,
+        15,
+        21,
+        37,
+        56,
+        73,
+        74,
+        75,
+        273,
+        284,
+        286,
+        291,
+        332,
+        371,
+        376,
+        394,
+        395,
+        397
+      ],
+      "symbols": [
+        "canvas",
+        "Canvas",
+        "canvasToTempFilePath",
+        "createCanvasContext"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 5,
+      "lines": [
+        152,
+        163,
+        171,
+        388,
+        474
+      ],
+      "symbols": [
+        "#ifdef H5",
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 3,
+      "lines": [
+        86,
+        110,
+        177
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "domain": "root-components",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        154,
+        165,
+        174
+      ],
+      "symbols": [
+        "document.removeEventListener",
+        "document.addEventListener"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/utils.js",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 1,
+      "lines": [
+        66
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/utils.js",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        72,
+        80
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/l-echart/uvue.uts",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 3,
+      "lines": [
+        110,
+        112,
+        126
+      ],
+      "symbols": [
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.nvue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 1,
+      "lines": [
+        148
+      ],
+      "symbols": [
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.uvue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        9,
+        82
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.vue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 1,
+      "lines": [
+        213
+      ],
+      "symbols": [
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/nav-bar-base.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        50
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/PageLayout.vue",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        61,
+        125
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/PageLayout.vue",
+      "domain": "root-components",
+      "capability": "getCurrentPages",
+      "count": 1,
+      "lines": [
+        64
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/PageLayout.vue",
+      "domain": "root-components",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        3,
+        62,
+        70
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/privacy-popup.vue",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 3,
+      "lines": [
+        2,
+        30,
+        55
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/privacy-popup.vue",
+      "domain": "root-components",
+      "capability": "privacy",
+      "count": 8,
+      "lines": [
+        8,
+        31,
+        32,
+        40,
+        41,
+        54,
+        56,
+        57
+      ],
+      "symbols": [
+        "openPrivacyContract",
+        "onNeedPrivacyAuthorization",
+        "getPrivacySetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/privacy-popup.vue",
+      "domain": "root-components",
+      "capability": "wx.*",
+      "count": 6,
+      "lines": [
+        31,
+        32,
+        40,
+        41,
+        56,
+        57
+      ],
+      "symbols": [
+        "wx.onNeedPrivacyAuthorization",
+        "wx.getPrivacySetting",
+        "wx.openPrivacyContract"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/share-app.vue",
+      "domain": "root-components",
+      "capability": "window.*",
+      "count": 5,
+      "lines": [
+        32,
+        34,
+        38,
+        44
+      ],
+      "symbols": [
+        "window.open",
+        "window.atob"
+      ],
+      "unguardedLines": [
+        32,
+        34,
+        38,
+        44
+      ]
+    },
+    {
+      "file": "src/components/ThemeRoot.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        2
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/ThemeRoot.vue",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        5
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 5,
+      "lines": [
+        65,
+        66,
+        68,
+        71,
+        646
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "clipboard",
+      "count": 3,
+      "lines": [
+        437,
+        449,
+        450
+      ],
+      "symbols": [
+        "setClipboardData",
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        129,
+        182,
+        414
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        135
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        415,
+        418,
+        420
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        280
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        425
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "navigator.*",
+      "count": 1,
+      "lines": [
+        450
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": [
+        450
+      ]
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "domain": "root-components",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        448
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": [
+        448
+      ]
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 23,
+      "lines": [
+        32,
+        34,
+        38,
+        126,
+        198,
+        201,
+        202,
+        204,
+        206,
+        207,
+        209,
+        211,
+        214,
+        215,
+        225,
+        246,
+        250,
+        272,
+        305,
+        306,
+        310,
+        322,
+        521
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "Canvas",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "clipboard",
+      "count": 2,
+      "lines": [
+        376,
+        389
+      ],
+      "symbols": [
+        "setClipboardData",
+        "getClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 6,
+      "lines": [
+        200,
+        243,
+        304,
+        349,
+        412,
+        418
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "document.*",
+      "count": 4,
+      "lines": [
+        126,
+        350,
+        353,
+        355
+      ],
+      "symbols": [
+        "document.getElementById",
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": [
+        126
+      ]
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        361
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "domain": "root-components",
+      "capability": "window.*",
+      "count": 4,
+      "lines": [
+        213,
+        252,
+        413,
+        419
+      ],
+      "symbols": [
+        "window.devicePixelRatio",
+        "window.addEventListener",
+        "window.removeEventListener"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "domain": "root-components",
+      "capability": "canvas",
+      "count": 1,
+      "lines": [
+        190
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "domain": "root-components",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        146
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "domain": "root-components",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        3,
+        179,
+        245
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "domain": "root-components",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        190
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "domain": "root-components",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        171
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/editor-core/demo/SchemaEditorDemo.vue",
+      "domain": "editor-core",
+      "capability": "canvas",
+      "count": 2,
+      "lines": [
+        20,
+        231
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/simple-scrambler/SimpleScrambler.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 3,
+      "lines": [
+        72,
+        73,
+        80
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/adapters/app/AppAdapter.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 12,
+      "lines": [
+        77,
+        78,
+        79,
+        82,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/adapters/h5/H5Adapter.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 13,
+      "lines": [
+        16,
+        42,
+        68,
+        69,
+        70,
+        72,
+        75,
+        79,
+        80,
+        88,
+        89
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/adapters/h5/H5Adapter.ts",
+      "domain": "engine",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        68
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/adapters/weapp/WeappAdapter.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 12,
+      "lines": [
+        82,
+        83,
+        84,
+        87,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/adapters/weapp/WeappAdapter.ts",
+      "domain": "engine",
+      "capability": "wx.*",
+      "count": 3,
+      "lines": [
+        59,
+        83,
+        91
+      ],
+      "symbols": [
+        "wx.getImageInfo",
+        "wx.createCanvasContext",
+        "wx.canvasToTempFilePath"
+      ],
+      "unguardedLines": [
+        59,
+        83,
+        91
+      ]
+    },
+    {
+      "file": "src/engine/tomato-cipher/core/CipherFactory.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 1,
+      "lines": [
+        89
+      ],
+      "symbols": [
+        "createCanvasContext"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/core/CipherFactory.ts",
+      "domain": "engine",
+      "capability": "wx.*",
+      "count": 1,
+      "lines": [
+        89
+      ],
+      "symbols": [
+        "wx.createCanvasContext"
+      ],
+      "unguardedLines": [
+        89
+      ]
+    },
+    {
+      "file": "src/engine/tomato-cipher/renderers/CanvasRenderer.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 3,
+      "lines": [
+        9,
+        10,
+        17
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/types/index.ts",
+      "domain": "engine",
+      "capability": "canvas",
+      "count": 2,
+      "lines": [
+        78,
+        79
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/engine/tomato-cipher/utils/metadataIO.ts",
+      "domain": "engine",
+      "capability": "wx.*",
+      "count": 1,
+      "lines": [
+        9
+      ],
+      "symbols": [
+        "wx.getFileSystemManager"
+      ],
+      "unguardedLines": [
+        9
+      ]
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "domain": "hooks",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        93
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "domain": "hooks",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        89
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/hooks/useTheme.ts",
+      "domain": "hooks",
+      "capability": "getCurrentPages",
+      "count": 1,
+      "lines": [
+        14
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/js/dsbridge-3.1.4.js",
+      "domain": "js",
+      "capability": "navigator.*",
+      "count": 1,
+      "lines": [
+        1
+      ],
+      "symbols": [
+        "navigator.userAgent"
+      ],
+      "unguardedLines": [
+        1
+      ]
+    },
+    {
+      "file": "src/js/dsbridge-3.1.4.js",
+      "domain": "js",
+      "capability": "window.*",
+      "count": 8,
+      "lines": [
+        1,
+        3
+      ],
+      "symbols": [
+        "window.dscb",
+        "window._dsbridge",
+        "window._dswk",
+        "window._dsaf",
+        "window._dsf",
+        "window._dsInit"
+      ],
+      "unguardedLines": [
+        1,
+        3
+      ]
+    },
+    {
+      "file": "src/main.ts",
+      "domain": "main.ts",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        10,
+        25
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/main.ts",
+      "domain": "main.ts",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        12,
+        22
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/index/index.vue",
+      "domain": "main:index",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        61,
+        118
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/index/index.vue",
+      "domain": "main:index",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        104,
+        109
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "domain": "main:mine",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        257
+      ],
+      "symbols": [
+        "uni.login"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "domain": "main:mine",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        161
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "domain": "main:mine",
+      "capability": "condition:MP-WEIXIN",
+      "count": 5,
+      "lines": [
+        32,
+        155,
+        441,
+        482,
+        530
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/mine/mine.vue",
+      "domain": "main:mine",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        141,
+        153
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/mine/mine.vue",
+      "domain": "main:mine",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        87,
+        91,
+        92
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/tools/index.vue",
+      "domain": "main:tools",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        83,
+        136
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/pages/tools/index.vue",
+      "domain": "main:tools",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        108,
+        113
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/services/http.ts",
+      "domain": "services",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        22
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/services/http.ts",
+      "domain": "services",
+      "capability": "getCurrentPages",
+      "count": 2,
+      "lines": [
+        184,
+        202
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/services/security.ts",
+      "domain": "services",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        36
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/stores/theme.ts",
+      "domain": "stores",
+      "capability": "condition:H5",
+      "count": 4,
+      "lines": [
+        6,
+        18,
+        28,
+        34
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/common/webview/webview.vue",
+      "domain": "webview",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        236,
+        266,
+        374
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/common/webview/webview.vue",
+      "domain": "webview",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        226
+      ],
+      "symbols": [
+        "document.querySelector"
+      ],
+      "unguardedLines": [
+        226
+      ]
+    },
+    {
+      "file": "src/subPackages/common/webview/webview.vue",
+      "domain": "webview",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        219
+      ],
+      "symbols": [
+        "window.open"
+      ],
+      "unguardedLines": [
+        219
+      ]
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        2114
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "canvas",
+      "count": 2,
+      "lines": [
+        2683,
+        2684
+      ],
+      "symbols": [
+        "Canvas",
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "clipboard",
+      "count": 5,
+      "lines": [
+        1327,
+        1386,
+        1402,
+        2150,
+        2152
+      ],
+      "symbols": [
+        "setClipboardData",
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "condition:H5",
+      "count": 12,
+      "lines": [
+        181,
+        718,
+        821,
+        1157,
+        1185,
+        1213,
+        1395,
+        1452,
+        1835,
+        2146,
+        2608,
+        2714
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "condition:MP-WEIXIN",
+      "count": 7,
+      "lines": [
+        188,
+        828,
+        1352,
+        1486,
+        2138,
+        2178,
+        2735
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "document.*",
+      "count": 11,
+      "lines": [
+        823,
+        1920,
+        1931,
+        1936,
+        1954,
+        1971,
+        1981,
+        1991,
+        2004,
+        2014,
+        2024
+      ],
+      "symbols": [
+        "document.documentElement",
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": [
+        1920,
+        1931,
+        1936,
+        1954,
+        1971,
+        1981,
+        1991,
+        2004,
+        2014,
+        2024
+      ]
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        1883,
+        2067
+      ],
+      "symbols": [
+        "URL.createObjectURL",
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        2092
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "navigator.*",
+      "count": 4,
+      "lines": [
+        1216,
+        1870,
+        2150,
+        2152
+      ],
+      "symbols": [
+        "navigator.userAgent",
+        "navigator.clipboard"
+      ],
+      "unguardedLines": [
+        1870
+      ]
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        465,
+        2179,
+        2187
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "domain": "memo",
+      "capability": "window.*",
+      "count": 7,
+      "lines": [
+        1160,
+        1186,
+        1187,
+        1214,
+        1225,
+        1396,
+        2148
+      ],
+      "symbols": [
+        "window.open",
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        3364
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "canvas",
+      "count": 75,
+      "lines": [
+        866,
+        867,
+        871,
+        872,
+        1392,
+        1395,
+        1396,
+        1403,
+        1408,
+        1409,
+        1413,
+        1417,
+        1420,
+        1422,
+        1423,
+        1425,
+        1442,
+        1447,
+        1448,
+        1459,
+        1460,
+        1461,
+        1468,
+        1479,
+        1480,
+        1491,
+        1492,
+        1493,
+        1498,
+        1502,
+        1503,
+        1504,
+        1505,
+        1506,
+        1507,
+        1508,
+        1509,
+        1510,
+        1511,
+        1515,
+        1516,
+        1517,
+        1518,
+        1519,
+        1520,
+        1521,
+        1522,
+        1523,
+        1524,
+        1525,
+        1526,
+        1527,
+        1528,
+        1529,
+        1533,
+        1534,
+        1535,
+        1536,
+        1537,
+        2844,
+        2845,
+        2846,
+        2847,
+        3035,
+        3063,
+        3064,
+        3066,
+        3067,
+        3139,
+        3262,
+        3263,
+        5185,
+        5186
+      ],
+      "symbols": [
+        "Canvas",
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "clipboard",
+      "count": 5,
+      "lines": [
+        1827,
+        1828,
+        1854,
+        2723,
+        2725
+      ],
+      "symbols": [
+        "clipboard",
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "condition:H5",
+      "count": 4,
+      "lines": [
+        1826,
+        2448,
+        2719,
+        2824
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "condition:MP-WEIXIN",
+      "count": 3,
+      "lines": [
+        2427,
+        2711,
+        3976
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "document.*",
+      "count": 2,
+      "lines": [
+        2844,
+        3036
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": [
+        2844,
+        3036
+      ]
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        1784
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "file:save",
+      "count": 1,
+      "lines": [
+        3328
+      ],
+      "symbols": [
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "getCurrentPages",
+      "count": 1,
+      "lines": [
+        3954
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        3344
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "navigator.*",
+      "count": 4,
+      "lines": [
+        1827,
+        1828,
+        2723,
+        2725
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "share",
+      "count": 2,
+      "lines": [
+        882,
+        3977
+      ],
+      "symbols": [
+        "onShareAppMessage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        2721
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "domain": "memo",
+      "capability": "wx.*",
+      "count": 2,
+      "lines": [
+        2428,
+        2430
+      ],
+      "symbols": [
+        "wx.chooseLocation"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        575
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "clipboard",
+      "count": 2,
+      "lines": [
+        599,
+        601
+      ],
+      "symbols": [
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        486,
+        595
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        588,
+        650
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        514
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": [
+        514
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        512,
+        544
+      ],
+      "symbols": [
+        "URL.createObjectURL",
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        561
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "navigator.*",
+      "count": 2,
+      "lines": [
+        599,
+        601
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        176,
+        651,
+        658
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "domain": "calendar",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        597
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "domain": "calendar",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        284
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "domain": "calendar",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        203,
+        285,
+        293
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "clipboard",
+      "count": 2,
+      "lines": [
+        393,
+        395
+      ],
+      "symbols": [
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        390
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        383,
+        430
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "navigator.*",
+      "count": 2,
+      "lines": [
+        393,
+        395
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        141,
+        431,
+        438
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "domain": "calendar",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        391
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "domain": "chat",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        323
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "domain": "chat",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        119,
+        280,
+        302
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "domain": "code-wallet",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        521
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        1235
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        266,
+        1236,
+        1246
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/icon-cache.ts",
+      "domain": "compendium",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        141
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/icon-cache.ts",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 3,
+      "lines": [
+        127,
+        145,
+        172
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/icon-cache.ts",
+      "domain": "compendium",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        98,
+        106
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "uni.saveFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        103
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        32,
+        104,
+        105
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        271
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        76,
+        272,
+        281
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        263
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        100,
+        264,
+        265
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        299
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        103,
+        300,
+        301
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        469
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        209,
+        470,
+        471
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "domain": "compendium",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        752
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "domain": "compendium",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        209,
+        753,
+        755
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "canvas",
+      "count": 7,
+      "lines": [
+        67,
+        68,
+        70,
+        73,
+        212,
+        237,
+        471
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        282
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        270
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        160,
+        263
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        271,
+        274,
+        276
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        130
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "domain": "document-scan",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        264
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "domain": "family-tree",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        4,
+        42
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "domain": "family-tree",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        31
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        943
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "canvas",
+      "count": 6,
+      "lines": [
+        46,
+        47,
+        51,
+        52,
+        1586,
+        1587
+      ],
+      "symbols": [
+        "Canvas",
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        866
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        886
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": [
+        886
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        924
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "domain": "family-tree",
+      "capability": "wx.*",
+      "count": 2,
+      "lines": [
+        903,
+        905
+      ],
+      "symbols": [
+        "wx.env",
+        "wx.getFileSystemManager"
+      ],
+      "unguardedLines": [
+        903,
+        905
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/index.vue",
+      "domain": "family-tree",
+      "capability": "condition:H5",
+      "count": 4,
+      "lines": [
+        9,
+        34,
+        49,
+        60
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "domain": "game-coupons",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        1295
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "domain": "game-coupons",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        284,
+        1296,
+        1297
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "domain": "image-cipher",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        43
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "domain": "image-cipher",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        13,
+        44,
+        49
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "canvas",
+      "count": 13,
+      "lines": [
+        322,
+        323,
+        327,
+        328,
+        331,
+        415,
+        416,
+        420,
+        421,
+        422,
+        428
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        321,
+        369,
+        452
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "condition:MP-WEIXIN",
+      "count": 4,
+      "lines": [
+        146,
+        160,
+        198,
+        299
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "document.*",
+      "count": 5,
+      "lines": [
+        322,
+        415,
+        453,
+        456,
+        458
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": [
+        415
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "file:choose",
+      "count": 3,
+      "lines": [
+        199,
+        200,
+        226
+      ],
+      "symbols": [
+        "wx.chooseMedia",
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        372,
+        445
+      ],
+      "symbols": [
+        "URL.createObjectURL"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        467
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "privacy",
+      "count": 4,
+      "lines": [
+        161,
+        166,
+        168,
+        173
+      ],
+      "symbols": [
+        "getPrivacySetting",
+        "requirePrivacyAuthorize"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "domain": "image-compress",
+      "capability": "wx.*",
+      "count": 6,
+      "lines": [
+        161,
+        166,
+        168,
+        173,
+        199,
+        200
+      ],
+      "symbols": [
+        "wx.getPrivacySetting",
+        "wx.requirePrivacyAuthorize",
+        "wx.chooseMedia"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "canvas",
+      "count": 11,
+      "lines": [
+        75,
+        76,
+        78,
+        81,
+        196,
+        202,
+        203,
+        204,
+        208,
+        221,
+        485
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "Canvas",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        292
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "condition:H5",
+      "count": 4,
+      "lines": [
+        119,
+        201,
+        260,
+        277
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        270
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "document.*",
+      "count": 7,
+      "lines": [
+        202,
+        261,
+        264,
+        266,
+        278,
+        281,
+        283
+      ],
+      "symbols": [
+        "document.getElementById",
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        149
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "domain": "image-format",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        271
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "canvas",
+      "count": 7,
+      "lines": [
+        58,
+        59,
+        61,
+        64,
+        217,
+        223,
+        416
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        267
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        255
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        159,
+        248
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        256,
+        259,
+        261
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        126
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "domain": "image-privacy",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        249
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        1753
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        1632
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "condition:H5",
+      "count": 5,
+      "lines": [
+        501,
+        913,
+        945,
+        1524,
+        1637
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "condition:MP-WEIXIN",
+      "count": 6,
+      "lines": [
+        1042,
+        1063,
+        1147,
+        1217,
+        1238,
+        1301
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        629,
+        631,
+        1683
+      ],
+      "symbols": [
+        "document.elementFromPoint",
+        "document.querySelectorAll",
+        "document.createElement"
+      ],
+      "unguardedLines": [
+        629,
+        631,
+        1683
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "file:choose",
+      "count": 4,
+      "lines": [
+        1080,
+        1148,
+        1266,
+        1304
+      ],
+      "symbols": [
+        "uni.chooseImage",
+        "wx.chooseMessageFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "file:save",
+      "count": 3,
+      "lines": [
+        1643,
+        1681,
+        1716
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "URL.createObjectURL"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "image:save",
+      "count": 2,
+      "lines": [
+        1651,
+        1734
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "privacy",
+      "count": 4,
+      "lines": [
+        1065,
+        1067,
+        1240,
+        1242
+      ],
+      "symbols": [
+        "getPrivacySetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "window.*",
+      "count": 3,
+      "lines": [
+        502,
+        503,
+        1638
+      ],
+      "symbols": [
+        "window.location",
+        "window.open"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "domain": "image-stitch",
+      "capability": "wx.*",
+      "count": 6,
+      "lines": [
+        1065,
+        1067,
+        1148,
+        1240,
+        1242,
+        1304
+      ],
+      "symbols": [
+        "wx.getPrivacySetting",
+        "wx.chooseMessageFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "canvas",
+      "count": 9,
+      "lines": [
+        22,
+        228,
+        229,
+        231,
+        234,
+        486,
+        518,
+        635,
+        822
+      ],
+      "symbols": [
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        551
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        371,
+        544
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        552,
+        555,
+        557
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        354
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        545
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "privacy",
+      "count": 4,
+      "lines": [
+        372,
+        377,
+        379,
+        384
+      ],
+      "symbols": [
+        "getPrivacySetting",
+        "requirePrivacyAuthorize"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "domain": "image-watermark",
+      "capability": "wx.*",
+      "count": 4,
+      "lines": [
+        372,
+        377,
+        379,
+        384
+      ],
+      "symbols": [
+        "wx.getPrivacySetting",
+        "wx.requirePrivacyAuthorize"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "domain": "magnet-link",
+      "capability": "clipboard",
+      "count": 4,
+      "lines": [
+        185,
+        190,
+        218,
+        260
+      ],
+      "symbols": [
+        "setClipboardData",
+        "getClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/markdown/index.vue",
+      "domain": "markdown",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        165
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/markdown/index.vue",
+      "domain": "markdown",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        47,
+        175
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/markdown/index.vue",
+      "domain": "markdown",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        178,
+        181,
+        183
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/markdown/index.vue",
+      "domain": "markdown",
+      "capability": "file:save",
+      "count": 1,
+      "lines": [
+        177
+      ],
+      "symbols": [
+        "URL.createObjectURL"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/components/PosterPanel.vue",
+      "domain": "memo",
+      "capability": "canvas",
+      "count": 9,
+      "lines": [
+        9,
+        10,
+        11,
+        96,
+        215,
+        286,
+        293
+      ],
+      "symbols": [
+        "Canvas",
+        "canvas",
+        "createCanvasContext",
+        "canvasToTempFilePath"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/components/PosterPanel.vue",
+      "domain": "memo",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        219
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        2202
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "canvas",
+      "count": 2,
+      "lines": [
+        2790,
+        2791
+      ],
+      "symbols": [
+        "Canvas",
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "clipboard",
+      "count": 5,
+      "lines": [
+        1415,
+        1474,
+        1490,
+        2238,
+        2240
+      ],
+      "symbols": [
+        "setClipboardData",
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "condition:H5",
+      "count": 12,
+      "lines": [
+        195,
+        780,
+        883,
+        1245,
+        1273,
+        1301,
+        1483,
+        1540,
+        1923,
+        2234,
+        2715,
+        2821
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "condition:MP-WEIXIN",
+      "count": 7,
+      "lines": [
+        202,
+        890,
+        1440,
+        1574,
+        2226,
+        2266,
+        2842
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "document.*",
+      "count": 11,
+      "lines": [
+        885,
+        2008,
+        2019,
+        2024,
+        2042,
+        2059,
+        2069,
+        2079,
+        2092,
+        2102,
+        2112
+      ],
+      "symbols": [
+        "document.documentElement",
+        "document.createElement",
+        "document.body"
+      ],
+      "unguardedLines": [
+        2008,
+        2019,
+        2024,
+        2042,
+        2059,
+        2069,
+        2079,
+        2092,
+        2102,
+        2112
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        1971,
+        2155
+      ],
+      "symbols": [
+        "URL.createObjectURL",
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        2180
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "navigator.*",
+      "count": 4,
+      "lines": [
+        1304,
+        1958,
+        2238,
+        2240
+      ],
+      "symbols": [
+        "navigator.userAgent",
+        "navigator.clipboard"
+      ],
+      "unguardedLines": [
+        1958
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        479,
+        2267,
+        2275
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "domain": "memo",
+      "capability": "window.*",
+      "count": 7,
+      "lines": [
+        1248,
+        1274,
+        1275,
+        1302,
+        1313,
+        1484,
+        2236
+      ],
+      "symbols": [
+        "window.open",
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "domain": "memo",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        585
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "domain": "memo",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        780
+      ],
+      "symbols": [
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "domain": "memo",
+      "capability": "getCurrentPages",
+      "count": 1,
+      "lines": [
+        1028
+      ],
+      "symbols": [
+        "getCurrentPages("
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "domain": "oss-upload",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        253
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "domain": "oss-upload",
+      "capability": "file:save",
+      "count": 5,
+      "lines": [
+        183,
+        198,
+        203,
+        297,
+        301
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "uni.saveFile",
+        "uni.openDocument"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "domain": "oss-upload",
+      "capability": "image:save",
+      "count": 1,
+      "lines": [
+        188
+      ],
+      "symbols": [
+        "uni.saveImageToPhotosAlbum"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "domain": "oss-upload",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        174
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "domain": "oss-upload",
+      "capability": "condition:MP-WEIXIN",
+      "count": 3,
+      "lines": [
+        110,
+        146,
+        214
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "domain": "oss-upload",
+      "capability": "file:choose",
+      "count": 4,
+      "lines": [
+        112,
+        129,
+        163,
+        216
+      ],
+      "symbols": [
+        "uni.chooseMessageFile",
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "domain": "oss-upload",
+      "capability": "privacy",
+      "count": 2,
+      "lines": [
+        148,
+        150
+      ],
+      "symbols": [
+        "getPrivacySetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "domain": "oss-upload",
+      "capability": "wx.*",
+      "count": 2,
+      "lines": [
+        148,
+        150
+      ],
+      "symbols": [
+        "wx.getPrivacySetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        515
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        326,
+        489
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        314,
+        350
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        320
+      ],
+      "symbols": [
+        "document.pdf"
+      ],
+      "unguardedLines": [
+        320
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "file:choose",
+      "count": 3,
+      "lines": [
+        294,
+        316,
+        328
+      ],
+      "symbols": [
+        "uni.chooseImage",
+        "uni.chooseMessageFile",
+        "uni.chooseFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        495,
+        500
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "uni.openDocument"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "domain": "pdf-toolkit",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        490
+      ],
+      "symbols": [
+        "window.open"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "canvas",
+      "count": 13,
+      "lines": [
+        14,
+        15,
+        48,
+        49,
+        1169,
+        1740,
+        1750,
+        1827,
+        1836
+      ],
+      "symbols": [
+        "canvas",
+        "Canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "clipboard",
+      "count": 2,
+      "lines": [
+        1476,
+        1477
+      ],
+      "symbols": [
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "condition:H5",
+      "count": 5,
+      "lines": [
+        1185,
+        1207,
+        1274,
+        1287,
+        1458
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        1462,
+        1486
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "navigator.*",
+      "count": 1,
+      "lines": [
+        1477
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": [
+        1477
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "share",
+      "count": 5,
+      "lines": [
+        186,
+        1464,
+        1487,
+        1492
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline",
+        "showShareMenu"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "domain": "pool-aim",
+      "capability": "window.*",
+      "count": 5,
+      "lines": [
+        1277,
+        1278,
+        1289,
+        1290,
+        1475
+      ],
+      "symbols": [
+        "window.scrollX",
+        "window.scrollY",
+        "window.location"
+      ],
+      "unguardedLines": [
+        1475
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "domain": "qr-generator",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        128
+      ],
+      "symbols": [
+        "getClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "domain": "qr-generator",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        148
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "domain": "qr-generator",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        39,
+        149,
+        155
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "domain": "qr-parser",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        64
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "domain": "qr-parser",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        24,
+        65,
+        71
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "auth",
+      "count": 1,
+      "lines": [
+        654
+      ],
+      "symbols": [
+        "uni.openSetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        685
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "condition:H5",
+      "count": 5,
+      "lines": [
+        28,
+        179,
+        373,
+        565,
+        667
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "condition:MP-WEIXIN",
+      "count": 7,
+      "lines": [
+        18,
+        360,
+        380,
+        432,
+        499,
+        571,
+        578
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "file:choose",
+      "count": 10,
+      "lines": [
+        433,
+        434,
+        435,
+        442,
+        457,
+        470,
+        475,
+        485,
+        500
+      ],
+      "symbols": [
+        "wx.chooseMedia",
+        "uni.chooseVideo",
+        "wx.chooseMessageFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "privacy",
+      "count": 2,
+      "lines": [
+        382,
+        383
+      ],
+      "symbols": [
+        "getPrivacySetting"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "domain": "video-compress",
+      "capability": "wx.*",
+      "count": 8,
+      "lines": [
+        382,
+        383,
+        433,
+        434,
+        435,
+        442,
+        457,
+        500
+      ],
+      "symbols": [
+        "wx.getPrivacySetting",
+        "wx.chooseMedia",
+        "wx.chooseMessageFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "canvas",
+      "count": 8,
+      "lines": [
+        78,
+        328,
+        329,
+        330,
+        331,
+        644
+      ],
+      "symbols": [
+        "canvas"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "condition:H5",
+      "count": 4,
+      "lines": [
+        76,
+        291,
+        299,
+        380
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        401
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "document.*",
+      "count": 3,
+      "lines": [
+        307,
+        328,
+        382
+      ],
+      "symbols": [
+        "document.createElement"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "file:choose",
+      "count": 1,
+      "lines": [
+        118
+      ],
+      "symbols": [
+        "uni.chooseVideo"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "file:save",
+      "count": 1,
+      "lines": [
+        360
+      ],
+      "symbols": [
+        "URL.createObjectURL"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "domain": "video-gif",
+      "capability": "share",
+      "count": 4,
+      "lines": [
+        87,
+        402,
+        407
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "clipboard",
+      "count": 5,
+      "lines": [
+        67,
+        145,
+        219,
+        220
+      ],
+      "symbols": [
+        "getClipboardData",
+        "setClipboardData",
+        "clipboard"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        51
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        46,
+        237
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "file:save",
+      "count": 1,
+      "lines": [
+        169
+      ],
+      "symbols": [
+        "uni.downloadFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "navigator.*",
+      "count": 2,
+      "lines": [
+        219,
+        220
+      ],
+      "symbols": [
+        "navigator.clipboard"
+      ],
+      "unguardedLines": [
+        219,
+        220
+      ]
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "share",
+      "count": 5,
+      "lines": [
+        35,
+        48,
+        238,
+        244
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline",
+        "showShareMenu"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "domain": "watermark",
+      "capability": "window.*",
+      "count": 1,
+      "lines": [
+        218
+      ],
+      "symbols": [
+        "window.location"
+      ],
+      "unguardedLines": [
+        218
+      ]
+    },
+    {
+      "file": "src/utils/avatar-cache.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        142
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/avatar-cache.ts",
+      "domain": "utils",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        127,
+        147
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/avatar-cache.ts",
+      "domain": "utils",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        99,
+        107
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "uni.saveFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/common.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        146
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/env.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        60,
+        68
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/file.ts",
+      "domain": "utils",
+      "capability": "file:save",
+      "count": 2,
+      "lines": [
+        66,
+        75
+      ],
+      "symbols": [
+        "uni.downloadFile",
+        "uni.openDocument"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/loadFile.ts",
+      "domain": "utils",
+      "capability": "document.*",
+      "count": 4,
+      "lines": [
+        5,
+        30,
+        35,
+        44
+      ],
+      "symbols": [
+        "document.createElement",
+        "document.head"
+      ],
+      "unguardedLines": [
+        5,
+        30,
+        35,
+        44
+      ]
+    },
+    {
+      "file": "src/utils/map.ts",
+      "domain": "utils",
+      "capability": "clipboard",
+      "count": 1,
+      "lines": [
+        68
+      ],
+      "symbols": [
+        "setClipboardData"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/map.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        38,
+        79
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/map.ts",
+      "domain": "utils",
+      "capability": "condition:MP-WEIXIN",
+      "count": 2,
+      "lines": [
+        18,
+        66
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/map.ts",
+      "domain": "utils",
+      "capability": "window.*",
+      "count": 2,
+      "lines": [
+        43,
+        81
+      ],
+      "symbols": [
+        "window.location",
+        "window.open"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/share.ts",
+      "domain": "utils",
+      "capability": "share",
+      "count": 10,
+      "lines": [
+        32,
+        34,
+        37,
+        45,
+        47,
+        50,
+        148,
+        153,
+        159,
+        160
+      ],
+      "symbols": [
+        "onShareAppMessage",
+        "onShareTimeline"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/upload/cdpOss.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        9
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/upload/cdpOss.ts",
+      "domain": "utils",
+      "capability": "window.*",
+      "count": 2,
+      "lines": [
+        79,
+        107
+      ],
+      "symbols": [
+        "window.open"
+      ],
+      "unguardedLines": [
+        79,
+        107
+      ]
+    },
+    {
+      "file": "src/utils/upload/platform/web.ts",
+      "domain": "utils",
+      "capability": "file:choose",
+      "count": 3,
+      "lines": [
+        7,
+        28,
+        49
+      ],
+      "symbols": [
+        "uni.chooseFile",
+        "uni.chooseImage"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/upload/platform/wechat.ts",
+      "domain": "utils",
+      "capability": "file:choose",
+      "count": 3,
+      "lines": [
+        7,
+        29,
+        51
+      ],
+      "symbols": [
+        "uni.chooseMedia",
+        "uni.chooseMessageFile"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "domain": "utils",
+      "capability": "auth",
+      "count": 2,
+      "lines": [
+        10,
+        56
+      ],
+      "symbols": [
+        "uni.login",
+        "uni.getUserInfo"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "domain": "utils",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        122
+      ],
+      "symbols": [
+        "#ifdef H5"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "domain": "utils",
+      "capability": "condition:MP-WEIXIN",
+      "count": 1,
+      "lines": [
+        100
+      ],
+      "symbols": [
+        "#ifdef MP-WEIXIN"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "domain": "utilsH5",
+      "capability": "condition:H5",
+      "count": 3,
+      "lines": [
+        77,
+        98,
+        121
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "domain": "utilsH5",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        177
+      ],
+      "symbols": [
+        "document.title"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "domain": "utilsH5",
+      "capability": "window.*",
+      "count": 12,
+      "lines": [
+        108,
+        109,
+        111,
+        112,
+        137,
+        148,
+        196,
+        201,
+        305,
+        313
+      ],
+      "symbols": [
+        "window.android",
+        "window.dsBridge",
+        "window.open",
+        "window.location"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/common.ts",
+      "domain": "utilsH5",
+      "capability": "document.*",
+      "count": 2,
+      "lines": [
+        3,
+        6
+      ],
+      "symbols": [
+        "document.getElementsByTagName"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/cookie.ts",
+      "domain": "utilsH5",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        4
+      ],
+      "symbols": [
+        "document.cookie"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/env.ts",
+      "domain": "utilsH5",
+      "capability": "condition:H5",
+      "count": 2,
+      "lines": [
+        11,
+        31
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/env.ts",
+      "domain": "utilsH5",
+      "capability": "location.*",
+      "count": 2,
+      "lines": [
+        16,
+        59
+      ],
+      "symbols": [
+        "location.href"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/env.ts",
+      "domain": "utilsH5",
+      "capability": "navigator.*",
+      "count": 1,
+      "lines": [
+        127
+      ],
+      "symbols": [
+        "navigator.userAgent"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/router.ts",
+      "domain": "utilsH5",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        4
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/theme.ts",
+      "domain": "utilsH5",
+      "capability": "condition:H5",
+      "count": 1,
+      "lines": [
+        3
+      ],
+      "symbols": [
+        "#ifdef WEB"
+      ],
+      "unguardedLines": []
+    },
+    {
+      "file": "src/utilsH5/theme.ts",
+      "domain": "utilsH5",
+      "capability": "document.*",
+      "count": 1,
+      "lines": [
+        5
+      ],
+      "symbols": [
+        "document.documentElement"
+      ],
+      "unguardedLines": []
+    }
+  ]
+}

@@ -153,49 +153,6 @@ export const useOptionGetCompendiumsConfig = (
 }
 
 /**
- * @description Compendiums/获取人物列表
- * @url GET /compendiums/characters
- * @host https://app.apifox.com/link/project/7048425/apis/api-470751680
- */
-export const getCompendiumsCharacters = async (
-  params: Expand<getCompendiumsCharactersQuery>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getCompendiumsCharactersRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/characters`, params, _config)
-}
-
-/**
- * 自定义函数：usegetCompendiumsCharacters
- * @description Compendiums/获取人物列表
- * @url GET /compendiums/characters
- * @host https://app.apifox.com/link/project/7048425/apis/api-470751680
- */
-
-export const useGetCompendiumsCharacters = (
-  params: Expand<getCompendiumsCharactersQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/compendiums/characters`, params, fetchOptions],
-    queryFn: () => getCompendiumsCharacters(params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetCompendiumsCharacters = (
-  params: Expand<getCompendiumsCharactersQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/compendiums/characters`, params, fetchOptions],
-    queryFn: () => getCompendiumsCharacters(params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description Compendiums/获取人物详情（含技能和排名）
  * @url GET /compendiums/character
  * @host https://app.apifox.com/link/project/7048425/apis/api-470751681
@@ -363,6 +320,49 @@ export const useOptionGetCompendiumsCompare = (
   return queryOptions({
     queryKey: [`/compendiums/compare`, params, fetchOptions],
     queryFn: () => getCompendiumsCompare(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+
+/**
+ * @description Compendiums/获取人物列表
+ * @url GET /compendiums/characters
+ * @host https://app.apifox.com/link/project/7048425/apis/api-470751680
+ */
+export const getCompendiumsCharacters = async (
+  params: Expand<getCompendiumsCharactersQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsCharactersRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/compendiums/characters`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsCharacters
+ * @description Compendiums/获取人物列表
+ * @url GET /compendiums/characters
+ * @host https://app.apifox.com/link/project/7048425/apis/api-470751680
+ */
+
+export const useGetCompendiumsCharacters = (
+  params: Expand<getCompendiumsCharactersQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/characters`, params, fetchOptions],
+    queryFn: () => getCompendiumsCharacters(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsCharacters = (
+  params: Expand<getCompendiumsCharactersQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/characters`, params, fetchOptions],
+    queryFn: () => getCompendiumsCharacters(params, fetchOptions),
     ..._queryOptions,
   })
 }

@@ -1,0 +1,944 @@
+{
+  "counts": {
+    "vue": 156,
+    "typescript": 234,
+    "source": 398
+  },
+  "vueOver500": [
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 7245,
+      "bytes": 212363,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3826,
+      "bytes": 114693,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3626,
+      "bytes": 107755,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "extension": ".vue",
+      "lines": 2736,
+      "bytes": 74711,
+      "domain": "game-coupons"
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "extension": ".vue",
+      "lines": 2563,
+      "bytes": 72172,
+      "domain": "image-stitch"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "extension": ".vue",
+      "lines": 2365,
+      "bytes": 82805,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "extension": ".vue",
+      "lines": 2325,
+      "bytes": 65637,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "extension": ".vue",
+      "lines": 2130,
+      "bytes": 59025,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "extension": ".vue",
+      "lines": 2102,
+      "bytes": 62035,
+      "domain": "pool-aim"
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 1882,
+      "bytes": 55120,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "extension": ".vue",
+      "lines": 1421,
+      "bytes": 45937,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "extension": ".vue",
+      "lines": 1397,
+      "bytes": 40519,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1283,
+      "bytes": 34997,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "extension": ".vue",
+      "lines": 1226,
+      "bytes": 35749,
+      "domain": "video-compress"
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1165,
+      "bytes": 30919,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "extension": ".vue",
+      "lines": 1084,
+      "bytes": 30441,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/character-picker-panel.vue",
+      "extension": ".vue",
+      "lines": 1010,
+      "bytes": 29050,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "extension": ".vue",
+      "lines": 943,
+      "bytes": 26393,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "extension": ".vue",
+      "lines": 930,
+      "bytes": 26291,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "extension": ".vue",
+      "lines": 908,
+      "bytes": 26276,
+      "domain": "pdf-toolkit"
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "extension": ".vue",
+      "lines": 868,
+      "bytes": 26318,
+      "domain": "code-wallet"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "extension": ".vue",
+      "lines": 844,
+      "bytes": 21296,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "extension": ".vue",
+      "lines": 832,
+      "bytes": 24345,
+      "domain": "image-watermark"
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "extension": ".vue",
+      "lines": 827,
+      "bytes": 22967,
+      "domain": "main:mine"
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "extension": ".vue",
+      "lines": 826,
+      "bytes": 21818,
+      "domain": "chat"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "extension": ".vue",
+      "lines": 814,
+      "bytes": 23725,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "extension": ".vue",
+      "lines": 757,
+      "bytes": 20189,
+      "domain": "image-compress"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "extension": ".vue",
+      "lines": 743,
+      "bytes": 21539,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-list.vue",
+      "extension": ".vue",
+      "lines": 736,
+      "bytes": 18083,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "extension": ".vue",
+      "lines": 722,
+      "bytes": 17778,
+      "domain": "chat"
+    },
+    {
+      "file": "src/subPackages/services/memo/components/OptionsControlPanel.vue",
+      "extension": ".vue",
+      "lines": 718,
+      "bytes": 21303,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "extension": ".vue",
+      "lines": 718,
+      "bytes": 16678,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/edit.vue",
+      "extension": ".vue",
+      "lines": 657,
+      "bytes": 19258,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "extension": ".vue",
+      "lines": 651,
+      "bytes": 17580,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "extension": ".vue",
+      "lines": 651,
+      "bytes": 17522,
+      "domain": "video-gif"
+    },
+    {
+      "file": "src/components/upload-card/index.vue",
+      "extension": ".vue",
+      "lines": 611,
+      "bytes": 15612,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/components/ga-select/ga-select.vue",
+      "extension": ".vue",
+      "lines": 588,
+      "bytes": 14976,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "extension": ".vue",
+      "lines": 584,
+      "bytes": 16506,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/components/family-tree/family-tree-detail.vue",
+      "extension": ".vue",
+      "lines": 551,
+      "bytes": 14126,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/components/FolderPicker.vue",
+      "extension": ".vue",
+      "lines": 533,
+      "bytes": 16530,
+      "domain": "root-components"
+    },
+    {
+      "file": "src/subPackages/common/webview/webview.vue",
+      "extension": ".vue",
+      "lines": 523,
+      "bytes": 18017,
+      "domain": "webview"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "extension": ".vue",
+      "lines": 516,
+      "bytes": 14101,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "extension": ".vue",
+      "lines": 514,
+      "bytes": 12719,
+      "domain": "root-components"
+    }
+  ],
+  "vueOver800": [
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 7245,
+      "bytes": 212363,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3826,
+      "bytes": 114693,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3626,
+      "bytes": 107755,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "extension": ".vue",
+      "lines": 2736,
+      "bytes": 74711,
+      "domain": "game-coupons"
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "extension": ".vue",
+      "lines": 2563,
+      "bytes": 72172,
+      "domain": "image-stitch"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "extension": ".vue",
+      "lines": 2365,
+      "bytes": 82805,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "extension": ".vue",
+      "lines": 2325,
+      "bytes": 65637,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "extension": ".vue",
+      "lines": 2130,
+      "bytes": 59025,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "extension": ".vue",
+      "lines": 2102,
+      "bytes": 62035,
+      "domain": "pool-aim"
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 1882,
+      "bytes": 55120,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "extension": ".vue",
+      "lines": 1421,
+      "bytes": 45937,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "extension": ".vue",
+      "lines": 1397,
+      "bytes": 40519,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1283,
+      "bytes": 34997,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "extension": ".vue",
+      "lines": 1226,
+      "bytes": 35749,
+      "domain": "video-compress"
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1165,
+      "bytes": 30919,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "extension": ".vue",
+      "lines": 1084,
+      "bytes": 30441,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/character-picker-panel.vue",
+      "extension": ".vue",
+      "lines": 1010,
+      "bytes": 29050,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "extension": ".vue",
+      "lines": 943,
+      "bytes": 26393,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "extension": ".vue",
+      "lines": 930,
+      "bytes": 26291,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "extension": ".vue",
+      "lines": 908,
+      "bytes": 26276,
+      "domain": "pdf-toolkit"
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "extension": ".vue",
+      "lines": 868,
+      "bytes": 26318,
+      "domain": "code-wallet"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "extension": ".vue",
+      "lines": 844,
+      "bytes": 21296,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "extension": ".vue",
+      "lines": 832,
+      "bytes": 24345,
+      "domain": "image-watermark"
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "extension": ".vue",
+      "lines": 827,
+      "bytes": 22967,
+      "domain": "main:mine"
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "extension": ".vue",
+      "lines": 826,
+      "bytes": 21818,
+      "domain": "chat"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "extension": ".vue",
+      "lines": 814,
+      "bytes": 23725,
+      "domain": "compendium"
+    }
+  ],
+  "typescriptOver400": [
+    {
+      "file": "src/subPackages/tools/memo/schemas.ts",
+      "extension": ".ts",
+      "lines": 454,
+      "bytes": 15432,
+      "domain": "memo"
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "extension": ".ts",
+      "lines": 431,
+      "bytes": 13594,
+      "domain": "utilsH5"
+    }
+  ],
+  "largest30": [
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 7245,
+      "bytes": 212363,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3826,
+      "bytes": 114693,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3626,
+      "bytes": 107755,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "extension": ".vue",
+      "lines": 2736,
+      "bytes": 74711,
+      "domain": "game-coupons"
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "extension": ".vue",
+      "lines": 2563,
+      "bytes": 72172,
+      "domain": "image-stitch"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "extension": ".vue",
+      "lines": 2365,
+      "bytes": 82805,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "extension": ".vue",
+      "lines": 2325,
+      "bytes": 65637,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "extension": ".vue",
+      "lines": 2130,
+      "bytes": 59025,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "extension": ".vue",
+      "lines": 2102,
+      "bytes": 62035,
+      "domain": "pool-aim"
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 1882,
+      "bytes": 55120,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "extension": ".vue",
+      "lines": 1421,
+      "bytes": 45937,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "extension": ".vue",
+      "lines": 1397,
+      "bytes": 40519,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1283,
+      "bytes": 34997,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "extension": ".vue",
+      "lines": 1226,
+      "bytes": 35749,
+      "domain": "video-compress"
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1165,
+      "bytes": 30919,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "extension": ".vue",
+      "lines": 1084,
+      "bytes": 30441,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/character-picker-panel.vue",
+      "extension": ".vue",
+      "lines": 1010,
+      "bytes": 29050,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "extension": ".vue",
+      "lines": 943,
+      "bytes": 26393,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "extension": ".vue",
+      "lines": 930,
+      "bytes": 26291,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "extension": ".vue",
+      "lines": 908,
+      "bytes": 26276,
+      "domain": "pdf-toolkit"
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "extension": ".vue",
+      "lines": 868,
+      "bytes": 26318,
+      "domain": "code-wallet"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "extension": ".vue",
+      "lines": 844,
+      "bytes": 21296,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "extension": ".vue",
+      "lines": 832,
+      "bytes": 24345,
+      "domain": "image-watermark"
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "extension": ".vue",
+      "lines": 827,
+      "bytes": 22967,
+      "domain": "main:mine"
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "extension": ".vue",
+      "lines": 826,
+      "bytes": 21818,
+      "domain": "chat"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "extension": ".vue",
+      "lines": 814,
+      "bytes": 23725,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "extension": ".vue",
+      "lines": 757,
+      "bytes": 20189,
+      "domain": "image-compress"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "extension": ".vue",
+      "lines": 743,
+      "bytes": 21539,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-list.vue",
+      "extension": ".vue",
+      "lines": 736,
+      "bytes": 18083,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "extension": ".vue",
+      "lines": 722,
+      "bytes": 17778,
+      "domain": "chat"
+    }
+  ],
+  "largest30IncludingGenerated": [
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 7245,
+      "bytes": 212363,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3826,
+      "bytes": 114693,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "extension": ".vue",
+      "lines": 3626,
+      "bytes": 107755,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "extension": ".vue",
+      "lines": 2736,
+      "bytes": 74711,
+      "domain": "game-coupons"
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "extension": ".vue",
+      "lines": 2563,
+      "bytes": 72172,
+      "domain": "image-stitch"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "extension": ".vue",
+      "lines": 2365,
+      "bytes": 82805,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "extension": ".vue",
+      "lines": 2325,
+      "bytes": 65637,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "extension": ".vue",
+      "lines": 2130,
+      "bytes": 59025,
+      "domain": "family-tree"
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "extension": ".vue",
+      "lines": 2102,
+      "bytes": 62035,
+      "domain": "pool-aim"
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "extension": ".vue",
+      "lines": 1882,
+      "bytes": 55120,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "extension": ".vue",
+      "lines": 1421,
+      "bytes": 45937,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "extension": ".vue",
+      "lines": 1397,
+      "bytes": 40519,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1283,
+      "bytes": 34997,
+      "domain": "memo"
+    },
+    {
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "extension": ".vue",
+      "lines": 1226,
+      "bytes": 35749,
+      "domain": "video-compress"
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "extension": ".vue",
+      "lines": 1165,
+      "bytes": 30919,
+      "domain": "memo"
+    },
+    {
+      "file": "src/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox.ts",
+      "extension": ".ts",
+      "lines": 1097,
+      "bytes": 37405,
+      "domain": "services"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "extension": ".vue",
+      "lines": 1084,
+      "bytes": 30441,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/components/character-picker-panel.vue",
+      "extension": ".vue",
+      "lines": 1010,
+      "bytes": 29050,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/services/apifox/3903128/shangPinXiangGuan/interface.ts",
+      "extension": ".ts",
+      "lines": 947,
+      "bytes": 21426,
+      "domain": "services"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "extension": ".vue",
+      "lines": 943,
+      "bytes": 26393,
+      "domain": "compendium"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "extension": ".vue",
+      "lines": 930,
+      "bytes": 26291,
+      "domain": "oss-upload"
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "extension": ".vue",
+      "lines": 908,
+      "bytes": 26276,
+      "domain": "pdf-toolkit"
+    },
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "extension": ".vue",
+      "lines": 868,
+      "bytes": 26318,
+      "domain": "code-wallet"
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "extension": ".vue",
+      "lines": 844,
+      "bytes": 21296,
+      "domain": "calendar"
+    },
+    {
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "extension": ".vue",
+      "lines": 832,
+      "bytes": 24345,
+      "domain": "image-watermark"
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "extension": ".vue",
+      "lines": 827,
+      "bytes": 22967,
+      "domain": "main:mine"
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "extension": ".vue",
+      "lines": 826,
+      "bytes": 21818,
+      "domain": "chat"
+    },
+    {
+      "file": "src/services/compendium-lineups.ts",
+      "extension": ".ts",
+      "lines": 821,
+      "bytes": 26917,
+      "domain": "services"
+    },
+    {
+      "file": "src/services/apifox/3903128/shangWuXiaoChengXu/gongSiShenJiLiDeShui/interface.ts",
+      "extension": ".ts",
+      "lines": 815,
+      "bytes": 20358,
+      "domain": "services"
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "extension": ".vue",
+      "lines": 814,
+      "bytes": 23725,
+      "domain": "compendium"
+    }
+  ],
+  "exactDuplicates": [
+    [
+      "src/editor-core/renderers/BlockHost.vue",
+      "src/subPackages/tools/memo/components/editor-core/renderers/BlockHost.vue"
+    ],
+    [
+      "src/editor-core/schemas/schema-field.ts",
+      "src/subPackages/tools/memo/components/editor-core/schemas/schema-field.ts"
+    ]
+  ]
+}

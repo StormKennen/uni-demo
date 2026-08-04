@@ -1,0 +1,1212 @@
+{
+  "counts": {
+    "components": 57,
+    "unreferenced": 32
+  },
+  "components": [
+    {
+      "file": "src/components/FolderPicker.vue",
+      "name": "FolderPicker",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/subPackages/tools/oss-upload/fileList.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/oss-upload/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 4,
+      "domains": [
+        "oss-upload"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "对应业务域 components（oss-upload）",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/PageLayout.vue",
+      "name": "PageLayout",
+      "referenceFiles": 53,
+      "references": [
+        {
+          "file": "src/editor-core/demo/SchemaEditorDemo.vue",
+          "count": 1
+        },
+        {
+          "file": "src/pages.json",
+          "count": 1
+        },
+        {
+          "file": "src/pages/index/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/pages/mine/login/login.vue",
+          "count": 1
+        },
+        {
+          "file": "src/pages/mine/mine.vue",
+          "count": 1
+        },
+        {
+          "file": "src/pages/tools/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/services/memo/detail.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/services/memo/editor.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/services/memo/list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/calendar/auspicious.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/calendar/detail.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/calendar/festivals.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/calendar/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/chat/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/chat/list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/code-wallet/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/detail.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/edit.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/lineup-edit.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/compendium/swc/list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/document-scan/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/demo.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/game-coupons/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-cipher/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-compress/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-format/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-privacy/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-stitch/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/image-watermark/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/magnet-link/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/markdown/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/memo/detail.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/memo/editor.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/memo/list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/oss-upload/fileList.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/oss-upload/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/pool-aim/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/qr-generator/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/qr-parser/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/schema-demo/list.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/video-compress/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/video-gif/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/watermark/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/user/setting/setting.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 53,
+      "domains": [
+        "editor-core",
+        "pages.json",
+        "main:index",
+        "main:mine",
+        "main:tools",
+        "memo",
+        "calendar",
+        "chat",
+        "code-wallet",
+        "compendium",
+        "document-scan",
+        "family-tree",
+        "game-coupons",
+        "image-cipher",
+        "image-compress",
+        "image-format",
+        "image-privacy",
+        "image-stitch",
+        "image-watermark",
+        "magnet-link",
+        "markdown",
+        "oss-upload",
+        "pdf-toolkit",
+        "pool-aim",
+        "qr-generator",
+        "qr-parser",
+        "schema-demo",
+        "video-compress",
+        "video-gif",
+        "watermark",
+        "setting"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/PageLayout.vue",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/ThemeRoot.vue",
+      "name": "ThemeRoot",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/button-item.vue",
+      "name": "button-item",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/card/index.vue",
+      "name": "card",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/components/certificate-card/base.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/upload-card/index.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "保留根组件，P2A 复核归属",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/certificate-card/base.vue",
+      "name": "base",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/components/certificate-card/hook.ts",
+          "count": 1
+        },
+        {
+          "file": "src/components/certificate-card/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/certificate-card/multifile.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 3,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "保留根组件，P2A 复核归属",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/certificate-card/index.vue",
+      "name": "certificate-card",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/components/certificate-card/hook.ts",
+          "count": 1
+        }
+      ],
+      "occurrences": 1,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "保留根组件，P2A 复核归属",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/certificate-card/multifile.vue",
+      "name": "multifile",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/check-radio/index.vue",
+      "name": "check-radio",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/confirm-dialog.vue",
+      "name": "confirm-dialog",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/subPackages/user/setting/setting.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "setting"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/confirm-dialog.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/date-range-picker/date-range-picker.vue",
+      "name": "date-range-picker",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/download-popup/download-popup.vue",
+      "name": "download-popup",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/empty-data.vue",
+      "name": "empty-data",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/subPackages/tools/code-wallet/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 3,
+      "domains": [
+        "code-wallet",
+        "pdf-toolkit"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/empty-data.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/family-tree/family-tree-detail.vue",
+      "name": "family-tree-detail",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/family-tree/family-tree-node.vue",
+      "name": "family-tree-node",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/footer/OneBtn.vue",
+      "name": "OneBtn",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/form/item.vue",
+      "name": "item",
+      "referenceFiles": 5,
+      "references": [
+        {
+          "file": "src/components/certificate-card/base.vue",
+          "count": 2
+        },
+        {
+          "file": "src/components/certificate-card/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/certificate-card/multifile.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/download-popup/download-popup.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/upload-card/index.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "保留根组件，P2A 复核归属",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-calendar/ga-calendar.vue",
+      "name": "ga-calendar",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-check/ga-check.vue",
+      "name": "ga-check",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-checkbox/ga-checkbox.vue",
+      "name": "ga-checkbox",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-confirm-popup.vue",
+      "name": "ga-confirm-popup",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-date-picker/ga-date-picker.vue",
+      "name": "ga-date-picker",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-picker/ga-picker.vue",
+      "name": "ga-picker",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-province/ga-province.vue",
+      "name": "ga-province",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-select/ga-select.vue",
+      "name": "ga-select",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/ga-tags/ga-tags.vue",
+      "name": "ga-tags",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/guide-card.vue",
+      "name": "guide-card",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "name": "h5-tab-bar",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/pages/index/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/pages/mine/mine.vue",
+          "count": 2
+        },
+        {
+          "file": "src/pages/tools/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "main:index",
+        "main:mine",
+        "main:tools"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/h5-tab-bar.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/l-echart/l-echart.uvue",
+      "name": "l-echart",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/components/lime-echart/lime-echart.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/demo.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 3,
+      "domains": [
+        "root-components",
+        "family-tree"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "对应业务域 components（family-tree）",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/l-echart/l-echart.vue",
+      "name": "l-echart",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/components/lime-echart/lime-echart.vue",
+          "count": 1
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/demo.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 5,
+      "domains": [
+        "root-components",
+        "family-tree"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "对应业务域 components（family-tree）",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/layout-page.vue",
+      "name": "layout-page",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/appDebug/debug.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "appDebug"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "对应业务域 components（appDebug）",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.nvue",
+      "name": "lime-echart",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.uvue",
+      "name": "lime-echart",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/lime-echart/lime-echart.vue",
+      "name": "lime-echart",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "High"
+    },
+    {
+      "file": "src/components/mine-list-item.vue",
+      "name": "mine-list-item",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/pages/mine/mine.vue",
+          "count": 3
+        },
+        {
+          "file": "src/subPackages/user/setting/setting.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 5,
+      "domains": [
+        "main:mine",
+        "setting"
+      ],
+      "classification": "分包内共享组件",
+      "suggestedTarget": "目标工具分包 _shared/mine-list-item.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/nav-bar-base.vue",
+      "name": "nav-bar-base",
+      "referenceFiles": 4,
+      "references": [
+        {
+          "file": "src/components/layout-page.vue",
+          "count": 2
+        },
+        {
+          "file": "src/components/nav-bar.vue",
+          "count": 2
+        },
+        {
+          "file": "src/pages/index/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/pages/tools/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 8,
+      "domains": [
+        "root-components",
+        "main:index",
+        "main:tools"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/nav-bar-base.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/nav-bar.vue",
+      "name": "nav-bar",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/components/PageLayout.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/nav-bar.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/new-confirm-dialog.vue",
+      "name": "new-confirm-dialog",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/no-more.vue",
+      "name": "no-more",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/platform-restriction-notice.vue",
+      "name": "platform-restriction-notice",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/popup.vue",
+      "name": "popup",
+      "referenceFiles": 6,
+      "references": [
+        {
+          "file": "src/components/certificate-card/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/certificate-card/multifile.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/download-popup/download-popup.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/toolkit/base/tool-sheet.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/upload-card/index.vue",
+          "count": 1
+        },
+        {
+          "file": "src/components/upload-popup/index.vue",
+          "count": 1
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/popup.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/privacy-popup.vue",
+      "name": "privacy-popup",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/components/PageLayout.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/privacy-popup.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/radio-select/radio-select.vue",
+      "name": "radio-select",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/share-app.vue",
+      "name": "share-app",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/simple-table/index.vue",
+      "name": "simple-table",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/step-bar/index.vue",
+      "name": "step-bar",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/toolkit/base/flow-action-bar.vue",
+      "name": "flow-action-bar",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/subPackages/tools/magnet-link/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/qr-generator/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/qr-parser/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "magnet-link",
+        "qr-generator",
+        "qr-parser"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/flow-action-bar.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/toolkit/base/tool-action-row.vue",
+      "name": "tool-action-row",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+          "count": 3
+        },
+        {
+          "file": "src/components/toolkit/business/qr-generator-panel.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 5,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/tool-action-row.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/toolkit/base/tool-section-card.vue",
+      "name": "tool-section-card",
+      "referenceFiles": 4,
+      "references": [
+        {
+          "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+          "count": 3
+        },
+        {
+          "file": "src/components/toolkit/business/qr-generator-panel.vue",
+          "count": 4
+        },
+        {
+          "file": "src/components/toolkit/business/qr-parser-panel.vue",
+          "count": 4
+        },
+        {
+          "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+          "count": 7
+        }
+      ],
+      "occurrences": 18,
+      "domains": [
+        "root-components",
+        "pdf-toolkit"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/tool-section-card.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/toolkit/base/tool-sheet.vue",
+      "name": "tool-sheet",
+      "referenceFiles": 2,
+      "references": [
+        {
+          "file": "src/subPackages/tools/magnet-link/index.vue",
+          "count": 3
+        },
+        {
+          "file": "src/subPackages/tools/qr-generator/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 5,
+      "domains": [
+        "magnet-link",
+        "qr-generator"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/tool-sheet.vue",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "name": "image-shuffle-panel",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/subPackages/tools/image-cipher/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/magnet-link/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/qr-generator/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "image-cipher",
+        "magnet-link",
+        "qr-generator"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/image-shuffle-panel.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/toolkit/business/qr-generator-panel.vue",
+      "name": "qr-generator-panel",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/subPackages/tools/code-wallet/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/magnet-link/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/subPackages/tools/qr-generator/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "code-wallet",
+        "magnet-link",
+        "qr-generator"
+      ],
+      "classification": "工具平台通用组件",
+      "suggestedTarget": "src/shared/toolkit/qr-generator-panel.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "name": "qr-parser-panel",
+      "referenceFiles": 1,
+      "references": [
+        {
+          "file": "src/subPackages/tools/qr-parser/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 2,
+      "domains": [
+        "qr-parser"
+      ],
+      "classification": "单一业务组件",
+      "suggestedTarget": "对应业务域 components（qr-parser）",
+      "migrationRisk": "Low"
+    },
+    {
+      "file": "src/components/upload-card/index.vue",
+      "name": "upload-card",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/upload-popup/index.vue",
+      "name": "upload-popup",
+      "referenceFiles": 3,
+      "references": [
+        {
+          "file": "src/components/certificate-card/index.vue",
+          "count": 2
+        },
+        {
+          "file": "src/components/certificate-card/multifile.vue",
+          "count": 2
+        },
+        {
+          "file": "src/components/upload-card/index.vue",
+          "count": 2
+        }
+      ],
+      "occurrences": 6,
+      "domains": [
+        "root-components"
+      ],
+      "classification": "全局基础 UI",
+      "suggestedTarget": "src/shared/ui/index.vue",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/vertical-steps/index.vue",
+      "name": "vertical-steps",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    },
+    {
+      "file": "src/components/vertical-steps/item.vue",
+      "name": "item",
+      "referenceFiles": 0,
+      "references": [],
+      "occurrences": 0,
+      "domains": [],
+      "classification": "未引用组件",
+      "suggestedTarget": "P2A 复核动态引用后删除或归档",
+      "migrationRisk": "Medium"
+    }
+  ]
+}

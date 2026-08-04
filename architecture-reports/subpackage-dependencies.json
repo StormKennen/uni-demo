@@ -1,0 +1,649 @@
+{
+  "counts": {
+    "crossSubpackageImports": 0,
+    "rootComponentImports": 21,
+    "rootComponentUsageFiles": 70
+  },
+  "crossSubpackageImports": [],
+  "rootComponentImports": [
+    {
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "line": 159,
+      "specifier": "@/components/toolkit/business/qr-generator-panel.vue",
+      "target": "src/components/toolkit/business/qr-generator-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "line": 43,
+      "specifier": "@/components/l-echart/l-echart.vue",
+      "target": "src/components/l-echart/l-echart.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "line": 270,
+      "specifier": "@/components/l-echart/l-echart.vue",
+      "target": "src/components/l-echart/l-echart.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "line": 14,
+      "specifier": "@/components/toolkit/business/image-shuffle-panel.vue",
+      "target": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "line": 15,
+      "specifier": "@/components/toolkit/types",
+      "target": "src/components/toolkit/types",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 87,
+      "specifier": "@/components/toolkit/base/tool-sheet.vue",
+      "target": "src/components/toolkit/base/tool-sheet.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 88,
+      "specifier": "@/components/toolkit/base/flow-action-bar.vue",
+      "target": "src/components/toolkit/base/flow-action-bar.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 89,
+      "specifier": "@/components/toolkit/business/qr-generator-panel.vue",
+      "target": "src/components/toolkit/business/qr-generator-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 90,
+      "specifier": "@/components/toolkit/business/image-shuffle-panel.vue",
+      "target": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 91,
+      "specifier": "@/components/toolkit/types",
+      "target": "src/components/toolkit/types",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "line": 7,
+      "specifier": "@/components/FolderPicker.vue",
+      "target": "src/components/FolderPicker.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 3,
+      "specifier": "@/components/FolderPicker.vue",
+      "target": "src/components/FolderPicker.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 40,
+      "specifier": "@/components/toolkit/business/qr-generator-panel.vue",
+      "target": "src/components/toolkit/business/qr-generator-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 41,
+      "specifier": "@/components/toolkit/business/image-shuffle-panel.vue",
+      "target": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 42,
+      "specifier": "@/components/toolkit/base/tool-sheet.vue",
+      "target": "src/components/toolkit/base/tool-sheet.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 43,
+      "specifier": "@/components/toolkit/base/flow-action-bar.vue",
+      "target": "src/components/toolkit/base/flow-action-bar.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 44,
+      "specifier": "@/components/toolkit/types",
+      "target": "src/components/toolkit/types",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 25,
+      "specifier": "@/components/toolkit/business/qr-parser-panel.vue",
+      "target": "src/components/toolkit/business/qr-parser-panel.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 26,
+      "specifier": "@/components/toolkit/base/flow-action-bar.vue",
+      "target": "src/components/toolkit/base/flow-action-bar.vue",
+      "package": "tools"
+    },
+    {
+      "file": "src/subPackages/user/setting/setting.vue",
+      "line": 2,
+      "specifier": "@/components/mine-list-item.vue",
+      "target": "src/components/mine-list-item.vue",
+      "package": "user"
+    },
+    {
+      "file": "src/subPackages/user/setting/setting.vue",
+      "line": 4,
+      "specifier": "@/components/confirm-dialog.vue",
+      "target": "src/components/confirm-dialog.vue",
+      "package": "user"
+    }
+  ],
+  "rootComponentUsages": [
+    {
+      "component": "src/components/FolderPicker.vue",
+      "importer": "src/subPackages/tools/oss-upload/fileList.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/FolderPicker.vue",
+      "importer": "src/subPackages/tools/oss-upload/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/services/memo/detail.vue",
+      "count": 1,
+      "importerPackage": "services",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/services/memo/editor.vue",
+      "count": 1,
+      "importerPackage": "services",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/services/memo/list.vue",
+      "count": 1,
+      "importerPackage": "services",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/calendar/auspicious.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/calendar/detail.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/calendar/festivals.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/calendar/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/chat/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/chat/list.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/code-wallet/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/detail.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/edit.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/lineup-edit.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/compendium/swc/list.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/document-scan/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/family-tree/demo.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/family-tree/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/game-coupons/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-cipher/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-compress/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-format/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-privacy/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-stitch/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/image-watermark/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/magnet-link/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/markdown/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/memo/detail.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/memo/editor.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/memo/list.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/oss-upload/fileList.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/oss-upload/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/pool-aim/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/qr-generator/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/qr-parser/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/schema-demo/list.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/video-compress/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/video-gif/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/tools/watermark/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/PageLayout.vue",
+      "importer": "src/subPackages/user/setting/setting.vue",
+      "count": 1,
+      "importerPackage": "user",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/confirm-dialog.vue",
+      "importer": "src/subPackages/user/setting/setting.vue",
+      "count": 2,
+      "importerPackage": "user",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/empty-data.vue",
+      "importer": "src/subPackages/tools/code-wallet/index.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/empty-data.vue",
+      "importer": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "全局基础 UI"
+    },
+    {
+      "component": "src/components/l-echart/l-echart.uvue",
+      "importer": "src/subPackages/tools/family-tree/demo.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/l-echart/l-echart.uvue",
+      "importer": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "count": 1,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/l-echart/l-echart.vue",
+      "importer": "src/subPackages/tools/family-tree/demo.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/l-echart/l-echart.vue",
+      "importer": "src/subPackages/tools/family-tree/family-tree-chart.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    },
+    {
+      "component": "src/components/mine-list-item.vue",
+      "importer": "src/subPackages/user/setting/setting.vue",
+      "count": 2,
+      "importerPackage": "user",
+      "classification": "分包内共享组件"
+    },
+    {
+      "component": "src/components/toolkit/base/flow-action-bar.vue",
+      "importer": "src/subPackages/tools/magnet-link/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/base/flow-action-bar.vue",
+      "importer": "src/subPackages/tools/qr-generator/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/base/flow-action-bar.vue",
+      "importer": "src/subPackages/tools/qr-parser/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/base/tool-section-card.vue",
+      "importer": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "count": 7,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/base/tool-sheet.vue",
+      "importer": "src/subPackages/tools/magnet-link/index.vue",
+      "count": 3,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/base/tool-sheet.vue",
+      "importer": "src/subPackages/tools/qr-generator/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "importer": "src/subPackages/tools/image-cipher/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "importer": "src/subPackages/tools/magnet-link/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/image-shuffle-panel.vue",
+      "importer": "src/subPackages/tools/qr-generator/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/qr-generator-panel.vue",
+      "importer": "src/subPackages/tools/code-wallet/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/qr-generator-panel.vue",
+      "importer": "src/subPackages/tools/magnet-link/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/qr-generator-panel.vue",
+      "importer": "src/subPackages/tools/qr-generator/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "工具平台通用组件"
+    },
+    {
+      "component": "src/components/toolkit/business/qr-parser-panel.vue",
+      "importer": "src/subPackages/tools/qr-parser/index.vue",
+      "count": 2,
+      "importerPackage": "tools",
+      "classification": "单一业务组件"
+    }
+  ]
+}

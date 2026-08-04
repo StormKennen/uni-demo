@@ -1,0 +1,1749 @@
+{
+  "counts": {
+    "mainPages": 4,
+    "subpackages": 4,
+    "subpackagePages": 47,
+    "registeredRoutes": 51,
+    "navigationCalls": 86,
+    "navigationByMethod": {
+      "navigateTo": 69,
+      "redirectTo": 8,
+      "reLaunch": 0,
+      "switchTab": 9
+    },
+    "toolRoutes": 27,
+    "shareRoutes": 38
+  },
+  "registered": [
+    {
+      "route": "/pages/index/index",
+      "package": "main",
+      "source": "src/pages.json",
+      "line": 11,
+      "file": "src/pages/index/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/pages/tools/index",
+      "package": "main",
+      "source": "src/pages.json",
+      "line": 20,
+      "file": "src/pages/tools/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/pages/mine/mine",
+      "package": "main",
+      "source": "src/pages.json",
+      "line": 27,
+      "file": "src/pages/mine/mine.vue",
+      "exists": true
+    },
+    {
+      "route": "/pages/mine/login/login",
+      "package": "main",
+      "source": "src/pages.json",
+      "line": 33,
+      "file": "src/pages/mine/login/login.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/user/setting/setting",
+      "package": "user",
+      "packageRoot": "subPackages/user",
+      "source": "src/pages.json",
+      "line": 47,
+      "file": "src/subPackages/user/setting/setting.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/memo/list",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 60,
+      "file": "src/subPackages/tools/memo/list.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/memo/editor",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 68,
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/memo/detail",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 75,
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/family-tree/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 82,
+      "file": "src/subPackages/tools/family-tree/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/family-tree/demo",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 89,
+      "file": "src/subPackages/tools/family-tree/demo.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/oss-upload/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 96,
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/oss-upload/fileList",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 103,
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-compress/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 112,
+      "file": "src/subPackages/tools/image-compress/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-privacy/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 119,
+      "file": "src/subPackages/tools/image-privacy/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-watermark/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 126,
+      "file": "src/subPackages/tools/image-watermark/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/markdown/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 133,
+      "file": "src/subPackages/tools/markdown/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-format/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 140,
+      "file": "src/subPackages/tools/image-format/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-cipher/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 147,
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/pdf-toolkit/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 154,
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/code-wallet/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 161,
+      "file": "src/subPackages/tools/code-wallet/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/qr-generator/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 168,
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/qr-parser/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 175,
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/calendar/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 182,
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/calendar/detail",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 189,
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/calendar/festivals",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 196,
+      "file": "src/subPackages/tools/calendar/festivals.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/calendar/auspicious",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 203,
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/video-compress/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 210,
+      "file": "src/subPackages/tools/video-compress/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/watermark/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 217,
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/image-stitch/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 224,
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/document-scan/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 231,
+      "file": "src/subPackages/tools/document-scan/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/chat/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 238,
+      "file": "src/subPackages/tools/chat/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/chat/list",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 245,
+      "file": "src/subPackages/tools/chat/list.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/schema-demo/list",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 252,
+      "file": "src/subPackages/tools/schema-demo/list.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/pool-aim/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 259,
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 266,
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/list",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 273,
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/detail",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 282,
+      "file": "src/subPackages/tools/compendium/swc/detail.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/edit",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 290,
+      "file": "src/subPackages/tools/compendium/swc/edit.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/admin-list",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 297,
+      "file": "src/subPackages/tools/compendium/swc/admin-list.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/lineups",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 305,
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/lineup-edit",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 312,
+      "file": "src/subPackages/tools/compendium/swc/lineup-edit.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/lineup-relations",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 319,
+      "file": "src/subPackages/tools/compendium/swc/lineup-relations.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/character-picker",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 326,
+      "file": "src/subPackages/tools/compendium/swc/character-picker.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 334,
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/compendium/swc/lineup-mapping-detail",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 342,
+      "file": "src/subPackages/tools/compendium/swc/lineup-mapping-detail.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/magnet-link/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 349,
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/video-gif/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 356,
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/tools/game-coupons/index",
+      "package": "tools",
+      "packageRoot": "subPackages/tools",
+      "source": "src/pages.json",
+      "line": 363,
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "exists": true
+    },
+    {
+      "route": "/editor-core/demo/SchemaEditorDemo",
+      "package": "editor",
+      "packageRoot": "editor-core",
+      "source": "src/pages.json",
+      "line": 376,
+      "file": "src/editor-core/demo/SchemaEditorDemo.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/common/webview/webview",
+      "package": "common",
+      "packageRoot": "subPackages/common",
+      "source": "src/pages.json",
+      "line": 389,
+      "file": "src/subPackages/common/webview/webview.vue",
+      "exists": true
+    },
+    {
+      "route": "/subPackages/common/webview/h5",
+      "package": "common",
+      "packageRoot": "subPackages/common",
+      "source": "src/pages.json",
+      "line": 392,
+      "file": "src/subPackages/common/webview/h5.vue",
+      "exists": true
+    }
+  ],
+  "toolRoutes": [
+    {
+      "file": "src/config/tools.ts",
+      "line": 56,
+      "route": "/subPackages/tools/compendium/swc/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 65,
+      "route": "/subPackages/tools/compendium/swc/admin-list",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 74,
+      "route": "/subPackages/tools/compendium/swc/lineups",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 85,
+      "route": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 96,
+      "route": "/subPackages/tools/game-coupons/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 108,
+      "route": "/subPackages/tools/oss-upload/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 116,
+      "route": "/subPackages/tools/image-stitch/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 124,
+      "route": "/subPackages/tools/image-compress/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 132,
+      "route": "/subPackages/tools/image-privacy/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 142,
+      "route": "/subPackages/tools/image-format/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 150,
+      "route": "/subPackages/tools/image-cipher/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 158,
+      "route": "/subPackages/tools/image-watermark/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 167,
+      "route": "/subPackages/tools/video-compress/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 175,
+      "route": "/subPackages/tools/watermark/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 183,
+      "route": "/subPackages/tools/video-gif/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 192,
+      "route": "/subPackages/tools/document-scan/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 202,
+      "route": "/subPackages/tools/pdf-toolkit/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 214,
+      "route": "/subPackages/tools/qr-generator/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 222,
+      "route": "/subPackages/tools/qr-parser/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 230,
+      "route": "/subPackages/tools/code-wallet/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 240,
+      "route": "/subPackages/tools/calendar/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 248,
+      "route": "/subPackages/tools/chat/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 256,
+      "route": "/subPackages/tools/memo/list",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 265,
+      "route": "/subPackages/tools/family-tree/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 275,
+      "route": "/subPackages/tools/markdown/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 283,
+      "route": "/subPackages/tools/magnet-link/index",
+      "registered": true
+    },
+    {
+      "file": "src/config/tools.ts",
+      "line": 292,
+      "route": "/subPackages/tools/pool-aim/index",
+      "registered": true
+    }
+  ],
+  "shareRoutes": [
+    {
+      "file": "src/pages/index/index.vue",
+      "line": 106,
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/pages/tools/index.vue",
+      "line": 110,
+      "raw": "/pages/tools/index",
+      "route": "/pages/tools/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 2182,
+      "raw": "/subPackages/services/memo/detail?id=${memoId.value}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 3980,
+      "raw": "/subPackages/services/memo/detail?id=${memoId.value}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/tools/calendar/detail.vue",
+      "line": 289,
+      "raw": "/subPackages/tools/calendar/detail?date=${currentDate.value}",
+      "route": "/subPackages/tools/calendar/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "line": 434,
+      "raw": "/subPackages/tools/calendar/index",
+      "route": "/subPackages/tools/calendar/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "line": 285,
+      "raw": "/subPackages/tools/chat/index",
+      "route": "/subPackages/tools/chat/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "line": 297,
+      "raw": "/subPackages/tools/chat/index?chatId=${currentChatId.value}",
+      "route": "/subPackages/tools/chat/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "line": 58,
+      "raw": "/subPackages/tools/compendium/swc/list",
+      "route": "/subPackages/tools/compendium/swc/list",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "line": 67,
+      "raw": "/subPackages/tools/game-coupons/index?gameId=swc&compendiumId=swc",
+      "route": "/subPackages/tools/game-coupons/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "line": 76,
+      "raw": "/subPackages/tools/compendium/swc/lineups?compendiumId=swc",
+      "route": "/subPackages/tools/compendium/swc/lineups",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "line": 85,
+      "raw": "/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc",
+      "route": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 19,
+      "raw": "/subPackages/tools/compendium/swc/index",
+      "route": "/subPackages/tools/compendium/swc/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 20,
+      "raw": "/subPackages/tools/compendium/swc/list",
+      "route": "/subPackages/tools/compendium/swc/list",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 21,
+      "raw": "/subPackages/tools/game-coupons/index",
+      "route": "/subPackages/tools/game-coupons/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 22,
+      "raw": "/subPackages/tools/compendium/swc/lineups",
+      "route": "/subPackages/tools/compendium/swc/lineups",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 23,
+      "raw": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "route": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 24,
+      "raw": "/subPackages/tools/compendium/swc/lineup-mapping-detail",
+      "route": "/subPackages/tools/compendium/swc/lineup-mapping-detail",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 25,
+      "raw": "/subPackages/tools/compendium/swc/lineup-relations",
+      "route": "/subPackages/tools/compendium/swc/lineup-relations",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/share.ts",
+      "line": 26,
+      "raw": "/subPackages/tools/compendium/swc/detail",
+      "route": "/subPackages/tools/compendium/swc/detail",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/image-cipher/index.vue",
+      "line": 46,
+      "raw": "/subPackages/tools/image-cipher/index",
+      "route": "/subPackages/tools/image-cipher/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 2270,
+      "raw": "/subPackages/services/memo/detail?id=${memoId.value}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/tools/pool-aim/index.vue",
+      "line": 1468,
+      "raw": "/subPackages/tools/pool-aim/index",
+      "route": "/subPackages/tools/pool-aim/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 151,
+      "raw": "/subPackages/tools/qr-generator/index",
+      "route": "/subPackages/tools/qr-generator/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 157,
+      "raw": "/subPackages/tools/qr-generator/index",
+      "route": "/subPackages/tools/qr-generator/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 67,
+      "raw": "/subPackages/tools/qr-parser/index",
+      "route": "/subPackages/tools/qr-parser/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 73,
+      "raw": "/subPackages/tools/qr-parser/index",
+      "route": "/subPackages/tools/qr-parser/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/video-gif/index.vue",
+      "line": 404,
+      "raw": "/subPackages/tools/video-gif/index",
+      "route": "/subPackages/tools/video-gif/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/watermark/index.vue",
+      "line": 55,
+      "raw": "/subPackages/tools/watermark/index",
+      "route": "/subPackages/tools/watermark/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 15,
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 68,
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 74,
+      "raw": "/pages/tools/index",
+      "route": "/pages/tools/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 88,
+      "raw": "/pages/mine/mine",
+      "route": "/pages/mine/mine",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 95,
+      "raw": "/subPackages/tools/family-tree/index",
+      "route": "/subPackages/tools/family-tree/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 102,
+      "raw": "/subPackages/tools/qr-generator/index",
+      "route": "/subPackages/tools/qr-generator/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 109,
+      "raw": "/subPackages/tools/image-compress/index",
+      "route": "/subPackages/tools/image-compress/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 116,
+      "raw": "/subPackages/tools/magnet-link/index",
+      "route": "/subPackages/tools/magnet-link/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/share.ts",
+      "line": 123,
+      "raw": "/subPackages/tools/video-gif/index",
+      "route": "/subPackages/tools/video-gif/index",
+      "dynamic": false,
+      "registered": true
+    }
+  ],
+  "routeUses": [
+    {
+      "file": "src/App.vue",
+      "line": 115,
+      "method": "redirectTo",
+      "raw": "options.referrerInfo.extraData.callbackObj.path",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "line": 50,
+      "method": "switchTab",
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "line": 54,
+      "method": "switchTab",
+      "raw": "/pages/tools/index",
+      "route": "/pages/tools/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/components/h5-tab-bar.vue",
+      "line": 58,
+      "method": "switchTab",
+      "raw": "/pages/mine/mine",
+      "route": "/pages/mine/mine",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/components/mine-list-item.vue",
+      "line": 47,
+      "method": "navigateTo",
+      "raw": "data.to",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "line": 154,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/qr-generator/index?content=${encodeURIComponent(parseResult.value)}",
+      "route": "/subPackages/tools/qr-generator/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/components/toolkit/business/qr-parser-panel.vue",
+      "line": 161,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/magnet-link/index?input=${encodeURIComponent(parseResult.value)}",
+      "route": "/subPackages/tools/magnet-link/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "line": 266,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "line": 281,
+      "method": "navigateTo",
+      "raw": "/subPackages/common/webview/h5?path=${encodeURIComponent(tool.path)}&title=${encodeURIComponent(tool.name)}",
+      "route": "/subPackages/common/webview/h5",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "line": 295,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(tool.path)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "line": 304,
+      "method": "navigateTo",
+      "raw": "tool.path",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/hooks/use-tool-directory.ts",
+      "line": 320,
+      "method": "navigateTo",
+      "raw": "${primary.tool.path}?flow=${scene.id}",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/index/index.vue",
+      "line": 99,
+      "method": "switchTab",
+      "raw": "/pages/tools/index",
+      "route": "/pages/tools/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/pages/mine/components/read-dialog.vue",
+      "line": 25,
+      "method": "navigateTo",
+      "raw": "PrivacyPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/components/read-dialog.vue",
+      "line": 30,
+      "method": "navigateTo",
+      "raw": "ProtocolPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/components/read-protocol.vue",
+      "line": 7,
+      "method": "navigateTo",
+      "raw": "PrivacyPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/components/read-protocol.vue",
+      "line": 12,
+      "method": "navigateTo",
+      "raw": "ProtocolPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 80,
+      "method": "switchTab",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 82,
+      "method": "redirectTo",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 143,
+      "method": "switchTab",
+      "raw": "targetUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 149,
+      "method": "redirectTo",
+      "raw": "targetUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 156,
+      "method": "switchTab",
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 162,
+      "method": "redirectTo",
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 403,
+      "method": "navigateTo",
+      "raw": "PrivacyPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/login/login.vue",
+      "line": 408,
+      "method": "navigateTo",
+      "raw": "ProtocolPageUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/pages/mine/mine.vue",
+      "line": 31,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/pages/mine/mine.vue",
+      "line": 80,
+      "method": "navigateTo",
+      "raw": "item.to",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/services/http.ts",
+      "line": 206,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(redirectUrl)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1190,
+      "method": "navigateTo",
+      "raw": "targetUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1693,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(currentUrl)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/services/memo/detail.vue",
+      "line": 1700,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor?id=${memoId.value}",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/services/memo/editor.vue",
+      "line": 1655,
+      "method": "redirectTo",
+      "raw": "/subPackages/services/memo/detail?id=${memoId.value}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "line": 449,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "line": 456,
+      "method": "navigateTo",
+      "raw": "/subPackages/services/memo/detail?id=${id}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/services/memo/list.vue",
+      "line": 463,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor?id=${id}",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/auspicious.vue",
+      "line": 387,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/calendar/detail?date=${dateStr}",
+      "route": "/subPackages/tools/calendar/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/festivals.vue",
+      "line": 99,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/calendar/detail?date=${date}",
+      "route": "/subPackages/tools/calendar/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "line": 365,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/calendar/detail?date=${selectedDateStr.value}",
+      "route": "/subPackages/tools/calendar/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "line": 371,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/calendar/festivals",
+      "route": "/subPackages/tools/calendar/festivals",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/calendar/index.vue",
+      "line": 377,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/calendar/auspicious",
+      "route": "/subPackages/tools/calendar/auspicious",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "line": 267,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/chat/list",
+      "route": "/subPackages/tools/chat/list",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/index.vue",
+      "line": 274,
+      "method": "redirectTo",
+      "raw": "/subPackages/tools/chat/index",
+      "route": "/subPackages/tools/chat/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "line": 199,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "line": 267,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/chat/index?chatId=${sessionId}",
+      "route": "/subPackages/tools/chat/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/chat/list.vue",
+      "line": 274,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/chat/index",
+      "route": "/subPackages/tools/chat/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/index.vue",
+      "line": 95,
+      "method": "navigateTo",
+      "raw": "path",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-edit.vue",
+      "line": 170,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/character-picker?${params.join('&')}",
+      "route": "/subPackages/tools/compendium/swc/character-picker",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineup-mappings.vue",
+      "line": 183,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/lineup-mapping-detail?mappingId=${encodeURIComponent(mappingId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}",
+      "route": "/subPackages/tools/compendium/swc/lineup-mapping-detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 325,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/character-picker?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}",
+      "route": "/subPackages/tools/compendium/swc/character-picker",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 337,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/lineup-edit?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}",
+      "route": "/subPackages/tools/compendium/swc/lineup-edit",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 344,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}",
+      "route": "/subPackages/tools/compendium/swc/lineup-edit",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 351,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}",
+      "route": "/subPackages/tools/compendium/swc/lineup-mappings",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/lineups.vue",
+      "line": 360,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/lineup-relations?${params.join('&')}",
+      "route": "/subPackages/tools/compendium/swc/lineup-relations",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "line": 716,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/detail?${params}",
+      "route": "/subPackages/tools/compendium/swc/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/compendium/swc/list.vue",
+      "line": 726,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/compendium/swc/edit?${params}",
+      "route": "/subPackages/tools/compendium/swc/edit",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/game-coupons/index.vue",
+      "line": 675,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/image-stitch/index.vue",
+      "line": 817,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/magnet-link/index.vue",
+      "line": 128,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/qr-generator/index?flow=${flowId.value}",
+      "route": "/subPackages/tools/qr-generator/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 1278,
+      "method": "navigateTo",
+      "raw": "targetUrl",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 1781,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(currentUrl)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/detail.vue",
+      "line": 1788,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor?id=${memoId.value}",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "line": 959,
+      "method": "redirectTo",
+      "raw": "/subPackages/tools/memo/detail?id=${memoId.value}&mode=${mode}&readonly=1",
+      "route": "/subPackages/tools/memo/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/editor.vue",
+      "line": 1022,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/detail?id=${memoId.value}",
+      "route": "/subPackages/tools/memo/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "line": 508,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "line": 515,
+      "method": "navigateTo",
+      "raw": "/subPackages/services/memo/detail?id=${id}",
+      "route": "/subPackages/services/memo/detail",
+      "dynamic": true,
+      "registered": false
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "line": 532,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/editor?id=${id}",
+      "route": "/subPackages/tools/memo/editor",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/memo/list.vue",
+      "line": 544,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/memo/detail?id=${memo.id}&mode=${mode}&readonly=1",
+      "route": "/subPackages/tools/memo/detail",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "line": 306,
+      "method": "navigateTo",
+      "raw": "/subPackages/common/webview/h5?url=${encodeURIComponent(url)}",
+      "route": "/subPackages/common/webview/h5",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/fileList.vue",
+      "line": 328,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 65,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/oss-upload/index.vue",
+      "line": 357,
+      "method": "navigateTo",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/subPackages/tools/pdf-toolkit/index.vue",
+      "line": 255,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=",
+      "route": "/pages/mine/login/login",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 75,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/code-wallet/index?content=${encodeURIComponent(generatedContent.value)}&codeType=qr",
+      "route": "/subPackages/tools/code-wallet/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-generator/index.vue",
+      "line": 83,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/image-cipher/index?flow=magnet-flow",
+      "route": "/subPackages/tools/image-cipher/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 43,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/code-wallet/index?content=${encodeURIComponent(parsedText.value)}&codeType=qr",
+      "route": "/subPackages/tools/code-wallet/index",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/qr-parser/index.vue",
+      "line": 51,
+      "method": "navigateTo",
+      "raw": "/subPackages/tools/magnet-link/index?flow=scan-flow",
+      "route": "/subPackages/tools/magnet-link/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/tools/schema-demo/list.vue",
+      "line": 85,
+      "method": "navigateTo",
+      "raw": "/editor-core/demo/SchemaEditorDemo",
+      "route": "/editor-core/demo/SchemaEditorDemo",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/subPackages/user/setting/setting.vue",
+      "line": 33,
+      "method": "switchTab",
+      "raw": "/pages/mine/mine",
+      "route": "/pages/mine/mine",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/admin.ts",
+      "line": 16,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(redirectUrl)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/utils/admin.ts",
+      "line": 51,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(redirectUrl)}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/utils/admin.ts",
+      "line": 65,
+      "method": "switchTab",
+      "raw": "/pages/index/index",
+      "route": "/pages/index/index",
+      "dynamic": false,
+      "registered": true
+    },
+    {
+      "file": "src/utils/file.ts",
+      "line": 117,
+      "method": "navigateTo",
+      "raw": "/subPackages/common/webview/webview?url=${publicFileUrl}&title=预览",
+      "route": "/subPackages/common/webview/webview",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "line": 74,
+      "method": "navigateTo",
+      "raw": "/pages/mine/login/login?redirectUrl=${encodeURIComponent(url || '')}",
+      "route": "/pages/mine/login/login",
+      "dynamic": true,
+      "registered": true
+    },
+    {
+      "file": "src/utils/wxLogin.ts",
+      "line": 80,
+      "method": "navigateTo",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "line": 225,
+      "method": "redirectTo",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    },
+    {
+      "file": "src/utilsH5/appDsBridge.ts",
+      "line": 229,
+      "method": "navigateTo",
+      "raw": "url",
+      "route": null,
+      "dynamic": true,
+      "registered": null
+    }
+  ],
+  "registeredMissingFiles": [],
+  "unregisteredCandidates": [
+    "src/subPackages/services/memo/detail.vue",
+    "src/subPackages/services/memo/editor.vue",
+    "src/subPackages/services/memo/list.vue",
+    "src/subPackages/tools/family-tree/family-tree-chart.vue",
+    "src/subPackages/tools/family-tree/family-tree-list.vue",
+    "src/subPackages/tools/family-tree/member-detail.vue"
+  ],
+  "tabBar": [
+    {
+      "route": "/pages/index/index",
+      "registered": true
+    },
+    {
+      "route": "/pages/tools/index",
+      "registered": true
+    },
+    {
+      "route": "/pages/mine/mine",
+      "registered": true
+    }
+  ],
+  "familyTree": {
+    "routeRegistered": true,
+    "toolEntryLine": 265,
+    "hiddenInDirectory": false,
+    "shareRegistered": true
+  }
+}
