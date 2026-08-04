@@ -513,7 +513,7 @@
   // 查看备忘录（预览模式）
   const viewMemo = (id: string) => {
     uni.navigateTo({
-      url: `/subPackages/services/memo/detail?id=${id}`,
+      url: `/subPackages/tools/memo/detail?id=${id}`,
     })
   }
 

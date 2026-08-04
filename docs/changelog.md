@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-04 [routes,memo] 将活动备忘录的列表备用跳转、详情登录回跳、内部链接、海报目标、H5 分享链接和微信分享卡片统一到 pages.json 已注册的 `/subPackages/tools/memo/detail`，并新增只读路由一致性门禁（Codex）
+
 - 2026-08-04 [tooling,components/PageLayout,engine/tomato-cipher] 恢复 TypeScript/Volar 与 Vitest 质量门禁启动链路；PageLayout 将内联 back emit 改为具名处理函数，规避 vue-tsc 模板代码生成崩溃且不改变事件行为；Tomato Snake 路径测试按算法实际返回的 Uint32Array 归一化后校验值序列（Codex）
 
 - 2026-08-03 [tools/compendium-swc] 人物列表形态筛选新增 Boss 选项，选中后按 categories[entry_type]=boss 查询（Codex）

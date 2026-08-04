@@ -1265,7 +1265,7 @@
       // 内部链接类型：区分「笔记」与「备忘录」
       const targetUrl =
         linkInfo.internalScene === 'memo' && linkInfo.internalId
-          ? `/subPackages/services/memo/detail?id=${linkInfo.internalId}`
+          ? `/subPackages/tools/memo/detail?id=${linkInfo.internalId}`
           : linkInfo.internalScene === 'chat' && linkInfo.internalPath
             ? linkInfo.internalPath
             : linkInfo.internalPath || null
@@ -1777,7 +1777,7 @@
 
   // 去登录
   const goToLogin = () => {
-    const currentUrl = `/subPackages/services/memo/detail?id=${memoId.value}`
+    const currentUrl = `/subPackages/tools/memo/detail?id=${memoId.value}`
     uni.navigateTo({
       url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(currentUrl)}`,
     })
@@ -1869,7 +1869,7 @@
 
       // 构建目标URL（去除可能的引号）
       const baseUrl = String(import.meta.env.VITE_PUBLIC_THIS_H5_URL || '').replace(/['"]/g, '')
-      const targetUrl = `${baseUrl}/subPackages/services/memo/detail?id=${memoId.value}`
+      const targetUrl = `${baseUrl}/subPackages/tools/memo/detail?id=${memoId.value}`
       const posterId = `memo_${memoId.value}_${Date.now()}`
 
       console.log('步骤1: 准备参数')
@@ -2233,7 +2233,7 @@
 
     // #ifdef H5
     // H5使用复制链接
-    const shareUrl = `${window.location.origin}/subPackages/services/memo/detail?id=${memoId.value}`
+    const shareUrl = `${window.location.origin}/subPackages/tools/memo/detail?id=${memoId.value}`
     // @ts-ignore
     if (navigator.clipboard) {
       // @ts-ignore
@@ -2267,7 +2267,7 @@
   onShareAppMessage(() => {
     return {
       title: memoTitle.value,
-      path: `/subPackages/services/memo/detail?id=${memoId.value}`,
+      path: `/subPackages/tools/memo/detail?id=${memoId.value}`,
       imageUrl: '',
     }
   })
