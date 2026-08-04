@@ -126,8 +126,8 @@ describe('Path generators', () => {
   it('Snake path alternates direction per row', () => {
     const generator = new SnakePathGenerator()
     const path = generator.generate(4, 4)
-    expect(path.slice(0, 4)).toEqual([0, 1, 2, 3])
-    expect(path.slice(4, 8)).toEqual([7, 6, 5, 4])
+    expect(Array.from(path.slice(0, 4))).toEqual([0, 1, 2, 3])
+    expect(Array.from(path.slice(4, 8))).toEqual([7, 6, 5, 4])
   })
 })
 

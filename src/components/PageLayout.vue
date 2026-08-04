@@ -52,6 +52,8 @@
     back: []
   }>()
 
+  const handleBack = () => emit('back')
+
   const slots = useSlots()
 
   const themeStore = useThemeStore()
@@ -111,7 +113,7 @@
       :title-color="navTitleColor"
       :custom-go-back="customGoBack"
       :before-back="beforeBack"
-      @back="emit('back')">
+      @back="handleBack">
       <template #right>
         <slot name="nav-right" />
       </template>
