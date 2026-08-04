@@ -6,6 +6,8 @@
     "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
     "check:generated-boundary": "node scripts/check-generated-boundary.mjs",
     "check:routes": "node scripts/check-routes.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:repo": "node scripts/check-repository-hygiene.mjs",
     "dev:custom": "uni -p",
     "dev:h5": "uni",
     "dev:h5:ssr": "uni --ssr",
