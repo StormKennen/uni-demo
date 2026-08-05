@@ -265,6 +265,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/family-tree/index',
     category: 'record',
     requiresAuth: true,
+    // 图谱能力升级中，暂不在工具目录展示正式入口；路由与成员数据能力保留
+    hiddenInDirectory: true,
   },
   // ── 文本 ──
   markdown: {

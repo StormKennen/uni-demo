@@ -9,7 +9,7 @@
           <!-- #ifdef H5 -->
           <view class="mode-btn" :class="{ active: viewMode === 'tree' }" @click="viewMode = 'tree'">
             <uni-icons type="staff" size="16" :color="viewMode === 'tree' ? '#fff' : '#667eea'" />
-            <text class="mode-text">树形图</text>
+            <text class="mode-text">图谱</text>
           </view>
           <!-- #endif -->
           <view class="mode-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
@@ -32,7 +32,7 @@
       </view>
 
       <!-- #ifdef H5 -->
-      <!-- 树形图模式 -->
+      <!-- 图谱面板模式（图谱升级中，保留成员新增能力） -->
       <view class="content-wrapper" v-if="viewMode === 'tree'">
         <FamilyTreeChart ref="chartRef" />
       </view>
@@ -65,14 +65,11 @@
   const listRef = ref(null)
   const chartRef = ref(null)
 
-  // 监听视图模式变化，切换到树形图时初始化
+  // 监听视图模式变化，切换到图谱面板时加载成员数据
   watch(viewMode, newMode => {
     if (newMode === 'tree') {
-      // 延迟初始化，确保组件已渲染
       nextTick(() => {
-        setTimeout(() => {
-          chartRef.value?.initChart?.()
-        }, 100)
+        chartRef.value?.initChart?.()
       })
     }
   })
@@ -81,13 +78,11 @@
     reportToolVisit('family-tree')
   })
 
-  // 页面挂载时，如果默认是树形图模式，初始化图表
+  // 页面挂载时，如果默认是图谱面板模式，加载成员数据
   onMounted(() => {
     if (viewMode.value === 'tree') {
       nextTick(() => {
-        setTimeout(() => {
-          chartRef.value?.initChart?.()
-        }, 200)
+        chartRef.value?.initChart?.()
       })
     }
   })

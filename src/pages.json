@@ -86,13 +86,6 @@
           }
         },
         {
-          "path": "family-tree/demo",
-          "style": {
-            "navigationBarTitleText": "族谱",
-            "navigationStyle": "custom"
-          }
-        },
-        {
           "path": "oss-upload/index",
           "style": {
             "navigationBarTitleText": "文件上传",
