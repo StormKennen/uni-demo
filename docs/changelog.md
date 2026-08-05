@@ -6,6 +6,10 @@
 
 ## Unreleased
 
+- 2026-08-05 [api/family-tree] 为族谱成员详情与编辑补充手写路径适配，绕开生成代码中未展开的成员 ID 占位符；Apifox 生成区保持只读（Codex）
+
+- 2026-08-05 [tools/family-tree] 在无 ECharts 的族谱管理面板中恢复成员详情与编辑入口，复用现有成员更新接口，保持成员列表、新增和编辑能力（Codex）
+
 - 2026-08-05 [platform/file,tools/image-format] 建立微信小程序与 H5 文件选择入口，统一图片/文件选择结果结构，并以图片格式转换页作为单页试点；旧上传调用入口保持不变（Codex）
 
 - 2026-08-05 [architecture,components] 建立基础 UI、工具共享组件和跨工具功能组件的最小边界；二维码生成、磁力链接、码包三个试点页面切换至新边界，并恢复族谱快照历史路由为无 ECharts 的升级占位（Codex）

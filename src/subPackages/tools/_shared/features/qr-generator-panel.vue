@@ -26,7 +26,7 @@
     <ToolSectionCard v-show="qrGenerated || isGenerating" title="生成结果">
       <view class="scale-control">
         <text class="scale-label">显示比例</text>
-        <slider min="70" max="100" step="1" :value="Math.round(displayScale * 100)" @change="onScaleChanged" activeColor="#667eea" />
+        <slider :min="70" :max="100" :step="1" :value="Math.round(displayScale * 100)" @change="onScaleChanged" activeColor="#667eea" />
       </view>
       <view ref="canvasHostRef" class="qr-container">
         <canvas

@@ -107,8 +107,8 @@
 </template>
 
 <script setup>
-  import { getFamiliesMembersMemberId } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
   import { computed, ref, watch } from 'vue'
+  import { getFamilyMemberDetail } from '@/api/family-tree'
 
   const props = defineProps({
     visible: {
@@ -141,7 +141,7 @@
 
     try {
       loading.value = true
-      const response = await getFamiliesMembersMemberId(memberId)
+      const response = await getFamilyMemberDetail(memberId)
       console.log('成员详情:', response)
       detailData.value = response
     } catch (error) {

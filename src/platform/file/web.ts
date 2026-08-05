@@ -18,10 +18,11 @@ export const webFilePicker: FilePicker = {
   },
 
   async pickFile(options = {}) {
+    const type = options.type === 'file' ? 'all' : options.type
     const result = (await uni.chooseFile({
       count: options.count ?? 1,
       extension: options.extensions,
-      type: options.type ?? 'all',
+      type: type ?? 'all',
     })) as FileSelectionResult
 
     const rawFiles = result.tempFiles || (result.tempFilePaths || []).map(path => ({ path }))

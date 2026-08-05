@@ -20,8 +20,9 @@
       :visible="showMemberDetail"
       :memberData="selectedNode"
       :parentName="selectedNodeParentName"
-      :showEditBtn="false"
-      @close="showMemberDetail = false" />
+      :showEditBtn="isLoggedIn"
+      @close="showMemberDetail = false"
+      @edit="startEdit" />
 
     <!-- 底部操作面板 -->
     <view class="bottom-panel" :class="{ 'panel-expanded': panelExpanded }">
@@ -60,10 +61,42 @@
                 {{ selectedMemberIndex >= 0 ? memberOptions[selectedMemberIndex]?.displayName : '请选择成员' }}
               </view>
             </picker>
+            <view v-if="selectedMember" class="member-actions">
+              <button class="action-btn secondary-btn" @click="showSelectedMemberDetail">查看详情</button>
+              <button class="action-btn secondary-btn" @click="startEdit(selectedMember.originalData)">编辑成员</button>
+            </view>
+          </view>
+
+          <!-- 编辑成员表单 -->
+          <view v-if="editingMember" class="form-content edit-member-form">
+            <view class="form-title">编辑成员</view>
+            <view class="member-selector-panel" style="display: flex">
+              <view class="selector-title">姓名</view>
+              <view style="display: flex">
+                <input class="input" v-model="editNode.surname" placeholder="姓氏" maxlength="20" style="flex: 1" />
+                <input class="input" v-model="editNode.givenName" placeholder="名字" maxlength="50" style="margin-left: 16rpx; flex: 2" />
+              </view>
+            </view>
+            <view class="member-selector-panel" style="display: flex">
+              <view class="selector-title">性别</view>
+              <picker
+                :value="editNode.gender === 'male' ? 0 : editNode.gender === 'female' ? 1 : 2"
+                :range="['男', '女', '未知']"
+                @change="onEditGenderChange"
+                class="picker">
+                <view class="picker-text">
+                  {{ editNode.gender === 'male' ? '男' : editNode.gender === 'female' ? '女' : '未知' }}
+                </view>
+              </picker>
+            </view>
+            <view class="form-actions">
+              <button class="action-btn secondary-btn" @click="cancelEdit">取消</button>
+              <button class="action-btn confirm-btn" :disabled="loading" @click="saveEdit">保存修改</button>
+            </view>
           </view>
 
           <!-- 新增子节点表单 -->
-          <view class="form-content">
+          <view v-else class="form-content">
             <view class="member-selector-panel" style="display: flex">
               <view class="selector-title">姓名</view>
               <view style="display: flex">
@@ -98,8 +131,9 @@
 <script setup>
   import { ref, computed } from 'vue'
   import MemberDetail from './member-detail.vue'
+  import { updateFamilyMember } from '@/api/family-tree'
   import { getToken } from '@/utils/storage'
-  import { postFamiliesMembers, postFamiliesRelationshipsLink, getFamiliesMembers } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
+  import { getFamiliesMembers, postFamiliesMembers, postFamiliesRelationshipsLink } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
 
   const loading = ref(false)
   // 默认姓氏
@@ -115,6 +149,7 @@
   const showMemberDetail = ref(false)
   const selectedNode = ref(null)
   const selectedNodeParentName = ref('')
+  const editingMember = ref(null)
 
   // 底部面板相关
   const panelExpanded = ref(false)
@@ -131,10 +166,16 @@
     givenName: '',
     gender: 'male',
   })
+  const editNode = ref({
+    surname: '',
+    givenName: '',
+    gender: 'unknown',
+  })
 
   // 选择父成员
   const onMemberSelect = e => {
     selectedMemberIndex.value = Number(e.detail.value)
+    editingMember.value = null
   }
 
   // 性别切换
@@ -143,8 +184,60 @@
     newNode.value.gender = genders[Number(e.detail.value)] || 'unknown'
   }
 
+  const onEditGenderChange = e => {
+    const genders = ['male', 'female', 'unknown']
+    editNode.value.gender = genders[Number(e.detail.value)] || 'unknown'
+  }
+
+  const showSelectedMemberDetail = () => {
+    if (!selectedMember.value) return
+    selectedNode.value = selectedMember.value.originalData
+    selectedNodeParentName.value = ''
+    showMemberDetail.value = true
+  }
+
+  const startEdit = member => {
+    if (!member?.id) return
+    showMemberDetail.value = false
+    editingMember.value = member
+    editNode.value = {
+      surname: member.nameZh?.surname || member.surname || '',
+      givenName: member.nameZh?.given || member.givenName || '',
+      gender: member.gender || 'unknown',
+    }
+  }
+
+  const cancelEdit = () => {
+    editingMember.value = null
+  }
+
+  const saveEdit = async () => {
+    const memberId = editingMember.value?.id
+    if (!memberId || !editNode.value.surname.trim() || !editNode.value.givenName.trim()) {
+      uni.showToast({ title: '请输入姓氏和名字', icon: 'none' })
+      return
+    }
+
+    try {
+      loading.value = true
+      await updateFamilyMember(memberId, {
+        surname: editNode.value.surname.trim(),
+        givenName: editNode.value.givenName.trim(),
+        gender: editNode.value.gender,
+      })
+      await loadMembers(memberId)
+      editingMember.value = null
+      uni.showToast({ title: '修改成功', icon: 'success' })
+    } catch (error) {
+      console.error('更新成员失败:', error)
+      uni.showToast({ title: '修改失败', icon: 'none' })
+    } finally {
+      loading.value = false
+    }
+  }
+
   // 加载家族成员列表
-  const loadMembers = async () => {
+  const loadMembers = async selectedId => {
     try {
       memberLoading.value = true
 
@@ -164,6 +257,9 @@
           originalData: member,
           generation: member.generation || 0,
         }))
+        if (selectedId) {
+          selectedMemberIndex.value = memberOptions.value.findIndex(member => member.id === selectedId)
+        }
       } else {
         memberOptions.value = []
       }
@@ -441,6 +537,23 @@
     background-color: var(--theme-surface);
   }
 
+  .member-actions {
+    display: flex;
+    gap: 16rpx;
+  }
+
+  .form-title {
+    margin-bottom: 24rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: var(--theme-text);
+  }
+
+  .edit-member-form {
+    padding-top: 24rpx;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
   .input {
     height: 64rpx;
     line-height: 64rpx;
@@ -488,5 +601,11 @@
   .confirm-btn {
     background-color: #007aff;
     color: #fff;
+  }
+
+  .secondary-btn {
+    flex: 1;
+    background-color: var(--theme-surface-2);
+    color: #667eea;
   }
 </style>

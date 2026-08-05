@@ -20,12 +20,16 @@ interface MessageFileSelectionResult {
 
 export const wechatFilePicker: FilePicker = {
   async pickImage(options = {}) {
-    const result = (await uni.chooseMedia({
-      count: options.count ?? 1,
-      mediaType: ['image'],
-      sizeType: options.sizeType,
-      sourceType: options.sourceType,
-    })) as MediaSelectionResult
+    const result = await new Promise<MediaSelectionResult>((resolve, reject) => {
+      uni.chooseMedia({
+        count: options.count ?? 1,
+        mediaType: ['image'],
+        sizeType: options.sizeType,
+        sourceType: options.sourceType,
+        success: resolve,
+        fail: reject,
+      })
+    })
 
     return normalizeFiles(
       (result.tempFiles || []).map(file => ({
@@ -38,11 +42,15 @@ export const wechatFilePicker: FilePicker = {
   },
 
   async pickFile(options = {}) {
-    const result = (await uni.chooseMessageFile({
-      count: options.count ?? 1,
-      extension: options.extensions,
-      type: options.type ?? 'all',
-    })) as MessageFileSelectionResult
+    const result = await new Promise<MessageFileSelectionResult>((resolve, reject) => {
+      uni.chooseMessageFile({
+        count: options.count ?? 1,
+        extension: options.extensions,
+        type: options.type ?? 'all',
+        success: resolve,
+        fail: reject,
+      })
+    })
 
     return normalizeFiles(result.tempFiles || [], 'file')
   },

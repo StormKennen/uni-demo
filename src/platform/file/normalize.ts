@@ -20,19 +20,18 @@ const fileNameFromPath = (path: string, fallback: string) => {
 }
 
 export const normalizeFiles = (files: RawSelectedFile[], fallbackPrefix: string): SelectedFile[] =>
-  files
-    .map((file, index) => {
-      const path = file.path || file.tempFilePath || ''
-      if (!path) return null
+  files.reduce<SelectedFile[]>((selectedFiles, file, index) => {
+    const path = file.path || file.tempFilePath || ''
+    if (!path) return selectedFiles
 
-      return {
-        name: file.name || fileNameFromPath(path, `${fallbackPrefix}_${index + 1}`),
-        path,
-        size: file.size,
-        type: file.type,
-      }
+    selectedFiles.push({
+      name: file.name || fileNameFromPath(path, `${fallbackPrefix}_${index + 1}`),
+      path,
+      size: file.size,
+      type: file.type,
     })
-    .filter((file): file is SelectedFile => file !== null)
+    return selectedFiles
+  }, [])
 
 export const normalizeImageSelection = (result: RawImageSelection): SelectedFile[] => {
   const rawFiles = Array.isArray(result.tempFiles) ? result.tempFiles : result.tempFiles ? [result.tempFiles] : []
