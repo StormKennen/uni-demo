@@ -86,7 +86,7 @@
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import ToolSheet from '@/components/toolkit/base/tool-sheet.vue'
   import FlowActionBar from '@/components/toolkit/base/flow-action-bar.vue'
-  import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
+  import QrGeneratorPanel from '@/subPackages/tools/_shared/features/qr-generator-panel.vue'
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
   import { reportToolVisit } from '@/utils/tracker'

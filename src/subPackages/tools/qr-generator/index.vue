@@ -37,7 +37,7 @@
 <script setup lang="ts">
   import { nextTick, ref } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-  import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
+  import QrGeneratorPanel from '@/subPackages/tools/_shared/features/qr-generator-panel.vue'
   import ImageShufflePanel from '@/components/toolkit/business/image-shuffle-panel.vue'
   import ToolSheet from '@/components/toolkit/base/tool-sheet.vue'
   import FlowActionBar from '@/components/toolkit/base/flow-action-bar.vue'

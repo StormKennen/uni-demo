@@ -31,7 +31,10 @@
         <view v-else-if="displayItems.length" class="card-list">
           <view v-for="item in displayItems" :key="itemKey(item)" class="wallet-card" @click="openPreview(item)">
             <view class="card-swatch" :style="{ background: item.backgroundColor || 'var(--theme-surface-2)' }">
-              <uni-icons :type="item.codeType === 'barcode' ? 'bars' : 'scan'" size="26" :color="item.color || 'var(--theme-text-secondary)'" />
+              <uni-icons
+                :type="item.codeType === 'barcode' ? 'bars' : 'scan'"
+                size="26"
+                :color="item.color || 'var(--theme-text-secondary)'" />
             </view>
             <view class="card-body">
               <view class="card-title-row">
@@ -53,7 +56,7 @@
           </view>
           <view v-if="isLoggedIn && hasMore" class="hint" @click="loadMore">{{ loadingMore ? '加载中...' : '加载更多' }}</view>
         </view>
-        <empty-data v-else :desc="emptyText" />
+        <EmptyState v-else :desc="emptyText" />
       </view>
     </view>
 
@@ -156,7 +159,8 @@
   import { computed, reactive, ref } from 'vue'
   import { onLoad, onShow } from '@dcloudio/uni-app'
   import { debounce } from 'lodash-es'
-  import QrGeneratorPanel from '@/components/toolkit/business/qr-generator-panel.vue'
+  import EmptyState from '@/shared/ui/empty-state.vue'
+  import QrGeneratorPanel from '@/subPackages/tools/_shared/features/qr-generator-panel.vue'
   import {
     deleteCodeWalletItemsItemId,
     getCodeWalletItems,

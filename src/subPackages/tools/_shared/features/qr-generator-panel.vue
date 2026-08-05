@@ -57,8 +57,8 @@
 <script setup lang="ts">
   import UQRCode from 'uqrcodejs'
   import { computed, getCurrentInstance, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-  import ToolActionRow from '@/components/toolkit/base/tool-action-row.vue'
-  import ToolSectionCard from '@/components/toolkit/base/tool-section-card.vue'
+  import ToolActionRow from '@/subPackages/tools/_shared/components/tool-action-row.vue'
+  import ToolSectionCard from '@/subPackages/tools/_shared/components/tool-section-card.vue'
   import type { ToolImagePayload } from '@/components/toolkit/types'
 
   type PanelMode = 'page' | 'sheet'
@@ -301,24 +301,26 @@
       return null
     }
 
+    let image: ToolImagePayload | null = null
+
     // #ifdef H5
     const canvas = resolveH5Canvas()
     if (!canvas) {
       if (!silent) uni.showToast({ title: '图片导出失败', icon: 'none' })
-      return null
-    }
-    const dataUrl = canvas.toDataURL('image/png')
-    const base64 = dataUrl.split(',')[1] || ''
-    return {
-      uri: dataUrl,
-      width: canvasDisplaySize.value,
-      height: canvasDisplaySize.value,
-      size: Math.round((base64.length * 3) / 4),
+    } else {
+      const dataUrl = canvas.toDataURL('image/png')
+      const base64 = dataUrl.split(',')[1] || ''
+      image = {
+        uri: dataUrl,
+        width: canvasDisplaySize.value,
+        height: canvasDisplaySize.value,
+        size: Math.round((base64.length * 3) / 4),
+      }
     }
     // #endif
 
     // #ifndef H5
-    return await new Promise(resolve => {
+    image = await new Promise(resolve => {
       uni.canvasToTempFilePath(
         {
           canvasId,
@@ -339,6 +341,8 @@
       )
     })
     // #endif
+
+    return image
   }
 
   const downloadQRCode = async () => {
