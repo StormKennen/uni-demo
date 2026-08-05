@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-阶段二已完成，进入阶段三。
+阶段三已完成，等待最终统一验证。
 
 ## 起点
 
@@ -33,7 +33,7 @@
 ## 阶段二：建立最小组件边界
 
 - 状态：已完成
-- 提交哈希：待填写
+- 提交哈希：`558412887a66e9a00c1dc6ad6a47ce5defbf25e9`
 - 修改范围
   - 新增 `src/shared/ui/empty-state.vue`
   - 新增 `src/subPackages/tools/_shared/components/tool-section-card.vue`、`tool-action-row.vue`
@@ -53,4 +53,20 @@
 
 ## 阶段三：整理微信小程序/H5 文件能力
 
-- 状态：进行中
+- 状态：已完成
+- 提交哈希：待填写
+- 修改范围
+  - 新增 `src/platform/file/`，统一 `SelectedFile`、图片选择和普通文件选择接口
+  - 微信小程序复用 `uni.chooseMedia`、`uni.chooseMessageFile`
+  - H5 复用 `uni.chooseImage`、`uni.chooseFile`
+  - 图片格式转换页作为唯一试点，取消选择保持静默，文件大小与原图选择行为保持不变
+  - `src/utils/upload/**` 旧上传入口保持不变
+- 静态检查
+  - 本阶段修改文件定向 ESLint：通过
+  - `git diff --check`：通过
+  - `git diff -- src/services`：无差异
+  - `pnpm check:generated-boundary`：通过
+  - `pnpm check:routes`：通过
+- 遗留问题
+  - 其他页面仍直接使用 `uni.chooseImage`、`uni.chooseFile` 或 `uni.chooseMessageFile`，后续按实际修改逐步迁移
+  - 本轮不抽取分享、Canvas、剪贴板等平台能力

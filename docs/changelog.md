@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-05 [platform/file,tools/image-format] 建立微信小程序与 H5 文件选择入口，统一图片/文件选择结果结构，并以图片格式转换页作为单页试点；旧上传调用入口保持不变（Codex）
+
 - 2026-08-05 [architecture,components] 建立基础 UI、工具共享组件和跨工具功能组件的最小边界；二维码生成、磁力链接、码包三个试点页面切换至新边界，并恢复族谱快照历史路由为无 ECharts 的升级占位（Codex）
 
 - 2026-08-05 [tools/family-tree,components,static] 隐藏族谱工具目录入口（保留路由/成员列表/详情/新增能力），移除 ECharts 与 ecStat 运行依赖、l-echart/lime-echart 适配组件及纯图表快照页，族谱图谱区域改为升级占位（Codex）

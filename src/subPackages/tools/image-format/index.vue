@@ -86,6 +86,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed, getCurrentInstance } from 'vue'
   import { onShow } from '@dcloudio/uni-app'
+  import { filePicker, isFilePickerCancel } from '@/platform/file'
   import { reportToolVisit } from '@/utils/tracker'
 
   onShow(() => {
@@ -145,31 +146,32 @@
     targetFormat.value = option.value
   }
 
-  const selectImage = () => {
-    uni.chooseImage({
-      count: 1,
-      sizeType: ['original'],
-      success: res => {
-        const tempPath = res.tempFilePaths[0]
-        uni.getImageInfo({
-          src: tempPath,
-          success: info => {
-            baseImage.src = info.path
-            baseImage.previewSrc = info.path
-            baseImage.width = info.width
-            baseImage.height = info.height
-            const tempFiles = res.tempFiles as any
-            baseImage.size = Array.isArray(tempFiles) ? tempFiles[0]?.size || 0 : tempFiles?.size || 0
-            canvasWidth.value = info.width
-            canvasHeight.value = info.height
-            convertedImage.src = ''
-            convertedImage.format = ''
-            convertedImage.size = 0
-          },
-          fail: () => uni.showToast({ title: '图片加载失败', icon: 'none' }),
-        })
-      },
-    })
+  const selectImage = async () => {
+    try {
+      const [selectedFile] = await filePicker.pickImage({ count: 1, sizeType: ['original'] })
+      if (!selectedFile) return
+
+      uni.getImageInfo({
+        src: selectedFile.path,
+        success: info => {
+          baseImage.src = info.path
+          baseImage.previewSrc = info.path
+          baseImage.width = info.width
+          baseImage.height = info.height
+          baseImage.size = selectedFile.size || 0
+          canvasWidth.value = info.width
+          canvasHeight.value = info.height
+          convertedImage.src = ''
+          convertedImage.format = ''
+          convertedImage.size = 0
+        },
+        fail: () => uni.showToast({ title: '图片加载失败', icon: 'none' }),
+      })
+    } catch (error) {
+      if (!isFilePickerCancel(error)) {
+        uni.showToast({ title: '选择图片失败', icon: 'none' })
+      }
+    }
   }
 
   const reset = () => {
