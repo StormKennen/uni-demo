@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-08 [tools/compendium-swc] character-picker 停止主动 preloadAvatars 整页头像下载，依赖 image lazy-load 与只读缓存命中；pageSize 改为 30，卸载时失效在途请求（Codex）
+
 - 2026-08-08 [tools/compendium-swc] 新增 SwcCharacterPickerSlots 人物选择槽位组件，lineup-counter 顶部筛选改为“头像+删除+/”交互（Codex）
 
 - 2026-08-08 [common/agreement,privacy] 协议页防空白默认正文、统一 content 数据源，补充隐私政策授权/保存期限/权利与用途说明，webview 复用本地协议内容（Codex）

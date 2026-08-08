@@ -169,7 +169,7 @@
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
-  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
+  import { resolveAvatar } from '@/utils/avatar-cache'
   import type { CharacterOption } from './lineup-types'
 
   type FilterKey = 'element' | 'star' | 'type' | 'awaken'
@@ -210,7 +210,7 @@
   }
 
   const ALL_VALUE = 'all'
-  const PAGE_SIZE = 50
+  const PAGE_SIZE = 30
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -271,7 +271,6 @@
   const errorMessage = ref('')
   const cacheKey = ref('compendium:swc:lineup-edit:picker-draft')
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
-  const avatarCacheRevision = ref(0)
   let requestSequence = 0
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   let suppressKeywordWatch = false
@@ -524,13 +523,11 @@
     status: 'enabled',
   })
 
-  const toCardView = (character: SwcCharacterView): SwcCharacterView => {
-    avatarCacheRevision.value
-    return {
-      ...character,
-      avatar: resolveAvatar(character.avatar) || character.avatar,
-    }
-  }
+  // 只读命中本地缓存；未命中直接用远程 URL，交给 <image lazy-load>
+  const toCardView = (character: SwcCharacterView): SwcCharacterView => ({
+    ...character,
+    avatar: resolveAvatar(character.avatar) || character.avatar,
+  })
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -549,14 +546,6 @@
       return
     }
     draftSelected.value = [...draftSelected.value, toCharacterOption(character)]
-  }
-
-  const preloadCharacterBatch = (items: SwcCharacterView[]) => {
-    const urls = items.map(item => item.avatar).filter(Boolean)
-    if (!urls.length) return
-    void preloadAvatars(urls).finally(() => {
-      avatarCacheRevision.value += 1
-    })
   }
 
   const mergeUniqueCharacters = (base: SwcCharacterView[], next: SwcCharacterView[]): SwcCharacterView[] => {
@@ -597,7 +586,6 @@
         .filter((item): item is SwcCharacterView => Boolean(item))
 
       characters.value = reset ? items : mergeUniqueCharacters(characters.value, items)
-      preloadCharacterBatch(items)
 
       const pagination = isRecord(res) ? readPagination(res) : {}
       hasNext.value = Boolean(
@@ -703,6 +691,8 @@
   })
 
   onUnload(() => {
+    // 使在途列表请求失效，避免页面销毁后回写 state
+    requestSequence += 1
     if (searchTimer) {
       clearTimeout(searchTimer)
       searchTimer = null
