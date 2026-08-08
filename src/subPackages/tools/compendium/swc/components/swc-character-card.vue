@@ -575,14 +575,14 @@
   .swc-character-card.picker .selected-badge {
     top: 4rpx;
     right: 4rpx;
-    min-width: 28rpx;
-    height: 28rpx;
+    min-width: 30rpx;
+    height: 30rpx;
     padding: 0 6rpx;
     box-shadow: none;
   }
 
   .swc-character-card.picker .selected-badge-text {
-    font-size: 18rpx;
+    font-size: 20rpx;
   }
 
   .swc-character-card.picker .avatar-placeholder {

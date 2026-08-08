@@ -133,7 +133,7 @@
             selectable
             :selected="isSelected(character.characterId)"
             :selected-index="getSelectedIndex(character.characterId)"
-            :avatar-size="76"
+            :avatar-size="92"
             @click="toggleSelect(character)" />
         </view>
 
@@ -870,9 +870,9 @@
 
   .grid-wrap {
     display: grid;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: 8rpx;
-    padding: 10rpx 12rpx 28rpx;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10rpx;
+    padding: 12rpx;
   }
 
   .grid-item {
