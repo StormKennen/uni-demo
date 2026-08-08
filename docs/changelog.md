@@ -6,6 +6,10 @@
 
 ## Unreleased
 
+- 2026-08-08 [common/agreement,privacy] 协议页防空白默认正文、统一 content 数据源，补充隐私政策授权/保存期限/权利与用途说明，webview 复用本地协议内容（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 人物筛选器矩阵由 8 列调整为 6 列，头像同步放大至 92rpx，保持紧凑选中体验（Codex）
+
 - 2026-08-08 [tools/compendium-swc] 修复并重构人物筛选器：补 errorMessage、统一 getCompendiumsCharacters 服务端筛选、300ms 搜索 debounce、默认收起筛选、8 列紧凑选中矩阵（Codex）
 
 - 2026-08-08 [tools/compendium-swc] 人物筛选页对齐图鉴列表：筛选改服务端 categories 参数、人物解析复用 list 逻辑，默认觉醒+星级排序，修复选人页空数据（Codex）

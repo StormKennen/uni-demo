@@ -1,10 +1,18 @@
 <template>
-  <scroll-view class="agreement-scroll" scroll-y>
+  <scroll-view class="agreement-scroll" scroll-y enable-back-to-top>
     <view class="agreement-page">
       <view class="agreement-hero">
         <text class="agreement-title">{{ title }}</text>
         <text class="agreement-subtitle">{{ subtitle }}</text>
-        <text class="agreement-date">更新日期：2026年8月7日</text>
+        <text class="agreement-date">更新日期：{{ updatedAt }}</text>
+      </view>
+
+      <view v-if="!sections.length" class="agreement-card">
+        <text class="agreement-section-title">内容加载中</text>
+        <view class="agreement-item">
+          <text class="agreement-dot">•</text>
+          <text class="agreement-text">若长时间未显示，请返回后重新进入本页。</text>
+        </view>
       </view>
 
       <view v-for="section in sections" :key="section.title" class="agreement-card">
@@ -21,26 +29,46 @@
 <script setup lang="ts">
   import { onLoad } from '@dcloudio/uni-app'
   import { ref } from 'vue'
-  import { getAgreementMeta, type AgreementSection, type AgreementType } from './content'
+  import {
+    getAgreementMeta,
+    normalizeAgreementType,
+    type AgreementSection,
+    type AgreementType,
+  } from './content'
 
-  const title = ref('用户服务协议')
-  const subtitle = ref('')
-  const sections = ref<AgreementSection[]>([])
+  // 防空白：初始化即填入默认协议正文，不依赖 onLoad / 网络 / 登录
+  const defaultMeta = getAgreementMeta('protocol')
+  const title = ref(defaultMeta.title)
+  const subtitle = ref(defaultMeta.subtitle)
+  const updatedAt = ref(defaultMeta.updatedAt)
+  const sections = ref<AgreementSection[]>([...defaultMeta.sections])
 
-  const resolveType = (option: Record<string, string | undefined> = {}): AgreementType => {
-    if (option.type === 'privacy' || option.type === 'protocol') return option.type
+  const applyType = (type: AgreementType) => {
+    const meta = getAgreementMeta(type)
+    title.value = meta.title
+    subtitle.value = meta.subtitle
+    updatedAt.value = meta.updatedAt
+    sections.value = [...meta.sections]
+    uni.setNavigationBarTitle({ title: meta.title })
+  }
+
+  const resolveTypeFromOptions = (option: Record<string, string | undefined> = {}): AgreementType => {
+    if (option.type === 'privacy' || option.type === 'protocol') {
+      return normalizeAgreementType(option.type)
+    }
     const t = option.title || ''
     if (t.includes('隐私') || t.includes('政策')) return 'privacy'
     return 'protocol'
   }
 
   onLoad(option => {
-    const type = resolveType((option || {}) as Record<string, string | undefined>)
-    const meta = getAgreementMeta(type)
-    title.value = meta.title
-    subtitle.value = meta.subtitle
-    sections.value = meta.sections
-    uni.setNavigationBarTitle({ title: meta.title })
+    try {
+      const type = resolveTypeFromOptions((option || {}) as Record<string, string | undefined>)
+      applyType(type)
+    } catch (error) {
+      // 任何异常都回退到默认协议，避免审核环境空白
+      applyType('protocol')
+    }
   })
 </script>
 
