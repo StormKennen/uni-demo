@@ -10,7 +10,7 @@
         @action="goBack" />
 
       <template v-else>
-        <view class="hero-banner">
+        <!-- <view class="hero-banner">
           <view>
             <text class="hero-title">魔灵召唤阵容</text>
             <text class="hero-subtitle">{{
@@ -18,15 +18,15 @@
             }}</text>
           </view>
           <text v-if="isAdmin" class="hero-badge">ADMIN</text>
-        </view>
+        </view> -->
 
-        <view class="mapping-entry" @click="goMappings()">
+        <!-- <view class="mapping-entry" @click="goMappings()">
           <view class="mapping-entry-main">
             <text class="mapping-entry-title">阵容映射</text>
             <text class="mapping-entry-desc">查看「源阵容 → 目标阵容」的容器化映射，支持新增与容器内点赞点踩</text>
           </view>
           <text class="mapping-entry-arrow">›</text>
-        </view>
+        </view> -->
 
         <view class="toolbar-card">
           <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
@@ -127,11 +127,12 @@
           <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
             <view class="lineup-head">
               <view class="lineup-title-wrap">
-                <text class="lineup-name">{{ lineup.name || '未命名阵容' }}</text>
-                <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
+                <text v-if="lineup.name" class="lineup-name">{{ lineup.name }}</text>
+                <!-- <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text> -->
                 <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
               </view>
-              <text class="lineup-count">{{ lineup.memberCount }} 人</text>
+              <!-- <text class="lineup-count">{{ lineup.memberCount }} 人</text> -->
+              <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
             </view>
 
             <text v-if="lineup.description" class="lineup-desc">{{ lineup.description }}</text>
@@ -142,29 +143,27 @@
                 <text class="metric-value">{{ lineup.memberCount }}</text>
               </view>
               <view class="metric-item">
-                <text class="metric-label">目标阵容</text>
+                <text class="metric-label">进攻阵容</text>
                 <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
               </view>
               <view class="metric-item">
-                <text class="metric-label">上游阵容</text>
+                <text class="metric-label">防御阵容</text>
                 <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
               </view>
             </view>
 
-            <scroll-view v-if="lineup.characters.length" class="member-scroll" scroll-x>
-              <view class="member-row">
-                <view v-for="member in lineup.characters" :key="member.characterId || member.id" class="member-pill">
-                  <image v-if="member.avatar" class="member-avatar" :src="member.avatar" mode="aspectFill" />
-                  <view v-else class="member-avatar member-avatar-placeholder">
-                    <text>{{ (member.name || '?').slice(0, 1) }}</text>
-                  </view>
-                  <view class="member-meta">
-                    <text class="member-name">{{ member.name || member.label || '未知魔灵' }}</text>
-                    <text class="member-extra">{{ member.elementName || member.familyName || '--' }}</text>
-                  </view>
-                </view>
-              </view>
-            </scroll-view>
+            <SwcLineup
+              v-if="lineup.characters.length"
+              class="lineup-members"
+              :characters="toMemberViews(lineup.characters)"
+              :columns="5"
+              :avatar-size="92"
+              :show-member-name="false"
+              :show-family="true"
+              :show-stars="true"
+              :show-element="true"
+              :show-member-type="true"
+              empty-text="暂无成员" />
 
             <view class="reaction-row">
               <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
@@ -173,7 +172,7 @@
               <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
                 <text>👎 {{ lineup.dislikeCount }}</text>
               </view>
-              <text class="reaction-score">热度 {{ lineup.score }}</text>
+              <!-- <text class="reaction-score">热度 {{ lineup.score }}</text> -->
             </view>
 
             <view v-if="canManageLineup(lineup) || isAdmin" class="card-actions">
@@ -209,13 +208,14 @@
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { reportToolVisit } from '@/utils/tracker'
   import {
-    deleteUserLineup,
-    fetchAdminLineupTypes,
-    reactToLineup,
-    type LineupTypeOption,
-    type ReactionValue,
-    type UserLineupSummary,
-  } from '@/services/compendium-lineups'
+    deleteCompendiumsLineupsLineupId,
+    getAdminLineupsTypes,
+    postLineupsLineupIdReaction,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import { getAnonymousId } from '@/utils/anonymous-id'
+  import type { LineupCharacterPreview, LineupTypeOption, ReactionValue, UserLineupSummary } from './lineup-types'
+  import { normalizeLineupTypes, normalizeReactionResult } from './lineup-normalizers'
+  import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
   import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
@@ -273,6 +273,8 @@
   const isLoggedIn = computed(() => !!getToken())
   const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
 
+  const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
+
   const toggleCharacterFilter = () => {
     characterFilterExpanded.value = !characterFilterExpanded.value
   }
@@ -306,9 +308,9 @@
       return
     }
     try {
-      dynamicLineupTypes.value = await fetchAdminLineupTypes({
-        compendiumId: COMPENDIUM_CODE,
-      })
+      dynamicLineupTypes.value = normalizeLineupTypes(
+        await getAdminLineupsTypes(sanitizeQuery({ compendiumId: COMPENDIUM_CODE }) as any, {}),
+      )
     } catch (error) {
       dynamicLineupTypes.value = []
     }
@@ -374,7 +376,7 @@
         if (!res.confirm) return
         deletingId.value = lineupId
         try {
-          await deleteUserLineup(lineupId)
+          await deleteCompendiumsLineupsLineupId(lineupId, buildAnonymousRequestConfig())
           uni.showToast({
             title: '删除成功',
             icon: 'success',
@@ -412,7 +414,14 @@
     if (reactingId.value) return
     reactingId.value = lineup.id
     try {
-      const result = await reactToLineup(lineup.id, value)
+      const result = normalizeReactionResult(
+        await postLineupsLineupIdReaction(
+          lineup.id,
+          { value, anonymousId: getAnonymousId() } as any,
+          buildAnonymousRequestConfig(),
+        ),
+        lineup.id,
+      )
       lineup.likeCount = result.likeCount
       lineup.dislikeCount = result.dislikeCount
       lineup.score = result.score
@@ -778,67 +787,8 @@
     font-weight: 800;
   }
 
-  .member-scroll {
+  .lineup-members {
     margin-top: 20rpx;
-    white-space: nowrap;
-  }
-
-  .member-row {
-    display: inline-flex;
-    gap: 14rpx;
-    padding-bottom: 4rpx;
-  }
-
-  .member-pill {
-    width: 240rpx;
-    padding: 14rpx;
-    border-radius: 18rpx;
-    background: var(--theme-surface-2);
-    border: 1rpx solid var(--theme-border);
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-  }
-
-  .member-avatar {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 16rpx;
-    background: var(--theme-border);
-    flex-shrink: 0;
-  }
-
-  .member-avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #92400e;
-    font-weight: 800;
-  }
-
-  .member-meta {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .member-name,
-  .member-extra {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .member-name {
-    color: var(--theme-text);
-    font-size: 24rpx;
-    font-weight: 700;
-  }
-
-  .member-extra {
-    margin-top: 6rpx;
-    color: var(--theme-text-tertiary);
-    font-size: 22rpx;
   }
 
   .mini-btn.danger {

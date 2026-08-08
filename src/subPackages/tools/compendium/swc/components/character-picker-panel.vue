@@ -199,14 +199,11 @@
   import StateBlock from './state-block.vue'
   import StickyActionBar from './sticky-action-bar.vue'
   import { normalizeSwcArchetype } from '../icon-assets'
-  import {
-    fetchAdminCharacterOptions,
-    fetchCharacterOptions as fetchUserCharacterOptions,
-    getPaginationOrDefault,
-    type CharacterOption,
-    type CharacterOptionResult,
-    type PaginationState,
-  } from '@/services/compendium-lineups'
+  import { getAdminLineupsCharacterOptions } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
+  import type { CharacterOption, CharacterOptionResult, PaginationState } from '../lineup-types'
+  import { getPaginationOrDefault, normalizeCharacterOptionResult } from '../lineup-normalizers'
+  import { sanitizeQuery } from '../request-options'
   import { isAdminUser } from '@/utils/admin'
   import { toSwcCharacterView } from '../utils'
 
@@ -511,15 +508,17 @@
 
     try {
       const nextPage = reset ? 1 : characterPagination.value.page + 1
-      const loadOptions = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
-      const result: CharacterOptionResult = await loadOptions({
+      const query = sanitizeQuery({
         compendiumId: props.compendiumId,
         locale: props.locale,
         keyword: memberKeyword.value.trim() || undefined,
         status: 'enabled',
         page: nextPage,
         pageSize: 20,
-      })
+      }) as any
+      const result: CharacterOptionResult = isAdminUser()
+        ? normalizeCharacterOptionResult(await getAdminLineupsCharacterOptions(query, {}))
+        : normalizeCharacterOptionResult(await getCompendiumsCharacters(query, {}))
 
       characterPagination.value = result.pagination
       characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]

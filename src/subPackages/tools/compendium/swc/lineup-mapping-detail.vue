@@ -78,17 +78,25 @@
   import LineupSelectModal from './components/lineup-select-modal.vue'
   import ContainerSection from './components/lineup-mapping-container-section.vue'
   import {
-    fetchLineupMappingDetail,
-    fetchUserLineupDetail,
-    reactToContainerLineup,
-    updateLineupMapping,
-    type ContainerKind,
-    type LineupCharacterPreview,
-    type LineupMapping,
-    type LineupMappingContainer,
-    type ReactionValue,
-    type UserLineupSummary,
-  } from '@/services/compendium-lineups'
+    getCompendiumsLineupMappingsMappingId,
+    getCompendiumsLineupsLineupId,
+    patchCompendiumsLineupMappingsMappingId,
+    postLineupMappingsContainersLineupsReaction,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import type {
+    ContainerKind,
+    LineupCharacterPreview,
+    LineupMapping,
+    LineupMappingContainer,
+    ReactionValue,
+    UserLineupSummary,
+  } from './lineup-types'
+  import {
+    normalizeContainerReactionResult,
+    normalizeLineupMappingResponse,
+    normalizeUserLineupDetail,
+  } from './lineup-normalizers'
+  import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
   import { ensureLineupFeatureAccess } from '@/utils/admin'
   import { buildSwcLineupMappingDetailShare } from './share'
 
@@ -131,7 +139,17 @@
     const missing = [...ids].filter(id => id && !characterMap.value[id])
     if (!missing.length) return
 
-    const results = await Promise.allSettled(missing.map(id => fetchUserLineupDetail(id, { locale: selectedLocale.value })))
+    const results = await Promise.allSettled(
+      missing.map(async id =>
+        normalizeUserLineupDetail(
+          await getCompendiumsLineupsLineupId(
+            id,
+            sanitizeQuery({ locale: selectedLocale.value }) as any,
+            buildAnonymousRequestConfig(),
+          ),
+        ),
+      ),
+    )
     const next = { ...characterMap.value }
     results.forEach((result, index) => {
       const id = missing[index]
@@ -145,7 +163,9 @@
     loading.value = true
     errorMessage.value = ''
     try {
-      const detail = await fetchLineupMappingDetail(mappingId.value)
+      const detail = normalizeLineupMappingResponse(
+        await getCompendiumsLineupMappingsMappingId(mappingId.value, buildAnonymousRequestConfig()),
+      )
       mapping.value = detail
       await enrichCharacters(detail)
     } catch (error) {
@@ -179,10 +199,14 @@
     if (saving.value || !editName.value.trim()) return
     saving.value = true
     try {
-      await updateLineupMapping(mappingId.value, {
-        name: editName.value.trim(),
-        description: editDescription.value.trim(),
-      })
+      await patchCompendiumsLineupMappingsMappingId(
+        mappingId.value,
+        {
+          name: editName.value.trim(),
+          description: editDescription.value.trim(),
+        } as any,
+        buildAnonymousRequestConfig(),
+      )
       uni.showToast({ title: '保存成功', icon: 'success' })
       editVisible.value = false
       await loadDetail()
@@ -205,9 +229,13 @@
     const container = containerByKind(pickerTarget.value)
     if (!container || !selected.length) return
     try {
-      await updateLineupMapping(mappingId.value, {
-        add: [{ containerId: container.containerId, lineupIds: selected.map(item => item.id) }],
-      })
+      await patchCompendiumsLineupMappingsMappingId(
+        mappingId.value,
+        {
+          add: [{ containerId: container.containerId, lineupIds: selected.map(item => item.id) }],
+        } as any,
+        buildAnonymousRequestConfig(),
+      )
       uni.showToast({ title: '添加成功', icon: 'success' })
       await loadDetail()
     } catch (error) {
@@ -219,9 +247,13 @@
     if (removingItemId.value) return
     removingItemId.value = payload.itemId
     try {
-      await updateLineupMapping(mappingId.value, {
-        remove: [{ containerId: payload.containerId, lineupIds: [payload.lineupId] }],
-      })
+      await patchCompendiumsLineupMappingsMappingId(
+        mappingId.value,
+        {
+          remove: [{ containerId: payload.containerId, lineupIds: [payload.lineupId] }],
+        } as any,
+        buildAnonymousRequestConfig(),
+      )
       uni.showToast({ title: '已移除', icon: 'success' })
       await loadDetail()
     } catch (error) {
@@ -236,7 +268,13 @@
     if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     reactingItemId.value = payload.itemId
     try {
-      const result = await reactToContainerLineup(mappingId.value, payload.containerId, payload.lineupId, payload.value)
+      const result = normalizeContainerReactionResult(
+        await postLineupMappingsContainersLineupsReaction(
+          { mappingId: mappingId.value, containerId: payload.containerId, lineupId: payload.lineupId },
+          { value: payload.value } as any,
+          buildAnonymousRequestConfig(),
+        ),
+      )
       if (!mapping.value) return
       const containers = [mapping.value.sourceContainer, mapping.value.targetContainer]
       containers.forEach(container => {

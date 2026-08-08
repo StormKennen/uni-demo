@@ -323,6 +323,15 @@
           }
         },
         {
+          "path": "compendium/swc/lineup-counter",
+          "style": {
+            "navigationBarTitleText": "克制与被克制",
+            "enablePullDownRefresh": false,
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "compendium/swc/character-picker",
           "style": {
             "navigationBarTitleText": "选择筛选魔灵",
@@ -385,6 +394,13 @@
       "root": "subPackages/common",
       "name": "common",
       "pages": [
+        {
+          "path": "agreement/index",
+          "style": {
+            "navigationBarTitleText": "协议",
+            "backgroundColor": "#f6f7fb"
+          }
+        },
         {
           "path": "webview/webview"
         },

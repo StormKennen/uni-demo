@@ -160,13 +160,12 @@
   import { normalizeSwcArchetype } from './icon-assets'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import {
-    fetchAdminCharacterOptions,
-    fetchCharacterOptions as fetchUserCharacterOptions,
-    getPaginationOrDefault,
-    type CharacterOption,
-    type CharacterOptionResult,
-    type PaginationState,
-  } from '@/services/compendium-lineups'
+    getAdminLineupsCharacterOptions,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
+  import type { CharacterOption, CharacterOptionResult, PaginationState } from './lineup-types'
+  import { getPaginationOrDefault, normalizeCharacterOptionResult } from './lineup-normalizers'
+  import { sanitizeQuery } from './request-options'
   import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
   import { isAdminUser } from '@/utils/admin'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
@@ -361,15 +360,18 @@
   }
 
   const loadCharacterPage = async (page: number): Promise<CharacterOptionResult> => {
-    const loadFn = isAdminUser() ? fetchAdminCharacterOptions : fetchUserCharacterOptions
-    return loadFn({
+    const query = sanitizeQuery({
       compendiumId: compendiumId.value,
       locale: selectedLocale.value,
       keyword: keyword.value.trim() || undefined,
       status: 'enabled',
       page,
       pageSize,
-    })
+    }) as any
+    if (isAdminUser()) {
+      return normalizeCharacterOptionResult(await getAdminLineupsCharacterOptions(query, {}))
+    }
+    return normalizeCharacterOptionResult(await getCompendiumsCharacters(query, {}))
   }
 
   const preloadCharacterBatch = (items: CharacterOption[]) => {

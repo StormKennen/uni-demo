@@ -1,4 +1,4 @@
-import type { LineupStatus, LineupType } from '@/services/compendium-lineups'
+import type { LineupStatus, LineupType } from './lineup-types'
 
 export const ALL_VALUE = ''
 

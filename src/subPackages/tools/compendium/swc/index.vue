@@ -44,7 +44,7 @@
     path: string
   }
 
-  const lineupEntryIds = new Set(['lineups', 'mappings'])
+  const lineupEntryIds = new Set(['lineups', 'mappings', 'counter'])
   const accessRefreshKey = ref(0)
 
   const allPortalEntries: PortalEntry[] = [
@@ -83,6 +83,15 @@
       accent: '#0f766e',
       accentSoft: 'rgba(15, 118, 110, 0.14)',
       path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
+    },
+    {
+      id: 'counter',
+      title: '克制与被克制',
+      desc: '按魔灵查询阵容克制与被克制关系',
+      icon: 'refresh',
+      accent: '#7c3aed',
+      accentSoft: 'rgba(124, 58, 237, 0.14)',
+      path: '/subPackages/tools/compendium/swc/lineup-counter?compendiumId=swc',
     },
   ]
 

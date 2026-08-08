@@ -26,6 +26,8 @@ import type {
   getCompendiumsLineupMappingsMappingIdRes,
   getCompendiumsLineupMappingsQuery,
   getCompendiumsLineupMappingsRes,
+  getCompendiumsLineupRelationsQuery,
+  getCompendiumsLineupRelationsRes,
   getCompendiumsLineupsLineupIdQuery,
   getCompendiumsLineupsLineupIdRes,
   getCompendiumsLineupsQuery,
@@ -67,7 +69,7 @@ export const getCharactersCharacterIdLineups = async (
 ): Promise<Expand<getCharactersCharacterIdLineupsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(
-    `/compendiums/characters/$${characterId}/lineups`,
+    `/compendiums/characters/${characterId}/lineups`,
     params,
     _config,
   )
@@ -88,7 +90,7 @@ export const useGetCharactersCharacterIdLineups = (
 ) => {
   return useQuery({
     queryKey: [
-      `/compendiums/characters/$${characterId}/lineups`,
+      `/compendiums/characters/${characterId}/lineups`,
       params,
       fetchOptions,
     ],
@@ -105,7 +107,7 @@ export const useOptionGetCharactersCharacterIdLineups = (
 ) => {
   return queryOptions({
     queryKey: [
-      `/compendiums/characters/$${characterId}/lineups`,
+      `/compendiums/characters/${characterId}/lineups`,
       params,
       fetchOptions,
     ],
@@ -193,7 +195,7 @@ export const getCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/lineups/$${lineupId}`, params, _config)
+  return http.get(`/compendiums/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -210,7 +212,7 @@ export const useGetCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineups/$${lineupId}`, params, fetchOptions],
+    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
@@ -223,7 +225,7 @@ export const useOptionGetCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineups/$${lineupId}`, params, fetchOptions],
+    queryKey: [`/compendiums/lineups/${lineupId}`, params, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
@@ -241,7 +243,7 @@ export const patchCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/compendiums/lineups/$${lineupId}`, data, _config)
+  return http.patch(`/compendiums/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -270,7 +272,7 @@ export const deleteCompendiumsLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteCompendiumsLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/compendiums/lineups/$${lineupId}`, {}, _config)
+  return http.delete(`/compendiums/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -286,7 +288,7 @@ export const useDeleteCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineups/$${lineupId}`, fetchOptions],
+    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
     queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -297,7 +299,7 @@ export const useOptionDeleteCompendiumsLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineups/$${lineupId}`, fetchOptions],
+    queryKey: [`/compendiums/lineups/${lineupId}`, fetchOptions],
     queryFn: () => deleteCompendiumsLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -314,7 +316,7 @@ export const postLineupsLineupIdReaction = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postLineupsLineupIdReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post(`/compendiums/lineups/$${lineupId}/reaction`, data, _config)
+  return http.post(`/compendiums/lineups/${lineupId}/reaction`, data, _config)
 }
 
 /**
@@ -538,7 +540,7 @@ export const getAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineups/$${lineupId}`, params, _config)
+  return http.get(`/admin/lineups/${lineupId}`, params, _config)
 }
 
 /**
@@ -555,7 +557,7 @@ export const useGetAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineups/$${lineupId}`, params, fetchOptions],
+    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
     queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
   })
@@ -567,7 +569,7 @@ export const useOptionGetAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineups/$${lineupId}`, params, fetchOptions],
+    queryKey: [`/admin/lineups/${lineupId}`, params, fetchOptions],
     queryFn: () => getAdminLineupsLineupId(lineupId, params, fetchOptions),
     ..._queryOptions,
   })
@@ -584,7 +586,7 @@ export const patchAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/admin/lineups/$${lineupId}`, data, _config)
+  return http.patch(`/admin/lineups/${lineupId}`, data, _config)
 }
 
 /**
@@ -611,7 +613,7 @@ export const deleteAdminLineupsLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupsLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/admin/lineups/$${lineupId}`, {}, _config)
+  return http.delete(`/admin/lineups/${lineupId}`, {}, _config)
 }
 
 /**
@@ -627,7 +629,7 @@ export const useDeleteAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineups/$${lineupId}`, fetchOptions],
+    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
     queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -638,7 +640,7 @@ export const useOptionDeleteAdminLineupsLineupId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineups/$${lineupId}`, fetchOptions],
+    queryKey: [`/admin/lineups/${lineupId}`, fetchOptions],
     queryFn: () => deleteAdminLineupsLineupId(lineupId, fetchOptions),
     ..._queryOptions,
   })
@@ -655,7 +657,7 @@ export const getAdminLineupRelationsSourceLineupId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupRelationsSourceLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineup-relations/$${sourceLineupId}`, params, _config)
+  return http.get(`/admin/lineup-relations/${sourceLineupId}`, params, _config)
 }
 
 /**
@@ -673,7 +675,7 @@ export const useGetAdminLineupRelationsSourceLineupId = (
 ) => {
   return useQuery({
     queryKey: [
-      `/admin/lineup-relations/$${sourceLineupId}`,
+      `/admin/lineup-relations/${sourceLineupId}`,
       params,
       fetchOptions,
     ],
@@ -694,7 +696,7 @@ export const useOptionGetAdminLineupRelationsSourceLineupId = (
 ) => {
   return queryOptions({
     queryKey: [
-      `/admin/lineup-relations/$${sourceLineupId}`,
+      `/admin/lineup-relations/${sourceLineupId}`,
       params,
       fetchOptions,
     ],
@@ -809,7 +811,7 @@ export const getAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/admin/lineup-mappings/$${mappingId}`, {}, _config)
+  return http.get(`/admin/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -825,7 +827,7 @@ export const useGetAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -836,7 +838,7 @@ export const useOptionGetAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () => getAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -853,7 +855,7 @@ export const patchAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/admin/lineup-mappings/$${mappingId}`, data, _config)
+  return http.patch(`/admin/lineup-mappings/${mappingId}`, data, _config)
 }
 
 /**
@@ -882,7 +884,7 @@ export const deleteAdminLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteAdminLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/admin/lineup-mappings/$${mappingId}`, {}, _config)
+  return http.delete(`/admin/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -898,7 +900,7 @@ export const useDeleteAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -909,7 +911,7 @@ export const useOptionDeleteAdminLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/admin/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/admin/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () => deleteAdminLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
   })
@@ -997,7 +999,7 @@ export const getCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/lineup-mappings/$${mappingId}`, {}, _config)
+  return http.get(`/compendiums/lineup-mappings/${mappingId}`, {}, _config)
 }
 
 /**
@@ -1013,7 +1015,7 @@ export const useGetCompendiumsLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return useQuery({
-    queryKey: [`/compendiums/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
@@ -1025,7 +1027,7 @@ export const useOptionGetCompendiumsLineupMappingsMappingId = (
   _queryOptions?: object = {},
 ) => {
   return queryOptions({
-    queryKey: [`/compendiums/lineup-mappings/$${mappingId}`, fetchOptions],
+    queryKey: [`/compendiums/lineup-mappings/${mappingId}`, fetchOptions],
     queryFn: () =>
       getCompendiumsLineupMappingsMappingId(mappingId, fetchOptions),
     ..._queryOptions,
@@ -1043,7 +1045,7 @@ export const patchCompendiumsLineupMappingsMappingId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchCompendiumsLineupMappingsMappingIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch(`/compendiums/lineup-mappings/$${mappingId}`, data, _config)
+  return http.patch(`/compendiums/lineup-mappings/${mappingId}`, data, _config)
 }
 
 /**
@@ -1092,6 +1094,49 @@ export const usePostLineupMappingsContainersLineupsReaction = (
 ) => {
   return useMutation({
     mutationFn: postLineupMappingsContainersLineupsReaction,
+    ..._queryOptions,
+  })
+}
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）
+ * @url GET /compendiums/lineup-relations
+ * @host https://app.apifox.com/link/project/7048425/apis/api-498826867
+ */
+export const getCompendiumsLineupRelations = async (
+  params: Expand<getCompendiumsLineupRelationsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsLineupRelationsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/compendiums/lineup-relations`, params, _config)
+}
+
+/**
+ * 自定义函数：usegetCompendiumsLineupRelations
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）
+ * @url GET /compendiums/lineup-relations
+ * @host https://app.apifox.com/link/project/7048425/apis/api-498826867
+ */
+
+export const useGetCompendiumsLineupRelations = (
+  params: Expand<getCompendiumsLineupRelationsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return useQuery({
+    queryKey: [`/compendiums/lineup-relations`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineupRelations(params, fetchOptions),
+    ..._queryOptions,
+  })
+}
+export const useOptionGetCompendiumsLineupRelations = (
+  params: Expand<getCompendiumsLineupRelationsQuery>,
+  fetchOptions: Expand<RequestInit> = {},
+  _queryOptions?: object = {},
+) => {
+  return queryOptions({
+    queryKey: [`/compendiums/lineup-relations`, params, fetchOptions],
+    queryFn: () => getCompendiumsLineupRelations(params, fetchOptions),
     ..._queryOptions,
   })
 }

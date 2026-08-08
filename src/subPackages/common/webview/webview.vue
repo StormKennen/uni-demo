@@ -292,7 +292,7 @@
       <!-- #endif -->
 
       <!-- #ifndef H5 -->
-      <web-view v-if="!isAgreementPage" :src="webviewSrc" bindmessage=""></web-view>
+      <web-view v-if="!isAgreementPage && webviewSrc" :src="webviewSrc" bindmessage=""></web-view>
       <!-- #endif -->
     </view>
   </view>

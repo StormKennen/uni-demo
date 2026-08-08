@@ -65,3 +65,10 @@ docs/                          设计文档（真理源）；changelog.md 为提
 - 分支：仅 feature 分支（`devin/*` 等），禁推 `main`/`dev`，禁 `--no-verify`。
 - pre-commit：lint-staged（Prettier 无分号/单引号/printWidth 140）+ `scripts/check-changelog.cjs`（改 `src/**` 必须同步 stage `docs/changelog.md`）。
 - 校验命令：`pnpm lint`、`pnpm type-check`、`pnpm test:tomato`（engine 改动）、`pnpm build:h5` / `pnpm build:mp-weixin`。
+
+
+## 业务接口使用规范
+
+- 业务页面/composable 直接 import Apifox 方法。
+- 禁止新增 `src/services/<business>.ts` wrapper。
+- Apifox Response schema 不准时，ViewModel 放业务目录。

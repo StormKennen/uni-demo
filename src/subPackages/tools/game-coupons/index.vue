@@ -2,15 +2,6 @@
   <PageLayout :title="gameConfig.title">
     <view class="coupon-page">
       <view class="coupon-main">
-        <!-- 未登录提示：内嵌文案，不挡内容预览 -->
-        <view v-if="!isLoggedIn" class="login-tip-card" @click="goLogin">
-          <view class="login-tip-copy">
-            <text class="login-tip-title">登录后可兑换</text>
-            <text class="login-tip-desc">下方操作已禁用，登录后可添加账号并批量兑换</text>
-          </view>
-          <text class="login-tip-action">去登录</text>
-        </view>
-
         <!-- 1. 账号 -->
         <view class="card checkout-card">
           <view class="step-head">
@@ -25,10 +16,9 @@
           <view v-if="!validAccounts.length" class="onboarding-panel">
             <text class="onboarding-title">先添加游戏账号</text>
             <text class="onboarding-desc">填写 {{ gameConfig.accountIdLabel }} 后即可兑换礼包码</text>
-            <view class="add-form" :class="{ disabled: !isLoggedIn }">
+            <view class="add-form">
               <picker
                 class="server-picker add-server-picker"
-                :disabled="!isLoggedIn"
                 :range="serverLabels"
                 :value="getServerIndex(newAccount.server)"
                 @change="changeNewServer($event)">
@@ -39,11 +29,10 @@
               <input
                 class="add-input"
                 type="text"
-                :disabled="!isLoggedIn"
                 :placeholder="gameConfig.accountIdPlaceholder"
                 :value="newAccount.accountId"
                 @input="updateNewAccountId" />
-              <view class="add-btn" :class="{ disabled: addingAccount || !isLoggedIn }" @click="addAccount">
+              <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
                 {{ addingAccount ? '...' : '添加' }}
               </view>
             </view>
@@ -51,7 +40,7 @@
 
           <!-- 已有账号：当前账号 + 管理 -->
           <view v-else class="current-account-wrap">
-            <view class="current-account" :class="{ disabled: !isLoggedIn }" @click="isLoggedIn && (showAccountManager = !showAccountManager)">
+            <view class="current-account" @click="showAccountManager = !showAccountManager">
               <view class="current-account-main">
                 <text class="current-account-name">{{ getAccountDisplayName(primaryAccount) }}</text>
                 <text class="current-account-meta">
@@ -70,7 +59,7 @@
                   v-for="(account, index) in accounts"
                   :key="account.id"
                   class="account-row"
-                  :class="{ selected: isAccountSelected(account), disabled: !isLoggedIn }"
+                  :class="{ selected: isAccountSelected(account) }"
                   @click="toggleAccountSelection(account)">
                   <view class="selection-check" :class="{ checked: isAccountSelected(account) }">
                     <text v-if="isAccountSelected(account)" class="selection-check-mark">✓</text>
@@ -89,20 +78,19 @@
                     <view
                       v-if="isLoggedIn && !account.managed"
                       class="mini-btn primary"
-                      :class="{ loading: account.syncing, disabled: !isLoggedIn }"
+                      :class="{ loading: account.syncing }"
                       @click.stop="syncLocalAccount(index)">
                       {{ account.syncing ? '同步中' : '同步' }}
                     </view>
-                    <view class="mini-btn danger" :class="{ disabled: !isLoggedIn }" @click.stop="removeAccount(index)">删除</view>
+                    <view class="mini-btn danger" @click.stop="removeAccount(index)">删除</view>
                   </view>
                 </view>
               </view>
 
-              <view class="add-form compact" :class="{ disabled: !isLoggedIn }">
+              <view class="add-form compact">
                 <picker
                   class="server-picker add-server-picker"
-                  :disabled="!isLoggedIn"
-                  :range="serverLabels"
+                    :range="serverLabels"
                   :value="getServerIndex(newAccount.server)"
                   @change="changeNewServer($event)">
                   <view class="server-chip editable">
@@ -112,11 +100,10 @@
                 <input
                   class="add-input"
                   type="text"
-                  :disabled="!isLoggedIn"
-                  :placeholder="gameConfig.accountIdPlaceholder"
+                    :placeholder="gameConfig.accountIdPlaceholder"
                   :value="newAccount.accountId"
                   @input="updateNewAccountId" />
-                <view class="add-btn" :class="{ disabled: addingAccount || !isLoggedIn }" @click="addAccount">
+                <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
                   {{ addingAccount ? '...' : '添加' }}
                 </view>
               </view>
@@ -126,8 +113,7 @@
                 <switch
                   class="auto-switch compact"
                   :checked="isLoggedIn && allAutoOn"
-                  :disabled="!isLoggedIn"
-                  color="var(--theme-brand)"
+                    color="var(--theme-brand)"
                   @change="handleAutoSwitchChange" />
               </view>
             </view>
@@ -144,15 +130,14 @@
             </view>
           </view>
 
-          <view class="code-add-row" :class="{ disabled: !isLoggedIn }">
+          <view class="code-add-row" >
             <input
               class="code-input-lg compact"
               type="text"
               placeholder="粘贴新券码并添加"
-              :disabled="!isLoggedIn"
-              :value="codeInput"
+                            :value="codeInput"
               @input="updateCodeInput" />
-            <view class="add-btn code-add-btn" :class="{ disabled: !isLoggedIn || addingPublicCode || redeeming }" @click="addPublicCode">
+            <view class="add-btn code-add-btn" :class="{ disabled: addingPublicCode || redeeming }" @click="addPublicCode">
               {{ addingPublicCode ? '...' : '添加' }}
             </view>
           </view>
@@ -163,8 +148,8 @@
             <view class="quick-head">
               <text class="quick-title">已选 {{ selectedCodes.length }}/{{ combinedCodes.length }}</text>
               <view class="quick-actions">
-                <text class="quick-link" :class="{ disabled: !isLoggedIn }" @click="selectAllCodesByUser">全选</text>
-                <text class="quick-link" :class="{ disabled: !isLoggedIn }" @click="clearSelectedCodes">清空</text>
+                <text class="quick-link" @click="selectAllCodesByUser">全选</text>
+                <text class="quick-link" @click="clearSelectedCodes">清空</text>
                 <text class="quick-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
                   {{ loadingCodes ? '刷新中' : '刷新' }}
                 </text>
@@ -175,7 +160,7 @@
                 v-for="item in visibleCodes"
                 :key="item.code"
                 class="quick-chip"
-                :class="{ active: isCodeSelected(item), disabled: !isLoggedIn }"
+                :class="{ active: isCodeSelected(item) }"
                 @click="toggleCodeSelection(item)">
                 <view class="selection-check code-check" :class="{ checked: isCodeSelected(item) }">
                   <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
@@ -406,7 +391,7 @@
   const hasRedeemableCodes = computed(() => selectedCodes.value.length > 0 || Boolean(codeInput.value.trim()))
 
   const cashierRedeemDisabled = computed(() => {
-    if (!isLoggedIn.value || redeeming.value) return true
+    if (redeeming.value) return true
     if (!selectedAccounts.value.length) return true
     return !hasRedeemableCodes.value
   })
@@ -556,12 +541,10 @@
   }
 
   function selectAllCodes() {
-    // 数据加载默认全选不强制登录；用户点击全选时才校验
     selectedCodeKeys.value = combinedCodes.value.map(item => getCodeKey(item))
   }
 
   function selectAllCodesByUser() {
-    if (!ensureLogin()) return
     selectAllCodes()
   }
 
@@ -574,7 +557,6 @@
   }
 
   function toggleAccountSelection(account: AccountVM) {
-    if (!ensureLogin()) return
     if (!account.managed && !account.accountId.trim()) return
     const selected = new Set(selectedAccountIds.value)
     if (selected.has(account.id)) selected.delete(account.id)
@@ -591,7 +573,6 @@
   }
 
   function clearSelectedCodes() {
-    if (!ensureLogin()) return
     selectedCodeKeys.value = []
   }
 
@@ -609,7 +590,6 @@
   }
 
   function toggleCodeSelection(item: getGameCouponsGameIdCodesResCodes) {
-    if (!ensureLogin()) return
     const key = getCodeKey(item)
     if (!key) return
     const selected = new Set(selectedCodeKeys.value)
@@ -675,10 +655,6 @@
     uni.navigateTo({ url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}` })
   }
 
-  function ensureLogin() {
-    // 未登录不自动跳转，仅由顶部「去登录」入口主动跳转
-    return isLoggedIn.value
-  }
 
   /* ----------------------------- 本地账号缓存 ----------------------------- */
 
@@ -839,7 +815,6 @@
   }
 
   async function addAccount() {
-    if (!ensureLogin()) return
     if (accounts.value.length >= maxAccounts) {
       toast(`最多保存 ${maxAccounts} 个账号`)
       return
@@ -851,24 +826,34 @@
     }
     const server = newAccount.value.server || getDefaultServer()
 
-    addingAccount.value = true
-    try {
-      await postGameCouponsGameIdAccounts(
-        gameConfig.value.gameId,
-        { compendium_id: gameConfig.value.compendiumId },
-        { account_id: accountId, server: server as ServerValue },
-      )
-      await loadManagedAccounts()
-      newAccount.value.accountId = ''
-    } catch (err) {
-      toast(errMsg(err, '添加账号失败'))
-    } finally {
-      addingAccount.value = false
+    if (isLoggedIn.value) {
+      addingAccount.value = true
+      try {
+        await postGameCouponsGameIdAccounts(
+          gameConfig.value.gameId,
+          { compendium_id: gameConfig.value.compendiumId },
+          { account_id: accountId, server: server as ServerValue },
+        )
+        await loadManagedAccounts()
+        newAccount.value.accountId = ''
+      } catch (err) {
+        toast(errMsg(err, '添加账号失败'))
+      } finally {
+        addingAccount.value = false
+      }
+      return
     }
+
+    // 游客：本地保存账号，可直接参与兑换
+    accounts.value.push({ id: localId(), managed: false, server, accountId })
+    const createdId = accounts.value[accounts.value.length - 1].id
+    selectedAccountIds.value = Array.from(new Set([...selectedAccountIds.value, createdId]))
+    newAccount.value.accountId = ''
+    saveLocalAccounts()
+    toast('已添加本地账号')
   }
 
   function removeAccount(index: number) {
-    if (!ensureLogin()) return
     const account = accounts.value[index]
     if (!account) return
     const name = account.nickname || account.accountIdMasked || account.accountId || gameConfig.value.accountIdLabel
@@ -982,13 +967,16 @@
   }
 
   function handleAutoSwitchChange(event: Event) {
-    if (!ensureLogin()) return
-
+    if (!isLoggedIn.value) {
+      toast('登录后可开启自动兑换托管')
+      return
+    }
     const target = Boolean((event as UniValueEvent).detail?.value)
     if (target !== allAutoOn.value) {
       toggleAllAuto()
     }
   }
+
 
   /* ----------------------------- 券码 ----------------------------- */
 
@@ -1011,7 +999,6 @@
 
   async function addPublicCode() {
     if (addingPublicCode.value || redeeming.value) return
-    if (!ensureLogin()) return
 
     const code = codeInput.value.trim().toUpperCase()
     if (!code) {
@@ -1021,6 +1008,16 @@
     if (combinedCodes.value.some(item => getCodeKey(item) === code)) {
       selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
       toast('券码已存在，已帮你勾选')
+      return
+    }
+
+    // 游客：仅加入本次本地列表并勾选，不写公共库
+    if (!isLoggedIn.value) {
+      remoteCodes.value = [...remoteCodes.value, { code, source: 'manual' }]
+      selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
+      codeInput.value = ''
+      showAllCodes.value = true
+      toast('已加入本次兑换列表')
       return
     }
 
@@ -1048,7 +1045,6 @@
   }
 
   async function startCashierRedeem() {
-    if (!ensureLogin()) return
     if (redeeming.value) return
     if (!validAccounts.value.length) {
       showAccountManager.value = true
@@ -1265,10 +1261,11 @@
     if (initialized.value) return
     initialized.value = true
     refreshLoginState()
-    // 未登录也拉券码列表，便于遮罩下预览页面能力
     loadCodes()
     if (isLoggedIn.value) {
       enterLoggedInMode()
+    } else {
+      loadLocalAccounts()
     }
   }
 
@@ -1320,48 +1317,6 @@
     box-sizing: border-box;
   }
 
-  .login-tip-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16rpx;
-    margin-bottom: 16rpx;
-    padding: 22rpx 20rpx;
-    border-radius: 14rpx;
-    background: rgba(79, 110, 242, 0.08);
-    border: 1rpx solid rgba(79, 110, 242, 0.16);
-  }
-
-  .login-tip-copy {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .login-tip-title {
-    display: block;
-    font-size: 28rpx;
-    font-weight: 700;
-    color: $text-primary;
-    line-height: 1.3;
-  }
-
-  .login-tip-desc {
-    display: block;
-    margin-top: 6rpx;
-    font-size: 22rpx;
-    line-height: 1.45;
-    color: $text-secondary;
-  }
-
-  .login-tip-action {
-    flex-shrink: 0;
-    padding: 12rpx 22rpx;
-    border-radius: 999rpx;
-    font-size: 24rpx;
-    font-weight: 600;
-    color: #fff;
-    background: $accent;
-  }
 
 
   .checkout-card {

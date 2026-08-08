@@ -18,8 +18,9 @@
         :avatar-shape="avatarShape"
         :avatar-size="avatarSize"
         :show-name="showMemberName"
-        :show-family="false"
+        :show-family="showFamily"
         :show-element="showElement"
+        :show-type="showMemberType"
         :show-stars="showStars"
         :star-layout="starLayout"
         :show-original-stars="showOriginalStars"
@@ -56,6 +57,8 @@
       columns?: number
       emptyText?: string
       showMemberName?: boolean
+      showFamily?: boolean
+      showMemberType?: boolean
       showStars?: boolean
       starLayout?: StarLayout
       showOriginalStars?: boolean
@@ -76,6 +79,8 @@
       columns: 5,
       emptyText: '暂无角色',
       showMemberName: true,
+      showFamily: false,
+      showMemberType: false,
       showStars: true,
       starLayout: 'flat',
       showOriginalStars: false,
@@ -159,5 +164,9 @@
     display: grid;
     gap: 14rpx;
     align-items: stretch;
+  }
+
+  .lineup-grid :deep(.swc-character-card) {
+    height: 100%;
   }
 </style>

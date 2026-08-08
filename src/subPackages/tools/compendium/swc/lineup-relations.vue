@@ -104,7 +104,14 @@
   import LineupPickerPanel from './components/lineup-picker-panel.vue'
   import StateBlock from './components/state-block.vue'
   import StickyActionBar from './components/sticky-action-bar.vue'
-  import { fetchAdminLineupOptions, fetchLineupRelationDetail, saveLineupRelation, type LineupOption } from '@/services/compendium-lineups'
+  import {
+    getAdminLineupRelationsSourceLineupId,
+    getAdminLineupsOptions,
+    postAdminLineupRelations,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import type { LineupOption } from './lineup-types'
+  import { normalizeLineupOptions, normalizeRelationDetail } from './lineup-normalizers'
+  import { sanitizeQuery } from './request-options'
   import { ensureAdminAccess, ensureLineupFeatureAccess } from '@/utils/admin'
   import { buildSwcLineupRelationsShare } from './share'
 
@@ -145,14 +152,14 @@
   const searchSourceOptions = async () => {
     sourceLoading.value = true
     try {
-      sourceOptions.value = await fetchAdminLineupOptions({
+      sourceOptions.value = normalizeLineupOptions(await getAdminLineupsOptions(sanitizeQuery({
         compendiumId: COMPENDIUM_CODE,
         locale: selectedLocale.value,
         keyword: sourceKeyword.value.trim() || undefined,
         status: 'enabled',
         page: 1,
         pageSize: 20,
-      })
+      }) as any, {}))
     } catch (error) {
       uni.showToast({
         title: typeof error === 'string' ? error : '加载源阵容失败',
@@ -166,14 +173,14 @@
   const searchTargetOptions = async () => {
     targetLoading.value = true
     try {
-      rawTargetOptions.value = await fetchAdminLineupOptions({
+      rawTargetOptions.value = normalizeLineupOptions(await getAdminLineupsOptions(sanitizeQuery({
         compendiumId: COMPENDIUM_CODE,
         locale: selectedLocale.value,
         keyword: targetKeyword.value.trim() || undefined,
         status: 'enabled',
         page: 1,
         pageSize: 20,
-      })
+      }) as any, {}))
     } catch (error) {
       uni.showToast({
         title: typeof error === 'string' ? error : '加载目标阵容失败',
@@ -192,9 +199,9 @@
     }
 
     try {
-      const detail = await fetchLineupRelationDetail(lineupId, {
+      const detail = normalizeRelationDetail(await getAdminLineupRelationsSourceLineupId(lineupId, sanitizeQuery({
         locale: selectedLocale.value,
-      })
+      }) as any, {}))
       selectedSource.value = detail.sourceLineup
       selectedTargets.value = detail.targetLineups
       incomingLineups.value = detail.incomingLineups
@@ -261,11 +268,11 @@
 
     saving.value = true
     try {
-      const result = await saveLineupRelation({
+      const result = normalizeRelationDetail(await postAdminLineupRelations({
         compendiumId: COMPENDIUM_CODE,
         sourceLineupId: selectedSource.value.id,
         targetLineupIds: selectedTargets.value.map(item => item.id),
-      })
+      } as any, {}))
 
       selectedSource.value = result.sourceLineup
       selectedTargets.value = result.targetLineups

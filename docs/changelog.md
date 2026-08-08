@@ -6,6 +6,20 @@
 
 ## Unreleased
 
+- 2026-08-08 [services,tools/compendium-swc] 删除 compendium-lineups/memo API wrapper，SWC 业务直接调用 Apifox；normalize/ViewModel 下沉到 swc 业务目录，generated boundary 收敛为 src/services/apifox/**（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 新增公开页「克制与被克制」：防守/进攻模式、魔灵多选、adapter 接入 GET /compendiums/lineup-relations、关联阵容点赞点踩与前端 score 排序；综合入口与工具配置同步（Codex）
+
+- 2026-08-07 [tools/compendium-swc] 修复 SwcLineup 成员卡因名称换行导致高度/边框不一致：名称单行省略，网格内卡片等高拉伸（Codex）
+
+- 2026-08-07 [tools/compendium-swc] 阵容列表成员预览改为 SwcLineup：展示星级/五行/人物类型图标与家族名，移除本地 member-pill（Codex）
+
+- 2026-08-07 [tools/compendium-swc] SwcCharacterCard/SwcLineup 支持配置家族名与成员名（头像下方换行展示），人物类型改为头像右下角图标；SwcLineup 新增 showFamily/showMemberType 透传（Codex）
+
+- 2026-08-07 [common/agreement] 用户服务协议/隐私政策改为独立原生页，避免小程序 web-view 白屏导致审核判定协议空白；入口 URL 切到 agreement/index（Codex）
+
+- 2026-08-07 [tools/game-coupons] 兑换券恢复游客可用：取消未登录按钮禁用与登录拦截，本地账号可直接添加并批量兑换，托管/记录仍建议登录后使用（Codex）
+
 - 2026-08-05 [api/family-tree] 为族谱成员详情与编辑补充手写路径适配，绕开生成代码中未展开的成员 ID 占位符；Apifox 生成区保持只读（Codex）
 
 - 2026-08-05 [tools/family-tree] 在无 ECharts 的族谱管理面板中恢复成员详情与编辑入口，复用现有成员更新接口，保持成员列表、新增和编辑能力（Codex）

@@ -31,21 +31,29 @@
           </view>
         </template>
 
-        <template v-if="hasActionBadge" #bottom-right>
-          <view v-if="showRemove" class="remove-badge inline-action-badge" @click.stop="handleRemove">
-            <text>×</text>
-          </view>
-          <view v-else-if="showEdit" class="edit-badge inline-action-badge" @click.stop="handleEdit">
-            <text>✎</text>
-          </view>
-          <view v-else-if="selectable && selected" class="selected-badge inline-action-badge">
-            <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
+        <template v-if="hasBestiaryBottomRight" #bottom-right>
+          <view class="bestiary-bottom-right">
+            <view v-if="showTypeIcon" class="type-badge inline-type-badge">
+              <SwcSquareIcon kind="archetype" :icon-key="character.archetype" :size="typeIconSize" :radius="6" />
+            </view>
+
+            <view v-if="showRemove" class="remove-badge inline-action-badge" @click.stop="handleRemove">
+              <text>×</text>
+            </view>
+            <view v-else-if="showEdit" class="edit-badge inline-action-badge" @click.stop="handleEdit">
+              <text>✎</text>
+            </view>
+            <view v-else-if="selectable && selected" class="selected-badge inline-action-badge">
+              <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
+            </view>
           </view>
         </template>
       </SwcAvatarFrame>
 
-      <view class="character-info bestiary-info">
-        <text class="character-title bestiary-title">{{ primaryTitle }}</text>
+      <view v-if="hasInfo || bestiaryMetaText" class="character-info bestiary-info">
+        <text v-if="showName" class="character-title bestiary-title">{{ character.name || '未知魔灵' }}</text>
+        <text v-if="showFamily && !showName" class="character-title bestiary-title">{{ character.familyName || '未知家族' }}</text>
+        <text v-if="showFamily && showName" class="character-family bestiary-family">{{ character.familyName || '未知家族' }}</text>
         <text v-if="bestiaryMetaText" class="bestiary-meta">{{ bestiaryMetaText }}</text>
       </view>
     </template>
@@ -63,8 +71,15 @@
           <text>{{ character.name.slice(0, 1) || '?' }}</text>
         </view>
 
-        <view v-if="showElement && character.elementKey" class="element-badge">
-          <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="40" :radius="8" />
+        <view
+          v-if="showElement && character.elementKey"
+          class="element-badge"
+          :class="elementBadgeClass">
+          <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="elementIconSize" :radius="8" />
+        </view>
+
+        <view v-if="showTypeIcon" class="type-badge">
+          <SwcSquareIcon kind="archetype" :icon-key="character.archetype" :size="typeIconSize" :radius="6" />
         </view>
 
         <view v-if="showOrder && order > 0" class="order-badge">
@@ -106,7 +121,7 @@
   import SwcAvatarFrame from './swc-avatar-frame.vue'
   import SwcStarBadge from './swc-star-badge.vue'
   import SwcSquareIcon from './swc-square-icon.vue'
-  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from '../icon-assets'
+  import { normalizeSwcArchetype } from '../icon-assets'
   import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
@@ -167,23 +182,24 @@
 
   const hasActionBadge = computed(() => props.showRemove || props.showEdit || (props.selectable && props.selected))
 
-  const primaryTitle = computed(() => {
-    if (props.showName) return props.character.name || '未知魔灵'
-    if (props.showFamily) return props.character.familyName || '未知家族'
-    return props.character.name || props.character.familyName || '未知魔灵'
+  const showTypeIcon = computed(() => props.showType && Boolean(normalizeSwcArchetype(props.character.archetype) || props.character.archetype))
+
+  const hasBestiaryBottomRight = computed(() => hasActionBadge.value || showTypeIcon.value)
+
+  // 类型图标固定右下角：五行避让到右上；若右上被操作角标占用则落到左下
+  const elementBadgeClass = computed(() => {
+    if (!showTypeIcon.value) return ''
+    if (hasActionBadge.value) return 'element-badge-bottom-left'
+    return 'element-badge-top'
   })
 
-  const archetypeLabel = computed(() => {
-    const normalizedKey = normalizeSwcArchetype(props.character.archetype)
-    const label = SWC_ARCHETYPE_LABEL_MAP[normalizedKey] || props.character.archetype || ''
-    return label
-  })
+  const typeIconSize = computed(() => Math.max(22, Math.min(40, Math.round(props.avatarSize * 0.3))))
+
+  const elementIconSize = computed(() => Math.max(24, Math.min(40, Math.round(props.avatarSize * 0.32))))
 
   const bestiaryMetaText = computed(() => {
-    const parts: string[] = []
-    if (props.showType && archetypeLabel.value) parts.push(archetypeLabel.value)
-    if (props.metricText) parts.push(props.metricText)
-    return parts.join(' · ')
+    // 人物类型改为头像右下角图标展示，meta 仅保留额外指标文案
+    return props.metricText || ''
   })
 
   const cardStyle = computed(() => ({
@@ -212,6 +228,8 @@
     --card-tint: rgba(15, 23, 42, 0.03);
     position: relative;
     min-width: 0;
+    height: 100%;
+    box-sizing: border-box;
     border-radius: 18rpx;
     background: linear-gradient(180deg, var(--card-tint), transparent 72%), var(--theme-surface);
     border: 2rpx solid var(--theme-border);
@@ -231,11 +249,18 @@
     border-bottom: 1rpx solid var(--theme-border);
   }
 
-  .bestiary-element-badge {
+  .bestiary-element-badge,
+  .type-badge {
     display: flex;
     align-items: center;
     justify-content: center;
     filter: drop-shadow(0 4rpx 10rpx rgba(15, 23, 42, 0.28));
+  }
+
+  .bestiary-bottom-right {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
   }
 
   .bestiary-info {
@@ -245,14 +270,25 @@
     text-align: center;
   }
 
-  .bestiary-title {
+  .bestiary-title,
+  .bestiary-family {
     width: 100%;
-    font-size: 23rpx;
-    line-height: 1.25;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     word-break: normal;
+  }
+
+  .bestiary-title {
+    font-size: 23rpx;
+    line-height: 1.25;
+  }
+
+  .bestiary-family {
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
+    font-weight: 700;
+    line-height: 1.25;
   }
 
   .bestiary-meta {
@@ -312,7 +348,8 @@
   .edit-badge,
   .selected-badge,
   .original-stars,
-  .element-badge {
+  .element-badge,
+  .type-badge {
     position: absolute;
     z-index: 2;
   }
@@ -324,6 +361,26 @@
     align-items: center;
     justify-content: center;
     filter: drop-shadow(0 4rpx 10rpx rgba(15, 23, 42, 0.28));
+  }
+
+  .element-badge-top {
+    top: 0rpx;
+    bottom: auto;
+  }
+
+  .element-badge-bottom-left {
+    left: 0rpx;
+    right: auto;
+    bottom: 0rpx;
+  }
+
+  .type-badge {
+    right: 0rpx;
+    bottom: 0rpx;
+  }
+
+  .inline-type-badge {
+    position: static;
   }
 
   .order-badge {
@@ -436,19 +493,29 @@
 
   .character-info {
     min-width: 0;
+    flex: 1;
     padding: 12rpx 14rpx 14rpx;
     display: flex;
     flex-direction: column;
-    gap: 8rpx;
+    justify-content: flex-start;
+    gap: 6rpx;
+  }
+
+  .character-title,
+  .character-family {
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
   }
 
   .character-title {
-    min-width: 0;
     color: var(--theme-text);
     font-size: 24rpx;
     font-weight: 800;
     line-height: 1.3;
-    word-break: break-word;
   }
 
   .character-family {
@@ -456,7 +523,6 @@
     font-size: 22rpx;
     font-weight: 700;
     line-height: 1.3;
-    word-break: break-word;
   }
 
   .card-element-fire {

@@ -1,4 +1,4 @@
-import type { LineupCharacterPreview } from '@/services/compendium-lineups'
+import type { LineupCharacterPreview } from './lineup-types'
 
 export interface SwcCharacterView {
   characterId: string

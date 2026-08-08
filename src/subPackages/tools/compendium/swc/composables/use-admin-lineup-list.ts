@@ -1,5 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
-import { fetchUserLineups, type CharacterOption, type PaginationState, type UserLineupSummary } from '@/services/compendium-lineups'
+import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import type { CharacterOption, PaginationState, UserLineupSummary } from '../lineup-types'
+import { normalizeUserLineupListResult } from '../lineup-normalizers'
+import { buildAnonymousRequestConfig, sanitizeQuery } from '../request-options'
 import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -103,18 +106,23 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     let hasNext = true
 
     while (hasNext) {
-      const result = await fetchUserLineups({
-        compendiumId: params.compendiumId,
-        locale: params.locale.value,
-        keyword: keyword.value.trim() || undefined,
-        characterId: primaryCharacterId || undefined,
-        type: selectedType.value || undefined,
-        status: selectedStatus.value || undefined,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-        page: nextPage,
-        pageSize,
-      })
+      const result = normalizeUserLineupListResult(
+        await getCompendiumsLineups(
+          sanitizeQuery({
+            compendiumId: params.compendiumId,
+            locale: params.locale.value,
+            keyword: keyword.value.trim() || undefined,
+            characterId: primaryCharacterId || undefined,
+            type: selectedType.value || undefined,
+            status: selectedStatus.value || undefined,
+            sortBy: 'updatedAt',
+            sortOrder: 'desc',
+            page: nextPage,
+            pageSize,
+          }) as any,
+          buildAnonymousRequestConfig(),
+        ),
+      )
 
       collected.push(...result.items)
       hasNext = result.pagination.hasNext
@@ -156,18 +164,23 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
         return
       }
 
-      const result = await fetchUserLineups({
-        compendiumId: params.compendiumId,
-        locale: params.locale.value,
-        keyword: keyword.value.trim() || undefined,
-        characterId: selectedCharacterIds.value[0] || undefined,
-        type: selectedType.value || undefined,
-        status: selectedStatus.value || undefined,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-        page: nextPage,
-        pageSize,
-      })
+      const result = normalizeUserLineupListResult(
+        await getCompendiumsLineups(
+          sanitizeQuery({
+            compendiumId: params.compendiumId,
+            locale: params.locale.value,
+            keyword: keyword.value.trim() || undefined,
+            characterId: selectedCharacterIds.value[0] || undefined,
+            type: selectedType.value || undefined,
+            status: selectedStatus.value || undefined,
+            sortBy: 'updatedAt',
+            sortOrder: 'desc',
+            page: nextPage,
+            pageSize,
+          }) as any,
+          buildAnonymousRequestConfig(),
+        ),
+      )
 
       allMatchedLineups.value = []
       pagination.value = result.pagination

@@ -88,6 +88,17 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     hiddenInDirectory: true,
     recentAliasKey: 'compendium-swc',
   },
+  'compendium-lineup-counter': {
+    name: '克制与被克制',
+    desc: '按魔灵查询阵容克制与被克制关系',
+    icon: 'refresh',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+    path: '/subPackages/tools/compendium/swc/lineup-counter?compendiumId=swc',
+    category: 'wiki',
+    isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
+  },
   'summoners-war-coupons': {
     name: '魔灵兑换券',
     desc: '礼包码/账号管理',

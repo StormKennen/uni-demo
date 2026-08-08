@@ -593,3 +593,44 @@ export interface postLineupsLineupIdReactionBody {
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
 export type postLineupsLineupIdReactionRes = string
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口请求Query参数
+ * @url GET /compendiums/lineup-relations
+ */
+export interface getCompendiumsLineupRelationsQuery {
+  /** 游戏代码或游戏 ID（与 gameId 二选一） */
+  compendiumId: string
+
+  gameId?: string
+  /** 主阵容类型。常用 `占领战防守` / `占领战进攻` */
+  type: string
+  /** 多人物 AND 筛选（Character._id）。
+支持 `id1,id2` 或 JSON 数组字符串。
+ */
+  characterIds?: any
+
+  characterId?: string
+
+  keyword?: string
+
+  locale?: string
+  /** 默认仅返回 enabled */
+  status?: string
+
+  sortBy?: string
+
+  sortOrder?: string
+
+  page?: number
+
+  pageSize?: number
+
+  limit?: number
+}
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口返回值
+ * @url GET /compendiums/lineup-relations
+ */
+export type getCompendiumsLineupRelationsRes = string

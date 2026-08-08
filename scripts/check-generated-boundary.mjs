@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 
-const GENERATED_PATH = 'src/services'
+const GENERATED_PATH = 'src/services/apifox'
 const args = process.argv.slice(2)
 
 function readBaseRef() {

@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
   import { ref, watch } from 'vue'
-  import type { LineupOption } from '@/services/compendium-lineups'
+  import type { LineupOption } from '../lineup-types'
   import SearchActionRow from './search-action-row.vue'
   import StateBlock from './state-block.vue'
 

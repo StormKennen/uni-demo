@@ -101,12 +101,13 @@
   import StateBlock from './components/state-block.vue'
   import { reportToolVisit } from '@/utils/tracker'
   import {
-    createLineupMapping,
-    deleteLineupMapping,
-    fetchLineupMappings,
-    type LineupMapping,
-    type PaginationState,
-  } from '@/services/compendium-lineups'
+    deleteAdminLineupMappingsMappingId,
+    getCompendiumsLineupMappings,
+    postCompendiumsLineupMappings,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import type { LineupMapping, PaginationState } from './lineup-types'
+  import { normalizeLineupMappingListResult, normalizeLineupMappingResponse } from './lineup-normalizers'
+  import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
   import { getToken } from '@/utils/storage'
   import { ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
   import { buildSwcLineupMappingsShare } from './share'
@@ -142,7 +143,12 @@
   })
 
   const loadPage = async (page: number) => {
-    const result = await fetchLineupMappings({ compendiumId: COMPENDIUM_CODE, page, limit: PAGE_SIZE })
+    const result = normalizeLineupMappingListResult(
+      await getCompendiumsLineupMappings(
+        sanitizeQuery({ compendiumId: COMPENDIUM_CODE, page, limit: PAGE_SIZE }) as any,
+        buildAnonymousRequestConfig(),
+      ),
+    )
     pagination.value = result.pagination
     mappings.value = page <= 1 ? result.items : [...mappings.value, ...result.items]
   }
@@ -205,11 +211,16 @@
     if (creating.value) return
     creating.value = true
     try {
-      const created = await createLineupMapping({
-        compendiumId: COMPENDIUM_CODE,
-        name: createName.value.trim() || undefined,
-        description: createDescription.value.trim() || undefined,
-      })
+      const created = normalizeLineupMappingResponse(
+        await postCompendiumsLineupMappings(
+          sanitizeQuery({
+            compendiumId: COMPENDIUM_CODE,
+            name: createName.value.trim() || undefined,
+            description: createDescription.value.trim() || undefined,
+          }) as any,
+          buildAnonymousRequestConfig(),
+        ),
+      )
       uni.showToast({ title: '创建成功', icon: 'success' })
       createVisible.value = false
       await refreshList()
@@ -229,7 +240,7 @@
         if (!res.confirm) return
         deletingId.value = mappingId
         try {
-          await deleteLineupMapping(mappingId)
+          await deleteAdminLineupMappingsMappingId(mappingId, buildAnonymousRequestConfig())
           uni.showToast({ title: '删除成功', icon: 'success' })
           refreshList()
         } catch (error) {

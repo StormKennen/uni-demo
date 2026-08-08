@@ -108,14 +108,13 @@
   import StickyActionBar from './components/sticky-action-bar.vue'
   import SwcLineup from './components/swc-lineup.vue'
   import {
-    createUserLineup,
-    fetchUserLineupDetail,
-    type CharacterOption,
-    type LineupStatus,
-    type LineupType,
-    type UserLineupDetail,
-    updateUserLineup,
-  } from '@/services/compendium-lineups'
+    getCompendiumsLineupsLineupId,
+    patchCompendiumsLineupsLineupId,
+    postCompendiumsLineups,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import type { CharacterOption, LineupStatus, LineupType, UserLineupDetail } from './lineup-types'
+  import { normalizeUserLineupDetail } from './lineup-normalizers'
+  import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
   import { ensureLineupFeatureAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
@@ -210,9 +209,13 @@
     try {
       resetForm()
       if (isEditMode.value) {
-        const detail = await fetchUserLineupDetail(lineupId.value, {
-          locale: selectedLocale.value,
-        })
+        const detail = normalizeUserLineupDetail(
+          await getCompendiumsLineupsLineupId(
+            lineupId.value,
+            sanitizeQuery({ locale: selectedLocale.value }) as any,
+            buildAnonymousRequestConfig(),
+          ),
+        )
         if (detail.canEdit === false) {
           uni.showToast({ title: '无权编辑该阵容', icon: 'none' })
           setTimeout(() => uni.navigateBack(), 600)
@@ -254,12 +257,15 @@
 
     try {
       if (isEditMode.value) {
-        await updateUserLineup(lineupId.value, basePayload)
+        await patchCompendiumsLineupsLineupId(lineupId.value, basePayload as any, buildAnonymousRequestConfig())
       } else {
-        await createUserLineup({
-          compendiumId: COMPENDIUM_CODE,
-          ...basePayload,
-        })
+        await postCompendiumsLineups(
+          {
+            compendiumId: COMPENDIUM_CODE,
+            ...basePayload,
+          } as any,
+          buildAnonymousRequestConfig(),
+        )
       }
 
       uni.showToast({

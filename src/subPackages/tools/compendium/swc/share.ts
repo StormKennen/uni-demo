@@ -23,6 +23,7 @@ const SWC_LINEUPS_PATH = '/subPackages/tools/compendium/swc/lineups'
 const SWC_LINEUP_MAPPINGS_PATH = '/subPackages/tools/compendium/swc/lineup-mappings'
 const SWC_LINEUP_MAPPING_DETAIL_PATH = '/subPackages/tools/compendium/swc/lineup-mapping-detail'
 const SWC_LINEUP_RELATIONS_PATH = '/subPackages/tools/compendium/swc/lineup-relations'
+const SWC_LINEUP_COUNTER_PATH = '/subPackages/tools/compendium/swc/lineup-counter'
 const SWC_DETAIL_PATH = '/subPackages/tools/compendium/swc/detail'
 
 function compactQuery(query: QueryValueMap = {}) {
@@ -99,6 +100,10 @@ export function buildSwcLineupMappingDetailShare(options: { mappingId: string; n
 
 export function buildSwcLineupRelationsShare(query: QueryValueMap = {}) {
   return createShare('魔灵召唤阵容克制关系配置', SWC_LINEUP_RELATIONS_PATH, query)
+}
+
+export function buildSwcLineupCounterShare(query: QueryValueMap = {}) {
+  return createShare('魔灵召唤克制与被克制：按魔灵查询阵容关系', SWC_LINEUP_COUNTER_PATH, query)
 }
 
 export function buildSwcSharePath(path: string, query: QueryValueMap = {}) {

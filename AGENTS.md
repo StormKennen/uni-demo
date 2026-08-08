@@ -26,7 +26,8 @@ pnpm build:h5 / build:mp-weixin
 src/pages/                 main package pages (index, mine only)
 src/subPackages/tools/<x>/ tool pages (register in src/pages.json + src/config/tools.ts)
 src/components/            global components (PascalCase or ga-* prefix)
-src/services/              Apifox-generated boundary; never hand-edit or format
+src/services/apifox/**      Apifox auto-generated APIs; never hand-edit or format
+src/services/              request infrastructure only (http/adapters/security/oss); no business API wrappers
 src/stores/                pinia stores (persistedstate)
 src/utils/ | src/utilsH5/  cross-platform utils | H5-only utils
 src/engine/                pure algorithm modules (no uni APIs, vitest-tested)
@@ -41,7 +42,9 @@ docs/                      design docs — source of truth; changelog.md is comm
 - No edits to `vite.config.ts` / `manifest.json` / `.env.*` / deploy scripts unless the task explicitly asks.
 - Every page/component must work on BOTH H5 and mp-weixin; platform code behind `// #ifdef` guards.
 - No hardcoded secrets/domains; use `import.meta.env.VITE_*`.
-- `src/services/**` is managed by Apifox; lint, formatting, and architecture work MUST NOT modify it.
+- `src/services/apifox/**` is managed by Apifox; lint, formatting, and architecture work MUST NOT modify it.
+- Business pages/composables import Apifox methods directly; do not create `src/services/<business>.ts` API wrappers.
+- Query/Body/Path types prefer Apifox generated types; when Response schema is inaccurate, put ViewModels in the business module.
 
 ## Style
 
@@ -62,3 +65,15 @@ Before executing an architecture phase:
 3. Do not begin subsequent phases automatically.
 4. Do not modify `src/services/**`.
 5. Complete validation and report results before stopping.
+
+
+## 业务接口使用规范
+
+1. API 请求方法统一由 `src/services/apifox/**` 提供。
+2. 业务页面 / composable 直接 import 对应 Apifox 方法。
+3. Query / Body / Path 类型优先使用 Apifox 生成类型。
+4. 不创建 `src/services/<business>.ts` API wrapper。
+5. Apifox Response 类型准确时直接使用。
+6. Response schema 不准确时，业务 ViewModel 放业务目录。
+7. normalize / mapper 属于业务域，不属于 services。
+8. `src/services/apifox/**` 禁止手工修改。

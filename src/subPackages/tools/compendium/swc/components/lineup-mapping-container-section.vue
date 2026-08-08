@@ -62,7 +62,7 @@
 <script setup lang="ts">
   import StateBlock from './state-block.vue'
   import SwcLineup from './swc-lineup.vue'
-  import type { LineupCharacterPreview, LineupMappingContainer, ReactionValue } from '@/services/compendium-lineups'
+  import type { LineupCharacterPreview, LineupMappingContainer, ReactionValue } from '../lineup-types'
   import { toSwcCharacterView } from '../utils'
 
   const props = withDefaults(

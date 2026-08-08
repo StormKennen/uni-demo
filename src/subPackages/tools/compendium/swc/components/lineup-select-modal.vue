@@ -71,7 +71,10 @@
   import StateBlock from './state-block.vue'
   import SwcLineup from './swc-lineup.vue'
   import { getLineupTypeLabel } from '../lineup-meta'
-  import { fetchUserLineups, type PaginationState, type UserLineupSummary } from '@/services/compendium-lineups'
+  import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import type { PaginationState, UserLineupSummary } from '../lineup-types'
+  import { normalizeUserLineupListResult } from '../lineup-normalizers'
+  import { buildAnonymousRequestConfig, sanitizeQuery } from '../request-options'
   import { toSwcCharacterView } from '../utils'
 
   const PAGE_SIZE = 20
@@ -122,14 +125,19 @@
   }
 
   const loadPage = async (page: number) => {
-    const result = await fetchUserLineups({
-      compendiumId: props.compendiumId,
-      locale: props.locale,
-      keyword: keyword.value.trim() || undefined,
-      status: 'enabled',
-      page,
-      pageSize: PAGE_SIZE,
-    })
+    const result = normalizeUserLineupListResult(
+      await getCompendiumsLineups(
+        sanitizeQuery({
+          compendiumId: props.compendiumId,
+          locale: props.locale,
+          keyword: keyword.value.trim() || undefined,
+          status: 'enabled',
+          page,
+          pageSize: PAGE_SIZE,
+        }) as any,
+        buildAnonymousRequestConfig(),
+      ),
+    )
     pagination.value = result.pagination
     const filtered = result.items.filter(item => !excludeSet.value.has(item.id))
     options.value = page <= 1 ? filtered : [...options.value, ...filtered]
