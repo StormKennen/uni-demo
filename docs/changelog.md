@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-08 [tools/compendium-swc] 新增 SwcCharacterPickerSlots 人物选择槽位组件，lineup-counter 顶部筛选改为“头像+删除+/”交互（Codex）
+
 - 2026-08-08 [common/agreement,privacy] 协议页防空白默认正文、统一 content 数据源，补充隐私政策授权/保存期限/权利与用途说明，webview 复用本地协议内容（Codex）
 
 - 2026-08-08 [tools/compendium-swc] 人物筛选器矩阵由 8 列调整为 6 列，头像同步放大至 92rpx，保持紧凑选中体验（Codex）

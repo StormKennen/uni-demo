@@ -14,29 +14,24 @@
 
         <view class="filter-head">
           <text class="filter-label">魔灵筛选（多选 AND）</text>
-          <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
+          <text v-if="selectedCharacters.length" class="filter-count">已选 {{ selectedCharacters.length }}</text>
         </view>
 
-        <SwcLineup
-          v-if="selectedCharacters.length"
-          class="selected-characters"
+        <SwcCharacterPickerSlots
+          class="character-picker-slots"
           :characters="selectedCharacterViews"
-          :columns="5"
-          editable
-          :show-member-name="false"
-          :show-family="true"
-          :show-stars="true"
-          :show-element="true"
-          :show-member-type="true"
-          :avatar-size="92"
-          empty-text="请选择魔灵"
-          @remove="removeCharacter" />
+          :max-count="0"
+          :size="120"
+          @add="openCharacterPicker"
+          @remove="handleRemoveSelectedCharacter" />
 
-        <view v-else class="helper-text">请选择 1 个或多个魔灵；阵容需同时包含全部所选人物</view>
+        <text class="helper-text">阵容需同时包含全部所选人物</text>
 
-        <view v-if="selectedCharacters.length" class="action-row">
-          <button class="toolbar-btn" size="mini" @click="clearCharacters">清空魔灵</button>
-          <button class="toolbar-btn primary" size="mini" :loading="loading" @click="refresh">查询</button>
+        <view class="action-row">
+          <button v-if="selectedCharacters.length" class="toolbar-btn" size="mini" @click="clearCharacters">清空魔灵</button>
+          <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="!selectedCharacters.length" @click="refresh">
+            查询
+          </button>
         </view>
       </view>
 
@@ -134,6 +129,7 @@
   import { onLoad, onShow, onReachBottom, onPullDownRefresh, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import StateBlock from './components/state-block.vue'
   import SwcLineup from './components/swc-lineup.vue'
+  import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
   import { getLineupTypeLabel } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
   import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
@@ -180,6 +176,10 @@
   })
 
   const selectedCharacterViews = computed(() => selectedCharacters.value.map(item => toSwcCharacterView(item)))
+
+  const handleRemoveSelectedCharacter = (character: { characterId: string }) => {
+    removeCharacter(character.characterId)
+  }
 
   const resultMetaText = computed(() => {
     if (relationMode.value === 'counteredBy') return '防守视角：展示克制该防守的进攻阵容'
@@ -345,8 +345,15 @@
     font-weight: 800;
   }
 
-  .selected-characters {
+  .character-picker-slots {
     margin-top: 8rpx;
+  }
+
+  .filter-count {
+    margin-left: auto;
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    font-weight: 700;
   }
 
   .action-row {
