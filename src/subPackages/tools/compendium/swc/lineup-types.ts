@@ -128,10 +128,17 @@ export interface RelationDetail {
   incomingLineups: LineupOption[]
 }
 
+/** 关联阵容项：后端返回 { lineup, relation }，前端展平展示。 */
+export interface RelatedLineupItem {
+  lineup: UserLineupSummary
+  relationId: string
+  relationDescription: string
+}
+
 /** 公开克制查询：主阵容 + 关联阵容（related 已按后端 mode 方向给出）。 */
 export interface LineupRelationGroup {
   lineup: UserLineupSummary
-  relatedLineups: UserLineupSummary[]
+  relatedLineups: RelatedLineupItem[]
 }
 
 export interface PublicLineupRelationResult {

@@ -6,6 +6,14 @@
 
 ## Unreleased
 
+- 2026-08-08 [tools/compendium-swc] 修复并重构人物筛选器：补 errorMessage、统一 getCompendiumsCharacters 服务端筛选、300ms 搜索 debounce、默认收起筛选、8 列紧凑选中矩阵（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 人物筛选页对齐图鉴列表：筛选改服务端 categories 参数、人物解析复用 list 逻辑，默认觉醒+星级排序，修复选人页空数据（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 修复人物筛选页空列表：默认形态改为全部、选人接口统一走 getCompendiumsCharacters（与图鉴同源），并增强人物选项 normalize（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 完善克制与被克制页：对齐 GET /compendiums/lineup-relations 返回结构（items + nested related.lineup/relation）、成员嵌套 character 解析、score 排序与下拉刷新（Codex）
+
 - 2026-08-08 [services,tools/compendium-swc] 删除 compendium-lineups/memo API wrapper，SWC 业务直接调用 Apifox；normalize/ViewModel 下沉到 swc 业务目录，generated boundary 收敛为 src/services/apifox/**（Codex）
 
 - 2026-08-08 [tools/compendium-swc] 新增公开页「克制与被克制」：防守/进攻模式、魔灵多选、adapter 接入 GET /compendiums/lineup-relations、关联阵容点赞点踩与前端 score 排序；综合入口与工具配置同步（Codex）

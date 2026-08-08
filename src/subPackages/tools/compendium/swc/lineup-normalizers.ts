@@ -15,6 +15,7 @@ import type {
   LineupMemberDetail,
   LineupOption,
   LineupRelationGroup,
+  RelatedLineupItem,
   LineupTypeOption,
   PaginationState,
   PublicLineup,
@@ -72,13 +73,19 @@ export const extractData = (res: unknown): RawRecord => {
 
 export const normalizePagination = (source: unknown): PaginationState => {
   const data = isRecord(source) ? source : {}
+  const page = toNumber(data.page, 1)
+  const limit = toNumber(data.limit ?? data.pageSize, 20)
+  const total = toNumber(data.total ?? data.totalResults, 0)
+  const totalPages = toNumber(data.totalPages, total > 0 && limit > 0 ? Math.ceil(total / limit) : 0)
+  const hasNext = data.hasNext != null ? Boolean(data.hasNext) : page < totalPages
+  const hasPrev = data.hasPrev != null ? Boolean(data.hasPrev) : page > 1
   return {
-    page: toNumber(data.page, 1),
-    limit: toNumber(data.limit ?? data.pageSize, 20),
-    total: toNumber(data.total, 0),
-    totalPages: toNumber(data.totalPages, 0),
-    hasNext: Boolean(data.hasNext),
-    hasPrev: Boolean(data.hasPrev),
+    page,
+    limit,
+    total,
+    totalPages,
+    hasNext,
+    hasPrev,
   }
 }
 
@@ -125,8 +132,8 @@ export const normalizeCharacterPreview = (source: unknown): LineupCharacterPrevi
   const starsAttr = findAttribute(attributes, 'stars')
 
   return {
-    id: toText(record.id || nestedCharacter.id || record.characterId),
-    characterId: toText(record.characterId || nestedCharacter.id || record.id),
+    id: toText(record.id || record._id || nestedCharacter.id || nestedCharacter._id || record.characterId),
+    characterId: toText(record.characterId || nestedCharacter.id || nestedCharacter._id || record.id || record._id),
     name: toText(record.name || nestedCharacter.name),
     label: toText(record.label || record.name || nestedCharacter.name),
     avatar: normalizeUrl(toText(record.avatar || nestedCharacter.avatar)),
@@ -159,7 +166,25 @@ export const normalizeCharacterPreview = (source: unknown): LineupCharacterPrevi
   }
 }
 
-const normalizeLineupCharacters = (source: unknown): LineupCharacterPreview[] => toArray(source).map(normalizeCharacterPreview)
+const normalizeLineupCharacters = (source: unknown): LineupCharacterPreview[] =>
+  toArray(source).map(item => {
+    const record = isRecord(item) ? item : {}
+    // 后端 member 形态：{ characterId, familyKey, elementKey, isCore, character }
+    if (isRecord(record.character)) {
+      return normalizeCharacterPreview({
+        ...record.character,
+        characterId: record.characterId || record.character.characterId || record.character.id,
+        familyKey: record.familyKey || record.character.familyKey,
+        familyName: record.familyName || record.character.familyName,
+        elementKey: record.elementKey || record.character.elementKey,
+        elementName: record.elementName || record.character.elementName,
+        archetype: record.archetype || record.character.archetype,
+        stars: record.stars || record.character.stars,
+        awaken: record.awaken || record.character.awaken,
+      })
+    }
+    return normalizeCharacterPreview(record)
+  })
 
 export const normalizeLineupSummary = (source: unknown): AdminLineupSummary => {
   const record = isRecord(source) ? source : {}
@@ -303,10 +328,31 @@ export const normalizeLineupTypes = (res: unknown): LineupTypeOption[] => {
 }
 
 export const normalizeCharacterOptionResult = (res: unknown): CharacterOptionResult => {
-  const data = extractData(res)
+  // http 拦截器已解包 data；兼容 {items,pagination} / {list} / {results} / 直接数组
+  const root = isRecord(res) ? res : {}
+  const data = isRecord(root.data) && !Array.isArray(root.items) ? root.data : root
+  const rawItems = Array.isArray(res)
+    ? res
+    : toArray(data.items).length
+      ? toArray(data.items)
+      : toArray(data.list).length
+        ? toArray(data.list)
+        : toArray(data.results).length
+          ? toArray(data.results)
+          : toArray(data.records)
+
+  const paginationSource = data.pagination || {
+    page: data.page,
+    limit: data.limit ?? data.pageSize,
+    total: data.total ?? data.totalResults,
+    totalPages: data.totalPages,
+    hasNext: data.hasNext ?? data.hasNextPage,
+    hasPrev: data.hasPrev ?? data.hasPrevPage,
+  }
+
   return {
-    items: toArray(data.items).map(normalizeCharacterOption),
-    pagination: normalizePagination(data.pagination),
+    items: rawItems.map(normalizeCharacterOption).filter(item => Boolean(item.characterId || item.id)),
+    pagination: normalizePagination(paginationSource),
   }
 }
 
@@ -343,6 +389,20 @@ const sortRelatedLineupsByScore = (list: UserLineupSummary[]): UserLineupSummary
     return 0
   })
 
+const normalizeRelatedLineupItem = (source: unknown): RelatedLineupItem | null => {
+  const record = isRecord(source) ? source : {}
+  // 后端标准：{ lineup, relation: { id, description } }
+  const lineupSource = record.lineup || record
+  const relation = isRecord(record.relation) ? record.relation : {}
+  const lineup = normalizeUserLineupSummary(lineupSource)
+  if (!lineup.id) return null
+  return {
+    lineup,
+    relationId: toText(relation.id || record.relationId),
+    relationDescription: toText(relation.description || record.relationDescription || record.description),
+  }
+}
+
 export const normalizeRelationGroup = (source: unknown): LineupRelationGroup => {
   const record = isRecord(source) ? source : {}
   const lineupSource = record.lineup || record.sourceLineup || record.mainLineup || record.defenseLineup || record.offenseLineup || record
@@ -355,22 +415,38 @@ export const normalizeRelationGroup = (source: unknown): LineupRelationGroup => 
     record.sourceLineups ||
     []
 
+  const relatedLineups = toArray(relatedSource)
+    .map(normalizeRelatedLineupItem)
+    .filter((item): item is RelatedLineupItem => Boolean(item))
+
   return {
     lineup: normalizeUserLineupSummary(lineupSource),
-    relatedLineups: sortRelatedLineupsByScore(toArray(relatedSource).map(normalizeUserLineupSummary).filter(item => item.id)),
+    relatedLineups: sortRelatedLineupsByScore(relatedLineups.map(item => item.lineup)).map(sorted => {
+      const found = relatedLineups.find(item => item.lineup.id === sorted.id)
+      return found || { lineup: sorted, relationId: '', relationDescription: '' }
+    }),
   }
 }
 
 export const normalizePublicLineupRelations = (res: unknown, fallbackType = ''): PublicLineupRelationResult => {
   const data = extractData(res)
-  const rawGroups = data.results || data.items || data.groups || data.list || []
+  // controller: { type, relationMode, items, pagination }
+  const rawGroups = data.items || data.results || data.groups || data.list || []
+  const paginationSource = data.pagination || {
+    page: data.page,
+    limit: data.limit,
+    total: data.total ?? data.totalResults,
+    totalPages: data.totalPages,
+    hasNext: data.hasNext,
+    hasPrev: data.hasPrev,
+  }
   return {
     type: toText(data.type) || fallbackType,
     relationMode: toText(data.relationMode || data.mode),
     results: toArray(rawGroups)
       .map(normalizeRelationGroup)
       .filter(group => Boolean(group.lineup.id)),
-    pagination: normalizePagination(data.pagination || data),
+    pagination: normalizePagination(paginationSource),
   }
 }
 

@@ -6,6 +6,7 @@
       {
         'avatar-circle': avatarShape === 'circle',
         bestiary: variant === 'bestiary',
+        picker: variant === 'picker',
         selectable,
         selected,
         removable: showRemove,
@@ -126,7 +127,7 @@
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'
-  type CardVariant = 'default' | 'bestiary'
+  type CardVariant = 'default' | 'bestiary' | 'picker'
 
   const props = withDefaults(
     defineProps<{
@@ -555,5 +556,36 @@
 
   .selected {
     box-shadow: 0 0 0 2rpx rgba(15, 118, 110, 0.3) inset;
+  }
+
+  .swc-character-card.picker {
+    border-radius: 12rpx;
+    border-width: 2rpx;
+  }
+
+  .swc-character-card.picker .avatar-wrap {
+    border-radius: 10rpx;
+  }
+
+  .swc-character-card.picker.selected {
+    border-color: var(--theme-brand);
+    box-shadow: 0 0 0 2rpx rgba(124, 58, 237, 0.35);
+  }
+
+  .swc-character-card.picker .selected-badge {
+    top: 4rpx;
+    right: 4rpx;
+    min-width: 28rpx;
+    height: 28rpx;
+    padding: 0 6rpx;
+    box-shadow: none;
+  }
+
+  .swc-character-card.picker .selected-badge-text {
+    font-size: 18rpx;
+  }
+
+  .swc-character-card.picker .avatar-placeholder {
+    font-size: 24rpx;
   }
 </style>

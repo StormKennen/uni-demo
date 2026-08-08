@@ -326,7 +326,7 @@
           "path": "compendium/swc/lineup-counter",
           "style": {
             "navigationBarTitleText": "克制与被克制",
-            "enablePullDownRefresh": false,
+            "enablePullDownRefresh": true,
             "onReachBottomDistance": 120,
             "navigationStyle": "custom"
           }

@@ -10,9 +10,10 @@
             <text>进攻</text>
           </view>
         </view>
+        <text class="mode-hint">{{ modeHint }}</text>
 
         <view class="filter-head">
-          <text class="filter-label">魔灵筛选</text>
+          <text class="filter-label">魔灵筛选（多选 AND）</text>
           <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
         </view>
 
@@ -31,11 +32,11 @@
           empty-text="请选择魔灵"
           @remove="removeCharacter" />
 
-        <view v-else class="helper-text">请选择魔灵查询阵容</view>
+        <view v-else class="helper-text">请选择 1 个或多个魔灵；阵容需同时包含全部所选人物</view>
 
         <view v-if="selectedCharacters.length" class="action-row">
           <button class="toolbar-btn" size="mini" @click="clearCharacters">清空魔灵</button>
-          <button class="toolbar-btn primary" size="mini" :loading="loading" @click="refresh">重新查询</button>
+          <button class="toolbar-btn primary" size="mini" :loading="loading" @click="refresh">查询</button>
         </view>
       </view>
 
@@ -48,10 +49,16 @@
       <StateBlock v-else-if="emptyReason === 'no_lineups'" class="state-block" text="暂未找到包含所选魔灵的阵容" />
 
       <view v-else class="result-list">
+        <view v-if="relationMode" class="result-meta">
+          <text class="result-meta-text">{{ resultMetaText }}</text>
+          <text class="result-meta-count">共 {{ pagination.total || results.length }} 组</text>
+        </view>
+
         <view v-for="group in results" :key="group.lineup.id" class="group-card">
           <view class="group-head">
             <text class="group-title">{{ primaryLabel }}</text>
             <text v-if="group.lineup.name" class="group-name">{{ group.lineup.name }}</text>
+            <text class="group-type">{{ getLineupTypeLabel(group.lineup.type) }}</text>
           </view>
 
           <SwcLineup
@@ -75,14 +82,16 @@
             <StateBlock v-if="!group.relatedLineups.length" class="related-empty" text="暂无克制数据" />
 
             <view v-else class="related-list">
-              <view v-for="related in group.relatedLineups" :key="related.id" class="related-card">
+              <view v-for="item in group.relatedLineups" :key="item.lineup.id" class="related-card">
                 <view class="related-meta">
-                  <text v-if="related.name" class="related-name">{{ related.name }}</text>
-                  <text class="related-type">{{ getLineupTypeLabel(related.type) }}</text>
+                  <text class="related-name">{{ item.lineup.name || '未命名阵容' }}</text>
+                  <text class="related-type">{{ getLineupTypeLabel(item.lineup.type) }}</text>
                 </view>
 
+                <text v-if="item.relationDescription" class="related-desc">{{ item.relationDescription }}</text>
+
                 <SwcLineup
-                  :characters="toMemberViews(related.characters)"
+                  :characters="toMemberViews(item.lineup.characters)"
                   :columns="5"
                   :avatar-size="84"
                   :show-member-name="false"
@@ -93,13 +102,19 @@
                   empty-text="暂无成员" />
 
                 <view class="reaction-row">
-                  <view class="reaction-btn" :class="{ active: related.myReaction === 1 }" @click="handleReaction(related, 1)">
-                    <text>👍 {{ related.likeCount }}</text>
+                  <view
+                    class="reaction-btn"
+                    :class="{ active: item.lineup.myReaction === 1, disabled: reactingId === item.lineup.id }"
+                    @click="handleReaction(item.lineup, 1)">
+                    <text>👍 {{ item.lineup.likeCount }}</text>
                   </view>
-                  <view class="reaction-btn" :class="{ active: related.myReaction === -1 }" @click="handleReaction(related, -1)">
-                    <text>👎 {{ related.dislikeCount }}</text>
+                  <view
+                    class="reaction-btn"
+                    :class="{ active: item.lineup.myReaction === -1, disabled: reactingId === item.lineup.id }"
+                    @click="handleReaction(item.lineup, -1)">
+                    <text>👎 {{ item.lineup.dislikeCount }}</text>
                   </view>
-                  <text class="reaction-score">热度 {{ related.score }}</text>
+                  <text class="reaction-score">热度 {{ item.lineup.score }}</text>
                 </view>
               </view>
             </view>
@@ -116,7 +131,7 @@
 
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onShow, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onReachBottom, onPullDownRefresh, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import StateBlock from './components/state-block.vue'
   import SwcLineup from './components/swc-lineup.vue'
   import { getLineupTypeLabel } from './lineup-meta'
@@ -134,7 +149,6 @@
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
 
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const accessChecked = ref(false)
   const hasFeatureAccess = ref(false)
 
   const {
@@ -142,13 +156,16 @@
     selectedCharacters,
     selectedCharacterIds,
     results,
+    relationMode,
     pagination,
     loading,
     loadingMore,
+    reactingId,
     errorMessage,
     emptyReason,
     primaryLabel,
     relatedLabel,
+    modeHint,
     setMode,
     setSelectedCharacters,
     removeCharacter,
@@ -163,6 +180,12 @@
   })
 
   const selectedCharacterViews = computed(() => selectedCharacters.value.map(item => toSwcCharacterView(item)))
+
+  const resultMetaText = computed(() => {
+    if (relationMode.value === 'counteredBy') return '防守视角：展示克制该防守的进攻阵容'
+    if (relationMode.value === 'counters') return '进攻视角：展示该进攻可克制的防守阵容'
+    return '克制关系结果'
+  })
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
 
@@ -204,7 +227,6 @@
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     applyRouteQuery(options)
     hasFeatureAccess.value = ensureLineupFeatureAccess(buildCurrentUrl())
-    accessChecked.value = true
     if (hasFeatureAccess.value && selectedCharacterIds.value.length) {
       void refresh()
     }
@@ -219,6 +241,18 @@
       setSelectedCharacters(pickerResult as any[])
       removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
       void refresh()
+    }
+  })
+
+  onPullDownRefresh(async () => {
+    if (!hasFeatureAccess.value || !selectedCharacterIds.value.length) {
+      uni.stopPullDownRefresh()
+      return
+    }
+    try {
+      await refresh()
+    } finally {
+      uni.stopPullDownRefresh()
     }
   })
 
@@ -256,7 +290,6 @@
   .mode-row {
     display: flex;
     gap: 12rpx;
-    margin-bottom: 18rpx;
   }
 
   .mode-chip {
@@ -279,10 +312,20 @@
     color: var(--theme-brand);
   }
 
+  .mode-hint,
+  .helper-text {
+    display: block;
+    margin-top: 14rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
+    line-height: 1.5;
+  }
+
   .filter-head,
   .related-head,
   .group-head,
-  .action-row {
+  .action-row,
+  .result-meta {
     display: flex;
     align-items: center;
     gap: 12rpx;
@@ -290,6 +333,7 @@
 
   .filter-head {
     justify-content: space-between;
+    margin-top: 18rpx;
     margin-bottom: 14rpx;
   }
 
@@ -303,12 +347,6 @@
 
   .selected-characters {
     margin-top: 8rpx;
-  }
-
-  .helper-text {
-    color: var(--theme-text-tertiary);
-    font-size: 24rpx;
-    line-height: 1.5;
   }
 
   .action-row {
@@ -345,6 +383,18 @@
     gap: 18rpx;
   }
 
+  .result-meta {
+    justify-content: space-between;
+    padding: 0 4rpx;
+  }
+
+  .result-meta-text,
+  .result-meta-count {
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
   .group-card {
     padding: 20rpx;
   }
@@ -357,6 +407,14 @@
   .group-name {
     color: var(--theme-text-secondary);
     font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .group-type,
+  .related-type {
+    flex-shrink: 0;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
     font-weight: 700;
   }
 
@@ -417,11 +475,12 @@
     font-weight: 800;
   }
 
-  .related-type {
-    flex-shrink: 0;
-    color: var(--theme-text-tertiary);
+  .related-desc {
+    display: block;
+    margin: -2rpx 0 12rpx;
+    color: var(--theme-text-secondary);
     font-size: 22rpx;
-    font-weight: 700;
+    line-height: 1.45;
   }
 
   .reaction-row {
@@ -450,6 +509,10 @@
     border-color: var(--theme-brand);
     color: var(--theme-brand);
     background: rgba(15, 118, 110, 0.12);
+  }
+
+  .reaction-btn.disabled {
+    opacity: 0.6;
   }
 
   .reaction-score {

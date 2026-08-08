@@ -3,6 +3,7 @@ import {
   getCompendiumsLineupRelations,
   postLineupsLineupIdReaction,
 } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import type { getCompendiumsLineupRelationsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
 import { getAnonymousId } from '@/utils/anonymous-id'
 import type {
   CharacterOption,
@@ -10,6 +11,7 @@ import type {
   PaginationState,
   ReactionResult,
   ReactionValue,
+  RelatedLineupItem,
   UserLineupSummary,
 } from '../lineup-types'
 import { normalizePublicLineupRelations, normalizeReactionResult } from '../lineup-normalizers'
@@ -47,29 +49,24 @@ const createCharacterOption = (characterId: string, option: Partial<CharacterOpt
   status: option.status || 'enabled',
 })
 
+const applyReaction = (lineup: UserLineupSummary, reaction: ReactionResult): UserLineupSummary => {
+  if (lineup.id !== reaction.id) return lineup
+  return {
+    ...lineup,
+    likeCount: reaction.likeCount,
+    dislikeCount: reaction.dislikeCount,
+    score: reaction.score,
+    myReaction: reaction.myReaction,
+  }
+}
+
 const patchGroupsReaction = (groups: LineupRelationGroup[], reaction: ReactionResult): LineupRelationGroup[] =>
   groups.map(group => ({
-    lineup:
-      group.lineup.id === reaction.id
-        ? {
-            ...group.lineup,
-            likeCount: reaction.likeCount,
-            dislikeCount: reaction.dislikeCount,
-            score: reaction.score,
-            myReaction: reaction.myReaction,
-          }
-        : group.lineup,
-    relatedLineups: group.relatedLineups.map(item =>
-      item.id === reaction.id
-        ? {
-            ...item,
-            likeCount: reaction.likeCount,
-            dislikeCount: reaction.dislikeCount,
-            score: reaction.score,
-            myReaction: reaction.myReaction,
-          }
-        : item,
-    ),
+    lineup: applyReaction(group.lineup, reaction),
+    relatedLineups: group.relatedLineups.map(item => ({
+      ...item,
+      lineup: applyReaction(item.lineup, reaction),
+    })),
   }))
 
 export const useLineupRelationQuery = (params: { compendiumId: string; locale: Ref<string>; pageSize?: number }) => {
@@ -77,6 +74,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
   const selectedMode = ref<LineupCounterMode>('占领战防守')
   const selectedCharacters = ref<CharacterOption[]>([])
   const results = ref<LineupRelationGroup[]>([])
+  const relationMode = ref('')
   const pagination = ref<PaginationState>(createDefaultPagination(pageSize))
   const loading = ref(false)
   const loadingMore = ref(false)
@@ -89,6 +87,11 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
   const isDefenseMode = computed(() => selectedMode.value === '占领战防守')
   const primaryLabel = computed(() => (isDefenseMode.value ? '防守阵容' : '进攻阵容'))
   const relatedLabel = computed(() => (isDefenseMode.value ? '克制阵容' : '可克制防守'))
+  const modeHint = computed(() =>
+    isDefenseMode.value
+      ? '查询包含所选魔灵的防守阵容，并展示能克制它们的进攻阵容'
+      : '查询包含所选魔灵的进攻阵容，并展示它们能克制的防守阵容',
+  )
   const hasResults = computed(() => results.value.length > 0)
 
   const setMode = (mode: LineupCounterMode) => {
@@ -109,6 +112,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
   const clearCharacters = () => {
     selectedCharacters.value = []
     results.value = []
+    relationMode.value = ''
     pagination.value = createDefaultPagination(pageSize)
     errorMessage.value = ''
     emptyReason.value = 'no_characters'
@@ -128,9 +132,23 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     }
   }
 
+  const buildQuery = (page: number): getCompendiumsLineupRelationsQuery =>
+    sanitizeQuery({
+      compendiumId: params.compendiumId,
+      type: selectedMode.value,
+      characterIds: selectedCharacterIds.value.join(','),
+      locale: params.locale.value,
+      status: 'enabled',
+      sortBy: 'score',
+      sortOrder: 'desc',
+      page,
+      pageSize,
+    }) as getCompendiumsLineupRelationsQuery
+
   const fetchPage = async (page: number, append: boolean) => {
     if (!selectedCharacterIds.value.length) {
       results.value = []
+      relationMode.value = ''
       pagination.value = createDefaultPagination(pageSize)
       errorMessage.value = ''
       emptyReason.value = 'no_characters'
@@ -143,34 +161,28 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     errorMessage.value = ''
 
     try {
-      const result = normalizePublicLineupRelations(
-        await getCompendiumsLineupRelations(
-          sanitizeQuery({
-            compendiumId: params.compendiumId,
-            type: selectedMode.value,
-            characterIds: selectedCharacterIds.value.join(','),
-            locale: params.locale.value,
-            page,
-            pageSize,
-          }) as any,
-          buildAnonymousRequestConfig(),
-        ),
-        selectedMode.value,
-      )
+      const raw = await getCompendiumsLineupRelations(buildQuery(page), buildAnonymousRequestConfig())
+      const result = normalizePublicLineupRelations(raw, selectedMode.value)
 
       if (currentVersion !== requestVersion) return
 
       results.value = append ? [...results.value, ...result.results] : result.results
+      relationMode.value = result.relationMode
       pagination.value = result.pagination
       emptyReason.value = result.results.length ? 'idle' : 'no_lineups'
     } catch (error) {
       if (currentVersion !== requestVersion) return
       if (!append) {
         results.value = []
+        relationMode.value = ''
         pagination.value = createDefaultPagination(pageSize)
       }
       emptyReason.value = 'error'
-      errorMessage.value = typeof error === 'string' ? error : '查询克制关系失败，请稍后重试'
+      const message =
+        typeof error === 'string'
+          ? error
+          : (error as { message?: string })?.message || '查询克制关系失败，请稍后重试'
+      errorMessage.value = message
     } finally {
       if (currentVersion === requestVersion) {
         loading.value = false
@@ -188,26 +200,17 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     await fetchPage(pagination.value.page + 1, true)
   }
 
-  const patchLineupReaction = (reaction: ReactionResult) => {
-    results.value = patchGroupsReaction(results.value, {
-      ...reaction,
-      id: reaction.id,
-    })
-  }
-
   const handleReaction = async (lineup: UserLineupSummary, value: ReactionValue) => {
     if (!lineup.id || reactingId.value) return
     reactingId.value = lineup.id
     try {
-      const result = normalizeReactionResult(
-        await postLineupsLineupIdReaction(
-          lineup.id,
-          { value, anonymousId: getAnonymousId() } as any,
-          buildAnonymousRequestConfig(),
-        ),
+      const raw = await postLineupsLineupIdReaction(
         lineup.id,
+        { value, anonymousId: getAnonymousId() } as any,
+        buildAnonymousRequestConfig(),
       )
-      patchLineupReaction({
+      const result = normalizeReactionResult(raw, lineup.id)
+      results.value = patchGroupsReaction(results.value, {
         id: result.id || lineup.id,
         likeCount: result.likeCount,
         dislikeCount: result.dislikeCount,
@@ -224,11 +227,16 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     }
   }
 
+  const handleRelatedReaction = async (item: RelatedLineupItem, value: ReactionValue) => {
+    await handleReaction(item.lineup, value)
+  }
+
   return {
     selectedMode,
     selectedCharacters,
     selectedCharacterIds,
     results,
+    relationMode,
     pagination,
     loading,
     loadingMore,
@@ -238,6 +246,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     isDefenseMode,
     primaryLabel,
     relatedLabel,
+    modeHint,
     hasResults,
     setMode,
     setSelectedCharacters,
@@ -247,6 +256,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     refresh,
     loadMore,
     handleReaction,
+    handleRelatedReaction,
     createCharacterOption,
   }
 }

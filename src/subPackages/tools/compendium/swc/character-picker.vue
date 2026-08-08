@@ -7,9 +7,9 @@
           class="search-row"
           placeholder="输入人物名称或 code"
           theme="violet"
-          @search="refreshCharacterOptions" />
+          @search="onSearchSubmit" />
 
-        <view v-if="showQuickFilters" class="filter-shell">
+        <view class="filter-shell">
           <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
             <text class="filter-icon" :class="{ active: hasActiveFilters }">⚙</text>
             <scroll-view v-if="activeFilterTags.length" class="filter-tags-scroll" scroll-x enable-flex>
@@ -17,14 +17,14 @@
                 <text v-for="tag in activeFilterTags" :key="tag" class="filter-tag">{{ tag }}</text>
               </view>
             </scroll-view>
-            <text v-else class="filter-hint">点击展开快速筛选</text>
+            <text v-else class="filter-hint">默认展示觉醒魔灵，按星级排序</text>
             <text class="filter-expand-arrow">▼</text>
           </view>
 
           <view v-else class="filter-expanded">
             <view class="filter-header">
-              <text class="filter-title">快速筛选</text>
-              <text v-if="hasActiveFilters" class="filter-reset" @click.stop="resetQuickFilters">重置</text>
+              <text class="filter-title">更多筛选</text>
+              <text v-if="hasActiveFilters" class="filter-reset" @click.stop="resetFilters">重置</text>
             </view>
 
             <view class="filter-section">
@@ -36,14 +36,14 @@
                     :key="option.value"
                     class="quick-chip element-chip"
                     :class="{ selected: option.value === selectedElement }"
-                    @click="selectQuickFilter('element', option.value)">
+                    @click="selectFilter('element', option.value)">
                     <SwcElementBadge
                       v-if="option.value !== ALL_VALUE"
                       :element-key="option.value"
                       :label="option.label"
-                      :size="24"
-                      :font-size="24"
-                      :gap="8" />
+                      :size="22"
+                      :font-size="22"
+                      :gap="6" />
                     <text v-else>{{ option.label }}</text>
                   </view>
                 </view>
@@ -59,14 +59,14 @@
                     :key="option.value"
                     class="quick-chip"
                     :class="{ selected: option.value === selectedAwaken }"
-                    @click="selectQuickFilter('awaken', option.value)">
+                    @click="selectFilter('awaken', option.value)">
                     <text>{{ option.label }}</text>
                   </view>
                 </view>
               </scroll-view>
             </view>
 
-            <view v-if="supportsTypeFilter" class="filter-section">
+            <view class="filter-section">
               <text class="filter-label">类型</text>
               <scroll-view class="filter-scroll" scroll-x enable-flex>
                 <view class="filter-chip-row">
@@ -75,7 +75,7 @@
                     :key="option.value"
                     class="quick-chip"
                     :class="{ selected: option.value === selectedType }"
-                    @click="selectQuickFilter('type', option.value)">
+                    @click="selectFilter('type', option.value)">
                     <text>{{ option.label }}</text>
                   </view>
                 </view>
@@ -91,7 +91,7 @@
                     :key="option.value"
                     class="quick-chip"
                     :class="{ selected: option.value === selectedStar }"
-                    @click="selectQuickFilter('star', option.value)">
+                    @click="selectFilter('star', option.value)">
                     <text>{{ option.label }}</text>
                   </view>
                 </view>
@@ -105,43 +105,51 @@
         </view>
       </view>
 
-      <StateBlock v-if="loading && !characterOptions.length" class="state-block" text="加载人物中..." />
+      <StateBlock v-if="loading && !characters.length" class="state-block" text="加载人物中..." />
 
-      <StateBlock v-else-if="!characterOptions.length && !loading" class="state-block" text="暂无可选人物" />
+      <StateBlock
+        v-else-if="errorMessage"
+        class="state-block"
+        :text="errorMessage"
+        action-text="重试"
+        theme="violet"
+        @action="refreshCharacters" />
+
+      <StateBlock v-else-if="!characters.length && !loading" class="state-block" :text="emptyText" />
 
       <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
-        <view v-if="filteredCharacterCards.length" class="grid-wrap">
+        <view class="grid-wrap">
           <SwcCharacterCard
-            v-for="item in filteredCharacterCards"
-            :key="item.option.characterId || item.option.id"
+            v-for="character in characters"
+            :key="character.characterId"
             class="grid-item"
-            :character="item.view"
+            variant="picker"
+            :character="toCardView(character)"
             :show-name="false"
             :show-family="false"
             :show-element="false"
             :show-stars="false"
             :show-original-stars="false"
             selectable
-            :selected="isSelected(item.option.characterId)"
-            :selected-index="getSelectedIndex(item.option.characterId)"
-            :avatar-size="176"
-            @click="toggleSelect(item.option)" />
+            :selected="isSelected(character.characterId)"
+            :selected-index="getSelectedIndex(character.characterId)"
+            :avatar-size="76"
+            @click="toggleSelect(character)" />
         </view>
-
-        <StateBlock v-else class="state-block filter-empty" :text="filteredEmptyText" />
 
         <view v-if="loadingMore" class="load-more">
           <text class="load-more-text">加载更多中...</text>
         </view>
-
-        <view v-else-if="characterOptions.length && !pagination.hasNext" class="load-more">
+        <view v-else-if="characters.length && !hasNext" class="load-more">
           <text class="load-more-text muted">没有更多了</text>
         </view>
       </scroll-view>
 
       <view class="footer-bar">
         <view class="footer-selected-info">
-          <text class="footer-count">{{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}</text>
+          <text class="footer-count">
+            {{ maxCount > 0 ? `已选 ${draftSelected.length}/${maxCount}` : `已选 ${draftSelected.length}` }}
+          </text>
         </view>
         <button class="footer-cancel-btn" @click="handleCancel">取消</button>
         <button class="footer-confirm-btn" @click="handleConfirm">确认选择</button>
@@ -151,35 +159,63 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
-  import { onLoad, onReachBottom } from '@dcloudio/uni-app'
+  import { computed, ref, watch } from 'vue'
+  import { onLoad, onReachBottom, onUnload } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
-  import { normalizeSwcArchetype } from './icon-assets'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
-  import {
-    getAdminLineupsCharacterOptions,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
-  import type { CharacterOption, CharacterOptionResult, PaginationState } from './lineup-types'
-  import { getPaginationOrDefault, normalizeCharacterOptionResult } from './lineup-normalizers'
-  import { sanitizeQuery } from './request-options'
-  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
-  import { isAdminUser } from '@/utils/admin'
+  import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
+  import type { CharacterOption } from './lineup-types'
 
-  type QuickFilterKey = 'element' | 'awaken' | 'type' | 'star'
+  type FilterKey = 'element' | 'star' | 'type' | 'awaken'
+  type SortOrder = 'asc' | 'desc'
+  type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
+  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery & {
+    'categories[awaken]'?: string
+    'categories[element]'?: string
+    'categories[archetype]'?: string
+    'categories[entry_type]'?: string
+  }
 
   interface FilterOption {
     label: string
     value: string
   }
 
+  interface CharacterCategory {
+    key: string
+    name: string
+    valueKey: string
+    value: string
+  }
+
+  interface CharacterAttribute {
+    key: string
+    name: string
+    value: string
+    displayValue: string
+    unit: string
+  }
+
+  interface PaginationLike {
+    hasNext?: boolean
+    hasNextPage?: boolean
+    page?: number
+    totalPages?: number
+  }
+
   const ALL_VALUE = 'all'
+  const PAGE_SIZE = 50
+  const DEFAULT_SORT_FIELD = 'stars'
+  const DEFAULT_SORT_ORDER: SortOrder = 'desc'
   const DEFAULT_LOCALE = 'zh-CN'
   const DEFAULT_COMPENDIUM_ID = 'swc'
+  const SEARCH_DEBOUNCE_MS = 300
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -188,20 +224,6 @@
     { label: '风', value: 'wind' },
     { label: '光', value: 'light' },
     { label: '暗', value: 'dark' },
-  ]
-
-  const awakenOptions: FilterOption[] = [
-    { label: '全部', value: ALL_VALUE },
-    { label: '觉醒', value: 'awakened' },
-    { label: '未觉醒', value: 'unawakened' },
-  ]
-
-  const typeOptions: FilterOption[] = [
-    { label: '全部', value: ALL_VALUE },
-    { label: '攻击', value: 'attack' },
-    { label: '防御', value: 'defense' },
-    { label: '体力', value: 'hp' },
-    { label: '辅助', value: 'support' },
   ]
 
   const starOptions: FilterOption[] = [
@@ -213,73 +235,64 @@
     { label: '1★', value: '1' },
   ]
 
+  const typeOptions: FilterOption[] = [
+    { label: '全部', value: ALL_VALUE },
+    { label: '攻击', value: 'attack' },
+    { label: '防御', value: 'defense' },
+    { label: '体力', value: 'hp' },
+    { label: '辅助', value: 'support' },
+  ]
+
+  // 与 list 一致默认觉醒；另提供“全部”以便不传 awaken 条件
+  const awakenOptions: FilterOption[] = [
+    { label: '全部', value: ALL_VALUE },
+    { label: '觉醒', value: 'awakened' },
+    { label: '未觉醒', value: 'unawakened' },
+    { label: 'Boss', value: 'boss' },
+  ]
+
   const compendiumId = ref(DEFAULT_COMPENDIUM_ID)
   const selectedLocale = ref(DEFAULT_LOCALE)
   const maxCount = ref(0)
   const keyword = ref('')
+  const filterExpanded = ref(false)
+  const selectedElement = ref(ALL_VALUE)
+  const selectedStar = ref(ALL_VALUE)
+  const selectedType = ref(ALL_VALUE)
+  const selectedAwaken = ref('awakened')
+  const selectedSort = ref(DEFAULT_SORT_FIELD)
+  const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
+  const characters = ref<SwcCharacterView[]>([])
+  const draftSelected = ref<CharacterOption[]>([])
+  const page = ref(1)
+  const hasNext = ref(true)
   const loading = ref(false)
   const loadingMore = ref(false)
-  const characterOptions = ref<CharacterOption[]>([])
-  const pagination = ref<PaginationState>(getPaginationOrDefault())
-  const draftSelected = ref<CharacterOption[]>([])
-  const initialized = ref(false)
-  const showQuickFilters = ref(true)
-  const filterExpanded = ref(true)
-  const selectedElement = ref(ALL_VALUE)
-  const selectedAwaken = ref('awakened')
-  const selectedType = ref(ALL_VALUE)
-  const selectedStar = ref(ALL_VALUE)
+  const errorMessage = ref('')
   const cacheKey = ref('compendium:swc:lineup-edit:picker-draft')
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
   const avatarCacheRevision = ref(0)
-  const pageSize = 50
   let requestSequence = 0
-
-  const normalizeText = (value?: string): string => (typeof value === 'string' ? value.trim().toLowerCase() : '')
-
-  const normalizeAwaken = (value?: string): string => {
-    const text = normalizeText(value)
-    if (!text) return ''
-    if (['awakened', 'true', '1', '觉醒', '已觉醒'].includes(text)) return 'awakened'
-    if (['unawakened', 'false', '0', '未觉醒', '未觉醒形态'].includes(text)) return 'unawakened'
-    return ''
-  }
-
-  const normalizeArchetype = normalizeSwcArchetype
-
-  const normalizeStars = (value?: string): string => {
-    const text = typeof value === 'string' ? value : ''
-    const matched = text.match(/\d+/)
-    return matched ? matched[0] : ''
-  }
-
-  const normalizeStarsValue = (value?: string): number => {
-    const stars = Number(normalizeStars(value))
-    return Number.isFinite(stars) ? stars : 0
-  }
-
-  const getAvatarSrc = (url: string): string => {
-    avatarCacheRevision.value
-    return resolveAvatar(url)
-  }
-
-  const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
+  let suppressKeywordWatch = false
 
   const hasActiveFilters = computed(
     () =>
+      Boolean(keyword.value.trim()) ||
       selectedElement.value !== ALL_VALUE ||
-      selectedAwaken.value !== ALL_VALUE ||
+      selectedStar.value !== ALL_VALUE ||
       selectedType.value !== ALL_VALUE ||
-      selectedStar.value !== ALL_VALUE,
+      selectedAwaken.value !== 'awakened',
   )
 
   const activeFilterTags = computed<string[]>(() => {
     const tags: string[] = []
+    if (keyword.value.trim()) tags.push(`关键词:${keyword.value.trim()}`)
     if (selectedElement.value !== ALL_VALUE) {
       const label = elementOptions.find(o => o.value === selectedElement.value)?.label
       if (label) tags.push(label)
     }
-    if (selectedAwaken.value !== ALL_VALUE) {
+    if (selectedAwaken.value !== 'awakened') {
       const label = awakenOptions.find(o => o.value === selectedAwaken.value)?.label
       if (label) tags.push(label)
     }
@@ -294,51 +307,230 @@
     return tags
   })
 
-  const filteredCharacterOptions = computed(() =>
-    characterOptions.value
-      .filter(option => {
-        const elementKey = normalizeText(option.elementKey || option.element)
-        const awaken = normalizeAwaken(option.awaken || option.awakenName)
-        const archetype = normalizeArchetype(option.archetype)
-        const stars = normalizeStars(option.stars)
-
-        if (selectedElement.value !== ALL_VALUE && elementKey !== selectedElement.value) return false
-        if (selectedAwaken.value !== ALL_VALUE && awaken !== selectedAwaken.value) return false
-        if (selectedType.value !== ALL_VALUE && archetype !== selectedType.value) return false
-        if (selectedStar.value !== ALL_VALUE && stars !== selectedStar.value) return false
-        return true
-      })
-      .map((item, index) => ({ item, index }))
-      .sort((left, right) => {
-        const starDiff = normalizeStarsValue(right.item.stars) - normalizeStarsValue(left.item.stars)
-        if (starDiff !== 0) return starDiff
-        return left.index - right.index
-      })
-      .map(entry => entry.item),
-  )
-
-  const filteredCharacterCards = computed<
-    Array<{
-      option: CharacterOption
-      view: SwcCharacterView
-    }>
-  >(() =>
-    filteredCharacterOptions.value.map(option => ({
-      option,
-      view: toSwcCharacterView({
-        ...option,
-        avatar: getAvatarSrc(option.avatar),
-      }),
-    })),
-  )
-
-  const filteredEmptyText = computed(() => {
-    if (!hasActiveFilters.value) return '暂无可选人物'
-    if (pagination.value.hasNext) return '当前已加载人物中暂无符合条件项，可继续下拉加载更多'
-    return '暂无符合筛选条件的人物'
+  const emptyText = computed(() => {
+    const kw = keyword.value.trim()
+    if (kw) return `没有找到“${kw}”相关人物`
+    if (hasActiveFilters.value) return '暂无符合当前筛选条件的人物'
+    return '暂无人物'
   })
 
-  const canLoadMore = computed(() => initialized.value && pagination.value.hasNext && !loading.value && !loadingMore.value)
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+  const readRecordValue = (record: Record<string, unknown>, key: string): RecordValue => record[key] as RecordValue
+
+  const stringifyValue = (value: RecordValue): string => {
+    if (typeof value === 'string') return value.trim()
+    if (typeof value === 'number') return String(value)
+    if (typeof value === 'boolean') return value ? '是' : '否'
+    return ''
+  }
+
+  const readString = (record: Record<string, unknown>, keys: string[]): string => {
+    for (const key of keys) {
+      const text = stringifyValue(readRecordValue(record, key))
+      if (text) return text
+    }
+    return ''
+  }
+
+  const readArray = (record: Record<string, unknown>, keys: string[]): unknown[] => {
+    for (const key of keys) {
+      const value = record[key]
+      if (Array.isArray(value)) return value
+    }
+    return []
+  }
+
+  const readPagination = (record: Record<string, unknown>): PaginationLike => {
+    const pagination = record.pagination
+    if (isRecord(pagination)) return pagination as PaginationLike
+    return {}
+  }
+
+  const normalizeCategory = (source: unknown): CharacterCategory | null => {
+    if (!isRecord(source)) return null
+    return {
+      key: readString(source, ['key']),
+      name: readString(source, ['name']),
+      valueKey: readString(source, ['valueKey']),
+      value: readString(source, ['value']),
+    }
+  }
+
+  const normalizeAttribute = (source: unknown): CharacterAttribute | null => {
+    if (!isRecord(source)) return null
+    return {
+      key: readString(source, ['key']),
+      name: readString(source, ['name']),
+      value: readString(source, ['value']),
+      displayValue: readString(source, ['displayValue']),
+      unit: readString(source, ['unit']),
+    }
+  }
+
+  const getCategoryValue = (categories: CharacterCategory[], key: string): string =>
+    categories.find(category => category.key === key)?.value || ''
+
+  const getCategoryValueKey = (categories: CharacterCategory[], key: string): string =>
+    categories.find(category => category.key === key)?.valueKey || ''
+
+  const normalizeElementKey = (value: string): string => {
+    const map: Record<string, string> = {
+      火: 'fire',
+      水: 'water',
+      风: 'wind',
+      光: 'light',
+      暗: 'dark',
+    }
+    return map[value] || value
+  }
+
+  const getAttribute = (attributes: CharacterAttribute[], key: string): CharacterAttribute | undefined =>
+    attributes.find(attribute => attribute.key === key || attribute.name === key)
+
+  const formatAttribute = (attributes: CharacterAttribute[], key: string): string => {
+    const attribute = getAttribute(attributes, key)
+    if (!attribute) return ''
+    const value = attribute.displayValue || attribute.value
+    return value ? `${value}${attribute.unit || ''}` : ''
+  }
+
+  const normalizeUrl = (url: string): string => {
+    if (!url) return ''
+    if (url.startsWith('http://')) return url.replace(/^http:/, 'https:')
+    return url
+  }
+
+  // 对齐 list.vue 的人物 normalize
+  const normalizeCharacter = (source: unknown): SwcCharacterView | null => {
+    if (!isRecord(source)) return null
+
+    const nestedCharacter = ['representative', 'representativeCharacter', 'character', 'item']
+      .map(key => source[key])
+      .find(isRecord)
+    const characterSource = nestedCharacter || source
+    const groupSource = isRecord(source.group) ? source.group : null
+
+    const id = readString(characterSource, ['id', 'characterId', 'code', '_id'])
+    if (!id) return null
+
+    const categories = readArray(characterSource, ['categories'])
+      .map(normalizeCategory)
+      .filter((item): item is CharacterCategory => Boolean(item))
+    const attributes = readArray(characterSource, ['attributes'])
+      .map(normalizeAttribute)
+      .filter((item): item is CharacterAttribute => Boolean(item))
+    const elementKey = normalizeElementKey(getCategoryValueKey(categories, 'element') || readString(characterSource, ['element']))
+    const elementName = getCategoryValue(categories, 'element') || readString(characterSource, ['elementName'])
+    const stars = formatAttribute(attributes, 'stars') || readString(characterSource, ['level', 'star', 'rarity'])
+    const awaken = getCategoryValue(categories, 'awaken') || readString(characterSource, ['awaken', 'awakening', 'awakened'])
+    const avatar = readString(characterSource, ['avatar', 'icon', 'image', 'cover', 'portrait'])
+    const groupFamily =
+      stringifyValue(source.group as RecordValue) ||
+      readString(source, ['groupValue', 'groupName', 'familyName']) ||
+      (groupSource ? readString(groupSource, ['value', 'name', 'label', 'key']) : '')
+
+    return toSwcCharacterView({
+      characterId: id,
+      name: readString(characterSource, ['name', 'title']),
+      avatar: normalizeUrl(avatar),
+      elementKey,
+      elementName,
+      familyName: getCategoryValue(categories, 'family') || groupFamily,
+      archetype: getCategoryValue(categories, 'archetype') || readString(characterSource, ['speciesType', 'type']),
+      stars: stars.replace(/星$/, ''),
+      awaken,
+    })
+  }
+
+  const extractItems = (res: getCompendiumsCharactersRes): unknown[] => {
+    if (Array.isArray(res)) return res
+    if (!isRecord(res)) return []
+
+    const directItems = readArray(res, ['items', 'list', 'records', 'data'])
+    if (directItems.length) return directItems
+
+    const nestedData = res.data
+    if (isRecord(nestedData)) return readArray(nestedData, ['items', 'list', 'records'])
+    return []
+  }
+
+  const getSortField = (value: string): string => {
+    const map: Record<string, string> = {
+      [ALL_VALUE]: DEFAULT_SORT_FIELD,
+      stars: 'stars',
+    }
+    return map[value] || DEFAULT_SORT_FIELD
+  }
+
+  const buildCharactersSortBy = (value: string, order: SortOrder): string => {
+    const field = getSortField(value)
+    const direction: SortOrder = value === ALL_VALUE ? DEFAULT_SORT_ORDER : order
+    return `${field}:${direction},code:desc`
+  }
+
+  const buildCharacterQuery = (pageNo: number): CompendiumCharactersQueryParams => {
+    const query: CompendiumCharactersQueryParams = {
+      compendiumId: compendiumId.value,
+      locale: selectedLocale.value,
+      page: pageNo,
+      pageSize: PAGE_SIZE,
+      sortBy: buildCharactersSortBy(selectedSort.value, selectedSortOrder.value),
+    }
+
+    const keywordText = keyword.value.trim()
+    if (keywordText) query.keyword = keywordText
+
+    // 与 list.vue 一致：形态走服务端 categories
+    if (selectedAwaken.value === 'boss') {
+      query['categories[entry_type]'] = 'boss'
+    } else if (selectedAwaken.value !== ALL_VALUE) {
+      query['categories[awaken]'] = selectedAwaken.value
+    }
+
+    if (selectedElement.value !== ALL_VALUE) {
+      query['categories[element]'] = selectedElement.value
+    }
+
+    if (selectedType.value !== ALL_VALUE) {
+      query['categories[archetype]'] = selectedType.value
+    }
+
+    if (selectedStar.value !== ALL_VALUE) {
+      query.attribute = 'stars'
+      query.minValue = Number(selectedStar.value)
+      query.maxValue = Number(selectedStar.value)
+    }
+
+    return query
+  }
+
+  const toCharacterOption = (character: SwcCharacterView): CharacterOption => ({
+    id: character.characterId,
+    characterId: character.characterId,
+    name: character.name,
+    label: character.name,
+    avatar: character.avatar,
+    element: character.elementKey,
+    elementKey: character.elementKey,
+    elementName: character.elementName,
+    archetype: character.archetype,
+    familyKey: '',
+    familyName: character.familyName,
+    awaken: character.awaken,
+    awakenName: character.awaken,
+    stars: character.stars,
+    status: 'enabled',
+  })
+
+  const toCardView = (character: SwcCharacterView): SwcCharacterView => {
+    avatarCacheRevision.value
+    return {
+      ...character,
+      avatar: resolveAvatar(character.avatar) || character.avatar,
+    }
+  }
 
   const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
 
@@ -347,112 +539,125 @@
     return idx >= 0 ? idx + 1 : 0
   }
 
-  const toggleSelect = (option: CharacterOption) => {
-    if (isSelected(option.characterId)) {
-      draftSelected.value = draftSelected.value.filter(item => item.characterId !== option.characterId)
+  const toggleSelect = (character: SwcCharacterView) => {
+    if (isSelected(character.characterId)) {
+      draftSelected.value = draftSelected.value.filter(item => item.characterId !== character.characterId)
       return
     }
     if (maxCount.value > 0 && draftSelected.value.length >= maxCount.value) {
       uni.showToast({ title: `最多选择 ${maxCount.value} 个魔灵`, icon: 'none' })
       return
     }
-    draftSelected.value = [...draftSelected.value, { ...option }]
+    draftSelected.value = [...draftSelected.value, toCharacterOption(character)]
   }
 
-  const loadCharacterPage = async (page: number): Promise<CharacterOptionResult> => {
-    const query = sanitizeQuery({
-      compendiumId: compendiumId.value,
-      locale: selectedLocale.value,
-      keyword: keyword.value.trim() || undefined,
-      status: 'enabled',
-      page,
-      pageSize,
-    }) as any
-    if (isAdminUser()) {
-      return normalizeCharacterOptionResult(await getAdminLineupsCharacterOptions(query, {}))
-    }
-    return normalizeCharacterOptionResult(await getCompendiumsCharacters(query, {}))
-  }
-
-  const preloadCharacterBatch = (items: CharacterOption[]) => {
-    const urls = items.map(item => item.avatar).filter((url): url is string => Boolean(url))
+  const preloadCharacterBatch = (items: SwcCharacterView[]) => {
+    const urls = items.map(item => item.avatar).filter(Boolean)
     if (!urls.length) return
     void preloadAvatars(urls).finally(() => {
       avatarCacheRevision.value += 1
     })
   }
 
-  const fetchOptions = async (reset = true) => {
+  const mergeUniqueCharacters = (base: SwcCharacterView[], next: SwcCharacterView[]): SwcCharacterView[] => {
+    const seen = new Set(base.map(item => item.characterId))
+    const merged = [...base]
+    next.forEach(item => {
+      if (!item.characterId || seen.has(item.characterId)) return
+      seen.add(item.characterId)
+      merged.push(item)
+    })
+    return merged
+  }
+
+  const fetchCharacters = async (reset = false) => {
+    if (loading.value && !reset) return
+    if (loadingMore.value && !reset) return
+    if (!reset && !hasNext.value) return
+
+    const requestId = reset ? ++requestSequence : requestSequence
     if (reset) {
-      const token = ++requestSequence
       loading.value = true
       loadingMore.value = false
       errorMessage.value = ''
-      pagination.value = getPaginationOrDefault()
-      characterOptions.value = []
-      initialized.value = false
-
-      try {
-        const result = await loadCharacterPage(1)
-        if (token !== requestSequence) return
-        pagination.value = result.pagination
-        characterOptions.value = result.items
-        initialized.value = true
-        preloadCharacterBatch(result.items)
-      } catch (error) {
-        uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
-      } finally {
-        if (token === requestSequence) {
-          loading.value = false
-        }
-      }
-      return
+      page.value = 1
+      hasNext.value = true
+      characters.value = []
+    } else {
+      loadingMore.value = true
     }
 
-    if (loading.value || loadingMore.value || !pagination.value.hasNext) return
-
-    const token = ++requestSequence
-    loadingMore.value = true
     try {
-      const result = await loadCharacterPage(pagination.value.page + 1)
-      if (token !== requestSequence) return
-      pagination.value = result.pagination
-      characterOptions.value = [...characterOptions.value, ...result.items]
-      initialized.value = true
-      preloadCharacterBatch(result.items)
+      const queryPage = reset ? 1 : page.value
+      const res = await getCompendiumsCharacters(buildCharacterQuery(queryPage))
+      if (requestId !== requestSequence) return
+
+      const items = extractItems(res)
+        .map(normalizeCharacter)
+        .filter((item): item is SwcCharacterView => Boolean(item))
+
+      characters.value = reset ? items : mergeUniqueCharacters(characters.value, items)
+      preloadCharacterBatch(items)
+
+      const pagination = isRecord(res) ? readPagination(res) : {}
+      hasNext.value = Boolean(
+        pagination.hasNext ||
+          pagination.hasNextPage ||
+          (pagination.totalPages && pagination.page && pagination.page < pagination.totalPages) ||
+          items.length >= PAGE_SIZE,
+      )
+      page.value = queryPage + 1
     } catch (error) {
-      uni.showToast({ title: typeof error === 'string' ? error : '加载人物选项失败', icon: 'none' })
+      if (requestId !== requestSequence) return
+      errorMessage.value = typeof error === 'string' ? error : '人物加载失败，请稍后重试'
+      if (reset) characters.value = []
     } finally {
-      if (token === requestSequence) {
+      if (requestId === requestSequence) {
+        loading.value = false
         loadingMore.value = false
       }
     }
   }
 
-  const refreshCharacterOptions = () => {
-    void fetchOptions(true)
+  const refreshCharacters = () => {
+    void fetchCharacters(true)
   }
 
   const loadMore = () => {
-    void fetchOptions(false)
+    void fetchCharacters(false)
   }
 
   const handleScrollToLower = () => {
-    if (canLoadMore.value) loadMore()
+    if (!loading.value && !loadingMore.value && hasNext.value) loadMore()
   }
 
-  const selectQuickFilter = (key: QuickFilterKey, value: string) => {
+  const selectFilter = (key: FilterKey, value: string) => {
     if (key === 'element') selectedElement.value = value
-    if (key === 'awaken') selectedAwaken.value = value
-    if (key === 'type') selectedType.value = value
     if (key === 'star') selectedStar.value = value
+    if (key === 'type') selectedType.value = value
+    if (key === 'awaken') selectedAwaken.value = value
+    refreshCharacters()
   }
 
-  const resetQuickFilters = () => {
+  const resetFilters = () => {
+    suppressKeywordWatch = true
+    keyword.value = ''
     selectedElement.value = ALL_VALUE
-    selectedAwaken.value = 'awakened'
-    selectedType.value = ALL_VALUE
     selectedStar.value = ALL_VALUE
+    selectedType.value = ALL_VALUE
+    selectedAwaken.value = 'awakened'
+    selectedSort.value = DEFAULT_SORT_FIELD
+    selectedSortOrder.value = DEFAULT_SORT_ORDER
+    suppressKeywordWatch = false
+    refreshCharacters()
+  }
+
+  const onSearchSubmit = () => {
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
+    refreshCharacters()
   }
 
   const handleCancel = () => {
@@ -466,6 +671,15 @@
     )
     uni.navigateBack()
   }
+
+  watch(keyword, () => {
+    if (suppressKeywordWatch) return
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      searchTimer = null
+      refreshCharacters()
+    }, SEARCH_DEBOUNCE_MS)
+  })
 
   onLoad((options: Record<string, string | undefined>) => {
     compendiumId.value = options.compendiumId || DEFAULT_COMPENDIUM_ID
@@ -481,11 +695,18 @@
       draftSelected.value = cached.map((item: CharacterOption) => ({ ...item }))
     }
 
-    fetchOptions(true)
+    refreshCharacters()
   })
 
   onReachBottom(() => {
-    if (canLoadMore.value) loadMore()
+    if (!loading.value && !loadingMore.value && hasNext.value) loadMore()
+  })
+
+  onUnload(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
   })
 </script>
 
@@ -495,42 +716,40 @@
     background: var(--theme-bg);
     display: flex;
     flex-direction: column;
-    padding-bottom: 140rpx;
+    padding-bottom: 120rpx;
   }
 
   .search-section {
     flex-shrink: 0;
-    padding: 20rpx 24rpx 0;
+    padding: 16rpx 16rpx 0;
   }
 
   .search-row {
-    margin-bottom: 16rpx;
+    margin-bottom: 12rpx;
   }
 
   .filter-shell {
-    margin-bottom: 16rpx;
-    border: 1rpx solid #eef0f5;
-    border-radius: 20rpx;
-    background: #f8fafc;
+    margin-bottom: 12rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
     overflow: hidden;
   }
 
   .filter-collapsed {
     display: flex;
     align-items: center;
-    gap: 16rpx;
-    min-height: 72rpx;
-    padding: 16rpx 20rpx;
+    gap: 10rpx;
+    padding: 12rpx 14rpx;
   }
 
   .filter-icon {
-    flex: none;
-    color: #b0b8c4;
-    font-size: 34rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 26rpx;
   }
 
   .filter-icon.active {
-    color: #7c3aed;
+    color: var(--theme-brand);
   }
 
   .filter-tags-scroll {
@@ -540,230 +759,138 @@
   }
 
   .filter-tags-row {
-    display: flex;
-    align-items: center;
-    gap: 10rpx;
+    display: inline-flex;
+    gap: 8rpx;
   }
 
   .filter-tag {
-    flex: none;
-    height: 44rpx;
-    line-height: 44rpx;
-    padding: 0 16rpx;
+    padding: 4rpx 12rpx;
     border-radius: 999rpx;
-    background: rgba(124, 58, 237, 0.12);
-    color: #7c3aed;
-    font-size: 22rpx;
-    font-weight: 700;
-  }
-
-  .filter-hint,
-  .filter-expand-arrow,
-  .filter-collapse-text {
-    color: #98a2b3;
-    font-size: 24rpx;
+    background: var(--theme-surface);
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
     font-weight: 700;
   }
 
   .filter-hint {
     flex: 1;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+
+  .filter-expand-arrow {
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
   }
 
   .filter-expanded {
-    padding-top: 8rpx;
-  }
-
-  .filter-header,
-  .filter-collapse-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20rpx;
+    padding: 12rpx 14rpx 8rpx;
   }
 
   .filter-header {
-    height: 64rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10rpx;
   }
 
   .filter-title {
-    color: #111827;
+    color: var(--theme-text);
     font-size: 24rpx;
     font-weight: 800;
   }
 
   .filter-reset {
-    color: #7c3aed;
-    font-size: 24rpx;
+    color: var(--theme-brand);
+    font-size: 22rpx;
     font-weight: 700;
   }
 
-  .filter-collapse-bar {
-    justify-content: center;
-    height: 60rpx;
-    border-top: 1rpx solid #eef0f5;
-  }
-
   .filter-section {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    padding: 0 0 14rpx 20rpx;
+    margin-bottom: 12rpx;
   }
 
   .filter-label {
-    flex: none;
-    width: 56rpx;
-    color: #667085;
-    font-size: 24rpx;
-    font-weight: 800;
+    display: block;
+    margin-bottom: 8rpx;
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
+    font-weight: 700;
   }
 
   .filter-scroll {
-    flex: 1;
-    min-width: 0;
     white-space: nowrap;
   }
 
   .filter-chip-row {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-    padding-right: 20rpx;
+    display: inline-flex;
+    gap: 10rpx;
   }
 
   .quick-chip {
-    flex: none;
+    min-height: 48rpx;
+    padding: 0 14rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10rpx;
-    height: 52rpx;
-    padding: 0 20rpx;
-    border: 1rpx solid #e7ebf2;
-    border-radius: 999rpx;
-    background: var(--theme-surface);
-    color: #465164;
-    font-size: 24rpx;
+    font-size: 20rpx;
     font-weight: 700;
   }
 
   .quick-chip.selected {
-    border-color: #111827;
-    background: #111827;
-    color: #fff;
+    border-color: var(--theme-brand);
+    color: var(--theme-brand);
+    background: rgba(124, 58, 237, 0.1);
   }
 
-  .element-chip {
-    padding-left: 18rpx;
-    padding-right: 18rpx;
+  .filter-collapse-bar {
+    padding: 4rpx 0;
+    text-align: center;
   }
 
-  .element-chip.selected {
-    color: #fff;
+  .filter-collapse-text {
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
   }
 
   .state-block {
-    padding: 60rpx 28rpx;
-    text-align: center;
-    color: #667085;
-    font-size: 28rpx;
-  }
-
-  .filter-empty {
-    padding: 30rpx 28rpx;
+    margin: 32rpx 20rpx;
   }
 
   .grid-scroll {
     flex: 1;
-    min-height: 0;
+    height: 0;
+    min-height: 62vh;
+    box-sizing: border-box;
   }
 
   .grid-wrap {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 20rpx 12rpx;
-    padding: 12rpx 24rpx 24rpx;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 8rpx;
+    padding: 10rpx 12rpx 28rpx;
   }
 
   .grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-  }
-
-  .avatar-wrap {
-    position: relative;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-
-  .avatar-image {
-    width: 110rpx;
-    height: 110rpx;
-    border-radius: 24rpx;
-    background: #e5e7eb;
-    box-shadow: 0 8rpx 20rpx rgba(15, 23, 42, 0.1);
-  }
-
-  .avatar-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #7c3aed;
-    font-size: 32rpx;
-    font-weight: 800;
-  }
-
-  .grid-item.selected .avatar-image {
-    border: 4rpx solid #7c3aed;
-    box-shadow: 0 8rpx 24rpx rgba(124, 58, 237, 0.3);
-  }
-
-  .selected-badge {
-    position: absolute;
-    top: -8rpx;
-    right: 4rpx;
-    min-width: 36rpx;
-    height: 36rpx;
-    line-height: 36rpx;
-    padding: 0 8rpx;
-    border-radius: 999rpx;
-    background: #7c3aed;
-    text-align: center;
-    z-index: 1;
-  }
-
-  .selected-badge-text {
-    color: #fff;
-    font-size: 22rpx;
-    font-weight: 800;
+    min-width: 0;
   }
 
   .load-more {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 16rpx 24rpx 24rpx;
+    padding: 8rpx 0 24rpx;
+    text-align: center;
   }
 
   .load-more-text {
-    color: #667085;
-    font-size: 24rpx;
-    font-weight: 700;
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
   }
 
   .load-more-text.muted {
-    color: #98a2b3;
-  }
-
-  .load-more-btn {
-    min-width: 220rpx;
-    border-radius: 999rpx;
-    font-size: 24rpx;
-    font-weight: 700;
-    color: #7c3aed;
+    color: var(--theme-text-tertiary);
   }
 
   .footer-bar {
@@ -771,14 +898,13 @@
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
-    gap: 16rpx;
-    padding: 20rpx 24rpx;
-    padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-    background: rgba(246, 247, 251, 0.96);
-    border-top: 1rpx solid #eef0f5;
-    box-shadow: 0 -6rpx 20rpx rgba(15, 23, 42, 0.06);
+    gap: 10rpx;
+    padding: 12rpx 16rpx calc(12rpx + env(safe-area-inset-bottom));
+    background: var(--theme-surface);
+    border-top: 1rpx solid var(--theme-border);
   }
 
   .footer-selected-info {
@@ -787,30 +913,31 @@
   }
 
   .footer-count {
-    color: #475467;
-    font-size: 24rpx;
-    font-weight: 700;
+    color: var(--theme-text);
+    font-size: 22rpx;
+    font-weight: 800;
   }
 
   .footer-cancel-btn,
   .footer-confirm-btn {
-    flex: none;
-    min-width: 160rpx;
-    height: 72rpx;
-    line-height: 72rpx;
+    margin: 0;
+    min-width: 120rpx;
+    height: 64rpx;
+    line-height: 64rpx;
     border-radius: 999rpx;
-    font-size: 26rpx;
+    font-size: 22rpx;
     font-weight: 700;
   }
 
   .footer-cancel-btn {
-    color: #667085;
-    background: var(--theme-surface);
-    border: 1rpx solid #e5e7eb;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    border: 1rpx solid var(--theme-border);
   }
 
   .footer-confirm-btn {
-    background: #7c3aed;
+    background: var(--theme-brand);
     color: #fff;
+    border: none;
   }
 </style>
