@@ -89,8 +89,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     recentAliasKey: 'compendium-swc',
   },
   'compendium-lineup-counter': {
-    name: '克制与被克制',
-    desc: '按魔灵查询阵容克制与被克制关系',
+    name: '阵容克制',
+    desc: '按魔灵查询阵容阵容克制关系',
     icon: 'refresh',
     gradient: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
     path: '/subPackages/tools/compendium/swc/lineup-counter?compendiumId=swc',

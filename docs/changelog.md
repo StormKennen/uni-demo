@@ -6,6 +6,20 @@
 
 ## Unreleased
 
+- 2026-08-10 [tools/compendium-swc] 阵容名称为空时停止展示默认名称；人物选择网格改为轻量头像节点，并修正人物分页结束状态，减少选中反馈及重复加载的渲染开销（Codex）
+
+- 2026-08-10 [tools/compendium-swc] 阵容列表与阵容克制开放游客浏览并在魔灵召唤入口展示；图鉴人物详情的阵容克制入口取消登录拦截并携带完整人物数据自动筛选查询（Codex）
+
+- 2026-08-09 [tools/compendium-swc] 修复阵容列表空数据与错误态容器样式，压缩阵容卡统计与操作区域并限制管理按钮仅管理员可见；优化阵容克制选人页选中索引和人物卡渲染，降低点击延迟（Codex）
+
+- 2026-08-09 [tools/compendium-swc] 优化阵容卡右上角类型与启用状态角标，进一步压缩非头像内容占用空间（Codex）
+
+- 2026-08-09 [tools/compendium-swc] 人物详情与阵容列表新增“阵容克制”入口，携带当前人物 ID 和完整展示数据预填查询（Codex）
+
+- 2026-08-09 [tools/compendium-swc] 对齐阵容列表最新 page/pageSize 分页参数并校正翻页状态；修复首屏加载容器背景显示异常（Codex）
+
+- 2026-08-08 [tools/compendium-swc] 阵容列表人物精准筛选改用头像槽位增删交互；克制关系入口跳转 lineup-counter，并携带已选人物 ID 与完整展示数据（Codex）
+
 - 2026-08-08 [tools/compendium-swc] character-picker 停止主动 preloadAvatars 整页头像下载，依赖 image lazy-load 与只读缓存命中；pageSize 改为 30，卸载时失效在途请求（Codex）
 
 - 2026-08-08 [tools/compendium-swc] 新增 SwcCharacterPickerSlots 人物选择槽位组件，lineup-counter 顶部筛选改为“头像+删除+/”交互（Codex）
@@ -20,11 +34,11 @@
 
 - 2026-08-08 [tools/compendium-swc] 修复人物筛选页空列表：默认形态改为全部、选人接口统一走 getCompendiumsCharacters（与图鉴同源），并增强人物选项 normalize（Codex）
 
-- 2026-08-08 [tools/compendium-swc] 完善克制与被克制页：对齐 GET /compendiums/lineup-relations 返回结构（items + nested related.lineup/relation）、成员嵌套 character 解析、score 排序与下拉刷新（Codex）
+- 2026-08-08 [tools/compendium-swc] 完善阵容克制页：对齐 GET /compendiums/lineup-relations 返回结构（items + nested related.lineup/relation）、成员嵌套 character 解析、score 排序与下拉刷新（Codex）
 
 - 2026-08-08 [services,tools/compendium-swc] 删除 compendium-lineups/memo API wrapper，SWC 业务直接调用 Apifox；normalize/ViewModel 下沉到 swc 业务目录，generated boundary 收敛为 src/services/apifox/**（Codex）
 
-- 2026-08-08 [tools/compendium-swc] 新增公开页「克制与被克制」：防守/进攻模式、魔灵多选、adapter 接入 GET /compendiums/lineup-relations、关联阵容点赞点踩与前端 score 排序；综合入口与工具配置同步（Codex）
+- 2026-08-08 [tools/compendium-swc] 新增公开页「阵容克制」：防守/进攻模式、魔灵多选、adapter 接入 GET /compendiums/lineup-relations、关联阵容点赞点踩与前端 score 排序；综合入口与工具配置同步（Codex）
 
 - 2026-08-07 [tools/compendium-swc] 修复 SwcLineup 成员卡因名称换行导致高度/边框不一致：名称单行省略，网格内卡片等高拉伸（Codex）
 

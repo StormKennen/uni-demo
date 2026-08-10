@@ -28,11 +28,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed } from 'vue'
   import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-  import { reportToolVisit } from '@/utils/tracker'
-  import { isLineupFeatureAllowed } from '@/utils/admin'
   import { buildSwcHomeShare } from './share'
+  import { reportToolVisit } from '@/utils/tracker'
 
   interface PortalEntry {
     id: string
@@ -43,9 +42,6 @@
     accentSoft: string
     path: string
   }
-
-  const lineupEntryIds = new Set(['lineups', 'mappings', 'counter'])
-  const accessRefreshKey = ref(0)
 
   const allPortalEntries: PortalEntry[] = [
     {
@@ -75,18 +71,18 @@
       accentSoft: 'rgba(217, 119, 6, 0.14)',
       path: '/subPackages/tools/compendium/swc/lineups?compendiumId=swc',
     },
-    {
-      id: 'mappings',
-      title: '阵容映射',
-      desc: '维护源阵容与目标阵容关系',
-      icon: 'link',
-      accent: '#0f766e',
-      accentSoft: 'rgba(15, 118, 110, 0.14)',
-      path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
-    },
+    // {
+    //   id: 'mappings',
+    //   title: '阵容映射',
+    //   desc: '维护源阵容与目标阵容关系',
+    //   icon: 'link',
+    //   accent: '#0f766e',
+    //   accentSoft: 'rgba(15, 118, 110, 0.14)',
+    //   path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
+    // },
     {
       id: 'counter',
-      title: '克制与被克制',
+      title: '阵容克制',
       desc: '按魔灵查询阵容克制与被克制关系',
       icon: 'refresh',
       accent: '#7c3aed',
@@ -95,17 +91,13 @@
     },
   ]
 
-  const portalEntries = computed(() => {
-    const lineupFeatureAllowed = accessRefreshKey.value >= 0 && isLineupFeatureAllowed()
-    return allPortalEntries.filter(entry => !lineupEntryIds.has(entry.id) || lineupFeatureAllowed)
-  })
+  const portalEntries = computed(() => allPortalEntries)
 
   function openEntry(path: string) {
     uni.navigateTo({ url: path })
   }
 
   onShow(() => {
-    accessRefreshKey.value += 1
     reportToolVisit('compendium-swc')
   })
 

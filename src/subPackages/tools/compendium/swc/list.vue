@@ -211,12 +211,12 @@
   import SwcCharacterCard from './components/swc-character-card.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
   import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
+  import { buildSwcListShare } from './share'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
-  import { reportToolVisit } from '@/utils/tracker'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getUserInfo } from '@/utils/storage'
-  import { buildSwcListShare } from './share'
+  import { reportToolVisit } from '@/utils/tracker'
 
   type FilterKey = 'element' | 'star' | 'type' | 'sort' | 'awaken'
   type SortOrder = 'asc' | 'desc'
@@ -599,6 +599,15 @@
     return `${field}:${direction},code:desc`
   }
 
+  const resolveHasNext = (pagination: PaginationLike, itemCount: number): boolean => {
+    if (typeof pagination.hasNext === 'boolean') return pagination.hasNext
+    if (typeof pagination.hasNextPage === 'boolean') return pagination.hasNextPage
+    if (typeof pagination.totalPages === 'number' && typeof pagination.page === 'number') {
+      return pagination.page < pagination.totalPages
+    }
+    return itemCount >= PAGE_SIZE
+  }
+
   const fetchCharacters = async (reset = false) => {
     if (loading.value && !reset) return
     if (!reset && !hasNext.value) return
@@ -625,12 +634,7 @@
       characters.value = reset ? items : [...characters.value, ...items]
 
       const pagination = isRecord(res) ? readPagination(res) : {}
-      hasNext.value = Boolean(
-        pagination.hasNext ||
-        pagination.hasNextPage ||
-        (pagination.totalPages && pagination.page && pagination.page < pagination.totalPages) ||
-        items.length >= PAGE_SIZE,
-      )
+      hasNext.value = resolveHasNext(pagination, items.length)
       page.value += 1
     } catch (error) {
       if (requestId !== requestSequence) return

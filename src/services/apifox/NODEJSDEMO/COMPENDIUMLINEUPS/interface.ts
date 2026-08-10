@@ -50,7 +50,7 @@ export interface getCompendiumsLineupsQuery {
   anonymousId?: string
   /** 页码，从 1 开始。 */
   page?: number
-  /** 每页条数，最大 100。 */
+  /** 每页条数。前端分页统一使用此参数；响应中对应字段为 `pagination.limit`。 */
   pageSize?: number
 }
 

@@ -13,7 +13,7 @@
       },
     ]"
     :style="cardStyle"
-    @click="handleClick">
+    @tap="handleClick">
     <template v-if="variant === 'bestiary'">
       <SwcAvatarFrame class="bestiary-avatar" :src="character.avatar" :name="character.name" :size="avatarSize" :shape="avatarShape">
         <template v-if="showStars && character.displayStars > 0" #top-left>
@@ -72,10 +72,7 @@
           <text>{{ character.name.slice(0, 1) || '?' }}</text>
         </view>
 
-        <view
-          v-if="showElement && character.elementKey"
-          class="element-badge"
-          :class="elementBadgeClass">
+        <view v-if="showElement && character.elementKey" class="element-badge" :class="elementBadgeClass">
           <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="elementIconSize" :radius="8" />
         </view>
 
@@ -119,11 +116,11 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
+  import { normalizeSwcArchetype } from '../icon-assets'
+  import type { SwcCharacterView } from '../utils'
   import SwcAvatarFrame from './swc-avatar-frame.vue'
   import SwcStarBadge from './swc-star-badge.vue'
   import SwcSquareIcon from './swc-square-icon.vue'
-  import { normalizeSwcArchetype } from '../icon-assets'
-  import type { SwcCharacterView } from '../utils'
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'
@@ -183,7 +180,9 @@
 
   const hasActionBadge = computed(() => props.showRemove || props.showEdit || (props.selectable && props.selected))
 
-  const showTypeIcon = computed(() => props.showType && Boolean(normalizeSwcArchetype(props.character.archetype) || props.character.archetype))
+  const showTypeIcon = computed(
+    () => props.showType && Boolean(normalizeSwcArchetype(props.character.archetype) || props.character.archetype),
+  )
 
   const hasBestiaryBottomRight = computed(() => hasActionBadge.value || showTypeIcon.value)
 

@@ -1,15 +1,7 @@
 <template>
   <PageLayout title="魔灵召唤阵容">
     <view class="lineup-page">
-      <StateBlock
-        v-if="accessChecked && !hasLineupFeatureAccess"
-        class="state-block"
-        text="该功能暂未开放"
-        action-text="返回"
-        theme="amber"
-        @action="goBack" />
-
-      <template v-else>
+      <template>
         <!-- <view class="hero-banner">
           <view>
             <text class="hero-title">魔灵召唤阵容</text>
@@ -60,57 +52,38 @@
           </view>
 
           <view class="filter-group">
-            <view class="filter-head" @click="toggleCharacterFilter">
-              <text class="filter-label">
-                人物精准筛选{{ selectedCharacterFilters.length ? ` · 已选 ${selectedCharacterFilters.length}` : '' }}
-              </text>
-              <text class="filter-toggle">{{ characterFilterExpanded ? '收起' : '展开' }}</text>
+            <view class="filter-head">
+              <text class="filter-label">人物精准筛选</text>
+              <text v-if="selectedCharacterFilters.length" class="filter-count">已选 {{ selectedCharacterFilters.length }}</text>
             </view>
 
-            <view v-if="characterFilterExpanded" class="filter-body">
-              <view class="filter-head">
-                <text class="filter-helper">
-                  {{
-                    selectedCharacterFilters.length
-                      ? `已选 ${selectedCharacterFilters.length} 个，可多选精准筛选`
-                      : '未选择人物，默认不过滤'
-                  }}
-                </text>
-                <button class="toolbar-btn primary" size="mini" @click="openCharacterPicker">选择魔灵</button>
-              </view>
+            <SwcCharacterPickerSlots
+              class="character-picker-slots"
+              :characters="selectedCharacterViews"
+              :max-count="0"
+              :size="120"
+              @add="openCharacterPicker"
+              @remove="handleRemoveCharacterFilter" />
 
-              <SwcLineup
-                v-if="selectedCharacterFilters.length"
-                class="selected-avatar-list"
-                :characters="selectedCharacterViews"
-                :columns="5"
-                editable
-                :show-member-name="false"
-                :show-stars="false"
-                :show-element="true"
-                :avatar-size="92"
-                @remove="removeCharacterFilter" />
+            <text class="filter-helper">阵容需同时包含全部所选人物</text>
 
-              <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
-                <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
-              </view>
+            <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
+              <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
             </view>
           </view>
 
-          <view v-if="isAdmin" class="action-row">
-            <button class="toolbar-btn" @click="goRelations()">克制关系</button>
+          <view class="action-row counter-entry-row">
+            <button class="toolbar-btn primary" @click="goLineupCounter">阵容克制</button>
           </view>
         </view>
 
-        <StateBlock v-if="loading && !lineups.length" class="state-block" text="加载阵容中..." />
+        <view v-if="loading && !lineups.length" class="loading-state">
+          <StateBlock text="加载阵容中..." />
+        </view>
 
-        <StateBlock
-          v-else-if="errorMessage && !lineups.length"
-          class="state-block"
-          :text="errorMessage"
-          action-text="重新加载"
-          theme="amber"
-          @action="refreshList" />
+        <view v-else-if="errorMessage && !lineups.length" class="error-state">
+          <StateBlock :text="errorMessage" action-text="重新加载" theme="amber" @action="refreshList" />
+        </view>
 
         <view v-else class="content">
           <view class="summary-row">
@@ -125,31 +98,29 @@
           <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
 
           <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
+            <view class="lineup-ribbons">
+              <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
+              <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
+            </view>
+
             <view class="lineup-head">
               <view class="lineup-title-wrap">
                 <text v-if="lineup.name" class="lineup-name">{{ lineup.name }}</text>
-                <!-- <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text> -->
-                <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
               </view>
-              <!-- <text class="lineup-count">{{ lineup.memberCount }} 人</text> -->
-              <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
             </view>
 
             <text v-if="lineup.description" class="lineup-desc">{{ lineup.description }}</text>
 
-            <view v-if="isAdmin" class="metric-row">
-              <view class="metric-item">
-                <text class="metric-label">成员</text>
-                <text class="metric-value">{{ lineup.memberCount }}</text>
-              </view>
-              <view class="metric-item">
-                <text class="metric-label">进攻阵容</text>
-                <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
-              </view>
-              <view class="metric-item">
-                <text class="metric-label">防御阵容</text>
-                <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
-              </view>
+            <view v-if="isAdmin" class="metric-row" aria-label="阵容统计">
+              <text class="metric-item">
+                成员 <text class="metric-value">{{ lineup.memberCount }}</text>
+              </text>
+              <text class="metric-item">
+                进攻 <text class="metric-value">{{ lineup.targetLineupsCount }}</text>
+              </text>
+              <text class="metric-item">
+                防御 <text class="metric-value">{{ lineup.sourceLineupsCount }}</text>
+              </text>
             </view>
 
             <SwcLineup
@@ -159,33 +130,29 @@
               :columns="5"
               :avatar-size="92"
               :show-member-name="false"
-              :show-family="true"
+              :show-family="false"
               :show-stars="true"
               :show-element="true"
               :show-member-type="true"
               empty-text="暂无成员" />
 
-            <view class="reaction-row">
-              <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-                <text>👍 {{ lineup.likeCount }}</text>
+            <view class="lineup-footer">
+              <view class="reaction-row">
+                <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
+                  <text>👍 {{ lineup.likeCount }}</text>
+                </view>
+                <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
+                  <text>👎 {{ lineup.dislikeCount }}</text>
+                </view>
               </view>
-              <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-                <text>👎 {{ lineup.dislikeCount }}</text>
-              </view>
-              <!-- <text class="reaction-score">热度 {{ lineup.score }}</text> -->
-            </view>
 
-            <view v-if="canManageLineup(lineup) || isAdmin" class="card-actions">
-              <button v-if="canManageLineup(lineup)" class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
-              <button v-if="isAdmin" class="card-btn" size="mini" @click="goRelations(lineup.id)"> 映射关系 </button>
-              <button
-                v-if="canManageLineup(lineup)"
-                class="card-btn danger"
-                size="mini"
-                :loading="deletingId === lineup.id"
-                @click="confirmDelete(lineup.id)">
-                删除
-              </button>
+              <view v-if="isAdmin" class="card-actions">
+                <button class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
+                <button class="card-btn" size="mini" @click="goRelations(lineup.id)">映射</button>
+                <button class="card-btn danger" size="mini" :loading="deletingId === lineup.id" @click="confirmDelete(lineup.id)">
+                  删除
+                </button>
+              </view>
             </view>
           </view>
 
@@ -206,21 +173,13 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import { reportToolVisit } from '@/utils/tracker'
-  import {
-    deleteCompendiumsLineupsLineupId,
-    getAdminLineupsTypes,
-    postLineupsLineupIdReaction,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
-  import { getAnonymousId } from '@/utils/anonymous-id'
   import type { LineupCharacterPreview, LineupTypeOption, ReactionValue, UserLineupSummary } from './lineup-types'
   import { normalizeLineupTypes, normalizeReactionResult } from './lineup-normalizers'
   import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
-  import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
   import SearchActionRow from './components/search-action-row.vue'
   import StateBlock from './components/state-block.vue'
+  import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
   import SwcLineup from './components/swc-lineup.vue'
-  import { canManageLineup, ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
   import {
     ALL_VALUE,
     getLineupTypeToneClass,
@@ -232,11 +191,22 @@
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
   import { toSwcCharacterView } from './utils'
   import { buildSwcLineupsShare } from './share'
+  import { ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
+  import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
+  import { getAnonymousId } from '@/utils/anonymous-id'
+  import {
+    deleteCompendiumsLineupsLineupId,
+    getAdminLineupsTypes,
+    postLineupsLineupIdReaction,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+  import { reportToolVisit } from '@/utils/tracker'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineups:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineups:character-picker:result'
+  const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
+  const LINEUP_COUNTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
   const selectedLocale = ref(DEFAULT_LOCALE)
   const dynamicLineupTypes = ref<LineupTypeOption[]>([])
   const {
@@ -266,17 +236,14 @@
   })
   const deletingId = ref('')
   const reactingId = ref('')
-  const characterFilterExpanded = ref(false)
-  const accessChecked = ref(false)
-  const hasLineupFeatureAccess = ref(false)
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
   const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
 
-  const toggleCharacterFilter = () => {
-    characterFilterExpanded.value = !characterFilterExpanded.value
+  const handleRemoveCharacterFilter = (character: { characterId: string }) => {
+    removeCharacterFilter(character.characterId)
   }
   const lineupTypeOptions = computed(() => {
     if (isAdmin.value) {
@@ -342,20 +309,15 @@
   }
 
   const goEdit = (lineupId: string) => {
+    if (!isAdmin.value) return
     if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
     })
   }
 
-  const goMappings = () => {
-    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
-    uni.navigateTo({
-      url: `/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
-    })
-  }
-
   const goRelations = (sourceLineupId = '') => {
+    if (!isAdmin.value) return
     if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
     if (sourceLineupId) params.push(`sourceLineupId=${encodeURIComponent(sourceLineupId)}`)
@@ -364,11 +326,31 @@
     })
   }
 
-  const goBack = () => {
-    uni.navigateBack()
+  const goLineupCounter = () => {
+    if (!selectedCharacterFilters.value.length) {
+      uni.showToast({ title: '请先选择人物', icon: 'none' })
+      return
+    }
+
+    const params = [
+      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+      'prefill=1',
+    ]
+    const characterIds = selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean)
+    if (characterIds.length) params.push(`characterIds=${encodeURIComponent(characterIds.join(','))}`)
+    const targetUrl = `/subPackages/tools/compendium/swc/lineup-counter?${params.join('&')}`
+
+    removeStorageSync(LINEUP_COUNTER_PICKER_RESULT_KEY)
+    setStorageSync(
+      LINEUP_COUNTER_PREFILL_KEY,
+      selectedCharacterFilters.value.map(item => ({ ...item })),
+    )
+    uni.navigateTo({ url: targetUrl })
   }
 
   const confirmDelete = (lineupId: string) => {
+    if (!isAdmin.value) return
     uni.showModal({
       title: '删除阵容',
       content: '删除后会同时移除关联的克制关系，确认继续吗？',
@@ -406,7 +388,10 @@
     type: selectedType.value !== ALL_VALUE ? selectedType.value : undefined,
     status: isAdmin.value && selectedStatus.value !== ALL_VALUE ? selectedStatus.value : undefined,
     characterIds: selectedCharacterFilters.value.length
-      ? selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean).join(',')
+      ? selectedCharacterFilters.value
+          .map(item => item.characterId)
+          .filter(Boolean)
+          .join(',')
       : undefined,
   })
 
@@ -415,11 +400,7 @@
     reactingId.value = lineup.id
     try {
       const result = normalizeReactionResult(
-        await postLineupsLineupIdReaction(
-          lineup.id,
-          { value, anonymousId: getAnonymousId() } as any,
-          buildAnonymousRequestConfig(),
-        ),
+        await postLineupsLineupIdReaction(lineup.id, { value, anonymousId: getAnonymousId() } as any, buildAnonymousRequestConfig()),
         lineup.id,
       )
       lineup.likeCount = result.likeCount
@@ -438,8 +419,6 @@
 
   onShow(() => {
     reportToolVisit('compendium-lineups')
-    if (!hasLineupFeatureAccess.value) return
-    loadLineupTypes()
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
     if (Array.isArray(pickerResult)) {
@@ -453,25 +432,16 @@
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     applyRouteQuery(options)
 
-    hasLineupFeatureAccess.value = ensureLineupFeatureAccess(buildCurrentUrl())
-    accessChecked.value = true
-    if (!hasLineupFeatureAccess.value) return
-
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })
     loadLineupTypes()
     refreshList()
   })
 
   onPullDownRefresh(() => {
-    if (!hasLineupFeatureAccess.value) {
-      uni.stopPullDownRefresh()
-      return
-    }
     refreshList()
   })
 
   onReachBottom(() => {
-    if (!hasLineupFeatureAccess.value) return
     loadMore()
   })
 
@@ -526,7 +496,9 @@
   .toolbar-card,
   .lineup-card,
   .empty-block,
-  .state-block {
+  .state-block,
+  .error-state,
+  .loading-state {
     margin: 0 24rpx 20rpx;
     background: var(--theme-surface);
     border: 1rpx solid var(--theme-border);
@@ -621,6 +593,16 @@
     font-weight: 700;
   }
 
+  .filter-count {
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    font-weight: 800;
+  }
+
+  .character-picker-slots {
+    margin-top: 16rpx;
+  }
+
   .chip-row {
     display: flex;
     flex-wrap: wrap;
@@ -679,25 +661,44 @@
     font-weight: 700;
   }
 
-  .selected-avatar-list {
-    margin-top: 18rpx;
-  }
-
   .state-block,
-  .empty-block {
+  .empty-block,
+  .error-state,
+  .loading-state {
     padding: 48rpx 28rpx;
     text-align: center;
     color: var(--theme-text-secondary);
     font-size: 28rpx;
   }
 
+  .error-state,
+  .loading-state {
+    box-sizing: border-box;
+    min-height: 148rpx;
+    background: var(--theme-surface);
+  }
+
   .lineup-card {
-    padding: 24rpx;
+    position: relative;
+    padding: 18rpx 20rpx;
+    overflow: hidden;
+  }
+
+  .lineup-ribbons {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
   }
 
   .lineup-head {
     justify-content: space-between;
     align-items: flex-start;
+    padding-right: 132rpx;
+    min-height: 42rpx;
   }
 
   .lineup-title-wrap {
@@ -709,33 +710,51 @@
   }
 
   .lineup-name {
-    font-size: 32rpx;
+    font-size: 29rpx;
     font-weight: 800;
     color: var(--theme-text);
+    line-height: 1.3;
   }
 
   .lineup-count,
   .type-badge,
   .status-badge {
-    font-size: 22rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    white-space: nowrap;
+    font-size: 20rpx;
     font-weight: 800;
-    border-radius: 999rpx;
-    padding: 6rpx 14rpx;
+    line-height: 1;
+  }
+
+  .type-badge {
+    width: 126rpx;
+    height: 50rpx;
+    padding: 0 10rpx 0 22rpx;
+    color: #fff;
+    clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%, 0 32%);
   }
 
   .type-badge.offense {
-    background: #e0f2fe;
-    color: #0369a1;
+    background: #0284c7;
   }
 
   .type-badge.defense {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: #7c3aed;
   }
 
   .type-badge.custom {
-    background: #ecfeff;
-    color: #0f766e;
+    background: #0f766e;
+  }
+
+  .status-badge {
+    height: 38rpx;
+    margin-top: 6rpx;
+    padding: 0 10rpx;
+    border-bottom-left-radius: 10rpx;
+    font-size: 18rpx;
   }
 
   .status-badge.enabled {
@@ -755,70 +774,89 @@
 
   .lineup-desc {
     display: block;
-    margin-top: 16rpx;
+    margin-top: 8rpx;
     color: var(--theme-text-secondary);
-    font-size: 26rpx;
-    line-height: 1.7;
+    font-size: 22rpx;
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .metric-row {
-    margin-top: 18rpx;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8rpx;
+    margin-top: 10rpx;
   }
 
   .metric-item {
-    flex: 1;
-    padding: 18rpx;
-    border-radius: 18rpx;
+    padding: 4rpx 10rpx;
+    border-radius: 6rpx;
     background: var(--theme-surface-2);
-    border: 1rpx solid var(--theme-border);
-  }
-
-  .metric-label {
-    display: block;
     color: var(--theme-text-tertiary);
-    font-size: 22rpx;
+    font-size: 19rpx;
+    line-height: 1.4;
   }
 
   .metric-value {
-    display: block;
-    margin-top: 6rpx;
+    margin-left: 4rpx;
     color: var(--theme-text);
-    font-size: 30rpx;
+    font-size: 21rpx;
     font-weight: 800;
   }
 
   .lineup-members {
-    margin-top: 20rpx;
+    margin-top: 12rpx;
   }
 
   .mini-btn.danger {
     color: #dc2626;
   }
 
+  .lineup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+    margin-top: 12rpx;
+  }
+
   .card-actions {
-    margin-top: 22rpx;
+    flex-shrink: 0;
     justify-content: flex-end;
+    gap: 8rpx;
+  }
+
+  .card-btn {
+    min-height: 50rpx;
+    margin: 0;
+    padding: 0 14rpx;
+    font-size: 20rpx;
+    line-height: 50rpx;
   }
 
   .reaction-row {
     display: flex;
     align-items: center;
-    gap: 20rpx;
-    margin-top: 20rpx;
+    gap: 8rpx;
+    min-width: 0;
   }
 
   .reaction-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 120rpx;
-    min-height: 64rpx;
-    padding: 0 28rpx;
+    min-width: 72rpx;
+    min-height: 48rpx;
+    padding: 0 14rpx;
     border-radius: 999rpx;
     background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
     border: 1rpx solid var(--theme-border);
-    font-size: 26rpx;
+    font-size: 21rpx;
     font-weight: 700;
   }
 
@@ -842,21 +880,14 @@
     justify-content: flex-end;
   }
 
+  .counter-entry-row {
+    justify-content: flex-end;
+  }
+
   .load-more {
     display: flex;
     justify-content: center;
     margin-top: 12rpx;
-  }
-
-  .filter-toggle {
-    flex-shrink: 0;
-    font-size: 24rpx;
-    color: var(--theme-brand);
-    font-weight: 700;
-  }
-
-  .filter-body {
-    margin-top: 16rpx;
   }
 
   .fab {

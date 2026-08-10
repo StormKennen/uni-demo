@@ -2,12 +2,7 @@
   <PageLayout title="选择筛选魔灵">
     <view class="character-picker-page">
       <view class="search-section">
-        <SearchActionRow
-          v-model="keyword"
-          class="search-row"
-          placeholder="输入人物名称或 code"
-          theme="violet"
-          @search="onSearchSubmit" />
+        <SearchActionRow v-model="keyword" class="search-row" placeholder="输入人物名称或 code" theme="violet" @search="onSearchSubmit" />
 
         <view class="filter-shell">
           <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
@@ -119,22 +114,20 @@
 
       <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
         <view class="grid-wrap">
-          <SwcCharacterCard
+          <view
             v-for="character in characters"
             :key="character.characterId"
             class="grid-item"
-            variant="picker"
-            :character="toCardView(character)"
-            :show-name="false"
-            :show-family="false"
-            :show-element="false"
-            :show-stars="false"
-            :show-original-stars="false"
-            selectable
-            :selected="isSelected(character.characterId)"
-            :selected-index="getSelectedIndex(character.characterId)"
-            :avatar-size="92"
-            @click="toggleSelect(character)" />
+            :class="{ selected: selectedIndexById.has(character.characterId) }"
+            @tap="toggleSelect(character)">
+            <image v-if="character.avatar" class="grid-avatar" :src="character.avatar" mode="aspectFill" lazy-load />
+            <view v-else class="grid-avatar grid-avatar-placeholder">
+              <text>{{ character.name.slice(0, 1) || '?' }}</text>
+            </view>
+            <view v-if="selectedIndexById.has(character.characterId)" class="grid-selected-badge">
+              <text>{{ selectedIndexById.get(character.characterId) }}</text>
+            </view>
+          </view>
         </view>
 
         <view v-if="loadingMore" class="load-more">
@@ -163,14 +156,13 @@
   import { onLoad, onReachBottom, onUnload } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
-  import SwcCharacterCard from './components/swc-character-card.vue'
   import StateBlock from './components/state-block.vue'
+  import type { CharacterOption } from './lineup-types'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
   import { resolveAvatar } from '@/utils/avatar-cache'
-  import type { CharacterOption } from './lineup-types'
 
   type FilterKey = 'element' | 'star' | 'type' | 'awaken'
   type SortOrder = 'asc' | 'desc'
@@ -405,9 +397,7 @@
   const normalizeCharacter = (source: unknown): SwcCharacterView | null => {
     if (!isRecord(source)) return null
 
-    const nestedCharacter = ['representative', 'representativeCharacter', 'character', 'item']
-      .map(key => source[key])
-      .find(isRecord)
+    const nestedCharacter = ['representative', 'representativeCharacter', 'character', 'item'].map(key => source[key]).find(isRecord)
     const characterSource = nestedCharacter || source
     const groupSource = isRecord(source.group) ? source.group : null
 
@@ -523,21 +513,25 @@
     status: 'enabled',
   })
 
-  // 只读命中本地缓存；未命中直接用远程 URL，交给 <image lazy-load>
-  const toCardView = (character: SwcCharacterView): SwcCharacterView => ({
+  // 人物进入列表时解析一次头像，避免每次选中状态变化都重新扫描本地缓存。
+  const resolveCardAvatar = (character: SwcCharacterView): SwcCharacterView => ({
     ...character,
     avatar: resolveAvatar(character.avatar) || character.avatar,
   })
 
-  const isSelected = (characterId: string): boolean => draftSelected.value.some(item => item.characterId === characterId)
+  const selectedIndexById = computed(() => new Map(draftSelected.value.map((item, index) => [item.characterId, index + 1])))
 
-  const getSelectedIndex = (characterId: string): number => {
-    const idx = draftSelected.value.findIndex(item => item.characterId === characterId)
-    return idx >= 0 ? idx + 1 : 0
+  const resolveHasNext = (pagination: PaginationLike, itemCount: number): boolean => {
+    if (typeof pagination.hasNext === 'boolean') return pagination.hasNext
+    if (typeof pagination.hasNextPage === 'boolean') return pagination.hasNextPage
+    if (typeof pagination.totalPages === 'number' && typeof pagination.page === 'number') {
+      return pagination.page < pagination.totalPages
+    }
+    return itemCount >= PAGE_SIZE
   }
 
   const toggleSelect = (character: SwcCharacterView) => {
-    if (isSelected(character.characterId)) {
+    if (selectedIndexById.value.has(character.characterId)) {
       draftSelected.value = draftSelected.value.filter(item => item.characterId !== character.characterId)
       return
     }
@@ -584,16 +578,12 @@
       const items = extractItems(res)
         .map(normalizeCharacter)
         .filter((item): item is SwcCharacterView => Boolean(item))
+        .map(resolveCardAvatar)
 
       characters.value = reset ? items : mergeUniqueCharacters(characters.value, items)
 
       const pagination = isRecord(res) ? readPagination(res) : {}
-      hasNext.value = Boolean(
-        pagination.hasNext ||
-          pagination.hasNextPage ||
-          (pagination.totalPages && pagination.page && pagination.page < pagination.totalPages) ||
-          items.length >= PAGE_SIZE,
-      )
+      hasNext.value = resolveHasNext(pagination, items.length)
       page.value = queryPage + 1
     } catch (error) {
       if (requestId !== requestSequence) return
@@ -866,7 +856,55 @@
   }
 
   .grid-item {
+    position: relative;
     min-width: 0;
+    height: 92rpx;
+    border: 2rpx solid var(--theme-border);
+    border-radius: 12rpx;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: var(--theme-surface-2);
+  }
+
+  .grid-item.selected {
+    border-color: var(--theme-brand);
+    box-shadow: 0 0 0 2rpx rgba(124, 58, 237, 0.35);
+  }
+
+  .grid-avatar {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .grid-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 24rpx;
+    font-weight: 800;
+    background: var(--theme-surface-2);
+  }
+
+  .grid-selected-badge {
+    position: absolute;
+    top: 4rpx;
+    right: 4rpx;
+    z-index: 2;
+    min-width: 30rpx;
+    height: 30rpx;
+    padding: 0 6rpx;
+    border-radius: 999rpx;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--theme-brand);
+    color: #fff;
+    font-size: 20rpx;
+    font-weight: 800;
+    line-height: 1;
   }
 
   .load-more {

@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="克制与被克制">
+  <PageLayout title="阵容克制">
     <view class="counter-page">
       <view class="filter-card">
         <view class="mode-row">
@@ -13,7 +13,7 @@
         <text class="mode-hint">{{ modeHint }}</text>
 
         <view class="filter-head">
-          <text class="filter-label">魔灵筛选（多选 AND）</text>
+          <text class="filter-label">魔灵筛选</text>
           <text v-if="selectedCharacters.length" class="filter-count">已选 {{ selectedCharacters.length }}</text>
         </view>
 
@@ -79,7 +79,7 @@
             <view v-else class="related-list">
               <view v-for="item in group.relatedLineups" :key="item.lineup.id" class="related-card">
                 <view class="related-meta">
-                  <text class="related-name">{{ item.lineup.name || '未命名阵容' }}</text>
+                  <text v-if="item.lineup.name" class="related-name">{{ item.lineup.name }}</text>
                   <text class="related-type">{{ getLineupTypeLabel(item.lineup.type) }}</text>
                 </view>
 
@@ -134,18 +134,17 @@
   import { toSwcCharacterView } from './utils'
   import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
   import { buildSwcLineupCounterShare } from './share'
+  import type { CharacterOption, LineupCharacterPreview } from './lineup-types'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
-  import { ensureLineupFeatureAccess } from '@/utils/admin'
   import { reportToolVisit } from '@/utils/tracker'
-  import type { LineupCharacterPreview } from './lineup-types'
 
   const COMPENDIUM_CODE = 'swc'
   const DEFAULT_LOCALE = 'zh-CN'
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineup-counter:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
+  const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
 
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const hasFeatureAccess = ref(false)
 
   const {
     selectedMode,
@@ -189,15 +188,6 @@
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
 
-  const buildCurrentUrl = () => {
-    const query: string[] = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
-    if (selectedMode.value) query.push(`type=${encodeURIComponent(selectedMode.value)}`)
-    if (selectedCharacterIds.value.length) {
-      query.push(`characterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}`)
-    }
-    return `/subPackages/tools/compendium/swc/lineup-counter?${query.join('&')}`
-  }
-
   const buildShareQuery = () => ({
     compendiumId: COMPENDIUM_CODE,
     locale: selectedLocale.value,
@@ -226,15 +216,22 @@
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
     applyRouteQuery(options)
-    hasFeatureAccess.value = ensureLineupFeatureAccess(buildCurrentUrl())
-    if (hasFeatureAccess.value && selectedCharacterIds.value.length) {
+
+    if (options.prefill === '1') {
+      const prefillCharacters = getStorageSync(LINEUP_COUNTER_PREFILL_KEY)
+      removeStorageSync(LINEUP_COUNTER_PREFILL_KEY)
+      if (Array.isArray(prefillCharacters)) {
+        setSelectedCharacters(prefillCharacters as CharacterOption[])
+      }
+    }
+
+    if (selectedCharacterIds.value.length) {
       void refresh()
     }
   })
 
   onShow(() => {
     reportToolVisit('compendium-lineup-counter')
-    if (!hasFeatureAccess.value) return
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
     if (Array.isArray(pickerResult)) {
@@ -245,7 +242,7 @@
   })
 
   onPullDownRefresh(async () => {
-    if (!hasFeatureAccess.value || !selectedCharacterIds.value.length) {
+    if (!selectedCharacterIds.value.length) {
       uni.stopPullDownRefresh()
       return
     }
@@ -257,7 +254,6 @@
   })
 
   onReachBottom(() => {
-    if (!hasFeatureAccess.value) return
     void loadMore()
   })
 
@@ -285,6 +281,7 @@
 
   .filter-card {
     padding: 22rpx;
+    margin-bottom: 24rpx;
   }
 
   .mode-row {
@@ -363,6 +360,7 @@
 
   .toolbar-btn {
     margin: 0;
+    width: 50%;
     min-width: 0;
     height: 56rpx;
     line-height: 56rpx;
@@ -382,6 +380,7 @@
 
   .state-block {
     margin-top: 24rpx;
+    padding-top: 24rpx;
   }
 
   .result-list {

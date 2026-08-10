@@ -103,7 +103,7 @@ export function buildSwcLineupRelationsShare(query: QueryValueMap = {}) {
 }
 
 export function buildSwcLineupCounterShare(query: QueryValueMap = {}) {
-  return createShare('魔灵召唤克制与被克制：按魔灵查询阵容关系', SWC_LINEUP_COUNTER_PATH, query)
+  return createShare('魔灵召唤阵容克制：按魔灵查询阵容关系', SWC_LINEUP_COUNTER_PATH, query)
 }
 
 export function buildSwcSharePath(path: string, query: QueryValueMap = {}) {

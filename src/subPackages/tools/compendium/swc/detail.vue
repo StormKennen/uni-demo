@@ -121,6 +121,8 @@
               </view>
             </scroll-view>
           </view>
+
+          <button class="counter-entry-btn" @click="goLineupCounter">查看阵容克制</button>
         </view>
 
         <view class="detail-tabs">
@@ -201,11 +203,7 @@
             class="skill-card"
             :class="{ leader: skill.type === 'leader' }">
             <view class="skill-head">
-              <SwcLeaderSkillIcon
-                v-if="skill.leaderSkill && skill.leaderSkillIcon"
-                :leader-skill="skill.leaderSkill"
-                :size="80"
-              />
+              <SwcLeaderSkillIcon v-if="skill.leaderSkill && skill.leaderSkillIcon" :leader-skill="skill.leaderSkill" :size="80" />
               <image v-else-if="skill.attachment" class="skill-icon" :src="skill.attachment" mode="aspectFill" lazy-load />
               <view v-else class="skill-icon empty-icon">{{ skill.type === 'leader' ? 'L' : skill.orderText }}</view>
               <view class="skill-title-wrap">
@@ -268,16 +266,13 @@
   import SwcLeaderSkillIcon from './components/swc-leader-skill-icon.vue'
   import SwcStarBadge from './components/swc-star-badge.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
-  import {
-    SWC_ARCHETYPE_LABEL_MAP,
-    buildLeaderSkillIconUrl,
-    normalizeSwcArchetype,
-    type SwcLeaderSkillInput,
-  } from './icon-assets'
+  import { SWC_ARCHETYPE_LABEL_MAP, buildLeaderSkillIconUrl, normalizeSwcArchetype, type SwcLeaderSkillInput } from './icon-assets'
   import { buildSwcDetailShare } from './share'
+  import type { CharacterOption } from './lineup-types'
   import { calculateSkillDamage, parseNumber, type DamageStats, type SkillDamageResult } from '@/engine/swc-damage-calculator'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { removeStorageSync, setStorageSync } from '@/utils/storage'
 
   type RawRecord = Record<string, any>
 
@@ -490,6 +485,8 @@
   const DEFAULT_LOCALE = 'zh-CN'
   const AWAKENED_LABEL = '觉醒'
   const UNAWAKENED_LABEL = '未觉醒'
+  const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
+  const LINEUP_COUNTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
 
   const localeOptions: LocaleOption[] = [
     { label: '简体中文', value: 'zh-CN' },
@@ -1217,6 +1214,41 @@
     if (target) switchAwakenForm(target)
   }
 
+  const goLineupCounter = () => {
+    const currentCharacterId = detail.value.id || characterId.value
+    if (!currentCharacterId) return
+
+    const query = [
+      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+      `characterIds=${encodeURIComponent(currentCharacterId)}`,
+      'prefill=1',
+    ]
+    const targetUrl = `/subPackages/tools/compendium/swc/lineup-counter?${query.join('&')}`
+
+    const currentCharacter: CharacterOption = {
+      id: currentCharacterId,
+      characterId: currentCharacterId,
+      name: detail.value.name || seedName.value || currentCharacterId,
+      label: detail.value.name || seedName.value || currentCharacterId,
+      avatar: detailAvatarSrc.value,
+      element: detail.value.elementKey,
+      elementKey: detail.value.elementKey,
+      elementName: detail.value.elementName,
+      archetype: detail.value.archetype,
+      familyKey: '',
+      familyName: detail.value.family,
+      awaken: activeAwakenLabel.value === AWAKENED_LABEL ? 'awakened' : 'unawakened',
+      awakenName: activeAwakenLabel.value,
+      stars: detail.value.stars,
+      status: 'enabled',
+    }
+
+    removeStorageSync(LINEUP_COUNTER_PICKER_RESULT_KEY)
+    setStorageSync(LINEUP_COUNTER_PREFILL_KEY, [currentCharacter])
+    uni.navigateTo({ url: targetUrl })
+  }
+
   onLoad((options: Record<string, string | undefined>) => {
     characterId.value = options.characterId || ''
     seedName.value = decodeURIComponent(options.name || '')
@@ -1648,6 +1680,23 @@
     display: flex;
     align-items: center;
     gap: 12rpx;
+  }
+
+  .counter-entry-btn {
+    width: 100%;
+    min-height: 72rpx;
+    margin-top: 16rpx;
+    border-radius: 12rpx;
+    border: 1rpx solid var(--hero-accent);
+    background: var(--hero-accent-soft);
+    color: var(--hero-accent);
+    font-size: 26rpx;
+    font-weight: 700;
+    line-height: 72rpx;
+  }
+
+  .counter-entry-btn::after {
+    border: 0;
   }
 
   .element-scroll {

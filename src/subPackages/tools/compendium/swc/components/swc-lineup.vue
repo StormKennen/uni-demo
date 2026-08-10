@@ -2,7 +2,7 @@
   <view class="swc-lineup">
     <view v-if="showHeader" class="lineup-head">
       <view class="lineup-title-wrap">
-        <text v-if="showName" class="lineup-name">{{ name || '未命名阵容' }}</text>
+        <text v-if="showName && name" class="lineup-name">{{ name }}</text>
         <text v-if="showType && typeLabel" class="type-badge">{{ typeLabel }}</text>
       </view>
       <text v-if="showDescription && description" class="lineup-desc">{{ description }}</text>
@@ -36,10 +36,10 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import StateBlock from './state-block.vue'
-  import SwcCharacterCard from './swc-character-card.vue'
   import { getLineupTypeLabel } from '../lineup-meta'
   import type { SwcCharacterView } from '../utils'
+  import StateBlock from './state-block.vue'
+  import SwcCharacterCard from './swc-character-card.vue'
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'

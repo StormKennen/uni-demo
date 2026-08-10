@@ -1,9 +1,10 @@
 import { computed, ref, type Ref } from 'vue'
-import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
-import type { CharacterOption, PaginationState, UserLineupSummary } from '../lineup-types'
+import type { CharacterOption, PaginationState, UserLineupListResult, UserLineupSummary } from '../lineup-types'
 import { normalizeUserLineupListResult } from '../lineup-normalizers'
-import { buildAnonymousRequestConfig, sanitizeQuery } from '../request-options'
+import { buildAnonymousRequestConfig } from '../request-options'
 import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
+import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import type { getCompendiumsLineupsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -99,6 +100,38 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     }
   }
 
+  const fetchPage = async (page: number, characterId?: string): Promise<UserLineupListResult> => {
+    const query: getCompendiumsLineupsQuery = {
+      compendiumId: params.compendiumId,
+      locale: params.locale.value,
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+      page,
+      pageSize,
+    }
+    const keywordText = keyword.value.trim()
+    if (keywordText) query.keyword = keywordText
+    if (characterId) query.characterId = characterId
+    if (selectedType.value) query.type = selectedType.value
+    if (selectedStatus.value) query.status = selectedStatus.value
+
+    const result = normalizeUserLineupListResult(await getCompendiumsLineups(query, buildAnonymousRequestConfig()))
+    const limit = result.pagination.limit || pageSize
+    const totalPages = result.pagination.totalPages || (result.pagination.total > 0 ? Math.ceil(result.pagination.total / limit) : 0)
+
+    return {
+      items: result.items,
+      pagination: {
+        ...result.pagination,
+        page,
+        limit,
+        totalPages,
+        hasNext: totalPages > 0 ? page < totalPages : result.pagination.hasNext,
+        hasPrev: page > 1,
+      },
+    }
+  }
+
   const fetchAllMatchedLineups = async (): Promise<UserLineupSummary[]> => {
     const [primaryCharacterId] = selectedCharacterIds.value
     const collected: UserLineupSummary[] = []
@@ -106,27 +139,11 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     let hasNext = true
 
     while (hasNext) {
-      const result = normalizeUserLineupListResult(
-        await getCompendiumsLineups(
-          sanitizeQuery({
-            compendiumId: params.compendiumId,
-            locale: params.locale.value,
-            keyword: keyword.value.trim() || undefined,
-            characterId: primaryCharacterId || undefined,
-            type: selectedType.value || undefined,
-            status: selectedStatus.value || undefined,
-            sortBy: 'updatedAt',
-            sortOrder: 'desc',
-            page: nextPage,
-            pageSize,
-          }) as any,
-          buildAnonymousRequestConfig(),
-        ),
-      )
+      const result = await fetchPage(nextPage, primaryCharacterId || undefined)
 
       collected.push(...result.items)
       hasNext = result.pagination.hasNext
-      nextPage = result.pagination.page + 1
+      nextPage += 1
     }
 
     return collected.filter(matchesSelectedCharacters)
@@ -164,23 +181,7 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
         return
       }
 
-      const result = normalizeUserLineupListResult(
-        await getCompendiumsLineups(
-          sanitizeQuery({
-            compendiumId: params.compendiumId,
-            locale: params.locale.value,
-            keyword: keyword.value.trim() || undefined,
-            characterId: selectedCharacterIds.value[0] || undefined,
-            type: selectedType.value || undefined,
-            status: selectedStatus.value || undefined,
-            sortBy: 'updatedAt',
-            sortOrder: 'desc',
-            page: nextPage,
-            pageSize,
-          }) as any,
-          buildAnonymousRequestConfig(),
-        ),
-      )
+      const result = await fetchPage(nextPage, selectedCharacterIds.value[0] || undefined)
 
       allMatchedLineups.value = []
       pagination.value = result.pagination
