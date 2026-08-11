@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-11 [tools/compendium-swc] Phase A：准备阵容社区互动条、全部/我创建的/我的收藏筛选、阵容选择页与关系编辑器；新增 lineup-picker 路由和隔离回跳上下文，收藏、scope、用户侧关系提交及创建后自动选中保留 BACKEND-CONTRACT-PENDING（Codex）
+
 - 2026-08-11 [tools/compendium-swc] 修复人物选择页滚动容器高度与固定底栏遮挡导致的触底分页不稳定，增加触底阈值并预留底部滚动空间（Codex）
 
 - 2026-08-11 [tools/compendium-swc] 阵容克制页星级图标改为头像上方独立占位，新增可选位置参数并保持其他阵容组件默认叠加样式不变（Codex）

@@ -37,6 +37,23 @@
             </view>
           </view>
 
+          <view class="filter-group">
+            <text class="filter-label">范围</text>
+            <view class="chip-row">
+              <text
+                v-for="option in LINEUP_SCOPE_OPTIONS"
+                :key="option.value"
+                class="chip"
+                :class="{ active: selectedScope === option.value }"
+                @click="selectScope(option.value)">
+                {{ option.label }}
+              </text>
+            </view>
+            <text v-if="selectedScope !== 'all'" class="filter-helper">
+              当前范围先按已加载阵容本地筛选，后端 scope 契约接入后将切换为服务端查询。
+            </text>
+          </view>
+
           <view v-if="isAdmin" class="filter-group">
             <text class="filter-label">状态</text>
             <view class="chip-row">
@@ -87,17 +104,17 @@
 
         <view v-else class="content">
           <view class="summary-row">
-            <text class="summary-text">共 {{ pagination.total }} 条阵容</text>
+            <text class="summary-text">共 {{ selectedScope === 'all' ? pagination.total : displayLineups.length }} 条阵容</text>
             <text class="summary-text">{{
               isAdmin
-                ? `当前 ${selectedTypeLabel} / ${selectedStatusLabel} / ${selectedCharacterLabel}`
-                : `当前 ${selectedTypeLabel} / ${selectedCharacterLabel}`
+                ? `当前 ${selectedScopeLabel} / ${selectedTypeLabel} / ${selectedStatusLabel} / ${selectedCharacterLabel}`
+                : `当前 ${selectedScopeLabel} / ${selectedTypeLabel} / ${selectedCharacterLabel}`
             }}</text>
           </view>
 
-          <StateBlock v-if="!lineups.length" class="empty-block" text="暂无符合条件的阵容" />
+          <StateBlock v-if="!displayLineups.length" class="empty-block" :text="emptyScopeText" />
 
-          <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
+          <view v-for="lineup in displayLineups" :key="lineup.id" class="lineup-card">
             <view class="lineup-ribbons">
               <text class="type-badge" :class="getLineupTypeToneClass(lineup.type)">{{ getLineupTypeLabel(lineup.type) }}</text>
               <text v-if="isAdmin" class="status-badge" :class="lineup.status">{{ getLineupStatusLabel(lineup.status) }}</text>
@@ -137,19 +154,26 @@
               empty-text="暂无成员" />
 
             <view class="lineup-footer">
-              <view class="reaction-row">
-                <view class="reaction-btn" :class="{ active: lineup.myReaction === 1 }" @click="handleReaction(lineup, 1)">
-                  <text>👍 {{ lineup.likeCount }}</text>
-                </view>
-                <view class="reaction-btn" :class="{ active: lineup.myReaction === -1 }" @click="handleReaction(lineup, -1)">
-                  <text>👎 {{ lineup.dislikeCount }}</text>
-                </view>
-              </view>
+              <LineupInteractionBar
+                :like-count="lineup.likeCount"
+                :dislike-count="lineup.dislikeCount"
+                :score="lineup.score"
+                :my-reaction="lineup.myReaction"
+                :is-favorite="isLineupFavorite(lineup.id)"
+                :disabled="reactingId === lineup.id"
+                @like="handleLike(lineup)"
+                @dislike="handleDislike(lineup)"
+                @favorite="handleFavorite(lineup)" />
 
-              <view v-if="isAdmin" class="card-actions">
+              <view v-if="isAdmin || canEditLineup(lineup)" class="card-actions">
                 <button class="card-btn primary" size="mini" @click="goEdit(lineup.id)">编辑</button>
-                <button class="card-btn" size="mini" @click="goRelations(lineup.id)">映射</button>
-                <button class="card-btn danger" size="mini" :loading="deletingId === lineup.id" @click="confirmDelete(lineup.id)">
+                <button v-if="isAdmin" class="card-btn" size="mini" @click="goRelations(lineup.id)">映射</button>
+                <button
+                  v-if="isAdmin"
+                  class="card-btn danger"
+                  size="mini"
+                  :loading="deletingId === lineup.id"
+                  @click="confirmDelete(lineup.id)">
                   删除
                 </button>
               </view>
@@ -180,6 +204,7 @@
   import StateBlock from './components/state-block.vue'
   import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
   import SwcLineup from './components/swc-lineup.vue'
+  import LineupInteractionBar from './components/lineup-interaction-bar.vue'
   import {
     ALL_VALUE,
     getLineupTypeToneClass,
@@ -191,7 +216,7 @@
   import { useAdminLineupList } from './composables/use-admin-lineup-list'
   import { toSwcCharacterView } from './utils'
   import { buildSwcLineupsShare } from './share'
-  import { ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
+  import { canManageLineup, ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
   import { getStorageSync, getToken, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { getAnonymousId } from '@/utils/anonymous-id'
   import {
@@ -207,6 +232,13 @@
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineups:character-picker:result'
   const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
   const LINEUP_COUNTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
+  const FAVORITE_LINEUPS_KEY = 'compendium:swc:lineups:favorite-ids'
+  const LINEUP_SCOPE_OPTIONS = [
+    { label: '全部', value: 'all' },
+    { label: '我创建的', value: 'mine' },
+    { label: '我的收藏', value: 'favorites' },
+  ] as const
+  type LineupScope = (typeof LINEUP_SCOPE_OPTIONS)[number]['value']
   const selectedLocale = ref(DEFAULT_LOCALE)
   const dynamicLineupTypes = ref<LineupTypeOption[]>([])
   const {
@@ -238,7 +270,21 @@
   const reactingId = ref('')
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
+  const selectedScope = ref<LineupScope>('all')
+  const favoriteLineupIds = ref<string[]>([])
   const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
+  const canEditLineup = (lineup: UserLineupSummary): boolean => isAdmin.value || canManageLineup(lineup)
+  const displayLineups = computed(() => {
+    if (selectedScope.value === 'mine') return lineups.value.filter(lineup => canEditLineup(lineup))
+    if (selectedScope.value === 'favorites') return lineups.value.filter(lineup => favoriteLineupIds.value.includes(lineup.id))
+    return lineups.value
+  })
+  const emptyScopeText = computed(() => {
+    if (selectedScope.value === 'mine') return '暂无自己创建的阵容'
+    if (selectedScope.value === 'favorites') return '暂无收藏阵容'
+    return '暂无符合条件的阵容'
+  })
+  const selectedScopeLabel = computed(() => LINEUP_SCOPE_OPTIONS.find(option => option.value === selectedScope.value)?.label || '全部')
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
 
@@ -309,7 +355,8 @@
   }
 
   const goEdit = (lineupId: string) => {
-    if (!isAdmin.value) return
+    const lineup = lineups.value.find(item => item.id === lineupId)
+    if (!lineup || !canEditLineup(lineup)) return
     if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
     uni.navigateTo({
       url: `/subPackages/tools/compendium/swc/lineup-edit?lineupId=${encodeURIComponent(lineupId)}&compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}&locale=${encodeURIComponent(selectedLocale.value)}`,
@@ -417,6 +464,33 @@
     }
   }
 
+  const handleLike = (lineup: UserLineupSummary) => {
+    void handleReaction(lineup, 1)
+  }
+
+  const handleDislike = (lineup: UserLineupSummary) => {
+    void handleReaction(lineup, -1)
+  }
+
+  const isLineupFavorite = (lineupId: string): boolean => favoriteLineupIds.value.includes(lineupId)
+
+  const handleFavorite = (lineup: UserLineupSummary) => {
+    // BACKEND-CONTRACT-PENDING: 收藏接口与 scope 查询参数等待后端完成并重新生成 Apifox 后接入。
+    const ids = new Set(favoriteLineupIds.value)
+    if (ids.has(lineup.id)) {
+      ids.delete(lineup.id)
+    } else {
+      ids.add(lineup.id)
+    }
+    favoriteLineupIds.value = [...ids]
+    setStorageSync(FAVORITE_LINEUPS_KEY, favoriteLineupIds.value)
+  }
+
+  const selectScope = (scope: LineupScope) => {
+    // BACKEND-CONTRACT-PENDING: 当前仅切换本地展示范围，暂不向现有 Query 类型写入 scope。
+    selectedScope.value = scope
+  }
+
   onShow(() => {
     reportToolVisit('compendium-lineups')
 
@@ -430,6 +504,11 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    const storedFavorites = getStorageSync(FAVORITE_LINEUPS_KEY)
+    if (Array.isArray(storedFavorites)) favoriteLineupIds.value = storedFavorites.filter((item): item is string => typeof item === 'string')
+    if (options.scope === 'mine' || options.scope === 'favorites' || options.scope === 'all') {
+      selectedScope.value = options.scope
+    }
     applyRouteQuery(options)
 
     uni.setNavigationBarTitle({ title: '魔灵召唤阵容' })

@@ -12,6 +12,23 @@
         </view>
         <text class="mode-hint">{{ modeHint }}</text>
 
+        <view class="scope-filter">
+          <text class="filter-label">范围</text>
+          <view class="scope-chip-row">
+            <text
+              v-for="option in LINEUP_SCOPE_OPTIONS"
+              :key="option.value"
+              class="scope-chip"
+              :class="{ active: selectedScope === option.value }"
+              @click="selectScope(option.value)">
+              {{ option.label }}
+            </text>
+          </view>
+          <text v-if="selectedScope !== 'all'" class="scope-helper">
+            当前范围先按已加载结果本地筛选，后端 scope 契约接入后将切换为服务端查询。
+          </text>
+        </view>
+
         <view class="filter-head">
           <text class="filter-label">魔灵筛选</text>
           <text v-if="selectedCharacters.length" class="filter-count">已选 {{ selectedCharacters.length }}</text>
@@ -33,7 +50,20 @@
             查询
           </button>
         </view>
+
+        <button class="relation-entry-btn" size="mini" @click="openRelationEditor()">+ 新增克制</button>
       </view>
+
+      <LineupRelationEditor
+        v-if="relationEditorVisible"
+        :defense="relationDraft.defense"
+        :offense="relationDraft.offense"
+        :description="relationDraft.description"
+        @update:description="relationDraft.description = $event"
+        @choose-defense="openRelationPicker('defense')"
+        @choose-offense="openRelationPicker('offense')"
+        @cancel="closeRelationEditor"
+        @save="saveRelationDraft" />
 
       <StateBlock v-if="loading && !results.length" class="state-block" text="查询克制关系中..." />
 
@@ -43,17 +73,22 @@
 
       <StateBlock v-else-if="emptyReason === 'no_lineups'" class="state-block" text="暂未找到包含所选魔灵的阵容" />
 
+      <StateBlock v-else-if="results.length && !filteredResults.length" class="state-block" text="当前范围暂无克制阵容" />
+
       <view v-else class="result-list">
         <view v-if="relationMode" class="result-meta">
           <text class="result-meta-text">{{ resultMetaText }}</text>
-          <text class="result-meta-count">共 {{ pagination.total || results.length }} 组</text>
+          <text class="result-meta-count">
+            共 {{ selectedScope === 'all' ? pagination.total || results.length : filteredResults.length }} 组
+          </text>
         </view>
 
-        <view v-for="group in results" :key="group.lineup.id" class="group-card">
+        <view v-for="group in filteredResults" :key="group.lineup.id" class="group-card">
           <view class="group-head">
             <text class="group-title">{{ primaryLabel }}</text>
             <text v-if="group.lineup.name" class="group-name">{{ group.lineup.name }}</text>
             <text class="group-type">{{ getLineupTypeLabel(group.lineup.type) }}</text>
+            <button class="relation-inline-btn" size="mini" @click="openRelationEditor(group)">补充克制</button>
           </view>
 
           <SwcLineup
@@ -68,6 +103,18 @@
             :show-element="true"
             :show-member-type="true"
             empty-text="暂无成员" />
+
+          <LineupInteractionBar
+            class="group-interaction"
+            :like-count="group.lineup.likeCount"
+            :dislike-count="group.lineup.dislikeCount"
+            :score="group.lineup.score"
+            :my-reaction="group.lineup.myReaction"
+            :is-favorite="isLineupFavorite(group.lineup.id)"
+            :disabled="reactingId === group.lineup.id"
+            @like="handleLike(group.lineup)"
+            @dislike="handleDislike(group.lineup)"
+            @favorite="handleFavorite(group.lineup)" />
 
           <view class="related-section">
             <view class="related-head">
@@ -98,21 +145,16 @@
                   :show-member-type="true"
                   empty-text="暂无成员" />
 
-                <view class="reaction-row">
-                  <view
-                    class="reaction-btn"
-                    :class="{ active: item.lineup.myReaction === 1, disabled: reactingId === item.lineup.id }"
-                    @click="handleReaction(item.lineup, 1)">
-                    <text>👍 {{ item.lineup.likeCount }}</text>
-                  </view>
-                  <view
-                    class="reaction-btn"
-                    :class="{ active: item.lineup.myReaction === -1, disabled: reactingId === item.lineup.id }"
-                    @click="handleReaction(item.lineup, -1)">
-                    <text>👎 {{ item.lineup.dislikeCount }}</text>
-                  </view>
-                  <text class="reaction-score">热度 {{ item.lineup.score }}</text>
-                </view>
+                <LineupInteractionBar
+                  :like-count="item.lineup.likeCount"
+                  :dislike-count="item.lineup.dislikeCount"
+                  :score="item.lineup.score"
+                  :my-reaction="item.lineup.myReaction"
+                  :is-favorite="isLineupFavorite(item.lineup.id)"
+                  :disabled="reactingId === item.lineup.id"
+                  @like="handleLike(item.lineup)"
+                  @dislike="handleDislike(item.lineup)"
+                  @favorite="handleFavorite(item.lineup)" />
               </view>
             </view>
           </view>
@@ -132,11 +174,14 @@
   import StateBlock from './components/state-block.vue'
   import SwcLineup from './components/swc-lineup.vue'
   import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
+  import LineupInteractionBar from './components/lineup-interaction-bar.vue'
+  import LineupRelationEditor from './components/lineup-relation-editor.vue'
   import { getLineupTypeLabel } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
   import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
   import { buildSwcLineupCounterShare } from './share'
-  import type { CharacterOption, LineupCharacterPreview } from './lineup-types'
+  import type { CharacterOption, LineupCharacterPreview, LineupOption, LineupRelationGroup } from './lineup-types'
+  import { ensureLineupFeatureAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -145,8 +190,30 @@
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineup-counter:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
   const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
+  const FAVORITE_LINEUPS_KEY = 'compendium:swc:lineup-counter:favorite-ids'
+  const RELATION_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:relation-picker:result'
+  const RELATION_PICKER_CONTEXT_KEY = 'compendium:swc:lineup-counter:relation-picker:context'
+
+  type RelationSide = 'defense' | 'offense'
+
+  interface RelationDraft {
+    defense: LineupOption | null
+    offense: LineupOption | null
+    description: string
+  }
 
   const selectedLocale = ref(DEFAULT_LOCALE)
+  const favoriteLineupIds = ref<string[]>([])
+  const relationEditorVisible = ref(false)
+  const relationPickerSide = ref<RelationSide>('defense')
+  const relationDraft = ref<RelationDraft>({ defense: null, offense: null, description: '' })
+  const LINEUP_SCOPE_OPTIONS = [
+    { label: '全部', value: 'all' },
+    { label: '我创建的', value: 'mine' },
+    { label: '我的收藏', value: 'favorites' },
+  ] as const
+  type LineupScope = (typeof LINEUP_SCOPE_OPTIONS)[number]['value']
+  const selectedScope = ref<LineupScope>('all')
 
   const {
     selectedMode,
@@ -178,6 +245,22 @@
 
   const selectedCharacterViews = computed(() => selectedCharacters.value.map(item => toSwcCharacterView(item)))
 
+  const filteredResults = computed(() => {
+    if (selectedScope.value === 'mine') return results.value.filter(group => group.lineup.canEdit)
+    if (selectedScope.value === 'favorites') {
+      return results.value.filter(group => {
+        if (favoriteLineupIds.value.includes(group.lineup.id)) return true
+        return group.relatedLineups.some(item => favoriteLineupIds.value.includes(item.lineup.id))
+      })
+    }
+    return results.value
+  })
+
+  const selectScope = (scope: LineupScope) => {
+    // BACKEND-CONTRACT-PENDING: 当前仅切换本地展示范围，暂不向现有 Query 类型写入 scope。
+    selectedScope.value = scope
+  }
+
   const handleRemoveSelectedCharacter = (character: { characterId: string }) => {
     removeCharacter(character.characterId)
   }
@@ -189,6 +272,99 @@
   })
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
+
+  const isLineupFavorite = (lineupId: string): boolean => favoriteLineupIds.value.includes(lineupId)
+
+  const handleFavorite = (lineup: { id: string }) => {
+    // BACKEND-CONTRACT-PENDING: 收藏接口等待后端契约与 Apifox 类型生成后接入。
+    const ids = new Set(favoriteLineupIds.value)
+    if (ids.has(lineup.id)) ids.delete(lineup.id)
+    else ids.add(lineup.id)
+    favoriteLineupIds.value = [...ids]
+    setStorageSync(FAVORITE_LINEUPS_KEY, favoriteLineupIds.value)
+  }
+
+  const handleLike = (lineup: (typeof results.value)[number]['lineup']) => {
+    void handleReaction(lineup, 1)
+  }
+
+  const handleDislike = (lineup: (typeof results.value)[number]['lineup']) => {
+    void handleReaction(lineup, -1)
+  }
+
+  const toLineupOption = (lineup: (typeof results.value)[number]['lineup']): LineupOption => ({
+    id: lineup.id,
+    name: lineup.name,
+    type: lineup.type,
+    description: lineup.description,
+    status: lineup.status,
+    memberCount: lineup.memberCount,
+    targetLineupsCount: lineup.targetLineupsCount,
+    sourceLineupsCount: lineup.sourceLineupsCount,
+    characters: lineup.characters,
+  })
+
+  const buildRelationCurrentUrl = (): string => {
+    const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
+    if (selectedCharacterIds.value.length) params.push(`characterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}`)
+    return `/subPackages/tools/compendium/swc/lineup-counter?${params.join('&')}`
+  }
+
+  const resetRelationDraft = () => {
+    relationDraft.value = { defense: null, offense: null, description: '' }
+  }
+
+  const openRelationEditor = (group?: LineupRelationGroup) => {
+    if (!ensureLineupFeatureAccess(buildRelationCurrentUrl())) return
+    resetRelationDraft()
+    if (group) {
+      if (selectedMode.value === '占领战防守') relationDraft.value.defense = toLineupOption(group.lineup)
+      else relationDraft.value.offense = toLineupOption(group.lineup)
+    }
+    relationEditorVisible.value = true
+  }
+
+  const closeRelationEditor = () => {
+    relationEditorVisible.value = false
+  }
+
+  const openRelationPicker = (side: RelationSide) => {
+    relationPickerSide.value = side
+    setStorageSync(RELATION_PICKER_CONTEXT_KEY, { side })
+    removeStorageSync(RELATION_PICKER_RESULT_KEY)
+    const selected = relationDraft.value[side]
+    const params = [
+      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+      'mode=relation',
+      `relationSide=${encodeURIComponent(side)}`,
+      `returnKey=${encodeURIComponent(RELATION_PICKER_RESULT_KEY)}`,
+    ]
+    if (selected?.id) params.push(`selectedId=${encodeURIComponent(selected.id)}`)
+    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/lineup-picker?${params.join('&')}` })
+  }
+
+  const saveRelationDraft = () => {
+    if (!relationDraft.value.defense || !relationDraft.value.offense) return
+    // BACKEND-CONTRACT-PENDING: 用户侧关系保存接口与 Body 等待后端完成后接入。
+    relationEditorVisible.value = false
+    uni.showToast({ title: '关系已准备，待后端接口接入后保存', icon: 'none' })
+  }
+
+  const readRelationPickerResult = () => {
+    const result = getStorageSync(RELATION_PICKER_RESULT_KEY)
+    if (!result || typeof result !== 'object') return
+    const record = result as { side?: RelationSide; lineup?: LineupOption; selectedLineup?: LineupOption }
+    const lineup = record.lineup || record.selectedLineup
+    if (!lineup || typeof lineup !== 'object' || !lineup.id) return
+    const context = getStorageSync(RELATION_PICKER_CONTEXT_KEY) as { side?: RelationSide } | null
+    const side = record.side || context?.side || relationPickerSide.value
+    if (side !== 'defense' && side !== 'offense') return
+    relationDraft.value[side] = lineup
+    relationEditorVisible.value = true
+    removeStorageSync(RELATION_PICKER_RESULT_KEY)
+    removeStorageSync(RELATION_PICKER_CONTEXT_KEY)
+  }
 
   const buildShareQuery = () => ({
     compendiumId: COMPENDIUM_CODE,
@@ -217,6 +393,8 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    const storedFavorites = getStorageSync(FAVORITE_LINEUPS_KEY)
+    if (Array.isArray(storedFavorites)) favoriteLineupIds.value = storedFavorites.filter((item): item is string => typeof item === 'string')
     applyRouteQuery(options)
 
     if (options.prefill === '1') {
@@ -234,6 +412,7 @@
 
   onShow(() => {
     reportToolVisit('compendium-lineup-counter')
+    readRelationPickerResult()
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
     if (Array.isArray(pickerResult)) {
@@ -312,12 +491,41 @@
   }
 
   .mode-hint,
-  .helper-text {
+  .helper-text,
+  .scope-helper {
     display: block;
     margin-top: 14rpx;
     color: var(--theme-text-tertiary);
     font-size: 22rpx;
     line-height: 1.5;
+  }
+
+  .scope-filter {
+    margin-top: 18rpx;
+    padding-top: 16rpx;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .scope-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+  }
+
+  .scope-chip {
+    padding: 12rpx 22rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid var(--theme-border);
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    font-weight: 700;
+  }
+
+  .scope-chip.active {
+    border-color: var(--theme-brand);
+    background: var(--theme-brand);
+    color: #fff;
   }
 
   .filter-head,
@@ -358,6 +566,17 @@
   .action-row {
     margin-top: 16rpx;
     justify-content: flex-end;
+  }
+
+  .relation-entry-btn {
+    width: 100%;
+    margin: 18rpx 0 0;
+    border: 1rpx dashed var(--theme-brand);
+    border-radius: 999rpx;
+    background: transparent;
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    font-weight: 700;
   }
 
   .toolbar-btn {
@@ -412,6 +631,14 @@
     flex-wrap: wrap;
   }
 
+  .relation-inline-btn {
+    margin: 0 0 0 auto;
+    border-radius: 999rpx;
+    color: var(--theme-brand);
+    font-size: 20rpx;
+    font-weight: 700;
+  }
+
   .group-name {
     color: var(--theme-text-secondary);
     font-size: 24rpx;
@@ -428,6 +655,10 @@
 
   .group-lineup {
     margin-bottom: 16rpx;
+  }
+
+  .group-interaction {
+    margin: 0 0 16rpx;
   }
 
   .related-section {
