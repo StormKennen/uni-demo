@@ -23,7 +23,7 @@ tmp/
 .env.*.local
 
 # Local Apifox generator credentials (keep shared .vscode files trackable)
-.vscode/autoApiGen.json
+# .vscode/autoApiGen.json
 
 # Archives and generated deployment packages
 *.zip

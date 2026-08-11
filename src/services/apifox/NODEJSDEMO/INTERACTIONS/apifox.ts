@@ -6,6 +6,10 @@ import type {
   deleteInteractionsCommentsCommentIdRes,
   getInteractionsCommentsQuery,
   getInteractionsCommentsRes,
+  getInteractionsMyFavoritesQuery,
+  getInteractionsMyFavoritesRes,
+  getInteractionsMyReactionsQuery,
+  getInteractionsMyReactionsRes,
   getInteractionsSummaryQuery,
   getInteractionsSummaryRes,
   patchCommentsCommentIdModerateBody,
@@ -30,7 +34,7 @@ export const postInteractionsReaction = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postInteractionsReactionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/interactions/reaction', data, _config)
+  return http.post(`/interactions/reaction`, data, _config)
 }
 
 /**
@@ -43,7 +47,7 @@ export const postInteractionsFavorite = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postInteractionsFavoriteRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/interactions/favorite', data, _config)
+  return http.post(`/interactions/favorite`, data, _config)
 }
 
 /**
@@ -56,7 +60,7 @@ export const getInteractionsComments = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getInteractionsCommentsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/interactions/comments', params, _config)
+  return http.get(`/interactions/comments`, params, _config)
 }
 
 /**
@@ -69,7 +73,7 @@ export const postInteractionsComments = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postInteractionsCommentsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/interactions/comments', data, _config)
+  return http.post(`/interactions/comments`, data, _config)
 }
 
 /**
@@ -82,7 +86,7 @@ export const deleteInteractionsCommentsCommentId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteInteractionsCommentsCommentIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/interactions/comments/${commentId}', {}, _config)
+  return http.delete(`/interactions/comments/${commentId}`, {}, _config)
 }
 
 /**
@@ -95,7 +99,7 @@ export const getInteractionsSummary = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getInteractionsSummaryRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/interactions/summary', params, _config)
+  return http.get(`/interactions/summary`, params, _config)
 }
 
 /**
@@ -110,8 +114,34 @@ export const patchCommentsCommentIdModerate = async (
 ): Promise<Expand<patchCommentsCommentIdModerateRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.patch(
-    '/admin/interactions/comments/${commentId}/moderate',
+    `/admin/interactions/comments/${commentId}/moderate`,
     data,
     _config,
   )
+}
+
+/**
+ * @description Interactions/我的收藏列表（按访问者身份反查）
+ * @url GET /interactions/my/favorites
+ * @host https://app.apifox.com/link/project/7048425/apis/api-489256857
+ */
+export const getInteractionsMyFavorites = async (
+  params: Expand<getInteractionsMyFavoritesQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getInteractionsMyFavoritesRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/interactions/my/favorites`, params, _config)
+}
+
+/**
+ * @description Interactions/我点赞/点踩过的列表（按访问者身份反查）
+ * @url GET /interactions/my/reactions
+ * @host https://app.apifox.com/link/project/7048425/apis/api-489256858
+ */
+export const getInteractionsMyReactions = async (
+  params: Expand<getInteractionsMyReactionsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getInteractionsMyReactionsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/interactions/my/reactions`, params, _config)
 }

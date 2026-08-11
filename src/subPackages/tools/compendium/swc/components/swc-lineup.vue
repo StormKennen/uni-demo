@@ -22,6 +22,7 @@
         :show-element="showElement"
         :show-type="showMemberType"
         :show-stars="showStars"
+        :star-position="starPosition"
         :star-layout="starLayout"
         :show-original-stars="showOriginalStars"
         :show-remove="editable"
@@ -43,6 +44,7 @@
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'
+  type StarPosition = 'overlay' | 'above'
 
   const props = withDefaults(
     defineProps<{
@@ -60,6 +62,7 @@
       showFamily?: boolean
       showMemberType?: boolean
       showStars?: boolean
+      starPosition?: StarPosition
       starLayout?: StarLayout
       showOriginalStars?: boolean
       showElement?: boolean
@@ -82,6 +85,7 @@
       showFamily: false,
       showMemberType: false,
       showStars: true,
+      starPosition: 'overlay',
       starLayout: 'flat',
       showOriginalStars: false,
       showElement: true,

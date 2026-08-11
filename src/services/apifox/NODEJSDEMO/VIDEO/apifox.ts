@@ -31,7 +31,7 @@ export const getVideoPlatforms = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoPlatformsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/platforms', {}, _config)
+  return http.get(`/video/platforms`, {}, _config)
 }
 
 /**
@@ -44,7 +44,7 @@ export const postVideoProcess = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postVideoProcessRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/video/process', data, _config)
+  return http.post(`/video/process`, data, _config)
 }
 
 /**
@@ -57,7 +57,7 @@ export const postVideoBatch = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postVideoBatchRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/video/batch', data, _config)
+  return http.post(`/video/batch`, data, _config)
 }
 
 /**
@@ -70,11 +70,11 @@ export const getVideoInfo = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoInfoRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/info', params, _config)
+  return http.get(`/video/info`, params, _config)
 }
 
 /**
- * @description Video/获取服务状态
+ * @description Video/获取视频解析服务状态
  * @url GET /video/status
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075581
  */
@@ -82,7 +82,7 @@ export const getVideoStatus = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoStatusRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/status', {}, _config)
+  return http.get(`/video/status`, {}, _config)
 }
 
 /**
@@ -94,7 +94,7 @@ export const getVideoQueueStatus = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoQueueStatusRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/queue/status', {}, _config)
+  return http.get(`/video/queue/status`, {}, _config)
 }
 
 /**
@@ -107,7 +107,7 @@ export const getVideoTaskTaskId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoTaskTaskIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/task/${taskId}', {}, _config)
+  return http.get(`/video/task/${taskId}`, {}, _config)
 }
 
 /**
@@ -120,7 +120,7 @@ export const deleteVideoTaskTaskId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteVideoTaskTaskIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/video/task/${taskId}', {}, _config)
+  return http.delete(`/video/task/${taskId}`, {}, _config)
 }
 
 /**
@@ -133,7 +133,7 @@ export const postVideoExtractUrl = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postVideoExtractUrlRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/video/extract-url', data, _config)
+  return http.post(`/video/extract-url`, data, _config)
 }
 
 /**
@@ -146,5 +146,5 @@ export const getVideoDownload = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getVideoDownloadRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/video/download', params, _config)
+  return http.get(`/video/download`, params, _config)
 }

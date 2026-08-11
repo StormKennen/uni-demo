@@ -12,6 +12,14 @@
             </view>
           </view>
 
+          <view v-if="!isLoggedIn" class="local-mode-tip">
+            <view class="local-mode-tip__copy">
+              <text class="local-mode-tip__title">当前为游客模式</text>
+              <text class="local-mode-tip__desc">验证后的账号信息仅保存在本设备；登录后可同步账号、查看兑换记录并开启自动兑换。</text>
+            </view>
+            <button class="local-mode-login" @click="goLogin">登录</button>
+          </view>
+
           <!-- 新用户：直接加号 -->
           <view v-if="!validAccounts.length" class="onboarding-panel">
             <text class="onboarding-title">先添加游戏账号</text>
@@ -33,7 +41,7 @@
                 :value="newAccount.accountId"
                 @input="updateNewAccountId" />
               <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
-                {{ addingAccount ? '...' : '添加' }}
+                {{ addingAccount ? '验证中' : '验证并添加' }}
               </view>
             </view>
           </view>
@@ -68,6 +76,9 @@
                     <view class="account-line">
                       <text class="account-name">{{ getAccountDisplayName(account) }}</text>
                       <text class="server-inline">{{ getServerShortLabel(account.server) }}</text>
+                      <text class="status-badge" :class="getStatusBadgeClass(account.status)">
+                        {{ getStatusBadgeText(account.status) }}
+                      </text>
                       <text v-if="isLoggedIn && !account.managed" class="local-badge">本地</text>
                     </view>
                     <text v-if="account.accountIdMasked || account.accountId" class="account-id-sub">
@@ -75,6 +86,13 @@
                     </text>
                   </view>
                   <view class="account-action-buttons">
+                    <view
+                      v-if="account.status !== 'active' || !account.nickname"
+                      class="mini-btn"
+                      :class="{ loading: account.verifying }"
+                      @click.stop="verifyAccount(index)">
+                      {{ account.verifying ? '验证中' : '验证' }}
+                    </view>
                     <view
                       v-if="isLoggedIn && !account.managed"
                       class="mini-btn primary"
@@ -90,7 +108,7 @@
               <view class="add-form compact">
                 <picker
                   class="server-picker add-server-picker"
-                    :range="serverLabels"
+                  :range="serverLabels"
                   :value="getServerIndex(newAccount.server)"
                   @change="changeNewServer($event)">
                   <view class="server-chip editable">
@@ -100,11 +118,11 @@
                 <input
                   class="add-input"
                   type="text"
-                    :placeholder="gameConfig.accountIdPlaceholder"
+                  :placeholder="gameConfig.accountIdPlaceholder"
                   :value="newAccount.accountId"
                   @input="updateNewAccountId" />
                 <view class="add-btn" :class="{ disabled: addingAccount }" @click="addAccount">
-                  {{ addingAccount ? '...' : '添加' }}
+                  {{ addingAccount ? '验证中' : '验证并添加' }}
                 </view>
               </view>
 
@@ -113,7 +131,7 @@
                 <switch
                   class="auto-switch compact"
                   :checked="isLoggedIn && allAutoOn"
-                    color="var(--theme-brand)"
+                  color="var(--theme-brand)"
                   @change="handleAutoSwitchChange" />
               </view>
             </view>
@@ -130,13 +148,8 @@
             </view>
           </view>
 
-          <view class="code-add-row" >
-            <input
-              class="code-input-lg compact"
-              type="text"
-              placeholder="粘贴新券码并添加"
-                            :value="codeInput"
-              @input="updateCodeInput" />
+          <view class="code-add-row">
+            <input class="code-input-lg compact" type="text" placeholder="粘贴新券码并添加" :value="codeInput" @input="updateCodeInput" />
             <view class="add-btn code-add-btn" :class="{ disabled: addingPublicCode || redeeming }" @click="addPublicCode">
               {{ addingPublicCode ? '...' : '添加' }}
             </view>
@@ -259,7 +272,6 @@
           </button>
         </view>
       </view>
-
     </view>
   </PageLayout>
 </template>
@@ -270,31 +282,37 @@
   import { getGameCouponConfig } from './config'
   import type { GameCouponConfig } from './config'
   import {
-    deleteGameCouponsAccounts,
-    getGameCouponsAccounts,
+    deleteGameIdAccountsAccountId,
+    getGameIdAccountsAccountId,
     getGameCouponsGameIdAccounts,
     getGameCouponsGameIdCodes,
     getGameCouponsGameIdProfile,
     getGameCouponsGameIdRedeemRecords,
-    postGameCouponsAccountsAutoRedeem,
-    postGameCouponsAccountsVerify,
+    postAccountsAccountIdAutoRedeem,
+    postAccountsAccountIdVerify,
+    postGameIdAccountsClaimGuest,
     postGameCouponsGameIdAccounts,
     postGameCouponsGameIdRedeem,
     postGameIdCodesManual,
   } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
   import type {
+    getGameCouponsGameIdAccountsResAccounts,
     getGameCouponsGameIdCodesResCodes,
+    getGameCouponsGameIdProfileRes,
     getGameCouponsGameIdRedeemRecordsResResults,
     getGameIdRedeemRecordsSummaryRes,
+    postGameIdAccountsClaimGuestBody,
+    postGameIdAccountsClaimGuestRes,
     postGameCouponsGameIdRedeemBodyAccountsItem,
     postGameCouponsGameIdRedeemResAccountResults,
-  } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
+  } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/interface'
   import { checkLoginStatus } from '@/utils/autoLogin'
   import { reportToolVisit } from '@/utils/tracker'
   import { buildSwcCouponsShare } from '@/subPackages/tools/compendium/swc/share'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
   type AccountStatus = 'active' | 'invalid' | 'pending' | 'disabled'
+  type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
   interface AccountVM {
     /** 托管账号为后端 ObjectId，游客为本地临时 ID */
     id: string
@@ -320,7 +338,14 @@
     compendium_id?: string
   }
 
-  interface UniValueEvent extends Event {
+  type ClaimGuestResponse = postGameIdAccountsClaimGuestRes & {
+    claimed?: number
+    duplicates?: number
+    failed?: number
+    total?: number
+  }
+
+  interface UniValueEvent {
     detail?: {
       value?: unknown
     }
@@ -361,8 +386,8 @@
 
   const isLoggedIn = ref(false)
   const initialized = ref(false)
-  // 登录后自动同步本地账号的并发锁（非响应式）
-  let autoSyncing = false
+  const claimingGuestAccounts = ref(false)
+  let guestClaimPrompted = false
 
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
@@ -462,9 +487,7 @@
     const codeCount = Math.max(selectedCodes.value.length, codeInput.value.trim() ? 1 : 0)
     // 若有输入且未在已选列表中，总数按合并后估算
     const input = codeInput.value.trim().toUpperCase()
-    const mergedCount =
-      selectedCodes.value.length +
-      (input && !selectedCodes.value.some(item => getCodeKey(item) === input) ? 1 : 0)
+    const mergedCount = selectedCodes.value.length + (input && !selectedCodes.value.some(item => getCodeKey(item) === input) ? 1 : 0)
     if (!mergedCount) return '请选择或添加券码'
     return `${selectedAccounts.value.length} 个账号 · ${mergedCount} 个券码`
   })
@@ -515,6 +538,8 @@
   function getStatusBadgeText(status?: string) {
     if (status === 'active') return '已校验'
     if (status === 'invalid') return '无效'
+    if (status === 'pending') return '待验证'
+    if (status === 'disabled') return '已停用'
     return '未校验'
   }
 
@@ -621,18 +646,17 @@
     uni.showToast({ title, icon: 'none' })
   }
 
-  function getEventValue(event: Event) {
-    return String((event as UniValueEvent).detail?.value || '')
+  function getEventValue(event: UniValueEvent) {
+    return String(event.detail?.value || '')
   }
 
-  function updateNewAccountId(event: Event) {
+  function updateNewAccountId(event: UniValueEvent) {
     newAccount.value.accountId = getEventValue(event).trim()
   }
 
-  function updateCodeInput(event: Event) {
+  function updateCodeInput(event: UniValueEvent) {
     codeInput.value = getEventValue(event).toUpperCase()
   }
-
 
   /* ----------------------------- 登录跳转 ----------------------------- */
 
@@ -655,7 +679,6 @@
     uni.navigateTo({ url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}` })
   }
 
-
   /* ----------------------------- 本地账号缓存 ----------------------------- */
 
   function saveLocalAccounts() {
@@ -663,11 +686,46 @@
     try {
       uni.setStorageSync(
         getStorageKey(),
-        accounts.value.map(item => ({ id: item.id, server: item.server, accountId: item.accountId, nickname: item.nickname })),
+        accounts.value
+          .filter(item => !item.managed)
+          .map(item => ({
+            id: item.id,
+            server: item.server,
+            accountId: item.accountId,
+            nickname: item.nickname,
+            status: item.status,
+          })),
       )
     } catch {
       /* 缓存失败不阻断 */
     }
+  }
+
+  function persistLocalAccount(account: AccountVM) {
+    if (account.managed) return
+    try {
+      const stored = uni.getStorageSync(getStorageKey())
+      const list = Array.isArray(stored) ? stored : []
+      const snapshot = {
+        id: account.id,
+        server: account.server,
+        accountId: account.accountId,
+        nickname: account.nickname,
+        status: account.status,
+      }
+      const hasStoredAccount = list.some(item => item && item.id === account.id)
+      uni.setStorageSync(
+        getStorageKey(),
+        hasStoredAccount ? list.map(item => (item && item.id === account.id ? snapshot : item)) : [...list, snapshot],
+      )
+    } catch {
+      /* 单个本地账号缓存失败不阻断 */
+    }
+  }
+
+  function normalizeStoredAccountStatus(status: unknown): AccountStatus | undefined {
+    if (status === 'active' || status === 'invalid' || status === 'pending' || status === 'disabled') return status
+    return undefined
   }
 
   /** 读取并解析本地缓存账号为 VM（managed=false） */
@@ -683,6 +741,7 @@
           server: gameConfig.value.servers.some(s => s.value === item.server) ? item.server : getDefaultServer(),
           accountId: typeof item.accountId === 'string' ? item.accountId : '',
           nickname: typeof item.nickname === 'string' ? item.nickname : undefined,
+          status: normalizeStoredAccountStatus(item.status),
         }))
     } catch {
       return []
@@ -710,28 +769,35 @@
 
   /* ----------------------------- 托管账号 ----------------------------- */
 
-  async function loadManagedAccounts() {
+  async function loadManagedAccounts(): Promise<AccountVM[] | null> {
     try {
       const res = await getGameCouponsGameIdAccounts(gameConfig.value.gameId, {
         compendium_id: gameConfig.value.compendiumId,
       })
-      const managed: AccountVM[] = (res.accounts || []).map(item => ({
-        id: String(item.id || ''),
-        managed: true,
-        server: item.server || getDefaultServer(),
-        accountId: '',
-        accountIdMasked: item.accountIdMasked,
-        accountLabel: item.accountLabel,
-        nickname: item.nickname,
-        status: item.status,
-        autoRedeemEnabled: item.autoRedeemEnabled,
-      }))
-      // 保留登录前的本地缓存账号，展示「本地」标识并支持同步到云端
+      const managed: AccountVM[] = (res.accounts || []).map(rawItem => {
+        const item = rawItem as ManagedAccountApiItem
+        return {
+          id: String(item.id || ''),
+          managed: true,
+          server: item.server || getDefaultServer(),
+          accountId: typeof item.accountId === 'string' ? item.accountId.trim() : '',
+          accountIdMasked: item.accountIdMasked,
+          accountLabel: item.accountLabel,
+          nickname: item.nickname,
+          status: item.status,
+          autoRedeemEnabled: item.autoRedeemEnabled,
+        }
+      })
+      // 保留登录前的本地缓存；与托管账号重复时只隐藏本地副本，退出登录后仍可继续使用。
       const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
-      accounts.value = [...managed, ...locals]
+      const managedKeys = new Set(managed.flatMap(getAccountMatchKeys))
+      const visibleLocals = locals.filter(local => !getAccountMatchKeys(local).some(key => managedKeys.has(key)))
+      accounts.value = [...managed, ...visibleLocals]
       selectDefaultAccounts()
+      return managed
     } catch (err) {
       toast(errMsg(err, '获取托管账号失败'))
+      return null
     }
   }
 
@@ -759,54 +825,101 @@
     }
   }
 
-  /**
-   * 登录后自动把本机缓存的全部账号上传到云端。
-   * 去重：1) 本地内部按 server + accountId 去重；
-   *      2) 后端 createAccount 以 account_id 指纹做 upsert，重复上传不会产生重复账号。
-   * 上传成功的从本机缓存移除；失败的保留，下次进入或手动「同步云端」时重试。
-   */
-  async function autoSyncLocalAccounts(): Promise<number> {
-    if (autoSyncing) return 0
-    autoSyncing = true
-    try {
-      const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
-      const seen = new Set<string>()
-      const unique: AccountVM[] = []
-      locals.forEach(item => {
-        const key = `${item.server}::${item.accountId.trim().toLowerCase()}`
-        if (seen.has(key)) {
-          dropLocalAccount(item.id) // 本地重复项直接清掉
-          return
-        }
-        seen.add(key)
-        unique.push(item)
+  function maskAccountId(accountId: string): string {
+    const value = accountId.trim()
+    if (!value) return ''
+    if (value.length <= 4) return `${value[0] || ''}***`
+    return `${value.slice(0, 3)}****${value.slice(-3)}`
+  }
+
+  function getAccountMatchKeys(account: AccountVM): string[] {
+    const server = account.server.trim().toLowerCase()
+    const keys: string[] = []
+    const accountId = account.accountId.trim().toLowerCase()
+    const masked = account.accountIdMasked?.trim()
+    if (accountId) keys.push(`${server}:plain:${accountId}`, `${server}:masked:${maskAccountId(accountId)}`)
+    if (masked) keys.push(`${server}:masked:${masked}`)
+    return keys.filter(Boolean)
+  }
+
+  function findUnclaimedGuestAccounts(managed: AccountVM[]): AccountVM[] {
+    const managedKeys = new Set(managed.flatMap(getAccountMatchKeys))
+    return parseStoredAccounts()
+      .filter(account => account.accountId.trim().length > 0)
+      .filter(account => !getAccountMatchKeys(account).some(key => managedKeys.has(key)))
+  }
+
+  function confirmGuestAccountClaim(accountsToClaim: AccountVM[]): Promise<boolean> {
+    const preview = accountsToClaim
+      .slice(0, 3)
+      .map(account => `${getServerShortLabel(account.server)} ${account.accountId}`)
+      .join('、')
+    const suffix = accountsToClaim.length > 3 ? ` 等 ${accountsToClaim.length} 个账号` : ''
+
+    return new Promise(resolve => {
+      uni.showModal({
+        title: '检测到游客账号',
+        content: `发现未同步到当前登录账号的游客数据：${preview}${suffix}，是否同步？`,
+        confirmText: '同步',
+        cancelText: '暂不',
+        success: result => resolve(result.confirm),
+        fail: () => resolve(false),
       })
-      let synced = 0
-      for (const item of unique) {
-        try {
-          await postGameCouponsGameIdAccounts(
-            gameConfig.value.gameId,
-            { compendium_id: gameConfig.value.compendiumId },
-            { account_id: item.accountId.trim(), server: item.server as ServerValue },
-          )
-          dropLocalAccount(item.id)
-          synced += 1
-        } catch {
-          /* 单个失败保留本地，不阻断其余账号 */
-        }
+    })
+  }
+
+  async function claimGuestAccounts(accountsToClaim: AccountVM[]) {
+    if (!accountsToClaim.length || claimingGuestAccounts.value) return
+    claimingGuestAccounts.value = true
+    try {
+      const body: postGameIdAccountsClaimGuestBody = {
+        accounts: accountsToClaim.map(account => ({
+          accountId: account.accountId.trim(),
+          accountLabel: account.accountLabel || '',
+          server: account.server as ServerValue,
+        })),
       }
-      return synced
+      const response = (await postGameIdAccountsClaimGuest(
+        gameConfig.value.gameId,
+        { compendium_id: gameConfig.value.compendiumId },
+        body,
+      )) as ClaimGuestResponse
+
+      await loadManagedAccounts()
+      const claimed = Number(response.claimed) || 0
+      const duplicates = Number(response.duplicates) || 0
+      const failed = Number(response.failed) || 0
+      if (claimed > 0) {
+        toast(`已同步 ${claimed} 个游客账号${failed ? `，${failed} 个失败` : ''}`)
+      } else if (duplicates > 0 && !failed) {
+        toast('游客账号已存在，无需重复同步')
+      } else {
+        toast(failed ? `同步失败 ${failed} 个账号` : '没有可同步的游客账号')
+      }
+    } catch (err) {
+      toast(errMsg(err, '游客账号同步失败'))
     } finally {
-      autoSyncing = false
+      claimingGuestAccounts.value = false
     }
   }
 
-  /** 进入登录态：先自动同步本地账号，再加载云端账号与统计 */
+  async function maybeClaimGuestAccounts(managed: AccountVM[]) {
+    if (guestClaimPrompted || !isLoggedIn.value || claimingGuestAccounts.value) return
+    const accountsToClaim = findUnclaimedGuestAccounts(managed)
+    if (!accountsToClaim.length) return
+
+    guestClaimPrompted = true
+    if (await confirmGuestAccountClaim(accountsToClaim)) {
+      await claimGuestAccounts(accountsToClaim)
+    }
+  }
+
+  /** 进入登录态：加载云端账号，确认后批量认领游客账号，再加载统计 */
   async function enterLoggedInMode() {
-    const synced = await autoSyncLocalAccounts()
-    await loadManagedAccounts()
+    const managed = await loadManagedAccounts()
+    if (!managed) return
+    await maybeClaimGuestAccounts(managed)
     loadRecords(true)
-    if (synced > 0) toast(`已自动同步 ${synced} 个本地账号到云端`)
   }
 
   function changeNewServer(event: { detail: { value: number | string } }) {
@@ -814,7 +927,33 @@
     newAccount.value.server = gameConfig.value.servers[idx]?.value || getDefaultServer()
   }
 
+  function hasAccount(server: string, accountId: string) {
+    const normalizedServer = server.trim().toLowerCase()
+    const normalizedAccountId = accountId.trim().toLowerCase()
+    const maskedAccountId = maskAccountId(accountId)
+    return accounts.value.some(account => {
+      if (account.server.trim().toLowerCase() !== normalizedServer) return false
+      return account.accountId.trim().toLowerCase() === normalizedAccountId || account.accountIdMasked?.trim() === maskedAccountId
+    })
+  }
+
+  function confirmAccountBinding(profile: getGameCouponsGameIdProfileRes, accountId: string, server: string): Promise<boolean> {
+    const nickname = profile.nickname?.trim() || ''
+    const serverLabel = profile.serverName?.trim() || getServerShortLabel(profile.server || server)
+    return new Promise(resolve => {
+      uni.showModal({
+        title: '确认游戏账号',
+        content: `游戏昵称：${nickname}\n区服：${serverLabel}\n${gameConfig.value.accountIdLabel}：${accountId}`,
+        confirmText: '确认绑定',
+        cancelText: '返回修改',
+        success: result => resolve(result.confirm),
+        fail: () => resolve(false),
+      })
+    })
+  }
+
   async function addAccount() {
+    if (addingAccount.value) return
     if (accounts.value.length >= maxAccounts) {
       toast(`最多保存 ${maxAccounts} 个账号`)
       return
@@ -826,31 +965,45 @@
     }
     const server = newAccount.value.server || getDefaultServer()
 
-    if (isLoggedIn.value) {
-      addingAccount.value = true
-      try {
+    if (hasAccount(server, accountId)) {
+      toast('该游戏账号已添加')
+      return
+    }
+
+    addingAccount.value = true
+    try {
+      const profile = await getGameCouponsGameIdProfile(gameConfig.value.gameId, {
+        account_id: accountId,
+        server,
+        compendium_id: gameConfig.value.compendiumId,
+      })
+      const nickname = profile.nickname?.trim() || ''
+      if (!profile.available || !nickname) {
+        toast(translateCouponErrorMessage(profile.message || '未获取到游戏昵称，请检查账号和区服'))
+        return
+      }
+      if (!(await confirmAccountBinding(profile, accountId, server))) return
+
+      if (isLoggedIn.value) {
         await postGameCouponsGameIdAccounts(
           gameConfig.value.gameId,
           { compendium_id: gameConfig.value.compendiumId },
           { account_id: accountId, server: server as ServerValue },
         )
         await loadManagedAccounts()
-        newAccount.value.accountId = ''
-      } catch (err) {
-        toast(errMsg(err, '添加账号失败'))
-      } finally {
-        addingAccount.value = false
+      } else {
+        const account: AccountVM = { id: localId(), managed: false, server, accountId, nickname, status: 'active' }
+        accounts.value.push(account)
+        selectedAccountIds.value = Array.from(new Set([...selectedAccountIds.value, account.id]))
+        saveLocalAccounts()
       }
-      return
+      newAccount.value.accountId = ''
+      toast(`已绑定：${nickname}`)
+    } catch (err) {
+      toast(errMsg(err, '账号验证或绑定失败'))
+    } finally {
+      addingAccount.value = false
     }
-
-    // 游客：本地保存账号，可直接参与兑换
-    accounts.value.push({ id: localId(), managed: false, server, accountId })
-    const createdId = accounts.value[accounts.value.length - 1].id
-    selectedAccountIds.value = Array.from(new Set([...selectedAccountIds.value, createdId]))
-    newAccount.value.accountId = ''
-    saveLocalAccounts()
-    toast('已添加本地账号')
   }
 
   function removeAccount(index: number) {
@@ -874,7 +1027,7 @@
 
     if (account.managed) {
       try {
-        await deleteGameCouponsAccounts({ gameId: gameConfig.value.gameId, accountId: account.id })
+        await deleteGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
         accounts.value.splice(index, 1)
         selectedAccountIds.value = selectedAccountIds.value.filter(id => id !== account.id)
         normalizeAccountSelections()
@@ -901,7 +1054,7 @@
     const account = accounts.value[index]
     if (!account || !account.managed) return
     try {
-      const detail = await getGameCouponsAccounts({ gameId: gameConfig.value.gameId, accountId: account.id })
+      const detail = await getGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
       account.server = detail.server || account.server
       account.accountIdMasked = detail.accountIdMasked
       account.nickname = detail.nickname
@@ -918,7 +1071,7 @@
     account.verifying = true
     try {
       if (account.managed) {
-        await postGameCouponsAccountsVerify({ gameId: gameConfig.value.gameId, accountId: account.id })
+        await postAccountsAccountIdVerify({ gameId: gameConfig.value.gameId, accountId: account.id })
         await refreshManagedAccount(index)
         toast(account.nickname ? `已验证：${account.nickname}` : '验证完成')
       } else {
@@ -931,14 +1084,20 @@
           server: account.server,
           compendium_id: gameConfig.value.compendiumId,
         })
-        account.nickname = res.nickname
-        account.status = res.available ? 'active' : 'invalid'
-        toast(res.available ? `验证成功：${res.nickname || '有效账号'}` : translateCouponErrorMessage(res.message || '账号无效'))
-        saveLocalAccounts()
+        const nickname = res.nickname?.trim() || ''
+        account.nickname = nickname || undefined
+        account.status = res.available && nickname ? 'active' : 'invalid'
+        toast(
+          res.available && nickname
+            ? `验证成功：${nickname}`
+            : translateCouponErrorMessage(res.message || '未获取到游戏昵称，请检查账号和区服'),
+        )
+        persistLocalAccount(account)
       }
     } catch (err) {
-      account.status = 'invalid'
+      account.status = 'pending'
       toast(errMsg(err, '验证失败'))
+      persistLocalAccount(account)
     } finally {
       account.verifying = false
     }
@@ -954,7 +1113,7 @@
     try {
       await Promise.all(
         managed.map(account =>
-          postGameCouponsAccountsAutoRedeem({ gameId: gameConfig.value.gameId, accountId: account.id }, { enabled: next }),
+          postAccountsAccountIdAutoRedeem({ gameId: gameConfig.value.gameId, accountId: account.id }, { enabled: next }),
         ),
       )
       managed.forEach(account => {
@@ -966,17 +1125,16 @@
     }
   }
 
-  function handleAutoSwitchChange(event: Event) {
+  function handleAutoSwitchChange(event: UniValueEvent) {
     if (!isLoggedIn.value) {
       toast('登录后可开启自动兑换托管')
       return
     }
-    const target = Boolean((event as UniValueEvent).detail?.value)
+    const target = Boolean(event.detail?.value)
     if (target !== allAutoOn.value) {
       toggleAllAuto()
     }
   }
-
 
   /* ----------------------------- 券码 ----------------------------- */
 
@@ -1170,7 +1328,6 @@
     recordsExpanded.value = false
   }
 
-
   function getRecordReward(record: getGameCouponsGameIdRedeemRecordsResResults) {
     if (record.reward) return record.reward
     const couponCode = String(record.couponCode || '').toUpperCase()
@@ -1317,8 +1474,6 @@
     box-sizing: border-box;
   }
 
-
-
   .checkout-card {
     padding: 24rpx;
   }
@@ -1362,6 +1517,61 @@
     font-size: 22rpx;
     color: $text-hint;
     line-height: 1.4;
+  }
+
+  .local-mode-tip {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 16rpx;
+    padding: 12rpx 16rpx;
+    border: 1rpx solid $border;
+    border-radius: 12rpx;
+    font-size: 22rpx;
+    line-height: 1.45;
+    color: $text-secondary;
+    background: $field-bg;
+  }
+
+  .local-mode-tip__copy {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .local-mode-tip__title,
+  .local-mode-tip__desc {
+    display: block;
+  }
+
+  .local-mode-tip__title {
+    color: $text-primary;
+    font-size: 24rpx;
+    font-weight: 600;
+  }
+
+  .local-mode-tip__desc {
+    margin-top: 4rpx;
+    color: $text-secondary;
+    font-size: 22rpx;
+    line-height: 1.45;
+  }
+
+  .local-mode-login {
+    flex: 0 0 112rpx;
+    width: 112rpx;
+    height: 60rpx;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 12rpx;
+    background: $accent;
+    color: #fff;
+    font-size: 24rpx;
+    line-height: 60rpx;
+  }
+
+  .local-mode-login::after {
+    border: 0;
   }
 
   .onboarding-panel {
@@ -1457,7 +1667,6 @@
     font-size: 24rpx;
     color: $text-secondary;
   }
-
 
   .code-add-row {
     display: flex;
@@ -1649,7 +1858,6 @@
     font-size: 22rpx;
     color: $text-hint;
   }
-
 
   /* 卡片 */
   .card {

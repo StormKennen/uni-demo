@@ -82,6 +82,8 @@ export interface getCompendiumsDetailRes {
 export interface getCompendiumsConfigQuery {
   /** 图鉴 ID 或 code */
   compendiumId: string
+  /** 展示语言，例如 zh-CN；只影响 name 字段，不影响 key/valueKey。 */
+  locale?: string
 }
 
 /**
@@ -94,14 +96,25 @@ export interface getCompendiumsConfigRes {
   game?: getCompendiumsConfigResGame
 }
 
+/** getCompendiumsConfigResAttributesTranslations */
+export interface getCompendiumsConfigResAttributesTranslations {
+  locale: string
+  name: string
+  status?: 'draft' | 'published'
+}
+
 /** getCompendiumsConfigResAttributes */
 export interface getCompendiumsConfigResAttributes {
   higherIsBetter?: boolean
   id?: string
+  /** 稳定属性 key，用于筛选和排序，不随 locale 变化。 */
   key?: string
+  /** 按 locale 返回的属性名称。 */
   name?: string
   rankable?: boolean
   sortOrder?: number
+  /** 仅导入请求使用的属性翻译。 */
+  translations?: getCompendiumsConfigResAttributesTranslations[]
   unit?: string
   valueType?: 'number' | 'percent' | 'text'
 }
@@ -111,18 +124,26 @@ export interface getCompendiumsConfigResCategoriesOptionsItem {
   color?: string
   icon?: string
   id?: string
+  /** 稳定分类选项 key，用于筛选，不随 locale 变化。 */
   key?: string
+  /** 按 locale 返回的分类选项名称。 */
   name?: string
   sortOrder?: number
+  /** 仅导入请求使用的分类选项翻译。 */
+  translations?: getCompendiumsConfigResAttributesTranslations[]
 }
 
 /** getCompendiumsConfigResCategories */
 export interface getCompendiumsConfigResCategories {
   id?: string
+  /** 稳定分类定义 key，用于程序逻辑和筛选，不随 locale 变化。 */
   key?: string
+  /** 按 locale 返回的分类定义名称。 */
   name?: string
   options?: getCompendiumsConfigResCategoriesOptionsItem[]
   sortOrder?: number
+  /** 仅导入请求使用的分类定义翻译。 */
+  translations?: getCompendiumsConfigResAttributesTranslations[]
 }
 
 /** getCompendiumsConfigResGame */
@@ -132,214 +153,6 @@ export interface getCompendiumsConfigResGame {
   icon?: string
   id?: string
   name?: string
-  status?: 'enabled' | 'disabled'
-}
-
-/**
- * @description Compendiums/获取人物详情（含技能和排名）--接口请求Query参数
- * @url GET /compendiums/character
- */
-export interface getCompendiumsCharacterQuery {
-  /** 图鉴 ID 或 code */
-  compendiumId: string
-  /** 人物 ID */
-  characterId: string
-  /** 国际化语言参数，例如 en、zh-CN。未提供或未找到翻译时自动回退英文。 */
-  locale?: string
-}
-
-/**
- * @description Compendiums/获取人物详情（含技能和排名）--接口返回值
- * @url GET /compendiums/character
- */
-export type getCompendiumsCharacterRes = string
-
-/**
- * @description Compendiums/获取单个人物的各属性排名--接口请求Query参数
- * @url GET /compendiums/character-rankings
- */
-export interface getCompendiumsCharacterRankingsQuery {
-  /** 图鉴 ID 或 code */
-  compendiumId: string
-  /** 人物 ID */
-  characterId: string
-}
-
-/**
- * @description Compendiums/获取单个人物的各属性排名--接口返回值
- * @url GET /compendiums/character-rankings
- */
-export type getCompendiumsCharacterRankingsRes =
-  getCompendiumsCharacterRankingsResItem[]
-
-/** getCompendiumsCharacterRankingsResItem */
-export interface getCompendiumsCharacterRankingsResItem {
-  /** 属性名称 */
-  attribute?: string
-  /** 展示值 */
-  displayValue?: string
-  /** 属性 key */
-  key?: string
-  /** 排名 */
-  rank?: number
-  /** 总参与排名数 */
-  total?: number
-  /** 单位 */
-  unit?: string
-  /** 属性值 */
-  value?: number
-}
-
-/**
- * @description Compendiums/获取属性排行榜--接口请求Query参数
- * @url GET /compendiums/rankings
- */
-export interface getCompendiumsRankingsQuery {
-  /** 图鉴 ID 或 code */
-  compendiumId: string
-  /** 属性 key（必须为 rankable 属性） */
-  attribute: string
-
-  sortOrder?: string
-
-  page?: number
-
-  pageSize?: number
-}
-
-/**
- * @description Compendiums/获取属性排行榜--接口返回值
- * @url GET /compendiums/rankings
- */
-export type getCompendiumsRankingsRes = getCompendiumsRankingsResItem[]
-
-/** getCompendiumsRankingsResItem */
-export interface getCompendiumsRankingsResItem {
-  avatar?: string
-  avatarOriginal?: string
-  avatarSource?: 'remote' | 'oss'
-  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
-  characterId?: string
-  displayValue?: string
-  name?: string
-  rank?: number
-  total?: number
-  value?: number
-}
-
-/**
- * @description Compendiums/对比多个人物--接口请求Query参数
- * @url GET /compendiums/compare
- */
-export interface getCompendiumsCompareQuery {
-  /** 图鉴 ID 或 code */
-  compendiumId: string
-  /** 逗号分隔的人物 ID 列表 */
-  ids: string
-}
-
-/**
- * @description Compendiums/对比多个人物--接口返回值
- * @url GET /compendiums/compare
- */
-export type getCompendiumsCompareRes = getCompendiumsCompareResItem[]
-
-/** getCompendiumsCompareResItemAttributes */
-export interface getCompendiumsCompareResItemAttributes {
-  displayValue?: string
-  key?: string
-  name?: string
-  rank?: any
-  rankable?: boolean
-  sortOrder?: number
-  total?: any
-  unit?: string
-  value?: string
-  valueType?: 'number' | 'percent' | 'text'
-}
-
-/** getCompendiumsCompareResItemCategories */
-export interface getCompendiumsCompareResItemCategories {
-  color?: string
-  icon?: string
-  key?: string
-  name?: string
-  value?: string
-  valueKey?: string
-}
-
-/** getCompendiumsCompareResItemSkillsCoefficients */
-export interface getCompendiumsCompareResItemSkillsCoefficients {
-  attachment?: string
-  condition?: string
-  description?: string
-  formula?: string
-  id?: string
-  key?: string
-  level?: string
-  name?: string
-  triggerProbability?: any
-  triggerUnit?: string
-  unit?: string
-  value?: number
-}
-
-/** getCompendiumsCompareResItemSkills */
-export interface getCompendiumsCompareResItemSkills {
-  attachment?: string
-  /** 技能业务编码；没有时可仅使用 id。 */
-  code?: string
-  coefficients?: getCompendiumsCompareResItemSkillsCoefficients[]
-  cooldown?: string
-  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
-  cooldownTurns?: any
-  cost?: string
-  /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
-  description?: string
-  /** 命中次数；未明确提供时为 null。 */
-  hitCount?: any
-  /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
-  id?: string
-  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
-  multiplierFormula?: string
-  /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
-  name?: string
-  sortOrder?: number
-  type?: string
-}
-
-/** getCompendiumsCompareResItemSkins */
-export interface getCompendiumsCompareResItemSkins {
-  attachment?: string
-  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
-  description?: string
-  id?: string
-  image?: string
-  isDefault?: boolean
-  name?: string
-  sortOrder?: number
-}
-
-/** getCompendiumsCompareResItem */
-export interface getCompendiumsCompareResItem {
-  aliases?: string[]
-  attributes?: getCompendiumsCompareResItemAttributes[]
-  /** 优先返回镜像后的 OSS/CDN 缩略图；未镜像时回退原始第三方头像地址 */
-  avatar?: string
-  avatarOriginal?: string
-  avatarSource?: 'remote' | 'oss'
-  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
-  categories?: getCompendiumsCompareResItemCategories[]
-  code?: string
-  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
-  description?: string
-  id?: string
-  level?: string
-  /** 按 locale 返回的人物名称；当前语言缺失时自动回退英文。 */
-  name?: string
-  skills?: getCompendiumsCompareResItemSkills[]
-  skins?: getCompendiumsCompareResItemSkins[]
-  sortOrder?: number
   status?: 'enabled' | 'disabled'
 }
 
@@ -411,4 +224,267 @@ export interface getCompendiumsCharactersResPagination {
   /** 总页数 */
   totalPages?: number
   totalResults?: number
+}
+
+/**
+ * @description Compendiums/获取人物详情（含技能和排名）--接口请求Query参数
+ * @url GET /compendiums/character
+ */
+export interface getCompendiumsCharacterQuery {
+  /** 图鉴 ID 或 code */
+  compendiumId: string
+  /** 人物 ID */
+  characterId: string
+  /** 国际化语言参数，例如 en、zh-CN。未提供或未找到翻译时自动回退英文。 */
+  locale?: string
+}
+
+/**
+ * @description Compendiums/获取人物详情（含技能和排名）--接口返回值
+ * @url GET /compendiums/character
+ */
+export type getCompendiumsCharacterRes = string
+
+/**
+ * @description Compendiums/获取单个人物的各属性排名--接口请求Query参数
+ * @url GET /compendiums/character-rankings
+ */
+export interface getCompendiumsCharacterRankingsQuery {
+  /** 图鉴 ID 或 code */
+  compendiumId: string
+  /** 人物 ID */
+  characterId: string
+  /** 展示语言，例如 zh-CN；只影响属性名称，不影响属性 key。 */
+  locale?: string
+}
+
+/**
+ * @description Compendiums/获取单个人物的各属性排名--接口返回值
+ * @url GET /compendiums/character-rankings
+ */
+export type getCompendiumsCharacterRankingsRes =
+  getCompendiumsCharacterRankingsResItem[]
+
+/** getCompendiumsCharacterRankingsResItem */
+export interface getCompendiumsCharacterRankingsResItem {
+  /** 属性名称 */
+  attribute?: string
+  /** 展示值 */
+  displayValue?: string
+  /** 属性 key */
+  key?: string
+  /** 排名 */
+  rank?: number
+  /** 总参与排名数 */
+  total?: number
+  /** 单位 */
+  unit?: string
+  /** 属性值 */
+  value?: number
+}
+
+/**
+ * @description Compendiums/获取属性排行榜--接口请求Query参数
+ * @url GET /compendiums/rankings
+ */
+export interface getCompendiumsRankingsQuery {
+  /** 图鉴 ID 或 code */
+  compendiumId: string
+  /** 属性 key（必须为 rankable 属性） */
+  attribute: string
+  /** 展示语言，例如 zh-CN；只影响人物和属性名称，不影响属性 key。 */
+  locale?: string
+
+  sortOrder?: string
+
+  page?: number
+
+  pageSize?: number
+}
+
+/**
+ * @description Compendiums/获取属性排行榜--接口返回值
+ * @url GET /compendiums/rankings
+ */
+export type getCompendiumsRankingsRes = getCompendiumsRankingsResItem[]
+
+/** getCompendiumsRankingsResItem */
+export interface getCompendiumsRankingsResItem {
+  /** 按 locale 返回的属性名称。 */
+  attribute?: string
+  avatar?: string
+  avatarOriginal?: string
+  avatarSource?: 'remote' | 'oss'
+  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
+  characterId?: string
+  displayValue?: string
+  /** 稳定属性 key。 */
+  key?: string
+  /** 按 locale 返回的人物名称。 */
+  name?: string
+  rank?: number
+  total?: number
+  unit?: string
+  value?: number
+}
+
+/**
+ * @description Compendiums/对比多个人物--接口请求Query参数
+ * @url GET /compendiums/compare
+ */
+export interface getCompendiumsCompareQuery {
+  /** 图鉴 ID 或 code */
+  compendiumId: string
+  /** 逗号分隔的人物 ID 列表 */
+  ids: string
+  /** 展示语言，例如 zh-CN；只影响展示文案，不影响稳定 key。 */
+  locale?: string
+}
+
+/**
+ * @description Compendiums/对比多个人物--接口返回值
+ * @url GET /compendiums/compare
+ */
+export type getCompendiumsCompareRes = getCompendiumsCompareResItem[]
+
+/** getCompendiumsCompareResItemAttributes */
+export interface getCompendiumsCompareResItemAttributes {
+  displayValue?: string
+  key?: string
+  /** 属性展示名称，按 locale 返回；缺失时回退默认名称，再回退 key。 */
+  name?: string
+  rank?: any
+  rankable?: boolean
+  sortOrder?: number
+  total?: any
+  unit?: string
+  value?: string
+  valueType?: 'number' | 'percent' | 'text'
+}
+
+/** getCompendiumsCompareResItemCategories */
+export interface getCompendiumsCompareResItemCategories {
+  color?: string
+  icon?: string
+  /** 稳定分类定义 key，用于程序逻辑和筛选，不随 locale 变化。 */
+  key?: string
+  /** 分类定义展示名称，按 locale 返回；缺失时回退默认名称，再回退 key。 */
+  name?: string
+  /** 分类选项展示名称，按 locale 返回；缺失时回退默认名称，再回退 valueKey。 */
+  value?: string
+  /** 稳定分类选项 key，筛选时应传该字段，不随 locale 变化。 */
+  valueKey?: string
+}
+
+/** getCompendiumsCompareResItemSkillsCoefficients */
+export interface getCompendiumsCompareResItemSkillsCoefficients {
+  attachment?: string
+  condition?: string
+  description?: string
+  formula?: string
+  id?: string
+  key?: string
+  level?: string
+  name?: string
+  triggerProbability?: any
+  triggerUnit?: string
+  unit?: string
+  value?: number
+}
+
+/** getCompendiumsCompareResItemSkillsEffectsItemEffect */
+export interface getCompendiumsCompareResItemSkillsEffectsItemEffect {
+  description?: string
+  /** 效果图标完整 URL */
+  icon?: string
+  iconFilename?: string
+  id?: any
+  isBuff?: boolean
+  name?: string
+  type?: string
+}
+
+/** 技能附带效果列表（来自 SWARFARM effects）。可能为空数组。 */
+export interface getCompendiumsCompareResItemSkillsEffectsItem {
+  all?: boolean
+  aoe?: boolean
+  chance?: any
+  damage?: boolean
+  effect?: getCompendiumsCompareResItemSkillsEffectsItemEffect
+  note?: string
+  onCrit?: boolean
+  onDeath?: boolean
+  quantity?: number
+  random?: boolean
+  selfEffect?: boolean
+  selfHp?: boolean
+  singleTarget?: boolean
+  targetHp?: boolean
+}
+
+/** getCompendiumsCompareResItemSkills */
+export interface getCompendiumsCompareResItemSkills {
+  attachment?: string
+  /** 技能业务编码；没有时可仅使用 id。 */
+  code?: string
+  coefficients?: getCompendiumsCompareResItemSkillsCoefficients[]
+  cooldown?: string
+  /** 从 cooldown 文本中提取的回合数，便于前端直接展示。 */
+  cooldownTurns?: any
+  cost?: string
+  /** 按 locale 返回的技能描述；当前语言缺失时自动回退英文。 */
+  description?: string
+  /** 技能附带效果列表（来自 SWARFARM effects）。可能为空数组。 */
+  effects?: getCompendiumsCompareResItemSkillsEffectsItem[]
+  /** 命中次数；未明确提供时为 null。 */
+  hitCount?: any
+  /** 技能唯一 ID。更新人物或国际化文案时建议原样回传，用于稳定匹配技能记录。 */
+  id?: string
+  /** 队长技能结构化字段（attribute/amount/area/element）。普通技能为 null。服务端不拼装游戏专属图标 URL。 */
+  leaderSkill?: any
+  /** 技能系数字符串，保留完整展示公式，不参与计算。 */
+  multiplierFormula?: string
+  /** 按 locale 返回的技能名称；当前语言缺失时自动回退英文。 */
+  name?: string
+  sortOrder?: number
+  /** 仅导入请求使用的技能翻译。 */
+  translations?: { [key: string]: any }[]
+  type?: string
+}
+
+/** getCompendiumsCompareResItemSkins */
+export interface getCompendiumsCompareResItemSkins {
+  attachment?: string
+  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
+  description?: string
+  id?: string
+  image?: string
+  isDefault?: boolean
+  name?: string
+  sortOrder?: number
+}
+
+/** getCompendiumsCompareResItem */
+export interface getCompendiumsCompareResItem {
+  aliases?: string[]
+  attributes?: getCompendiumsCompareResItemAttributes[]
+  /** 优先返回镜像后的 OSS/CDN 缩略图；未镜像时回退原始第三方头像地址 */
+  avatar?: string
+  avatarOriginal?: string
+  avatarSource?: 'remote' | 'oss'
+  avatarStatus?: 'empty' | 'remote' | 'pending' | 'mirrored' | 'failed'
+  categories?: getCompendiumsCompareResItemCategories[]
+  code?: string
+  /** 按 locale 返回的人物描述；当前语言缺失时自动回退英文。 */
+  description?: string
+  id?: string
+  level?: string
+  /** 按 locale 返回的人物名称；当前语言缺失时自动回退英文。 */
+  name?: string
+  skills?: getCompendiumsCompareResItemSkills[]
+  skins?: getCompendiumsCompareResItemSkins[]
+  sortOrder?: number
+  status?: 'enabled' | 'disabled'
+  /** 仅导入请求使用的人物翻译。 */
+  translations?: getCompendiumsCompareResItemSkillsTranslations[]
 }

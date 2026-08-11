@@ -52,7 +52,23 @@ export interface postVideoBatchBody {
  * @description Video/批量处理视频去水印--接口返回值
  * @url POST /video/batch
  */
-export type postVideoBatchRes = object
+export interface postVideoBatchRes {
+  errors?: postVideoBatchResErrorsItem[]
+  results?: postVideoBatchResResultsItem[]
+}
+
+/** postVideoBatchResErrors */
+export interface postVideoBatchResErrorsItem {
+  error?: string
+  url?: string
+}
+
+/** postVideoBatchResResults */
+export interface postVideoBatchResResultsItem {
+  data?: { [key: string]: any }
+  success?: boolean
+  url?: string
+}
 
 /**
  * @description Video/获取视频信息--接口请求Query参数
@@ -67,13 +83,25 @@ export interface getVideoInfoQuery {
  * @description Video/获取视频信息--接口返回值
  * @url GET /video/info
  */
-export type getVideoInfoRes = object
+export interface getVideoInfoRes {
+  author?: string
+  cover?: string
+  platform?: string
+  title?: string
+  videoUrl?: string
+}
 
 /**
- * @description Video/获取服务状态--接口返回值
+ * @description Video/获取视频解析服务状态--接口返回值
  * @url GET /video/status
  */
-export type getVideoStatusRes = object
+export interface getVideoStatusRes {
+  features?: string[]
+  maxFileSize?: string
+  status?: string
+  supportedFormats?: string[]
+  version?: string
+}
 
 /**
  * @description Video/获取队列状态--接口返回值
@@ -109,7 +137,7 @@ export interface getVideoTaskTaskIdRes {
  * @description Video/取消任务--接口返回值
  * @url DELETE /video/task/{taskId}
  */
-export type deleteVideoTaskTaskIdRes = object
+export type deleteVideoTaskTaskIdRes = any
 
 /**
  * @description Video/提取视频URL--接口请求Body参数

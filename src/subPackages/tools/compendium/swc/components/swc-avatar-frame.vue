@@ -1,9 +1,21 @@
 <template>
   <view class="swc-avatar-frame" :class="{ circle: shape === 'circle' }" :style="frameStyle">
-    <image v-if="src" class="avatar-image" :class="{ circle: shape === 'circle' }" :src="src" mode="aspectFill" lazy-load />
-    <view v-else class="avatar-placeholder" :class="{ circle: shape === 'circle' }">
+    <view class="avatar-placeholder" :class="{ circle: shape === 'circle' }">
       <text>{{ placeholderText }}</text>
     </view>
+    <image
+      v-if="src && !loadError"
+      :key="src"
+      class="avatar-image"
+      :class="{ circle: shape === 'circle', loaded }"
+      :src="src"
+      :data-avatar-src="src"
+      mode="aspectFill"
+      lazy-load
+      @load="handleLoad"
+      @error="handleError" />
+
+    <slot />
 
     <view v-if="$slots['top-left']" class="corner top-left">
       <slot name="top-left" />
@@ -21,9 +33,17 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
 
   type AvatarShape = 'square' | 'circle'
+
+  interface AvatarLoadEvent {
+    currentTarget?: {
+      dataset?: {
+        avatarSrc?: string
+      }
+    }
+  }
 
   const props = withDefaults(
     defineProps<{
@@ -45,6 +65,32 @@
   }))
 
   const placeholderText = computed(() => props.name.slice(0, 1) || '?')
+  const loaded = ref(false)
+  const loadError = ref(false)
+
+  const resetLoadState = () => {
+    loaded.value = false
+    loadError.value = false
+  }
+
+  const isCurrentSourceEvent = (event: AvatarLoadEvent): boolean => {
+    const eventSource = event.currentTarget?.dataset?.avatarSrc
+    return !eventSource || eventSource === props.src
+  }
+
+  const handleLoad = (event: AvatarLoadEvent) => {
+    if (!isCurrentSourceEvent(event)) return
+    loaded.value = true
+    loadError.value = false
+  }
+
+  const handleError = (event: AvatarLoadEvent) => {
+    if (!isCurrentSourceEvent(event)) return
+    loaded.value = false
+    loadError.value = true
+  }
+
+  watch(() => props.src, resetLoadState, { flush: 'sync' })
 </script>
 
 <style scoped lang="scss">
@@ -63,9 +109,21 @@
 
   .avatar-image,
   .avatar-placeholder {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     display: block;
+  }
+
+  .avatar-image {
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  .avatar-image.loaded {
+    opacity: 1;
   }
 
   .avatar-placeholder {

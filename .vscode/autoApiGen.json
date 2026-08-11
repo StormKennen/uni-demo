@@ -1,0 +1,21 @@
+{
+    "appName": "apifox",
+    "Authorization": "",
+    "path": "/src/services",
+    "projectId": [
+        3119237,
+        7048425
+    ],
+    "head": "import http from '@/services/http'\nimport type { ParticalUniAppRequestOptions } from '@/services/interface'\nconst baseURL = undefined\ntype Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never",
+    "customReturn": "function fun () {\n  const args = []\n  const pathParams = options.pathParams || []\n  const method = (options.apiMethod || 'get').toLowerCase()\n\n  const upper = (value) => {\n    if (!value) return ''\n    return value.charAt(0).toUpperCase() + value.slice(1)\n  }\n\n  const pascal = (value) => (value || '').split(/[^a-zA-Z0-9]+/).filter(Boolean).map(upper).join('')\n\n  const normalizeNamePath = (path) => (path || '').replace(/\\$\\{(?:pathParams\\.)?(\\w+)\\}/g, '{$1}')\n\n  const normalizeRuntimePath = (path) => {\n    const getRuntimeName = (name) => (pathParams.length > 1 ? `pathParams.${name}` : name)\n    return (path || '')\n      .replace(/\\$\\{(?:pathParams\\.)?(\\w+)\\}/g, (_, name) => '${' + getRuntimeName(name) + '}')\n      .replace(/(^|[^$])\\{(\\w+)\\}/g, (_, prefix, name) => prefix + '${' + getRuntimeName(name) + '}')\n  }\n\n  const buildResolvedFunctionName = () => {\n    if (pathParams.length <= 1) return options.apiFunctionName\n\n    const normalizedPath = normalizeNamePath(options.apiPath || '')\n    const staticSegments = normalizedPath\n      .split('/')\n      .filter(Boolean)\n      .filter((segment) => !/^\\{.+\\}$/.test(segment))\n      .filter((segment) => !['admin', 'compendiums'].includes(segment))\n\n    return `${method}${staticSegments.map(pascal).join('')}`\n  }\n\n  if (pathParams.length) {\n    if (pathParams.length > 1) {\n      args.push(`pathParams: Expand<${options.pathParamsType}>`)\n    } else {\n      args.push(`${pathParams[0].name}: ${options.buildParameters(pathParams[0])}`)\n    }\n  }\n\n  if ((options.queryParams || []).length) {\n    args.push(`params: Expand<${options.queryParamsType}>`)\n  }\n\n  if (!['get', 'delete', 'head', 'options'].includes(method) && options.haveReqBody) {\n    args.push(`data: Expand<${options.dataParamsType}>`)\n  }\n\n  args.push('config?: Expand<ParticalUniAppRequestOptions>')\n\n  const runtimePath = normalizeRuntimePath(options.apiPath)\n  const quote = String.fromCharCode(96)\n  const url = quote + runtimePath + quote\n  const bodyParams = ['get', 'delete', 'head', 'options'].includes(method)\n    ? (options.queryParams.length ? 'params, ' : '{}, ')\n    : (options.haveReqBody ? 'data, ' : '{}, ')\n  const newline = String.fromCharCode(10)\n  const resolvedFunctionName = buildResolvedFunctionName()\n\n  return `export const ${resolvedFunctionName} = async (${args.join(', ')}): Promise<Expand<${options.apiFunctionName}Res>> => {${newline}    const _config = baseURL ? { baseURL, ...config } : config${newline}    return http.${method}(${url}, ${bodyParams}_config)${newline}}`\n}\nfun()",
+    "customExtraFunction": "",
+    "model": "custom",
+    "prettierSetting": "{\n    \"semi\": false,\n    \"singleQuote\": true,\n    \"parser\": \"typescript\"\n}",
+    "axiosPath": "",
+    "axiosReturnKey": "data",
+    "useProjectName": true,
+    "alias": "src: @",
+    "Cookie": "abflag=1773287666; projectCid=Pmv3JSQh-yS7k-5wTh-2g2F-4FzhYnliRv0H; AGL_USER_ID=0919243c-0a76-4307-a05d-4bd87089a029; _ga=GA1.1.101296722.1773287669; _ga_QC4DQKHR9V=GS2.1.s1774342122$o1$g1$t1774342155$j27$l0$h0; Hm_lvt_34be24cd47c1c8849a4b4a87748e6979=1780133319; _uetvid=2b37b7101dc711f1a366a77ce2397fc0; _ga_NTLDK3J296=GS2.1.s1780133318$o3$g1$t1780133325$j53$l0$h0; Authorization=Bearer dfCK9_leMfpV1G_xqolYMXGcXjCLYoCO; Authorization.sig=-_VzNmEWcQURpPh4kULvr11PEF804eWd_VB4iG8HrqI; isTracking=true; userToken=",
+    "useProjectId": false,
+    "useTypeExtension": false
+}

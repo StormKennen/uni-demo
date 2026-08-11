@@ -168,7 +168,12 @@ export interface postGameCouponsGameIdRedeemResAccountResultsResults {
   /** 奖励描述 */
   reward?: string
   /** 兑换结果：success | already_used | invalid_coupon | invalid_id | failed */
-  status?: 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed'
+  status?:
+    | 'success'
+    | 'already_used'
+    | 'invalid_coupon'
+    | 'invalid_id'
+    | 'failed'
 }
 
 /** 单账号兑换结果汇总 */
@@ -491,8 +496,6 @@ export interface getGameCouponsGameIdRedeemRecordsResResults {
   couponCode?: string
   /** 记录 ID */
   id?: string
-  /** 兑换时保存的券码奖励快照 */
-  reward?: string
   /** 兑换执行时间 */
   redeemedAt?: string
   /** 官方原始返回码标识（如 official_100, official_303） */
@@ -500,7 +503,16 @@ export interface getGameCouponsGameIdRedeemRecordsResResults {
   /** 结果消息（可能为官方原文或系统翻译） */
   resultMessage?: string
   /** 兑换结果状态：success | already_used | invalid_coupon | invalid_id | failed */
-  resultStatus?: 'success' | 'already_used' | 'invalid_coupon' | 'invalid_id' | 'failed' | 'pending' | 'redeeming'
+  resultStatus?:
+    | 'success'
+    | 'already_used'
+    | 'invalid_coupon'
+    | 'invalid_id'
+    | 'failed'
+    | 'pending'
+    | 'redeeming'
+  /** 兑换时保存的券码奖励快照 */
+  reward?: string
   /** 兑换时使用的区服 */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
 }
@@ -529,3 +541,32 @@ export interface getGameIdRedeemRecordsSummaryRes {
   /** 总兑换次数 */
   total?: number
 }
+
+/**
+ * @description GameCoupons/认领游客账号--接口请求Query参数
+ * @url POST /game-coupons/{gameId}/accounts/claim-guest
+ */
+export interface postGameIdAccountsClaimGuestQuery {
+  compendium_id?: string
+}
+
+/**
+ * @description GameCoupons/认领游客账号--接口请求Body参数
+ * @url POST /game-coupons/{gameId}/accounts/claim-guest
+ */
+export interface postGameIdAccountsClaimGuestBody {
+  accounts: postGameIdAccountsClaimGuestBodyAccountsItem[]
+}
+
+/** postGameIdAccountsClaimGuestBodyAccounts */
+export interface postGameIdAccountsClaimGuestBodyAccountsItem {
+  accountId?: string
+  accountLabel?: string
+  server: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
+}
+
+/**
+ * @description GameCoupons/认领游客账号--接口返回值
+ * @url POST /game-coupons/{gameId}/accounts/claim-guest
+ */
+export type postGameIdAccountsClaimGuestRes = object

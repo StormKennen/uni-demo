@@ -31,36 +31,6 @@ export const getCodeWalletItems = async (
 }
 
 /**
- * 自定义函数：usegetCodeWalletItems
- * @description CodeWallet/获取码包列表
- * @url GET /code-wallet/items
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256859
- */
-
-export const useGetCodeWalletItems = (
-  params: Expand<getCodeWalletItemsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/code-wallet/items`, params, fetchOptions],
-    queryFn: () => getCodeWalletItems(params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetCodeWalletItems = (
-  params: Expand<getCodeWalletItemsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/code-wallet/items`, params, fetchOptions],
-    queryFn: () => getCodeWalletItems(params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description CodeWallet/创建码包条目
  * @url POST /code-wallet/items
  * @host https://app.apifox.com/link/project/7048425/apis/api-489256860
@@ -71,17 +41,6 @@ export const postCodeWalletItems = async (
 ): Promise<Expand<postCodeWalletItemsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(`/code-wallet/items`, data, _config)
-}
-
-/**
- * 自定义函数：usepostCodeWalletItems
- * @description CodeWallet/创建码包条目
- * @url POST /code-wallet/items
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256860
- */
-
-export const usePostCodeWalletItems = (_queryOptions?: object = {}) => {
-  return useMutation({ mutationFn: postCodeWalletItems, ..._queryOptions })
 }
 
 /**
@@ -98,17 +57,6 @@ export const postCodeWalletItemsSync = async (
 }
 
 /**
- * 自定义函数：usepostCodeWalletItemsSync
- * @description CodeWallet/本地码包同步到云端
- * @url POST /code-wallet/items/sync
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256861
- */
-
-export const usePostCodeWalletItemsSync = (_queryOptions?: object = {}) => {
-  return useMutation({ mutationFn: postCodeWalletItemsSync, ..._queryOptions })
-}
-
-/**
  * @description CodeWallet/获取码包详情
  * @url GET /code-wallet/items/{itemId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-489256862
@@ -119,36 +67,6 @@ export const getCodeWalletItemsItemId = async (
 ): Promise<Expand<getCodeWalletItemsItemIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/code-wallet/items/${itemId}`, {}, _config)
-}
-
-/**
- * 自定义函数：usegetCodeWalletItemsItemId
- * @description CodeWallet/获取码包详情
- * @url GET /code-wallet/items/{itemId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256862
- */
-
-export const useGetCodeWalletItemsItemId = (
-  itemId: string,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/code-wallet/items/${itemId}`, fetchOptions],
-    queryFn: () => getCodeWalletItemsItemId(itemId, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetCodeWalletItemsItemId = (
-  itemId: string,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/code-wallet/items/${itemId}`, fetchOptions],
-    queryFn: () => getCodeWalletItemsItemId(itemId, fetchOptions),
-    ..._queryOptions,
-  })
 }
 
 /**
@@ -166,20 +84,6 @@ export const patchCodeWalletItemsItemId = async (
 }
 
 /**
- * 自定义函数：usepatchCodeWalletItemsItemId
- * @description CodeWallet/更新码包条目
- * @url PATCH /code-wallet/items/{itemId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256863
- */
-
-export const usePatchCodeWalletItemsItemId = (_queryOptions?: object = {}) => {
-  return useMutation({
-    mutationFn: patchCodeWalletItemsItemId,
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description CodeWallet/删除码包条目（软删除）
  * @url DELETE /code-wallet/items/{itemId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-489256864
@@ -190,34 +94,4 @@ export const deleteCodeWalletItemsItemId = async (
 ): Promise<Expand<deleteCodeWalletItemsItemIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.delete(`/code-wallet/items/${itemId}`, {}, _config)
-}
-
-/**
- * 自定义函数：usedeleteCodeWalletItemsItemId
- * @description CodeWallet/删除码包条目（软删除）
- * @url DELETE /code-wallet/items/{itemId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-489256864
- */
-
-export const useDeleteCodeWalletItemsItemId = (
-  itemId: string,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/code-wallet/items/${itemId}`, fetchOptions],
-    queryFn: () => deleteCodeWalletItemsItemId(itemId, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionDeleteCodeWalletItemsItemId = (
-  itemId: string,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/code-wallet/items/${itemId}`, fetchOptions],
-    queryFn: () => deleteCodeWalletItemsItemId(itemId, fetchOptions),
-    ..._queryOptions,
-  })
 }

@@ -64,6 +64,7 @@
             :show-member-name="false"
             :show-family="true"
             :show-stars="true"
+            star-position="above"
             :show-element="true"
             :show-member-type="true"
             empty-text="暂无成员" />
@@ -92,6 +93,7 @@
                   :show-member-name="false"
                   :show-family="true"
                   :show-stars="true"
+                  star-position="above"
                   :show-element="true"
                   :show-member-type="true"
                   empty-text="暂无成员" />

@@ -31,19 +31,50 @@ export interface getMemoFoldersQuery {
  * @description MemoFolders/Get all folders--接口返回值
  * @url GET /memo-folders
  */
-export interface getMemoFoldersRes {}
+export type getMemoFoldersRes = getMemoFoldersResItem[]
+
+/** getMemoFoldersResItem */
+export interface getMemoFoldersResItem {
+  color?: string
+  createdAt?: string
+  created_by?: string
+  description?: string
+  icon?: string
+  id?: string
+  level?: number
+  name?: string
+  order?: number
+  parent_id?: any
+  path?: string
+  status?: 'active' | 'deleted'
+  updatedAt?: string
+}
 
 /**
  * @description MemoFolders/Get folder statistics--接口返回值
  * @url GET /memo-folders/stats
  */
-export interface getMemoFoldersStatsRes {}
+export type getMemoFoldersStatsRes = object
 
 /**
  * @description MemoFolders/Get a folder--接口返回值
  * @url GET /memo-folders/{folderId}
  */
-export interface getMemoFoldersFolderIdRes {}
+export interface getMemoFoldersFolderIdRes {
+  color?: string
+  createdAt?: string
+  created_by?: string
+  description?: string
+  icon?: string
+  id?: string
+  level?: number
+  name?: string
+  order?: number
+  parent_id?: any
+  path?: string
+  status?: 'active' | 'deleted'
+  updatedAt?: string
+}
 
 /**
  * @description MemoFolders/Update a folder--接口请求Body参数
@@ -62,7 +93,21 @@ export interface patchMemoFoldersFolderIdBody {
  * @description MemoFolders/Update a folder--接口返回值
  * @url PATCH /memo-folders/{folderId}
  */
-export interface patchMemoFoldersFolderIdRes {}
+export interface patchMemoFoldersFolderIdRes {
+  color?: string
+  createdAt?: string
+  created_by?: string
+  description?: string
+  icon?: string
+  id?: string
+  level?: number
+  name?: string
+  order?: number
+  parent_id?: any
+  path?: string
+  status?: 'active' | 'deleted'
+  updatedAt?: string
+}
 
 /**
  * @description MemoFolders/Delete a folder--接口返回值

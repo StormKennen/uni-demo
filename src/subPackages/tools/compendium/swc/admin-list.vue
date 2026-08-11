@@ -234,14 +234,6 @@
   import { computed, ref } from 'vue'
   import { onLoad, onReachBottom } from '@dcloudio/uni-app'
 
-  import { getCompendiumsCharacter, getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
-  import type {
-    getCompendiumsCharacterQuery,
-    getCompendiumsCharactersQuery,
-    getCompendiumsCharactersRes,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
-  import { patchAdminCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox'
-  import { getUserInfo } from '@/utils/storage'
   import {
     buildAttributesPayload,
     buildCategoriesPayload,
@@ -254,7 +246,16 @@
     toText,
     type CharacterRecord,
   } from './character-payload'
+  import { clearSwcCharacterCache } from './composables/swc-character-cache'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
+  import { getCompendiumsCharacter, getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
+  import type {
+    getCompendiumsCharacterQuery,
+    getCompendiumsCharactersQuery,
+    getCompendiumsCharactersRes,
+  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { patchAdminCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMADMIN/apifox'
+  import { getUserInfo } from '@/utils/storage'
 
   interface FilterOption {
     label: string
@@ -1043,6 +1044,7 @@
 
       syncRowFromSnapshot(row, zhPatchData, enPatchData)
       row.editing = false
+      clearSwcCharacterCache()
 
       const parts: string[] = []
       if (needZhRequest) parts.push('中文')

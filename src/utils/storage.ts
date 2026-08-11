@@ -20,7 +20,7 @@ export const setStorageSync = (key: string, value: any) => {
   try {
     uni.setStorageSync(key, value)
   } catch (e) {
-    console.log('🚀 ~ setStorageSync ~ e:', key, value, e)
+    console.log('[storage] set failed', { key, error: e })
   }
 }
 

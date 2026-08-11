@@ -31,6 +31,9 @@ import type {
   postGameCouponsGameIdRedeemBody,
   postGameCouponsGameIdRedeemQuery,
   postGameCouponsGameIdRedeemRes,
+  postGameIdAccountsClaimGuestBody,
+  postGameIdAccountsClaimGuestQuery,
+  postGameIdAccountsClaimGuestRes,
   postGameIdCodesManualBody,
   postGameIdCodesManualQuery,
   postGameIdCodesManualRes,
@@ -53,38 +56,6 @@ export const getGameCouponsGameIdCodes = async (
 }
 
 /**
- * 自定义函数：usegetGameCouponsGameIdCodes
- * @description GameCoupons/获取当前可用券码列表
- * @url GET /game-coupons/{gameId}/codes
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831023
- */
-
-export const useGetGameCouponsGameIdCodes = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdCodesQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/game-coupons/${gameId}/codes`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdCodes(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameCouponsGameIdCodes = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdCodesQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/game-coupons/${gameId}/codes`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdCodes(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/手动添加券码
  * @url POST /game-coupons/{gameId}/codes/manual
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831024
@@ -100,17 +71,6 @@ export const postGameIdCodesManual = async (
 }
 
 /**
- * 自定义函数：usepostGameIdCodesManual
- * @description GameCoupons/手动添加券码
- * @url POST /game-coupons/{gameId}/codes/manual
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831024
- */
-
-export const usePostGameIdCodesManual = (_queryOptions?: object = {}) => {
-  return useMutation({ mutationFn: postGameIdCodesManual, ..._queryOptions })
-}
-
-/**
  * @description GameCoupons/查询账号资料（昵称验证）
  * @url GET /game-coupons/{gameId}/profile
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831025
@@ -122,38 +82,6 @@ export const getGameCouponsGameIdProfile = async (
 ): Promise<Expand<getGameCouponsGameIdProfileRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/game-coupons/${gameId}/profile`, params, _config)
-}
-
-/**
- * 自定义函数：usegetGameCouponsGameIdProfile
- * @description GameCoupons/查询账号资料（昵称验证）
- * @url GET /game-coupons/{gameId}/profile
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831025
- */
-
-export const useGetGameCouponsGameIdProfile = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdProfileQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/game-coupons/${gameId}/profile`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdProfile(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameCouponsGameIdProfile = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdProfileQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/game-coupons/${gameId}/profile`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdProfile(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
 }
 
 /**
@@ -172,20 +100,6 @@ export const postGameCouponsGameIdRedeem = async (
 }
 
 /**
- * 自定义函数：usepostGameCouponsGameIdRedeem
- * @description GameCoupons/执行兑换（支持多账号多券码批量）
- * @url POST /game-coupons/{gameId}/redeem
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831026
- */
-
-export const usePostGameCouponsGameIdRedeem = (_queryOptions?: object = {}) => {
-  return useMutation({
-    mutationFn: postGameCouponsGameIdRedeem,
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/获取当前用户托管账号列表
  * @url GET /game-coupons/{gameId}/accounts
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831027
@@ -197,38 +111,6 @@ export const getGameCouponsGameIdAccounts = async (
 ): Promise<Expand<getGameCouponsGameIdAccountsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/game-coupons/${gameId}/accounts`, params, _config)
-}
-
-/**
- * 自定义函数：usegetGameCouponsGameIdAccounts
- * @description GameCoupons/获取当前用户托管账号列表
- * @url GET /game-coupons/{gameId}/accounts
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831027
- */
-
-export const useGetGameCouponsGameIdAccounts = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdAccountsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/game-coupons/${gameId}/accounts`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdAccounts(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameCouponsGameIdAccounts = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdAccountsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/game-coupons/${gameId}/accounts`, params, fetchOptions],
-    queryFn: () => getGameCouponsGameIdAccounts(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
 }
 
 /**
@@ -247,27 +129,11 @@ export const postGameCouponsGameIdAccounts = async (
 }
 
 /**
- * 自定义函数：usepostGameCouponsGameIdAccounts
- * @description GameCoupons/添加托管账号
- * @url POST /game-coupons/{gameId}/accounts
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831028
- */
-
-export const usePostGameCouponsGameIdAccounts = (
-  _queryOptions?: object = {},
-) => {
-  return useMutation({
-    mutationFn: postGameCouponsGameIdAccounts,
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/获取单个托管账号详情
  * @url GET /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831029
  */
-export const getGameCouponsAccounts = async (
+export const getGameIdAccountsAccountId = async (
   pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameIdAccountsAccountIdRes>> => {
@@ -280,47 +146,11 @@ export const getGameCouponsAccounts = async (
 }
 
 /**
- * 自定义函数：usegetGameIdAccountsAccountId
- * @description GameCoupons/获取单个托管账号详情
- * @url GET /game-coupons/{gameId}/accounts/{accountId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831029
- */
-
-export const useGetGameCouponsAccounts = (
-  pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [
-      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
-      fetchOptions,
-    ],
-    queryFn: () => getGameCouponsAccounts(pathParams, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameCouponsAccounts = (
-  pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [
-      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
-      fetchOptions,
-    ],
-    queryFn: () => getGameCouponsAccounts(pathParams, fetchOptions),
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/更新托管账号信息
  * @url PATCH /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831030
  */
-export const patchGameCouponsAccounts = async (
+export const patchGameIdAccountsAccountId = async (
   pathParams: Expand<patchGameIdAccountsAccountIdPathQuery>,
   data: Expand<patchGameIdAccountsAccountIdBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
@@ -334,22 +164,11 @@ export const patchGameCouponsAccounts = async (
 }
 
 /**
- * 自定义函数：usepatchGameIdAccountsAccountId
- * @description GameCoupons/更新托管账号信息
- * @url PATCH /game-coupons/{gameId}/accounts/{accountId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831030
- */
-
-export const usePatchGameCouponsAccounts = (_queryOptions?: object = {}) => {
-  return useMutation({ mutationFn: patchGameCouponsAccounts, ..._queryOptions })
-}
-
-/**
  * @description GameCoupons/删除托管账号
  * @url DELETE /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831031
  */
-export const deleteGameCouponsAccounts = async (
+export const deleteGameIdAccountsAccountId = async (
   pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteGameIdAccountsAccountIdRes>> => {
@@ -362,47 +181,11 @@ export const deleteGameCouponsAccounts = async (
 }
 
 /**
- * 自定义函数：usedeleteGameIdAccountsAccountId
- * @description GameCoupons/删除托管账号
- * @url DELETE /game-coupons/{gameId}/accounts/{accountId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831031
- */
-
-export const useDeleteGameCouponsAccounts = (
-  pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [
-      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
-      fetchOptions,
-    ],
-    queryFn: () => deleteGameCouponsAccounts(pathParams, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionDeleteGameCouponsAccounts = (
-  pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [
-      `/game-coupons/${pathParams.gameId}/accounts/${pathParams.accountId}`,
-      fetchOptions,
-    ],
-    queryFn: () => deleteGameCouponsAccounts(pathParams, fetchOptions),
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/验证托管账号有效性
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/verify
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831032
  */
-export const postGameCouponsAccountsVerify = async (
+export const postAccountsAccountIdVerify = async (
   pathParams: Expand<postAccountsAccountIdVerifyPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAccountsAccountIdVerifyRes>> => {
@@ -415,27 +198,11 @@ export const postGameCouponsAccountsVerify = async (
 }
 
 /**
- * 自定义函数：usepostAccountsAccountIdVerify
- * @description GameCoupons/验证托管账号有效性
- * @url POST /game-coupons/{gameId}/accounts/{accountId}/verify
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831032
- */
-
-export const usePostGameCouponsAccountsVerify = (
-  _queryOptions?: object = {},
-) => {
-  return useMutation({
-    mutationFn: postGameCouponsAccountsVerify,
-    ..._queryOptions,
-  })
-}
-
-/**
  * @description GameCoupons/设置自动兑换开关
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/auto-redeem
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831033
  */
-export const postGameCouponsAccountsAutoRedeem = async (
+export const postAccountsAccountIdAutoRedeem = async (
   pathParams: Expand<postAccountsAccountIdAutoRedeemPathQuery>,
   data: Expand<postAccountsAccountIdAutoRedeemBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
@@ -446,22 +213,6 @@ export const postGameCouponsAccountsAutoRedeem = async (
     data,
     _config,
   )
-}
-
-/**
- * 自定义函数：usepostAccountsAccountIdAutoRedeem
- * @description GameCoupons/设置自动兑换开关
- * @url POST /game-coupons/{gameId}/accounts/{accountId}/auto-redeem
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831033
- */
-
-export const usePostGameCouponsAccountsAutoRedeem = (
-  _queryOptions?: object = {},
-) => {
-  return useMutation({
-    mutationFn: postGameCouponsAccountsAutoRedeem,
-    ..._queryOptions,
-  })
 }
 
 /**
@@ -476,40 +227,6 @@ export const getGameCouponsGameIdRedeemRecords = async (
 ): Promise<Expand<getGameCouponsGameIdRedeemRecordsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/game-coupons/${gameId}/redeem-records`, params, _config)
-}
-
-/**
- * 自定义函数：usegetGameCouponsGameIdRedeemRecords
- * @description GameCoupons/获取兑换记录列表
- * @url GET /game-coupons/{gameId}/redeem-records
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831034
- */
-
-export const useGetGameCouponsGameIdRedeemRecords = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdRedeemRecordsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [`/game-coupons/${gameId}/redeem-records`, params, fetchOptions],
-    queryFn: () =>
-      getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameCouponsGameIdRedeemRecords = (
-  gameId: string,
-  params: Expand<getGameCouponsGameIdRedeemRecordsQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [`/game-coupons/${gameId}/redeem-records`, params, fetchOptions],
-    queryFn: () =>
-      getGameCouponsGameIdRedeemRecords(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
 }
 
 /**
@@ -531,41 +248,20 @@ export const getGameIdRedeemRecordsSummary = async (
 }
 
 /**
- * 自定义函数：usegetGameIdRedeemRecordsSummary
- * @description GameCoupons/获取兑换统计
- * @url GET /game-coupons/{gameId}/redeem-records/summary
- * @host https://app.apifox.com/link/project/7048425/apis/api-479831035
+ * @description GameCoupons/认领游客账号
+ * @url POST /game-coupons/{gameId}/accounts/claim-guest
+ * @host https://app.apifox.com/link/project/7048425/apis/api-499273382
  */
-
-export const useGetGameIdRedeemRecordsSummary = (
+export const postGameIdAccountsClaimGuest = async (
   gameId: string,
-  params: Expand<getGameIdRedeemRecordsSummaryQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return useQuery({
-    queryKey: [
-      `/game-coupons/${gameId}/redeem-records/summary`,
-      params,
-      fetchOptions,
-    ],
-    queryFn: () => getGameIdRedeemRecordsSummary(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
-}
-export const useOptionGetGameIdRedeemRecordsSummary = (
-  gameId: string,
-  params: Expand<getGameIdRedeemRecordsSummaryQuery>,
-  fetchOptions: Expand<RequestInit> = {},
-  _queryOptions?: object = {},
-) => {
-  return queryOptions({
-    queryKey: [
-      `/game-coupons/${gameId}/redeem-records/summary`,
-      params,
-      fetchOptions,
-    ],
-    queryFn: () => getGameIdRedeemRecordsSummary(gameId, params, fetchOptions),
-    ..._queryOptions,
-  })
+  params: Expand<postGameIdAccountsClaimGuestQuery>,
+  data: Expand<postGameIdAccountsClaimGuestBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postGameIdAccountsClaimGuestRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(
+    `/game-coupons/${gameId}/accounts/claim-guest`,
+    data,
+    _config,
+  )
 }

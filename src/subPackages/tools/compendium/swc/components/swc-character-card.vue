@@ -60,18 +60,14 @@
     </template>
 
     <template v-else>
-      <view class="avatar-wrap" :class="{ 'avatar-wrap-circle': avatarShape === 'circle' }" :style="avatarWrapStyle">
-        <image
-          v-if="character.avatar"
-          class="avatar"
-          :class="{ circle: avatarShape === 'circle' }"
-          :src="character.avatar"
-          mode="aspectFill"
-          lazy-load />
-        <view v-else class="avatar-placeholder" :class="{ circle: avatarShape === 'circle' }">
-          <text>{{ character.name.slice(0, 1) || '?' }}</text>
-        </view>
+      <view
+        v-if="starPosition === 'above' && showStars && character.displayStars > 0"
+        class="stars stars-above"
+        :class="{ 'stars-stacked': starLayout === 'stacked' }">
+        <text v-for="i in character.displayStars" :key="i" class="star-icon">★</text>
+      </view>
 
+      <SwcAvatarFrame class="avatar-wrap" :src="character.avatar" :name="character.name" :size="avatarSize" :shape="avatarShape">
         <view v-if="showElement && character.elementKey" class="element-badge" :class="elementBadgeClass">
           <SwcSquareIcon kind="element" :icon-key="character.elementKey" :size="elementIconSize" :radius="8" />
         </view>
@@ -96,14 +92,17 @@
           <text class="selected-badge-text">{{ selectedIndex > 0 ? selectedIndex : '✓' }}</text>
         </view>
 
-        <view v-if="showStars && character.displayStars > 0" class="stars" :class="{ 'stars-stacked': starLayout === 'stacked' }">
+        <view
+          v-if="starPosition !== 'above' && showStars && character.displayStars > 0"
+          class="stars"
+          :class="{ 'stars-stacked': starLayout === 'stacked' }">
           <text v-for="i in character.displayStars" :key="i" class="star-icon">★</text>
         </view>
 
         <view v-if="showOriginalStars && character.stars" class="original-stars">
           <text>{{ character.stars }}★</text>
         </view>
-      </view>
+      </SwcAvatarFrame>
 
       <view v-if="hasInfo" class="character-info">
         <text v-if="showName" class="character-title">{{ character.name || '未知魔灵' }}</text>
@@ -124,6 +123,7 @@
 
   type AvatarShape = 'square' | 'circle'
   type StarLayout = 'flat' | 'stacked'
+  type StarPosition = 'overlay' | 'above'
   type CardVariant = 'default' | 'bestiary' | 'picker'
 
   const props = withDefaults(
@@ -135,6 +135,7 @@
       showFamily?: boolean
       showElement?: boolean
       showStars?: boolean
+      starPosition?: StarPosition
       starLayout?: StarLayout
       showOriginalStars?: boolean
       showRemove?: boolean
@@ -155,6 +156,7 @@
       showFamily: false,
       showElement: true,
       showStars: true,
+      starPosition: 'overlay',
       starLayout: 'flat',
       showOriginalStars: false,
       showRemove: false,
@@ -203,10 +205,6 @@
   })
 
   const cardStyle = computed(() => ({
-    '--avatar-size': `${props.avatarSize}rpx`,
-  }))
-
-  const avatarWrapStyle = computed(() => ({
     '--avatar-size': `${props.avatarSize}rpx`,
   }))
 
@@ -458,6 +456,17 @@
     align-items: flex-end;
     gap: 4rpx;
     z-index: 1;
+  }
+
+  .stars-above {
+    position: static;
+    width: 100%;
+    min-height: 30rpx;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    padding: 5rpx 0 3rpx;
+    flex-shrink: 0;
   }
 
   .star-icon {

@@ -26,7 +26,7 @@ export const postMemoFolders = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMemoFoldersRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/memo-folders', data, _config)
+  return http.post(`/memo-folders`, data, _config)
 }
 
 /**
@@ -39,7 +39,7 @@ export const getMemoFolders = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMemoFoldersRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/memo-folders', params, _config)
+  return http.get(`/memo-folders`, params, _config)
 }
 
 /**
@@ -51,7 +51,7 @@ export const getMemoFoldersStats = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMemoFoldersStatsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/memo-folders/stats', {}, _config)
+  return http.get(`/memo-folders/stats`, {}, _config)
 }
 
 /**
@@ -64,7 +64,7 @@ export const getMemoFoldersFolderId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMemoFoldersFolderIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/memo-folders/${folderId}', {}, _config)
+  return http.get(`/memo-folders/${folderId}`, {}, _config)
 }
 
 /**
@@ -78,7 +78,7 @@ export const patchMemoFoldersFolderId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchMemoFoldersFolderIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/memo-folders/${folderId}', data, _config)
+  return http.patch(`/memo-folders/${folderId}`, data, _config)
 }
 
 /**
@@ -91,5 +91,5 @@ export const deleteMemoFoldersFolderId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteMemoFoldersFolderIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/memo-folders/${folderId}', {}, _config)
+  return http.delete(`/memo-folders/${folderId}`, {}, _config)
 }

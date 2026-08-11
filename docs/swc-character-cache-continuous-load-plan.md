@@ -1,6 +1,6 @@
 # 魔灵召唤图鉴 · 人物数据缓存 + 持续加载方案（含后端接口优化建议）
 
-> 本文档遵循 Harness 流程，仅为**方案梳理**，不含实现。落地前需人工确认。
+> 本文档遵循 Harness 流程，记录方案与当前实现状态。后端版本校验、ETag 等接口增强仍需单独评估。
 > 涉及页面：图鉴人物列表 `src/subPackages/tools/compendium/swc/list.vue`、选人组件 `src/subPackages/tools/compendium/swc/character-picker.vue`；服务层 `src/services/compendium-lineups.ts`、`src/services/apifox/.../COMPENDIUMS`。
 
 ---
@@ -41,7 +41,7 @@
 ### 2.3 缓存现状
 
 - 仅有**头像缓存** `src/utils/avatar-cache.ts`（PR #1）：H5 预热浏览器缓存、mp-weixin `downloadFile+saveFile` 持久化 + 300 条 LRU。
-- **无人物列表数据缓存**：每次进入两页都重新请求全部分页。mp-weixin 冷启动、重复进出、弱网下体验与流量成本较高。
+- 已新增人物分页共享缓存：当前会话使用内存 LRU，mp-weixin 使用轻量视图模型的分片持久化缓存；缓存按 12 小时过期，最多保存 24 页、约 1.5MB，超出后按最早写入页淘汰。
 - `src/utils/storage.ts` 仅有裸 `get/set/removeStorageSync`，**无 TTL / 版本 / 命名空间**封装。
 
 ---
@@ -70,7 +70,7 @@
 ### 3.2 缓存分层与失效策略（G1，重点 mp-weixin）
 
 - **L1 内存缓存**：模块级单例（`ref` + 时间戳）。同一会话内多次进出选人页/列表页零请求。
-- **L2 持久化缓存（mp-weixin 主）**：`storage` 存规范化后的全量数组 + 元信息 `{ version, updatedAt, locale, compendiumCode, cachedAt }`。冷启动命中即秒开。
+- **L2 持久化缓存（mp-weixin 主）**：按查询分页保存规范化后的轻量视图模型，单页和总量均有限制；冷启动命中已缓存页即可快速展示，超出容量时自动放弃该页持久化，不影响网络加载。
   - Key：`compendium:characters:{compendiumCode}:{locale}`（按图鉴 + 语言分桶）。
   - 体积控制：仅缓存**列表/选人所需精简字段**（id/name/avatar/stars/awaken/element/type + 排序键），剔除详情大字段；预估几百条 × 精简字段远小于 mp storage 单 key 上限，仍需在写入前做体积校验与降级（超限则只存内存）。
 - **失效策略（三选一，建议渐进）**：
@@ -78,7 +78,7 @@
   2. **SWR（stale-while-revalidate）**：命中缓存**先渲染**，同时后台静默拉最新，diff 后更新（体验最佳，推荐目标态）。
   3. **版本号校验**（需后端支持，见 §4）：带上本地 `version`/`updatedAt`，后端 `304`/空 diff 时零传输。
 - **平台差异**：用 `// #ifdef MP-WEIXIN` 控制持久化写入；H5 端本就有浏览器 HTTP 缓存，L2 可选（默认只用 L1 + HTTP 缓存，避免与浏览器缓存重复）。
-- **缓存工具**：新增 `src/utils/cache-store.ts`（带 TTL/版本/命名空间的通用 `getCache/setCache/invalidate`），复用现有 `storage.ts`，不引入新依赖。
+- **缓存工具**：新增 `src/subPackages/tools/compendium/swc/composables/swc-character-cache.ts`，按规范化查询键共享内存分页，并在 mp-weixin 端通过 `storage.ts` 做受控分片持久化，不引入新依赖。
 
 ### 3.3 持续加载（G2）
 
@@ -137,39 +137,34 @@
 
 ## 5. 影响面与约束（Harness）
 
-- 新增：`src/utils/cache-store.ts`（TTL/版本缓存工具）、`src/composables|hooks/useCompendiumCharacters.ts`（共享数据层）。
-- 修改：`character-picker.vue`（接入共享层，阶段一）；后续 `list.vue`（阶段二）；`compendium-lineups.ts`（数据层收敛）。
+- 新增：`src/subPackages/tools/compendium/swc/composables/swc-character-cache.ts`（按查询分页共享、TTL、微信端分片持久化与容量保护）。
+- 已修改：`character-picker.vue`、`list.vue`、`components/character-picker-panel.vue` 接入共享分页缓存；`avatar-cache.ts` 的 300 条 LRU 与并发 5 作为头像文件缓存边界继续生效。
 - 约束遵循：请求仍走 `src/services/http.ts`；平台差异用 `// #ifdef`；持久化经 `storage.ts`；**不新增依赖**、不改 `vite.config.ts/manifest.json/.env`；改 `src/**` 时同提交 `docs/changelog.md`；仅提交到 `devin/*` 分支。
 
 ## 6. 落地顺序建议
 
-1. 后端确认 §4.1（version/updatedAt）与 §4.5（接口对齐）是否可行 → 决定采用 TTL 还是 SWR/版本策略。
-2. 前端阶段一：`cache-store.ts` + 共享数据层 + 选人页接入（mp 持久化 + SWR/TTL）。
-3. 验证 mp-weixin 冷启动秒开、流量下降、静默加载与头像缓存协同。
-4. 视 §3.4 评估结果推进阶段二（`list.vue` 全量共享）。
+1. 已完成前端阶段一：共享分页缓存、mp 持久化容量保护、选人页与图鉴列表接入。
+2. 验证 mp-weixin 冷启动秒开、流量下降、分页加载与头像缓存协同。
+3. 后续可由后端补充 §4.1（version/updatedAt）与 ETag，再将 TTL 升级为版本/SWR 策略。
 
 ## 8. 选人组件优先落地方案（1000+ 条 / 每页 50 / 后台持续自动加载 + 头像缓存）
 
-> 依据补充需求：优先处理**选人组件** `character-picker.vue`（被「编辑阵容」`lineup-edit.vue`、「编辑阵容映射」`lineup-mappings.vue` 以及筛选共用）。数据量 1000+，C 端页面；每页 50 条，**客户端后台持续自动加载**（非用户触发），核心目的是**提前缓存头像**让用户快速选人。
+> 依据补充需求：优先处理**选人组件** `character-picker.vue`（被「编辑阵容」`lineup-edit.vue`、「编辑阵容映射」`lineup-mappings.vue` 以及筛选共用）。数据量 1000+，C 端页面；每页 50 条，按滚动持续加载，头像只对已加载页受控预取。
 
 ### 8.1 关键矛盾与结论
 
 - **真正的瓶颈是头像，不是列表请求**：列表 JSON 很快，但每个魔灵头像是独立图片地址、加载慢。所以策略不是「减少请求」，而是**客户端后台持续自动拉全部分页并提前缓存头像**，让用户滚到哪儿头像都已就绪、无需用户触发翻页。
-- 现状（PR #1 后）：选人页已是 `pageSize=50` + 后台拉全部分页（`loadRemainingPages`），方向正确；缺的是**头像预取编排**与**缓存容量**针对 1000+ 条的优化（见 §8.5），以及把过滤/排序改为服务端。
+- 当前实现：选人页使用 `pageSize=50` 按滚动加载，图鉴列表、选人页和选择面板共享规范化分页缓存；头像预取只跟随已加载页，持久化头像仍受 300 条 LRU 与并发 5 限制。
 - 「默认已觉醒 + 星级倒序」当前是**客户端**过滤/排序，只对已加载子集生效。改为**服务端**过滤/排序后，首屏 50 条即是正确的「觉醒 + 星级倒序」结果，且缩小需缓存集合。
 - **重要发现**：`GET /compendiums/characters` **已支持服务端过滤+排序+分页**（`list.vue` 实际在用：`categories[awaken]`、`categories[element]`、`categories[archetype]`、`sortBy`、`sortOrder`、`page`、`pageSize`）。因此选人页无需后端新增即可实现「服务端过滤/排序 + 后台持续加载」。
 
-### 8.2 加载策略：客户端持续自动加载（非用户触发）
+### 8.2 加载策略：分页持续加载与受控头像预取
 
-> 需求修订：**不要**让用户主动触发翻页/滚动加载。列表请求本身很快，真正慢的是**头像**（每个魔灵一张独立图片地址）。目标是让客户端在后台**持续、自动**把分页拉完并**提前缓存头像**，用户滚动到哪儿头像都已就绪，从而快速选人。
+> 当前采用滚动持续加载：列表请求和头像预取分离，避免为了提前缓存 1800 张头像而打满开发者工具、网络和本地文件空间。
 
-- 本质：**保留「拉全部」的后台自动加载**，但明确为**客户端驱动的持续加载循环**（无需用户触发、无需等待）：
-  1. 打开即请求第 1 页 50 条并渲染；
-  2. 随即在后台**自动、逐页**继续请求（每页 50），直到 `hasNext=false`；
-  3. 每页返回后**立即批量预热该页头像**（`preloadAvatars`），让缓存领先于用户浏览进度。
-- 与 PR #1 的差异：PR #1 已是后台拉全部，但**加载节奏/头像预取优先级**未针对「1000+ 条、头像为瓶颈」优化。本次重点是**分页与头像预取的编排**（分页请求可较快连发；头像下载受并发限制排队，避免一次性打满网络/内存）。
-- 节奏控制：分页循环之间可不强制等待（列表快）；头像预取维持**并发上限**（当前 `avatar-cache.ts` 为 5），按加载顺序排队，保证「先到先缓存」。
-- 切换筛选/关键字：中止当前循环（请求序列号失效）→ 重置 → 以新条件重新开始持续加载。
+- 本质：打开先请求第 1 页 50 条并渲染，滚动到底部再请求下一页；每页返回后批量预热该页头像。
+- 头像预取维持**并发上限**（当前 `avatar-cache.ts` 为 5），并通过 300 条 LRU 回收本地文件。
+- 切换筛选/关键字：中止当前请求回写（请求序列号失效）→ 重置 → 按新条件重新加载。
 - 已选中项独立保存，不受分页/筛选影响。
 
 ### 8.3 前端改造点（character-picker.vue + 服务层）

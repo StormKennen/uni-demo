@@ -140,10 +140,7 @@
           <scroll-view class="options-scroll" scroll-y lower-threshold="120" @scrolltolower="handleOptionsScrollToLower">
             <view v-if="filteredCharacterOptions.length" class="option-list">
               <view v-for="option in filteredCharacterOptions" :key="option.characterId || option.id" class="option-card">
-                <image v-if="option.avatar" class="member-avatar" :src="option.avatar" mode="aspectFill" />
-                <view v-else class="member-avatar member-avatar-placeholder">
-                  <text>{{ (option.name || '?').slice(0, 1) }}</text>
-                </view>
+                <SwcAvatarFrame class="member-avatar" :src="option.avatar" :name="option.name || option.label" :size="72" />
                 <view class="member-info">
                   <text class="member-name">{{ option.name || option.label || '未知魔灵' }}</text>
                   <view class="member-extra">
@@ -160,7 +157,7 @@
                     <text v-if="!option.elementName && !option.familyName && !option.stars" class="member-meta-fallback">--</text>
                   </view>
                 </view>
-                <button class="mini-btn" size="mini" :disabled="isAddDisabled(option.characterId)" @click="toggleMember(option)">
+                <button class="mini-btn" size="mini" :disabled="isAddDisabled(option.characterId)" @tap="toggleMember(option)">
                   {{ getOptionActionText(option.characterId) }}
                 </button>
               </view>
@@ -193,21 +190,26 @@
 
 <script setup lang="ts">
   import { computed, getCurrentInstance, nextTick, onMounted, ref, watch } from 'vue'
+  import { normalizeSwcArchetype } from '../icon-assets'
+  import { getCachedSwcCharacterPage } from '../composables/swc-character-cache'
+  import type { CharacterOption, PaginationState } from '../lineup-types'
+  import { getPaginationOrDefault, normalizeCharacterOptionResult } from '../lineup-normalizers'
+  import { sanitizeQuery } from '../request-options'
+  import { toSwcCharacterView } from '../utils'
   import SearchActionRow from './search-action-row.vue'
+  import SwcAvatarFrame from './swc-avatar-frame.vue'
   import SwcElementBadge from './swc-element-badge.vue'
   import SwcLineup from './swc-lineup.vue'
   import StateBlock from './state-block.vue'
   import StickyActionBar from './sticky-action-bar.vue'
-  import { normalizeSwcArchetype } from '../icon-assets'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
-  import type { CharacterOption, CharacterOptionResult, PaginationState } from '../lineup-types'
-  import { getPaginationOrDefault, normalizeCharacterOptionResult } from '../lineup-normalizers'
-  import { sanitizeQuery } from '../request-options'
-  import { toSwcCharacterView } from '../utils'
+  import type { getCompendiumsCharactersQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
 
   type SelectionMode = 'single' | 'multiple'
   type FooterMode = 'manual' | 'none'
   type QuickFilterKey = 'element' | 'awaken' | 'type' | 'star'
+  type CharacterListQuery = getCompendiumsCharactersQuery & Record<string, string | number | undefined>
 
   interface FilterOption {
     label: string
@@ -215,6 +217,8 @@
   }
 
   const ALL_VALUE = 'all'
+  const RENDER_BATCH_SIZE = 50
+  const INITIAL_AVATAR_PRELOAD_COUNT = 16
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -300,7 +304,9 @@
   const memberKeyword = ref('')
   const memberLoading = ref(false)
   const memberLoadingMore = ref(false)
+  const allCharacterOptions = ref<CharacterOption[]>([])
   const characterOptions = ref<CharacterOption[]>([])
+  const renderedOptionCount = ref(0)
   const characterPagination = ref<PaginationState>(getPaginationOrDefault())
   const draftSelected = ref<CharacterOption[]>([])
   const initialized = ref(false)
@@ -311,6 +317,8 @@
   const selectedType = ref(ALL_VALUE)
   const selectedStar = ref(ALL_VALUE)
   const instance = getCurrentInstance()
+  let requestSequence = 0
+  let avatarPreloadTimer: ReturnType<typeof setTimeout> | null = null
 
   const cloneSelection = (items: CharacterOption[] = []): CharacterOption[] => items.map(item => ({ ...item }))
 
@@ -345,6 +353,7 @@
 
   const selectedGridColumns = computed(() => (props.selectionMode === 'single' ? 1 : Math.min(Math.max(props.maxCount, 1), 5)))
   const draftSelectedViews = computed(() => draftSelected.value.map(item => toSwcCharacterView(item)))
+  const selectedCharacterIds = computed(() => new Set(draftSelected.value.map(member => member.characterId)))
 
   const supportsTypeFilter = computed(() => characterOptions.value.some(option => Boolean(normalizeArchetype(option.archetype))))
 
@@ -398,9 +407,16 @@
     return '暂无符合筛选条件的人物'
   })
 
-  const canLoadMore = computed(() => initialized.value && characterPagination.value.hasNext && !memberLoading.value)
+  const hasBufferedCharacterOptions = computed(() => characterOptions.value.length < allCharacterOptions.value.length)
 
-  const showNoMoreText = computed(() => initialized.value && !characterPagination.value.hasNext && characterOptions.value.length > 0)
+  const canLoadMore = computed(
+    () => initialized.value && (hasBufferedCharacterOptions.value || characterPagination.value.hasNext) && !memberLoading.value,
+  )
+
+  const showNoMoreText = computed(
+    () =>
+      initialized.value && !hasBufferedCharacterOptions.value && !characterPagination.value.hasNext && characterOptions.value.length > 0,
+  )
 
   const optionsScrollStyle = computed(() => ({
     height: `${optionsScrollHeight.value}px`,
@@ -438,7 +454,7 @@
     })
   }
 
-  const isMemberSelected = (characterId: string): boolean => draftSelected.value.some(member => member.characterId === characterId)
+  const isMemberSelected = (characterId: string): boolean => selectedCharacterIds.value.has(characterId)
 
   const isAddDisabled = (characterId: string): boolean => {
     if (isMemberSelected(characterId)) return false
@@ -494,11 +510,60 @@
     applySelection(draftSelected.value.filter(member => member.characterId !== characterId))
   }
 
+  const mergeUniqueCharacterOptions = (base: CharacterOption[], next: CharacterOption[]): CharacterOption[] => {
+    const seen = new Set(base.map(item => item.characterId))
+    const merged = [...base]
+    next.forEach(item => {
+      if (!item.characterId || seen.has(item.characterId)) return
+      seen.add(item.characterId)
+      merged.push(item)
+    })
+    return merged
+  }
+
+  const syncRenderedCharacterOptions = () => {
+    characterOptions.value = allCharacterOptions.value.slice(0, renderedOptionCount.value)
+  }
+
+  const revealNextOptionBatch = (): boolean => {
+    if (!hasBufferedCharacterOptions.value) return false
+    renderedOptionCount.value = Math.min(allCharacterOptions.value.length, renderedOptionCount.value + RENDER_BATCH_SIZE)
+    syncRenderedCharacterOptions()
+    updateOptionsScrollHeight()
+    return true
+  }
+
+  const clearScheduledAvatarPreload = () => {
+    if (!avatarPreloadTimer) return
+    clearTimeout(avatarPreloadTimer)
+    avatarPreloadTimer = null
+  }
+
+  const scheduleInitialAvatarPreload = (avatarUrls: string[], requestId: number) => {
+    const urls = avatarUrls.slice(0, INITIAL_AVATAR_PRELOAD_COUNT).filter(Boolean)
+    if (!urls.length) return
+
+    void nextTick().then(() => {
+      if (requestId !== requestSequence) return
+      clearScheduledAvatarPreload()
+      avatarPreloadTimer = setTimeout(() => {
+        avatarPreloadTimer = null
+        if (requestId !== requestSequence) return
+        void preloadAvatars(urls)
+      }, 0)
+    })
+  }
+
   const fetchCharacterOptions = async (reset = true) => {
-    if (!props.active || memberLoading.value || memberLoadingMore.value) return
+    if (!props.active) return
+    if (!reset && (memberLoading.value || memberLoadingMore.value)) return
+
+    const requestId = reset ? ++requestSequence : requestSequence
 
     if (reset) {
+      clearScheduledAvatarPreload()
       memberLoading.value = true
+      memberLoadingMore.value = false
     } else {
       if (!characterPagination.value.hasNext) return
       memberLoadingMore.value = true
@@ -511,24 +576,64 @@
         locale: props.locale,
         keyword: memberKeyword.value.trim() || undefined,
         page: nextPage,
-        pageSize: 20,
-      }) as any
-      // 与图鉴列表同源，避免 admin character-options 鉴权/字段差异导致空列表
-      const result: CharacterOptionResult = normalizeCharacterOptionResult(await getCompendiumsCharacters(query, {}))
+        pageSize: 50,
+        sortBy: 'stars:desc,code:desc',
+      }) as CharacterListQuery
+      // 与图鉴列表同源，避免 admin character-options 鉴权/字段差异导致空列表；缓存只保存轻量视图模型。
+      const result = await getCachedSwcCharacterPage(query, async () => {
+        const normalized = normalizeCharacterOptionResult(await getCompendiumsCharacters(query, {}))
+        return {
+          items: normalized.items.map(item => toSwcCharacterView(item)),
+          pagination: normalized.pagination,
+        }
+      })
+      const items: CharacterOption[] = result.items.map(item => ({
+        id: item.characterId,
+        characterId: item.characterId,
+        name: item.name,
+        label: item.name,
+        avatar: resolveAvatar(item.avatar) || item.avatar,
+        element: item.elementKey,
+        elementKey: item.elementKey,
+        elementName: item.elementName,
+        archetype: item.archetype,
+        familyKey: '',
+        familyName: item.familyName,
+        awaken: item.awaken,
+        awakenName: item.awaken,
+        stars: item.stars,
+        status: 'enabled',
+      }))
+      if (requestId !== requestSequence) return
 
       characterPagination.value = result.pagination
-      characterOptions.value = reset ? result.items : [...characterOptions.value, ...result.items]
+      allCharacterOptions.value = reset
+        ? mergeUniqueCharacterOptions([], items)
+        : mergeUniqueCharacterOptions(allCharacterOptions.value, items)
+      renderedOptionCount.value = reset
+        ? Math.min(RENDER_BATCH_SIZE, allCharacterOptions.value.length)
+        : Math.min(allCharacterOptions.value.length, renderedOptionCount.value + RENDER_BATCH_SIZE)
+      syncRenderedCharacterOptions()
       initialized.value = true
+      if (reset) {
+        scheduleInitialAvatarPreload(
+          result.items.map(item => item.avatar),
+          requestId,
+        )
+      }
       updateOptionsScrollHeight()
     } catch (error) {
+      if (requestId !== requestSequence) return
       uni.showToast({
         title: typeof error === 'string' ? error : '加载人物选项失败',
         icon: 'none',
       })
     } finally {
-      memberLoading.value = false
-      memberLoadingMore.value = false
-      updateOptionsScrollHeight()
+      if (requestId === requestSequence) {
+        memberLoading.value = false
+        memberLoadingMore.value = false
+        updateOptionsScrollHeight()
+      }
     }
   }
 
@@ -537,6 +642,7 @@
   }
 
   const loadMoreCharacterOptions = () => {
+    if (revealNextOptionBatch()) return
     fetchCharacterOptions(false)
   }
 
@@ -593,7 +699,13 @@
   watch(
     () => props.active,
     active => {
-      if (!active) return
+      if (!active) {
+        requestSequence += 1
+        memberLoading.value = false
+        memberLoadingMore.value = false
+        clearScheduledAvatarPreload()
+        return
+      }
       syncDraftFromModel()
       ensureInitialLoad()
     },

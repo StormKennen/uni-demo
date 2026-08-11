@@ -124,9 +124,9 @@
         <text>{{ isFamilyMode ? '加载物种中...' : '加载魔灵中...' }}</text>
       </view>
 
-      <view v-else-if="errorMessage" class="state-block">
+      <view v-else-if="errorMessage && characters.length === 0" class="state-block">
         <text>{{ errorMessage }}</text>
-        <button class="retry-btn" @click="refreshCharacters">重试</button>
+        <button class="retry-btn" @click="refreshCharacters()">重试</button>
       </view>
 
       <view v-else-if="characters.length === 0" class="state-block">
@@ -199,34 +199,37 @@
       </view>
 
       <view v-if="loading && characters.length > 0" class="load-more">继续加载...</view>
-      <view v-else-if="!hasNext && characters.length > 0" class="load-more muted">没有更多了</view>
+      <view v-else-if="!canLoadMore && characters.length > 0" class="load-more muted">没有更多了</view>
     </view>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
-  import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { computed, nextTick, ref } from 'vue'
+  import { onLoad, onShow, onPullDownRefresh, onReachBottom, onShareAppMessage, onShareTimeline, onUnload } from '@dcloudio/uni-app'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import SwcCharacterCard from './components/swc-character-card.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
   import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from './icon-assets'
   import { buildSwcListShare } from './share'
+  import { clearSwcCharacterCache, getCachedSwcCharacterPage } from './composables/swc-character-cache'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getUserInfo } from '@/utils/storage'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
   import { reportToolVisit } from '@/utils/tracker'
 
   type FilterKey = 'element' | 'star' | 'type' | 'sort' | 'awaken'
   type SortOrder = 'asc' | 'desc'
   type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
-  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery & {
-    'categories[awaken]'?: string
-    'categories[element]'?: string
-    'categories[archetype]'?: string
-    'categories[entry_type]'?: string
-  }
+  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery &
+    Record<string, string | number | undefined> & {
+      'categories[awaken]'?: string
+      'categories[element]'?: string
+      'categories[archetype]'?: string
+      'categories[entry_type]'?: string
+    }
 
   interface FilterOption {
     label: string
@@ -262,12 +265,18 @@
     hasNext?: boolean
     hasNextPage?: boolean
     page?: number
+    limit?: number
+    pageSize?: number
+    total?: number
+    totalResults?: number
     totalPages?: number
   }
 
   const COMPENDIUM_CODE = 'swc'
   const ALL_VALUE = 'all'
   const PAGE_SIZE = 50
+  const RENDER_BATCH_SIZE = 50
+  const INITIAL_AVATAR_PRELOAD_COUNT = 16
   const FAVORITE_KEY = `compendium:${COMPENDIUM_CODE}:favoriteCharacters`
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'
@@ -333,7 +342,9 @@
   const selectedAwaken = ref('awakened')
   const selectedSort = ref(DEFAULT_SORT_FIELD)
   const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
+  const allCharacters = ref<SwcCharacterView[]>([])
   const characters = ref<SwcCharacterView[]>([])
+  const renderedCount = ref(0)
   const refreshOnReturnFromEdit = ref(false)
   const favoriteIds = ref<string[]>([])
   const page = ref(1)
@@ -341,7 +352,10 @@
   const loading = ref(false)
   const errorMessage = ref('')
   let requestSequence = 0
+  let avatarPreloadTimer: ReturnType<typeof setTimeout> | null = null
   const isFamilyMode = computed(() => false) // computed(() => selectedElement.value === ALL_VALUE)
+  const hasBufferedCharacters = computed(() => characters.value.length < allCharacters.value.length)
+  const canLoadMore = computed(() => hasBufferedCharacters.value || hasNext.value)
 
   const hasActiveFilters = computed(
     () =>
@@ -608,7 +622,53 @@
     return itemCount >= PAGE_SIZE
   }
 
-  const fetchCharacters = async (reset = false) => {
+  const mergeUniqueCharacters = (base: SwcCharacterView[], next: SwcCharacterView[]): SwcCharacterView[] => {
+    const seen = new Set(base.map(item => item.characterId))
+    const merged = [...base]
+    next.forEach(item => {
+      if (!item.characterId || seen.has(item.characterId)) return
+      seen.add(item.characterId)
+      merged.push(item)
+    })
+    return merged
+  }
+
+  const syncRenderedCharacters = () => {
+    characters.value = allCharacters.value.slice(0, renderedCount.value)
+  }
+
+  const revealNextRenderBatch = (): boolean => {
+    if (!hasBufferedCharacters.value) return false
+    renderedCount.value = Math.min(allCharacters.value.length, renderedCount.value + RENDER_BATCH_SIZE)
+    syncRenderedCharacters()
+    return true
+  }
+
+  const clearScheduledAvatarPreload = () => {
+    if (!avatarPreloadTimer) return
+    clearTimeout(avatarPreloadTimer)
+    avatarPreloadTimer = null
+  }
+
+  const scheduleInitialAvatarPreload = (items: SwcCharacterView[], requestId: number) => {
+    const urls = items
+      .slice(0, INITIAL_AVATAR_PRELOAD_COUNT)
+      .map(item => item.avatar)
+      .filter(Boolean)
+    if (!urls.length) return
+
+    void nextTick().then(() => {
+      if (requestId !== requestSequence) return
+      clearScheduledAvatarPreload()
+      avatarPreloadTimer = setTimeout(() => {
+        avatarPreloadTimer = null
+        if (requestId !== requestSequence) return
+        void preloadAvatars(urls)
+      }, 0)
+    })
+  }
+
+  const fetchCharacters = async (reset = false, force = false) => {
     if (loading.value && !reset) return
     if (!reset && !hasNext.value) return
 
@@ -617,25 +677,55 @@
     errorMessage.value = ''
 
     if (reset) {
+      clearScheduledAvatarPreload()
       page.value = 1
       hasNext.value = true
+      allCharacters.value = []
       characters.value = []
+      renderedCount.value = 0
     }
 
     try {
       favoriteIds.value = readFavoriteIds()
-      const res = await getCompendiumsCharacters(buildQuery())
+      const queryPage = reset ? 1 : page.value
+      const query = buildQuery()
+      const result = await getCachedSwcCharacterPage(
+        query,
+        async () => {
+          const res = await getCompendiumsCharacters(query)
+          const items = extractItems(res)
+            .map(normalizeCharacter)
+            .filter((item): item is SwcCharacterView => Boolean(item))
+
+          const pagination = isRecord(res) ? readPagination(res) : {}
+          return {
+            items,
+            pagination: {
+              page: pagination.page || queryPage,
+              limit: pagination.limit || pagination.pageSize || PAGE_SIZE,
+              total: pagination.total || pagination.totalResults || 0,
+              totalPages: pagination.totalPages || 0,
+              hasNext: resolveHasNext(pagination, items.length),
+              hasPrev: Boolean(pagination.page && pagination.page > 1),
+            },
+          }
+        },
+        { force },
+      )
       if (requestId !== requestSequence) return
 
-      const items = extractItems(res)
-        .map(normalizeCharacter)
-        .filter((item): item is SwcCharacterView => Boolean(item))
-
-      characters.value = reset ? items : [...characters.value, ...items]
-
-      const pagination = isRecord(res) ? readPagination(res) : {}
-      hasNext.value = resolveHasNext(pagination, items.length)
-      page.value += 1
+      const displayItems = result.items.map(item => ({
+        ...item,
+        avatar: resolveAvatar(item.avatar) || item.avatar,
+      }))
+      allCharacters.value = reset ? mergeUniqueCharacters([], displayItems) : mergeUniqueCharacters(allCharacters.value, displayItems)
+      renderedCount.value = reset
+        ? Math.min(RENDER_BATCH_SIZE, allCharacters.value.length)
+        : Math.min(allCharacters.value.length, renderedCount.value + RENDER_BATCH_SIZE)
+      syncRenderedCharacters()
+      hasNext.value = result.pagination.hasNext
+      page.value = queryPage + 1
+      if (reset) scheduleInitialAvatarPreload(result.items, requestId)
     } catch (error) {
       if (requestId !== requestSequence) return
       errorMessage.value = typeof error === 'string' ? error : '图鉴加载失败，请稍后重试'
@@ -647,8 +737,9 @@
     }
   }
 
-  const refreshCharacters = () => {
-    fetchCharacters(true)
+  const refreshCharacters = (force = false) => {
+    if (force) clearSwcCharacterCache()
+    fetchCharacters(true, force)
   }
 
   const changeLocale = (locale: string) => {
@@ -734,7 +825,7 @@
     reportToolVisit('compendium-swc')
     if (refreshOnReturnFromEdit.value) {
       refreshOnReturnFromEdit.value = false
-      refreshCharacters()
+      refreshCharacters(true)
     }
   })
 
@@ -746,11 +837,17 @@
   })
 
   onPullDownRefresh(() => {
-    refreshCharacters()
+    refreshCharacters(true)
   })
 
   onReachBottom(() => {
-    fetchCharacters()
+    if (revealNextRenderBatch()) return
+    void fetchCharacters()
+  })
+
+  onUnload(() => {
+    requestSequence += 1
+    clearScheduledAvatarPreload()
   })
 
   // #ifdef MP-WEIXIN

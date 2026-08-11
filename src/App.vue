@@ -3,6 +3,7 @@
   import { watchRouter } from '@/utilsH5/router'
   import { updateHttpHeaders } from '@/utils/httpHeaders'
   import { useThemeStore } from '@/stores/theme'
+  import http from '@/services/http'
 
   watchRouter()
   const themeStore = useThemeStore()
@@ -12,6 +13,11 @@
     updateHttpHeaders().catch(error => {
       console.error('Failed to initialize HTTP headers on app launch:', error)
     })
+    // #ifdef MP-WEIXIN
+    http.prewarmGuestSession().catch(error => {
+      console.warn('Guest Session 预热失败，将在首次业务请求时重试:', error)
+    })
+    // #endif
     uni.addInterceptor('navigateTo', {
       //监听跳转
       invoke(e) {

@@ -4,6 +4,7 @@ import http from '@/services/http'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteGeminiSessionIdRes,
+  deleteSessionIdShareRes,
   getGeminiAuditStatusRes,
   getGeminiHistoryChatIdRes,
   getGeminiSessionIdRes,
@@ -11,12 +12,16 @@ import type {
   getGeminiSessionsRes,
   patchGeminiSessionIdBody,
   patchGeminiSessionIdRes,
+  postGeminiAuditStatusBody,
+  postGeminiAuditStatusRes,
   postGeminiChatBody,
   postGeminiChatRes,
   postGeminiGenerateBody,
   postGeminiGenerateRes,
   postGeminiSessionBody,
   postGeminiSessionRes,
+  postSessionIdShareBody,
+  postSessionIdShareRes,
 } from './interface'
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
@@ -31,7 +36,7 @@ export const postGeminiSession = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postGeminiSessionRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/gemini/session', data, _config)
+  return http.post(`/gemini/session`, data, _config)
 }
 
 /**
@@ -44,7 +49,7 @@ export const getGeminiSessions = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGeminiSessionsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/gemini/sessions', params, _config)
+  return http.get(`/gemini/sessions`, params, _config)
 }
 
 /**
@@ -58,19 +63,6 @@ export const getGeminiSessionId = async (
 ): Promise<Expand<getGeminiSessionIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/gemini/session/${id}`, {}, _config)
-}
-
-/**
- * @description Gemini/多轮对话（支持会话持久化）
- * @url POST /gemini/chat
- * @host https://app.apifox.com/link/project/7048425/apis/api-405889633
- */
-export const postGeminiChat = async (
-  data: Expand<postGeminiChatBody>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postGeminiChatRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/gemini/chat', data, _config)
 }
 
 /**
@@ -88,19 +80,6 @@ export const patchGeminiSessionId = async (
 }
 
 /**
- * @description Gemini/单轮生成
- * @url POST /gemini/generate
- * @host https://app.apifox.com/link/project/7048425/apis/api-405889634
- */
-export const postGeminiGenerate = async (
-  data: Expand<postGeminiGenerateBody>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postGeminiGenerateRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/gemini/generate', data, _config)
-}
-
-/**
  * @description Gemini/删除会话
  * @url DELETE /gemini/session/{id}
  * @host https://app.apifox.com/link/project/7048425/apis/api-406220512
@@ -114,16 +93,30 @@ export const deleteGeminiSessionId = async (
 }
 
 /**
- * @description Gemini/获取会话历史消息
- * @url GET /gemini/history/{chatId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-406220513
+ * @description Gemini/分享会话给指定用户
+ * @url POST /gemini/session/{id}/share
+ * @host https://app.apifox.com/link/project/7048425/apis/api-406772499
  */
-export const getGeminiHistoryChatId = async (
-  chatId: string,
+export const postSessionIdShare = async (
+  id: string,
+  data: Expand<postSessionIdShareBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getGeminiHistoryChatIdRes>> => {
+): Promise<Expand<postSessionIdShareRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/gemini/history/${chatId}', {}, _config)
+  return http.post(`/gemini/session/${id}/share`, data, _config)
+}
+
+/**
+ * @description Gemini/取消分享会话
+ * @url DELETE /gemini/session/{id}/share
+ * @host https://app.apifox.com/link/project/7048425/apis/api-406772500
+ */
+export const deleteSessionIdShare = async (
+  id: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<deleteSessionIdShareRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete(`/gemini/session/${id}/share`, {}, _config)
 }
 
 /**
@@ -135,5 +128,57 @@ export const getGeminiAuditStatus = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGeminiAuditStatusRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/gemini/audit-status', {}, _config)
+  return http.get(`/gemini/audit-status`, {}, _config)
+}
+
+/**
+ * @description Gemini/切换审核模式状态
+ * @url POST /gemini/audit-status
+ * @host https://app.apifox.com/link/project/7048425/apis/api-406772502
+ */
+export const postGeminiAuditStatus = async (
+  data: Expand<postGeminiAuditStatusBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postGeminiAuditStatusRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/gemini/audit-status`, data, _config)
+}
+
+/**
+ * @description Gemini/获取会话历史消息
+ * @url GET /gemini/history/{chatId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-406220513
+ */
+export const getGeminiHistoryChatId = async (
+  chatId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getGeminiHistoryChatIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/gemini/history/${chatId}`, {}, _config)
+}
+
+/**
+ * @description Gemini/多轮对话（支持会话持久化）
+ * @url POST /gemini/chat
+ * @host https://app.apifox.com/link/project/7048425/apis/api-405889633
+ */
+export const postGeminiChat = async (
+  data: Expand<postGeminiChatBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postGeminiChatRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/gemini/chat`, data, _config)
+}
+
+/**
+ * @description Gemini/单轮生成
+ * @url POST /gemini/generate
+ * @host https://app.apifox.com/link/project/7048425/apis/api-405889634
+ */
+export const postGeminiGenerate = async (
+  data: Expand<postGeminiGenerateBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postGeminiGenerateRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/gemini/generate`, data, _config)
 }

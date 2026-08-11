@@ -3,6 +3,7 @@ import { getStorageSync, setStorageSync } from '@/utils/storage'
 const CACHE_KEY = 'compendium:avatar-cache:index'
 const MAX_CACHE_ENTRIES = 300
 const PREFETCH_CONCURRENCY = 5
+const MAX_TRACKED_PREFETCH_URLS = 600
 
 interface AvatarCacheEntry {
   url: string
@@ -11,6 +12,7 @@ interface AvatarCacheEntry {
 }
 
 const prefetchedUrls = new Set<string>()
+const prefetchingUrls = new Set<string>()
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -42,7 +44,7 @@ const loadAvatarCacheIndex = (): AvatarCacheEntry[] => {
     .sort((a, b) => a.updatedAt - b.updatedAt)
 }
 
-let avatarCacheIndex = loadAvatarCacheIndex()
+const avatarCacheIndex = loadAvatarCacheIndex()
 
 const persistAvatarCacheIndex = () => {
   setStorageSync(
@@ -78,29 +80,34 @@ const upsertAvatarCacheEntry = async (entry: AvatarCacheEntry) => {
   await pruneAvatarCacheIndex()
 }
 
-const preloadWithLimit = async (urls: string[], limit: number, loader: (url: string) => Promise<void>) => {
+const preloadWithLimit = async (urls: string[], limit: number, loader: (url: string) => Promise<boolean>): Promise<string[]> => {
+  const failedUrls: string[] = []
   for (let index = 0; index < urls.length; index += limit) {
     const batch = urls.slice(index, index + limit)
-    await Promise.all(batch.map(url => loader(url)))
+    const results = await Promise.all(batch.map(url => loader(url)))
+    results.forEach((succeeded, resultIndex) => {
+      if (!succeeded) failedUrls.push(batch[resultIndex])
+    })
   }
+  return failedUrls
 }
 
-const preloadWebImage = (url: string): Promise<void> =>
+const preloadWebImage = (url: string): Promise<boolean> =>
   new Promise(resolve => {
     uni.getImageInfo({
       src: url,
-      success: () => resolve(),
-      fail: () => resolve(),
+      success: () => resolve(true),
+      fail: () => resolve(false),
     })
   })
 
-const downloadAndSaveAvatar = (url: string): Promise<void> =>
+const downloadAndSaveAvatar = (url: string): Promise<boolean> =>
   new Promise(resolve => {
     uni.downloadFile({
       url,
       success: downloadResult => {
         if (downloadResult.statusCode !== 200 || !downloadResult.tempFilePath) {
-          resolve()
+          resolve(false)
           return
         }
 
@@ -112,14 +119,23 @@ const downloadAndSaveAvatar = (url: string): Promise<void> =>
               path: saveResult.savedFilePath,
               updatedAt: Date.now(),
             })
-            resolve()
+            resolve(true)
           },
-          fail: () => resolve(),
+          fail: () => resolve(false),
         })
       },
-      fail: () => resolve(),
+      fail: () => resolve(false),
     })
   })
+
+const rememberPrefetchedUrls = (urls: string[]) => {
+  urls.forEach(url => prefetchedUrls.add(url))
+  while (prefetchedUrls.size > MAX_TRACKED_PREFETCH_URLS) {
+    const oldest = prefetchedUrls.values().next().value
+    if (typeof oldest !== 'string') break
+    prefetchedUrls.delete(oldest)
+  }
+}
 
 export const resolveAvatar = (url: string): string => {
   if (!url) return ''
@@ -134,19 +150,25 @@ export const resolveAvatar = (url: string): string => {
 
 export const preloadAvatars = async (urls: string[]): Promise<void> => {
   const uniqueUrls = Array.from(new Set(urls.map(toText).filter(Boolean)))
-  const pendingUrls = uniqueUrls.filter(url => !prefetchedUrls.has(url))
-  pendingUrls.forEach(url => prefetchedUrls.add(url))
+  const pendingUrls = uniqueUrls.filter(url => !prefetchedUrls.has(url) && !prefetchingUrls.has(url))
+  pendingUrls.forEach(url => prefetchingUrls.add(url))
 
   if (!pendingUrls.length) return
 
   // #ifdef WEB
-  await Promise.allSettled(pendingUrls.map(url => preloadWebImage(url)))
+  const webFailedUrls = await preloadWithLimit(pendingUrls, PREFETCH_CONCURRENCY, preloadWebImage)
+  const webFailedUrlSet = new Set(webFailedUrls)
+  rememberPrefetchedUrls(pendingUrls.filter(url => !webFailedUrlSet.has(url)))
+  pendingUrls.forEach(url => prefetchingUrls.delete(url))
   return
   // #endif
 
   // #ifdef MP-WEIXIN
   const cachedUrls = new Set(avatarCacheIndex.map(item => item.url))
   const downloadTargets = pendingUrls.filter(url => !cachedUrls.has(url))
-  await preloadWithLimit(downloadTargets, PREFETCH_CONCURRENCY, downloadAndSaveAvatar)
+  const mpFailedUrls = await preloadWithLimit(downloadTargets, PREFETCH_CONCURRENCY, downloadAndSaveAvatar)
+  const mpFailedUrlSet = new Set(mpFailedUrls)
+  rememberPrefetchedUrls(pendingUrls.filter(url => !mpFailedUrlSet.has(url)))
+  pendingUrls.forEach(url => prefetchingUrls.delete(url))
   // #endif
 }

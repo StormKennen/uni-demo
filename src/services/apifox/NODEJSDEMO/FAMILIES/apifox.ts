@@ -4,6 +4,7 @@ import http from '@/services/http'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteFamiliesEventsEventIdRes,
+  deleteFamiliesMembersMemberIdPathQuery,
   deleteFamiliesMembersMemberIdRes,
   deleteFamiliesShareShareIdRes,
   getFamiliesEventsEventIdRes,
@@ -18,10 +19,10 @@ import type {
   getTreesMemberMemberIdQuery,
   getTreesMemberMemberIdRes,
   patchFamiliesMembersMemberIdBody,
+  patchFamiliesMembersMemberIdPathQuery,
   patchFamiliesMembersMemberIdRes,
   postFamiliesMembersBody,
   postFamiliesMembersRes,
-  postFamiliesRelationshipsLinkRes,
   postFamiliesShareShareIdRes,
   postMembersMemberIdEventsRes,
   postMembersMemberIdShareRes,
@@ -42,20 +43,7 @@ export const getFamiliesMembers = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFamiliesMembersRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/members', params, _config)
-}
-
-/**
- * @description Families/按姓氏获取家族树
- * @url GET /families/trees
- * @host https://app.apifox.com/link/project/7048425/apis/api-363079900
- */
-export const getFamiliesTrees = async (
-  params: Expand<getFamiliesTreesQuery>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getFamiliesTreesRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/trees', params, _config)
+  return http.get(`/families/members`, params, _config)
 }
 
 /**
@@ -68,7 +56,7 @@ export const postFamiliesMembers = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postFamiliesMembersRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/members', data, _config)
+  return http.post(`/families/members`, data, _config)
 }
 
 /**
@@ -81,7 +69,7 @@ export const getFamiliesMembersMemberId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFamiliesMembersMemberIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/members/${memberId}', {}, _config)
+  return http.get(`/families/members/${memberId}`, {}, _config)
 }
 
 /**
@@ -89,13 +77,13 @@ export const getFamiliesMembersMemberId = async (
  * @url PATCH /families/members/{memberId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075557
  */
-export const patchFamiliesMembersMemberId = async (
-  memberId: string,
+export const patchFamiliesMembers = async (
+  pathParams: Expand<patchFamiliesMembersMemberIdPathQuery>,
   data: Expand<patchFamiliesMembersMemberIdBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<patchFamiliesMembersMemberIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.patch('/families/members/${memberId}', data, _config)
+  return http.patch(`/families/members/${pathParams.memberId}`, data, _config)
 }
 
 /**
@@ -103,12 +91,25 @@ export const patchFamiliesMembersMemberId = async (
  * @url DELETE /families/members/{memberId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075558
  */
-export const deleteFamiliesMembersMemberId = async (
-  memberId: string,
+export const deleteFamiliesMembers = async (
+  pathParams: Expand<deleteFamiliesMembersMemberIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteFamiliesMembersMemberIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/families/members/${memberId}', {}, _config)
+  return http.delete(`/families/members/${pathParams.memberId}`, {}, _config)
+}
+
+/**
+ * @description Families/按姓氏获取家族树
+ * @url GET /families/trees
+ * @host https://app.apifox.com/link/project/7048425/apis/api-363079900
+ */
+export const getFamiliesTrees = async (
+  params: Expand<getFamiliesTreesQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getFamiliesTreesRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/families/trees`, params, _config)
 }
 
 /**
@@ -122,7 +123,7 @@ export const getTreesMemberMemberId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getTreesMemberMemberIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/trees/member/${memberId}', params, _config)
+  return http.get(`/families/trees/member/${memberId}`, params, _config)
 }
 
 /**
@@ -135,7 +136,7 @@ export const postMembersMemberIdShare = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMembersMemberIdShareRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/members/${memberId}/share', {}, _config)
+  return http.post(`/families/members/${memberId}/share`, {}, _config)
 }
 
 /**
@@ -148,7 +149,7 @@ export const postFamiliesShareShareId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postFamiliesShareShareIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/share/${shareId}', {}, _config)
+  return http.post(`/families/share/${shareId}`, {}, _config)
 }
 
 /**
@@ -161,7 +162,7 @@ export const putFamiliesShareShareId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<putFamiliesShareShareIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.put('/families/share/${shareId}', {}, _config)
+  return http.put(`/families/share/${shareId}`, {}, _config)
 }
 
 /**
@@ -174,7 +175,7 @@ export const deleteFamiliesShareShareId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteFamiliesShareShareIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/families/share/${shareId}', {}, _config)
+  return http.delete(`/families/share/${shareId}`, {}, _config)
 }
 
 /**
@@ -187,7 +188,7 @@ export const postShareShareIdData = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postShareShareIdDataRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/share/${shareId}/data', {}, _config)
+  return http.post(`/families/share/${shareId}/data`, {}, _config)
 }
 
 /**
@@ -200,7 +201,7 @@ export const getMembersMemberIdShares = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getMembersMemberIdSharesRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/members/${memberId}/shares', {}, _config)
+  return http.get(`/families/members/${memberId}/shares`, {}, _config)
 }
 
 /**
@@ -213,7 +214,7 @@ export const postMembersMemberIdEvents = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postMembersMemberIdEventsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/members/${memberId}/events', {}, _config)
+  return http.post(`/families/members/${memberId}/events`, {}, _config)
 }
 
 /**
@@ -225,7 +226,7 @@ export const getFamiliesEvents = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFamiliesEventsRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/events', {}, _config)
+  return http.get(`/families/events`, {}, _config)
 }
 
 /**
@@ -238,7 +239,7 @@ export const getFamiliesEventsEventId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFamiliesEventsEventIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/events/${eventId}', {}, _config)
+  return http.get(`/families/events/${eventId}`, {}, _config)
 }
 
 /**
@@ -251,7 +252,7 @@ export const putFamiliesEventsEventId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<putFamiliesEventsEventIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.put('/families/events/${eventId}', {}, _config)
+  return http.put(`/families/events/${eventId}`, {}, _config)
 }
 
 /**
@@ -264,7 +265,7 @@ export const deleteFamiliesEventsEventId = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteFamiliesEventsEventIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete('/families/events/${eventId}', {}, _config)
+  return http.delete(`/families/events/${eventId}`, {}, _config)
 }
 
 /**
@@ -276,18 +277,5 @@ export const getFamiliesTimeline = async (
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getFamiliesTimelineRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
-  return http.get('/families/timeline', {}, _config)
-}
-
-/**
- * @description Families/建立父母与子女关系（需登录）
- * @url POST /families/relationships/link
- * @host https://app.apifox.com/link/project/7048425/apis/api-363075573
- */
-export const postFamiliesRelationshipsLink = async (
-  relationshipData: postFamiliesRelationshipsLinkReq,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postFamiliesRelationshipsLinkRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.post('/families/relationships/link', relationshipData, _config)
+  return http.get(`/families/timeline`, {}, _config)
 }

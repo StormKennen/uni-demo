@@ -103,7 +103,7 @@
       <StateBlock v-if="loading && !characters.length" class="state-block" text="加载人物中..." />
 
       <StateBlock
-        v-else-if="errorMessage"
+        v-else-if="errorMessage && !characters.length"
         class="state-block"
         :text="errorMessage"
         action-text="重试"
@@ -112,7 +112,7 @@
 
       <StateBlock v-else-if="!characters.length && !loading" class="state-block" :text="emptyText" />
 
-      <scroll-view v-else class="grid-scroll" scroll-y @scrolltolower="handleScrollToLower">
+      <scroll-view v-else class="grid-scroll" scroll-y :lower-threshold="160" enable-back-to-top @scrolltolower="handleScrollToLower">
         <view class="grid-wrap">
           <view
             v-for="character in characters"
@@ -120,10 +120,7 @@
             class="grid-item"
             :class="{ selected: selectedIndexById.has(character.characterId) }"
             @tap="toggleSelect(character)">
-            <image v-if="character.avatar" class="grid-avatar" :src="character.avatar" mode="aspectFill" lazy-load />
-            <view v-else class="grid-avatar grid-avatar-placeholder">
-              <text>{{ character.name.slice(0, 1) || '?' }}</text>
-            </view>
+            <SwcAvatarFrame class="grid-avatar" :src="character.avatar" :name="character.name" :size="92" />
             <view v-if="selectedIndexById.has(character.characterId)" class="grid-selected-badge">
               <text>{{ selectedIndexById.get(character.characterId) }}</text>
             </view>
@@ -133,7 +130,7 @@
         <view v-if="loadingMore" class="load-more">
           <text class="load-more-text">加载更多中...</text>
         </view>
-        <view v-else-if="characters.length && !hasNext" class="load-more">
+        <view v-else-if="characters.length && !canLoadMore" class="load-more">
           <text class="load-more-text muted">没有更多了</text>
         </view>
       </scroll-view>
@@ -152,27 +149,30 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { onLoad, onReachBottom, onUnload } from '@dcloudio/uni-app'
   import SearchActionRow from './components/search-action-row.vue'
+  import SwcAvatarFrame from './components/swc-avatar-frame.vue'
   import SwcElementBadge from './components/swc-element-badge.vue'
   import StateBlock from './components/state-block.vue'
+  import { getCachedSwcCharacterPage } from './composables/swc-character-cache'
   import type { CharacterOption } from './lineup-types'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { getCompendiumsCharacters } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharactersQuery, getCompendiumsCharactersRes } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
   import { getStorageSync, setStorageSync } from '@/utils/storage'
-  import { resolveAvatar } from '@/utils/avatar-cache'
+  import { preloadAvatars, resolveAvatar } from '@/utils/avatar-cache'
 
   type FilterKey = 'element' | 'star' | 'type' | 'awaken'
   type SortOrder = 'asc' | 'desc'
   type RecordValue = string | number | boolean | null | undefined | Record<string, unknown> | unknown[]
-  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery & {
-    'categories[awaken]'?: string
-    'categories[element]'?: string
-    'categories[archetype]'?: string
-    'categories[entry_type]'?: string
-  }
+  type CompendiumCharactersQueryParams = getCompendiumsCharactersQuery &
+    Record<string, string | number | undefined> & {
+      'categories[awaken]'?: string
+      'categories[element]'?: string
+      'categories[archetype]'?: string
+      'categories[entry_type]'?: string
+    }
 
   interface FilterOption {
     label: string
@@ -198,11 +198,17 @@
     hasNext?: boolean
     hasNextPage?: boolean
     page?: number
+    limit?: number
+    pageSize?: number
+    total?: number
+    totalResults?: number
     totalPages?: number
   }
 
   const ALL_VALUE = 'all'
-  const PAGE_SIZE = 30
+  const PAGE_SIZE = 50
+  const RENDER_BATCH_SIZE = 50
+  const INITIAL_AVATAR_PRELOAD_COUNT = 16
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'
   const DEFAULT_LOCALE = 'zh-CN'
@@ -254,7 +260,9 @@
   const selectedAwaken = ref('awakened')
   const selectedSort = ref(DEFAULT_SORT_FIELD)
   const selectedSortOrder = ref<SortOrder>(DEFAULT_SORT_ORDER)
+  const allCharacters = ref<SwcCharacterView[]>([])
   const characters = ref<SwcCharacterView[]>([])
+  const renderedCount = ref(0)
   const draftSelected = ref<CharacterOption[]>([])
   const page = ref(1)
   const hasNext = ref(true)
@@ -264,8 +272,11 @@
   const cacheKey = ref('compendium:swc:lineup-edit:picker-draft')
   const resultKey = ref('compendium:swc:lineup-edit:picker-result')
   let requestSequence = 0
+  let avatarPreloadTimer: ReturnType<typeof setTimeout> | null = null
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   let suppressKeywordWatch = false
+  const hasBufferedCharacters = computed(() => characters.value.length < allCharacters.value.length)
+  const canLoadMore = computed(() => hasBufferedCharacters.value || hasNext.value)
 
   const hasActiveFilters = computed(
     () =>
@@ -553,6 +564,41 @@
     return merged
   }
 
+  const syncRenderedCharacters = () => {
+    characters.value = allCharacters.value.slice(0, renderedCount.value)
+  }
+
+  const revealNextRenderBatch = (): boolean => {
+    if (!hasBufferedCharacters.value) return false
+    renderedCount.value = Math.min(allCharacters.value.length, renderedCount.value + RENDER_BATCH_SIZE)
+    syncRenderedCharacters()
+    return true
+  }
+
+  const clearScheduledAvatarPreload = () => {
+    if (!avatarPreloadTimer) return
+    clearTimeout(avatarPreloadTimer)
+    avatarPreloadTimer = null
+  }
+
+  const scheduleInitialAvatarPreload = (items: SwcCharacterView[], requestId: number) => {
+    const urls = items
+      .slice(0, INITIAL_AVATAR_PRELOAD_COUNT)
+      .map(item => item.avatar)
+      .filter(Boolean)
+    if (!urls.length) return
+
+    void nextTick().then(() => {
+      if (requestId !== requestSequence) return
+      clearScheduledAvatarPreload()
+      avatarPreloadTimer = setTimeout(() => {
+        avatarPreloadTimer = null
+        if (requestId !== requestSequence) return
+        void preloadAvatars(urls)
+      }, 0)
+    })
+  }
+
   const fetchCharacters = async (reset = false) => {
     if (loading.value && !reset) return
     if (loadingMore.value && !reset) return
@@ -560,35 +606,59 @@
 
     const requestId = reset ? ++requestSequence : requestSequence
     if (reset) {
+      clearScheduledAvatarPreload()
       loading.value = true
       loadingMore.value = false
       errorMessage.value = ''
       page.value = 1
       hasNext.value = true
+      allCharacters.value = []
       characters.value = []
+      renderedCount.value = 0
     } else {
       loadingMore.value = true
     }
 
     try {
       const queryPage = reset ? 1 : page.value
-      const res = await getCompendiumsCharacters(buildCharacterQuery(queryPage))
+      const result = await getCachedSwcCharacterPage(buildCharacterQuery(queryPage), async () => {
+        const res = await getCompendiumsCharacters(buildCharacterQuery(queryPage))
+        const items = extractItems(res)
+          .map(normalizeCharacter)
+          .filter((item): item is SwcCharacterView => Boolean(item))
+
+        const pagination = isRecord(res) ? readPagination(res) : {}
+        return {
+          items,
+          pagination: {
+            page: pagination.page || queryPage,
+            limit: pagination.limit || pagination.pageSize || PAGE_SIZE,
+            total: pagination.total || pagination.totalResults || 0,
+            totalPages: pagination.totalPages || 0,
+            hasNext: resolveHasNext(pagination, items.length),
+            hasPrev: Boolean(pagination.page && pagination.page > 1),
+          },
+        }
+      })
       if (requestId !== requestSequence) return
 
-      const items = extractItems(res)
-        .map(normalizeCharacter)
-        .filter((item): item is SwcCharacterView => Boolean(item))
-        .map(resolveCardAvatar)
-
-      characters.value = reset ? items : mergeUniqueCharacters(characters.value, items)
-
-      const pagination = isRecord(res) ? readPagination(res) : {}
-      hasNext.value = resolveHasNext(pagination, items.length)
+      const displayItems = result.items.map(resolveCardAvatar)
+      allCharacters.value = reset ? mergeUniqueCharacters([], displayItems) : mergeUniqueCharacters(allCharacters.value, displayItems)
+      renderedCount.value = reset
+        ? Math.min(RENDER_BATCH_SIZE, allCharacters.value.length)
+        : Math.min(allCharacters.value.length, renderedCount.value + RENDER_BATCH_SIZE)
+      syncRenderedCharacters()
+      hasNext.value = result.pagination.hasNext
       page.value = queryPage + 1
+      if (reset) scheduleInitialAvatarPreload(result.items, requestId)
     } catch (error) {
       if (requestId !== requestSequence) return
       errorMessage.value = typeof error === 'string' ? error : '人物加载失败，请稍后重试'
-      if (reset) characters.value = []
+      if (reset) {
+        allCharacters.value = []
+        characters.value = []
+        renderedCount.value = 0
+      }
     } finally {
       if (requestId === requestSequence) {
         loading.value = false
@@ -602,11 +672,12 @@
   }
 
   const loadMore = () => {
+    if (revealNextRenderBatch()) return
     void fetchCharacters(false)
   }
 
   const handleScrollToLower = () => {
-    if (!loading.value && !loadingMore.value && hasNext.value) loadMore()
+    if (!loading.value && !loadingMore.value && canLoadMore.value) loadMore()
   }
 
   const selectFilter = (key: FilterKey, value: string) => {
@@ -677,12 +748,13 @@
   })
 
   onReachBottom(() => {
-    if (!loading.value && !loadingMore.value && hasNext.value) loadMore()
+    if (!loading.value && !loadingMore.value && canLoadMore.value) loadMore()
   })
 
   onUnload(() => {
     // 使在途列表请求失效，避免页面销毁后回写 state
     requestSequence += 1
+    clearScheduledAvatarPreload()
     if (searchTimer) {
       clearTimeout(searchTimer)
       searchTimer = null
@@ -843,8 +915,7 @@
 
   .grid-scroll {
     flex: 1;
-    height: 0;
-    min-height: 62vh;
+    min-height: 0;
     box-sizing: border-box;
   }
 
@@ -852,7 +923,7 @@
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10rpx;
-    padding: 12rpx;
+    padding: 12rpx 12rpx 152rpx;
   }
 
   .grid-item {

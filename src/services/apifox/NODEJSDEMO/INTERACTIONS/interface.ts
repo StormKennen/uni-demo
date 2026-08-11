@@ -89,3 +89,42 @@ export interface patchCommentsCommentIdModerateBody {
  * @url PATCH /admin/interactions/comments/{commentId}/moderate
  */
 export type patchCommentsCommentIdModerateRes = string
+
+/**
+ * @description Interactions/我的收藏列表（按访问者身份反查）--接口请求Query参数
+ * @url GET /interactions/my/favorites
+ */
+export interface getInteractionsMyFavoritesQuery {
+  /** 仅返回该内容主体类型的收藏。 */
+  targetType?: string
+
+  page?: number
+
+  pageSize?: number
+}
+
+/**
+ * @description Interactions/我的收藏列表（按访问者身份反查）--接口返回值
+ * @url GET /interactions/my/favorites
+ */
+export type getInteractionsMyFavoritesRes = string
+
+/**
+ * @description Interactions/我点赞/点踩过的列表（按访问者身份反查）--接口请求Query参数
+ * @url GET /interactions/my/reactions
+ */
+export interface getInteractionsMyReactionsQuery {
+  targetType?: string
+  /** 只看点赞（1）或点踩（-1）；省略则全部。 */
+  value?: number
+
+  page?: number
+
+  pageSize?: number
+}
+
+/**
+ * @description Interactions/我点赞/点踩过的列表（按访问者身份反查）--接口返回值
+ * @url GET /interactions/my/reactions
+ */
+export type getInteractionsMyReactionsRes = string
