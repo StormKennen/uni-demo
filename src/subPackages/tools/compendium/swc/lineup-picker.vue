@@ -134,6 +134,7 @@
   const selectedLocale = ref(DEFAULT_LOCALE)
   const pickerMode = ref<PickerMode>('lineup')
   const relationSide = ref<RelationSide>('defense')
+  const requiredType = ref('')
   const returnKey = ref(DEFAULT_RESULT_KEY)
   const initialSelectedId = ref('')
   const keyword = ref('')
@@ -150,6 +151,7 @@
   const relationSideLabel = computed(() => (relationSide.value === 'offense' ? '进攻阵容' : '防守阵容'))
   const selectedCharacterViews = computed<SwcCharacterView[]>(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
   const typeOptions = computed(() => {
+    if (requiredType.value) return [{ label: getLineupTypeLabel(requiredType.value), value: requiredType.value }]
     const seen = new Set<string>()
     const result: Array<{ label: string; value: string }> = [{ label: '全部', value: ALL_VALUE }]
     ;[...LINEUP_TYPE_OPTIONS, ...LINEUP_TYPE_PRESET_OPTIONS].forEach(option => {
@@ -260,6 +262,7 @@
   }
 
   const selectType = (value: string) => {
+    if (requiredType.value && value !== requiredType.value) return
     if (selectedType.value === value) return
     selectedType.value = value
     void refreshList()
@@ -318,10 +321,10 @@
     const params = [
       `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
-      'returnMode=picker',
+      'returnMode=lineup-picker',
       `returnKey=${encodeURIComponent(returnKey.value)}`,
-      `presetType=${encodeURIComponent(selectedType.value || (relationSide.value === 'offense' ? '竞技场进攻' : '竞技场防守'))}`,
-      `lockType=${encodeURIComponent(isRelationMode.value ? '1' : '0')}`,
+      `presetType=${encodeURIComponent(requiredType.value || selectedType.value || (relationSide.value === 'offense' ? '竞技场进攻' : '竞技场防守'))}`,
+      `lockType=${encodeURIComponent(requiredType.value || isRelationMode.value ? '1' : '0')}`,
     ]
     if (isRelationMode.value) params.push(`returnSide=${encodeURIComponent(relationSide.value)}`)
     uni.navigateTo({ url: `/subPackages/tools/compendium/swc/lineup-edit?${params.join('&')}` })
@@ -348,7 +351,8 @@
     if (!routeReturnKey) removeStorageSync(DEFAULT_RESULT_KEY)
     keyword.value = decodeOption(options.keyword)
     const routeType = decodeOption(options.type)
-    selectedType.value = routeType === 'all' ? ALL_VALUE : routeType
+    requiredType.value = decodeOption(options.requiredType)
+    selectedType.value = requiredType.value || (routeType === 'all' ? ALL_VALUE : routeType)
     initialSelectedId.value = decodeOption(options.selectedId || options.selectedLineupId)
     const ids = decodeOption(options.characterIds || options.selectedCharacterIds)
       .split(',')

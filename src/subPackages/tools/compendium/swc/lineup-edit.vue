@@ -65,7 +65,11 @@
 
           <view class="field">
             <text class="field-label">阵容描述</text>
-            <textarea v-model="form.description" class="field-textarea" :maxlength="1000" placeholder="请输入阵容思路、适用场景或关键打法" />
+            <textarea
+              v-model="form.description"
+              class="field-textarea"
+              :maxlength="1000"
+              placeholder="请输入阵容思路、适用场景或关键打法" />
           </view>
         </view>
 
@@ -117,7 +121,7 @@
   import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
   import { LINEUP_STATUS_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
-  import { ensureLineupFeatureAccess } from '@/utils/admin'
+  import { ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import {
     getCompendiumsLineupsLineupId,
@@ -130,7 +134,7 @@
   const PICKER_CACHE_KEY = 'compendium:swc:lineup-edit:picker-draft'
   const PICKER_RESULT_KEY = 'compendium:swc:lineup-edit:picker-result'
 
-  type ReturnMode = 'picker' | ''
+  type ReturnMode = 'lineup-picker' | 'picker' | ''
   type ReturnSide = 'defense' | 'offense'
 
   interface FormState {
@@ -161,6 +165,7 @@
   })
 
   const isEditMode = computed(() => Boolean(lineupId.value))
+  const isPickerReturnMode = computed(() => returnMode.value === 'lineup-picker' || returnMode.value === 'picker')
   const isTypeLocked = computed(() => lockType.value && !isEditMode.value)
   const selectedMemberViews = computed(() => selectedMembers.value.map(item => toSwcCharacterView(item)))
 
@@ -247,7 +252,7 @@
         const detail = normalizeUserLineupDetail(
           await getCompendiumsLineupsLineupId(
             lineupId.value,
-            sanitizeQuery({ locale: selectedLocale.value }) as any,
+            sanitizeQuery({ locale: selectedLocale.value }),
             buildAnonymousRequestConfig(),
           ),
         )
@@ -283,8 +288,7 @@
 
   /**
    * 创建接口当前由生成层声明为 string，无法从类型安全地读取新阵容 ID。
-   * 仅接受明确的 Mongo ObjectId / UUID 或对象中的 id 字段，其他响应交给后端契约阶段处理。
-   * BACKEND-CONTRACT-PENDING: 重新生成 Apifox 后应优先使用明确的创建响应类型。
+   * 仅接受明确的 Mongo ObjectId / UUID 或对象中的 id 字段；生成层仍声明 string 时保留兼容兜底。
    */
   const extractCreatedLineupId = (value: unknown): string => {
     if (typeof value === 'string') {
@@ -308,29 +312,26 @@
     return ''
   }
 
-  const writePickerReturn = (response: unknown): boolean => {
-    if (returnMode.value !== 'picker' || !returnKey.value) return false
+  const writePickerReturn = async (response: unknown): Promise<boolean> => {
+    if (!isPickerReturnMode.value || !returnKey.value) return false
     const createdId = extractCreatedLineupId(response)
     if (!createdId) return false
 
+    let detail: UserLineupDetail
+    try {
+      detail = normalizeUserLineupDetail(
+        await getCompendiumsLineupsLineupId(createdId, sanitizeQuery({ locale: selectedLocale.value }), buildAnonymousRequestConfig()),
+      )
+    } catch {
+      return false
+    }
+
     const lineup: UserLineupSummary = {
-      id: createdId,
-      name: form.name.trim(),
-      type: form.type.trim(),
-      description: form.description.trim(),
-      status: form.status,
-      memberCount: selectedMembers.value.length,
+      ...detail,
+      memberCount: detail.characters.length,
       targetLineupsCount: 0,
       sourceLineupsCount: 0,
-      characters: selectedMembers.value.map(item => ({ ...item })),
-      source: 'user',
-      createdBy: null,
-      updatedBy: null,
-      likeCount: 0,
-      dislikeCount: 0,
-      score: 0,
-      myReaction: 0,
-      canEdit: true,
+      characters: detail.characters.map(item => item.character),
     }
 
     if (returnSideProvided.value) {
@@ -357,19 +358,19 @@
     try {
       let createResponse: unknown
       if (isEditMode.value) {
-        await patchCompendiumsLineupsLineupId(lineupId.value, basePayload as any, buildAnonymousRequestConfig())
+        await patchCompendiumsLineupsLineupId(lineupId.value, basePayload, buildAnonymousRequestConfig())
       } else {
         createResponse = await postCompendiumsLineups(
           {
             compendiumId: COMPENDIUM_CODE,
             ...basePayload,
-          } as any,
+          },
           buildAnonymousRequestConfig(),
         )
       }
 
-      const returnedToPicker = !isEditMode.value && returnMode.value === 'picker'
-      const hasPickerResult = returnedToPicker ? writePickerReturn(createResponse) : false
+      const returnedToPicker = !isEditMode.value && isPickerReturnMode.value
+      const hasPickerResult = returnedToPicker ? await writePickerReturn(createResponse) : false
 
       uni.showToast({
         title: isEditMode.value ? '保存成功' : '创建成功',
@@ -377,7 +378,7 @@
       })
 
       if (returnedToPicker && !hasPickerResult) {
-        // BACKEND-CONTRACT-PENDING: 当前创建响应类型为 string，无法安全取得新阵容 ID；返回选择页后由用户手动选择。
+        // 生成层响应仍声明为 string 且未能提取稳定 ID，返回选择页后由用户手动选择。
         uni.showToast({ title: '已创建，请返回列表手动选择', icon: 'none' })
       }
 
@@ -398,14 +399,15 @@
   onLoad((options: Record<string, string | undefined>) => {
     lineupId.value = options.lineupId || ''
     selectedLocale.value = decodeRouteOption(options.locale) || DEFAULT_LOCALE
-    returnMode.value = decodeRouteOption(options.returnMode) === 'picker' ? 'picker' : ''
+    const routeReturnMode = decodeRouteOption(options.returnMode)
+    returnMode.value = routeReturnMode === 'lineup-picker' || routeReturnMode === 'picker' ? routeReturnMode : ''
     returnKey.value = decodeRouteOption(options.returnKey)
     returnSideProvided.value = Boolean(options.returnSide)
     returnSide.value = decodeRouteOption(options.returnSide) === 'offense' ? 'offense' : 'defense'
     presetType.value = decodeRouteOption(options.presetType)
     lockType.value = ['1', 'true', 'yes'].includes(decodeRouteOption(options.lockType).toLowerCase())
 
-    if (!ensureLineupFeatureAccess(buildCurrentUrl())) return
+    if (!ensureLoginAccess(buildCurrentUrl())) return
 
     removeStorageSync(PICKER_RESULT_KEY)
     uni.setNavigationBarTitle({ title: isEditMode.value ? '编辑阵容' : '新建阵容' })

@@ -24,9 +24,6 @@
               {{ option.label }}
             </text>
           </view>
-          <text v-if="selectedScope !== 'all'" class="scope-helper">
-            当前范围先按已加载结果本地筛选，后端 scope 契约接入后将切换为服务端查询。
-          </text>
         </view>
 
         <view class="filter-head">
@@ -46,16 +43,14 @@
 
         <view class="action-row">
           <button v-if="selectedCharacters.length" class="toolbar-btn" size="mini" @click="clearCharacters">清空魔灵</button>
-          <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="!selectedCharacters.length" @click="refresh">
-            查询
-          </button>
+          <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="loading" @click="refresh"> 查询 </button>
         </view>
 
-        <button class="relation-entry-btn" size="mini" @click="openRelationEditor()">+ 新增克制</button>
+        <button v-if="relationWriteAvailable" class="relation-entry-btn" size="mini" @click="openRelationEditor()">+ 新增克制</button>
       </view>
 
       <LineupRelationEditor
-        v-if="relationEditorVisible"
+        v-if="relationWriteAvailable && relationEditorVisible"
         :defense="relationDraft.defense"
         :offense="relationDraft.offense"
         :description="relationDraft.description"
@@ -69,26 +64,27 @@
 
       <StateBlock v-else-if="errorMessage" class="state-block" :text="errorMessage" action-text="重试" theme="teal" @action="refresh" />
 
-      <StateBlock v-else-if="emptyReason === 'no_characters'" class="state-block" text="请选择魔灵查询阵容" />
+      <StateBlock
+        v-else-if="emptyReason === 'idle' && !results.length"
+        class="state-block"
+        text="可以选择魔灵缩小范围，也可以直接点击查询阵容克制" />
 
       <StateBlock v-else-if="emptyReason === 'no_lineups'" class="state-block" text="暂未找到包含所选魔灵的阵容" />
-
-      <StateBlock v-else-if="results.length && !filteredResults.length" class="state-block" text="当前范围暂无克制阵容" />
 
       <view v-else class="result-list">
         <view v-if="relationMode" class="result-meta">
           <text class="result-meta-text">{{ resultMetaText }}</text>
-          <text class="result-meta-count">
-            共 {{ selectedScope === 'all' ? pagination.total || results.length : filteredResults.length }} 组
-          </text>
+          <text class="result-meta-count"> 共 {{ pagination.total || results.length }} 组 </text>
         </view>
 
-        <view v-for="group in filteredResults" :key="group.lineup.id" class="group-card">
+        <view v-for="group in results" :key="group.lineup.id" class="group-card">
           <view class="group-head">
             <text class="group-title">{{ primaryLabel }}</text>
             <text v-if="group.lineup.name" class="group-name">{{ group.lineup.name }}</text>
             <text class="group-type">{{ getLineupTypeLabel(group.lineup.type) }}</text>
-            <button class="relation-inline-btn" size="mini" @click="openRelationEditor(group)">补充克制</button>
+            <button v-if="relationWriteAvailable" class="relation-inline-btn" size="mini" @click="openRelationEditor(group)"
+              >补充克制</button
+            >
           </view>
 
           <SwcLineup
@@ -110,8 +106,9 @@
             :dislike-count="group.lineup.dislikeCount"
             :score="group.lineup.score"
             :my-reaction="group.lineup.myReaction"
-            :is-favorite="isLineupFavorite(group.lineup.id)"
-            :disabled="reactingId === group.lineup.id"
+            :favorite-count="group.lineup.favoriteCount"
+            :is-favorite="group.lineup.isFavorited"
+            :disabled="reactingId === group.lineup.id || favoritingIds.has(group.lineup.id)"
             @like="handleLike(group.lineup)"
             @dislike="handleDislike(group.lineup)"
             @favorite="handleFavorite(group.lineup)" />
@@ -132,6 +129,10 @@
                 </view>
 
                 <text v-if="item.relationDescription" class="related-desc">{{ item.relationDescription }}</text>
+                <text v-if="item.relationCreatedAt" class="relation-origin">
+                  {{ item.relationCanEdit ? '我创建的' : item.relationSource === 'user' ? '玩家补充' : '系统关系' }} ·
+                  {{ formatDate(item.relationCreatedAt) }}
+                </text>
 
                 <SwcLineup
                   :characters="toMemberViews(item.lineup.characters)"
@@ -150,8 +151,9 @@
                   :dislike-count="item.lineup.dislikeCount"
                   :score="item.lineup.score"
                   :my-reaction="item.lineup.myReaction"
-                  :is-favorite="isLineupFavorite(item.lineup.id)"
-                  :disabled="reactingId === item.lineup.id"
+                  :favorite-count="item.lineup.favoriteCount"
+                  :is-favorite="item.lineup.isFavorited"
+                  :disabled="reactingId === item.lineup.id || favoritingIds.has(item.lineup.id)"
                   @like="handleLike(item.lineup)"
                   @dislike="handleDislike(item.lineup)"
                   @favorite="handleFavorite(item.lineup)" />
@@ -180,8 +182,8 @@
   import { toSwcCharacterView } from './utils'
   import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
   import { buildSwcLineupCounterShare } from './share'
-  import type { CharacterOption, LineupCharacterPreview, LineupOption, LineupRelationGroup } from './lineup-types'
-  import { ensureLineupFeatureAccess } from '@/utils/admin'
+  import type { CharacterOption, LineupCharacterPreview, LineupOption, LineupRelationGroup, LineupScope } from './lineup-types'
+  import { ensureLineupFeatureAccess, ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -190,9 +192,9 @@
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineup-counter:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
   const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
-  const FAVORITE_LINEUPS_KEY = 'compendium:swc:lineup-counter:favorite-ids'
   const RELATION_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:relation-picker:result'
   const RELATION_PICKER_CONTEXT_KEY = 'compendium:swc:lineup-counter:relation-picker:context'
+  const relationWriteAvailable = false
 
   type RelationSide = 'defense' | 'offense'
 
@@ -203,20 +205,18 @@
   }
 
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const favoriteLineupIds = ref<string[]>([])
   const relationEditorVisible = ref(false)
   const relationPickerSide = ref<RelationSide>('defense')
   const relationDraft = ref<RelationDraft>({ defense: null, offense: null, description: '' })
-  const LINEUP_SCOPE_OPTIONS = [
+  const LINEUP_SCOPE_OPTIONS: Array<{ label: string; value: LineupScope }> = [
     { label: '全部', value: 'all' },
     { label: '我创建的', value: 'mine' },
     { label: '我的收藏', value: 'favorites' },
-  ] as const
-  type LineupScope = (typeof LINEUP_SCOPE_OPTIONS)[number]['value']
-  const selectedScope = ref<LineupScope>('all')
+  ]
 
   const {
     selectedMode,
+    selectedScope,
     selectedCharacters,
     selectedCharacterIds,
     results,
@@ -225,12 +225,14 @@
     loading,
     loadingMore,
     reactingId,
+    favoritingIds,
     errorMessage,
     emptyReason,
     primaryLabel,
     relatedLabel,
     modeHint,
     setMode,
+    setScope: setScopeState,
     setSelectedCharacters,
     removeCharacter,
     clearCharacters,
@@ -238,6 +240,7 @@
     refresh,
     loadMore,
     handleReaction,
+    handleFavorite: handleFavoriteRequest,
   } = useLineupRelationQuery({
     compendiumId: COMPENDIUM_CODE,
     locale: selectedLocale,
@@ -245,20 +248,9 @@
 
   const selectedCharacterViews = computed(() => selectedCharacters.value.map(item => toSwcCharacterView(item)))
 
-  const filteredResults = computed(() => {
-    if (selectedScope.value === 'mine') return results.value.filter(group => group.lineup.canEdit)
-    if (selectedScope.value === 'favorites') {
-      return results.value.filter(group => {
-        if (favoriteLineupIds.value.includes(group.lineup.id)) return true
-        return group.relatedLineups.some(item => favoriteLineupIds.value.includes(item.lineup.id))
-      })
-    }
-    return results.value
-  })
-
   const selectScope = (scope: LineupScope) => {
-    // BACKEND-CONTRACT-PENDING: 当前仅切换本地展示范围，暂不向现有 Query 类型写入 scope。
-    selectedScope.value = scope
+    if (scope !== 'all' && !ensureLoginAccess(buildRelationCurrentUrl(scope))) return
+    setScopeState(scope)
   }
 
   const handleRemoveSelectedCharacter = (character: { characterId: string }) => {
@@ -273,15 +265,9 @@
 
   const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
 
-  const isLineupFavorite = (lineupId: string): boolean => favoriteLineupIds.value.includes(lineupId)
-
-  const handleFavorite = (lineup: { id: string }) => {
-    // BACKEND-CONTRACT-PENDING: 收藏接口等待后端契约与 Apifox 类型生成后接入。
-    const ids = new Set(favoriteLineupIds.value)
-    if (ids.has(lineup.id)) ids.delete(lineup.id)
-    else ids.add(lineup.id)
-    favoriteLineupIds.value = [...ids]
-    setStorageSync(FAVORITE_LINEUPS_KEY, favoriteLineupIds.value)
+  const handleFavorite = (lineup: (typeof results.value)[number]['lineup']) => {
+    if (!ensureLoginAccess(buildRelationCurrentUrl())) return
+    void handleFavoriteRequest(lineup)
   }
 
   const handleLike = (lineup: (typeof results.value)[number]['lineup']) => {
@@ -290,6 +276,14 @@
 
   const handleDislike = (lineup: (typeof results.value)[number]['lineup']) => {
     void handleReaction(lineup, -1)
+  }
+
+  const formatDate = (value: string): string => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+    const pad = (part: number) => String(part).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
   }
 
   const toLineupOption = (lineup: (typeof results.value)[number]['lineup']): LineupOption => ({
@@ -304,8 +298,9 @@
     characters: lineup.characters,
   })
 
-  const buildRelationCurrentUrl = (): string => {
+  const buildRelationCurrentUrl = (scope = selectedScope.value): string => {
     const params = [`compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
+    if (scope !== 'all') params.push(`scope=${encodeURIComponent(scope)}`)
     if (selectedCharacterIds.value.length) params.push(`characterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}`)
     return `/subPackages/tools/compendium/swc/lineup-counter?${params.join('&')}`
   }
@@ -338,6 +333,7 @@
       `locale=${encodeURIComponent(selectedLocale.value)}`,
       'mode=relation',
       `relationSide=${encodeURIComponent(side)}`,
+      `requiredType=${encodeURIComponent(side === 'defense' ? '占领战防守' : '占领战进攻')}`,
       `returnKey=${encodeURIComponent(RELATION_PICKER_RESULT_KEY)}`,
     ]
     if (selected?.id) params.push(`selectedId=${encodeURIComponent(selected.id)}`)
@@ -393,9 +389,9 @@
 
   onLoad((options: Record<string, string | undefined>) => {
     selectedLocale.value = options.locale || DEFAULT_LOCALE
-    const storedFavorites = getStorageSync(FAVORITE_LINEUPS_KEY)
-    if (Array.isArray(storedFavorites)) favoriteLineupIds.value = storedFavorites.filter((item): item is string => typeof item === 'string')
     applyRouteQuery(options)
+
+    if (selectedScope.value !== 'all' && !ensureLoginAccess(buildRelationCurrentUrl())) return
 
     if (options.prefill === '1') {
       const prefillCharacters = getStorageSync(LINEUP_COUNTER_PREFILL_KEY)
@@ -416,17 +412,13 @@
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
     if (Array.isArray(pickerResult)) {
-      setSelectedCharacters(pickerResult as any[])
+      setSelectedCharacters(pickerResult as CharacterOption[])
       removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
       void refresh()
     }
   })
 
   onPullDownRefresh(async () => {
-    if (!selectedCharacterIds.value.length) {
-      uni.stopPullDownRefresh()
-      return
-    }
     try {
       await refresh()
     } finally {
@@ -491,8 +483,7 @@
   }
 
   .mode-hint,
-  .helper-text,
-  .scope-helper {
+  .helper-text {
     display: block;
     margin-top: 14rpx;
     color: var(--theme-text-tertiary);
@@ -720,6 +711,13 @@
     color: var(--theme-text-secondary);
     font-size: 22rpx;
     line-height: 1.45;
+  }
+
+  .relation-origin {
+    display: block;
+    margin: -4rpx 0 12rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
   }
 
   .reaction-row {

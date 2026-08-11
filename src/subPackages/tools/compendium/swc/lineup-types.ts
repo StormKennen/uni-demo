@@ -1,5 +1,6 @@
 export type LineupType = string
 export type LineupStatus = 'enabled' | 'disabled'
+export type LineupScope = 'all' | 'mine' | 'favorites'
 
 export interface PaginationState {
   page: number
@@ -12,15 +13,25 @@ export interface PaginationState {
 
 export type ReactionValue = 1 | -1
 
+export interface LineupReactionRequest {
+  value?: ReactionValue
+  action?: 'favorite'
+  anonymousId?: string
+}
+
 /** 阵容互动/归属字段（用户侧接口返回）。 */
 export interface LineupInteractionFields {
   source: string
   createdBy: string | null
   updatedBy: string | null
+  createdAt: string
+  updatedAt: string
   likeCount: number
   dislikeCount: number
   score: number
   myReaction: number
+  favoriteCount: number
+  isFavorited: boolean
   canEdit: boolean
 }
 
@@ -30,6 +41,8 @@ export interface ReactionResult {
   dislikeCount: number
   score: number
   myReaction: number
+  favoriteCount: number
+  isFavorited: boolean
 }
 
 export interface LineupCharacterPreview {
@@ -133,6 +146,12 @@ export interface RelatedLineupItem {
   lineup: UserLineupSummary
   relationId: string
   relationDescription: string
+  relationSource: string
+  relationCreatedBy: string | null
+  relationUpdatedBy: string | null
+  relationCreatedAt: string
+  relationUpdatedAt: string
+  relationCanEdit: boolean
 }
 
 /** 公开克制查询：主阵容 + 关联阵容（related 已按后端 mode 方向给出）。 */

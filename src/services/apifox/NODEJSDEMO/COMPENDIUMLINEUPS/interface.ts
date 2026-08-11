@@ -38,6 +38,8 @@ export interface getCompendiumsLineupsQuery {
   type?: string
   /** 按阵容状态筛选。 */
   status?: string
+  /** 数据范围。`all` 全部，`mine` 我创建的，`favorites` 我的收藏；默认 `all`。 */
+  scope?: string
   /** 排序字段。支持按互动数据排序：
 - `likeCount` 按点赞数排序
 - `dislikeCount` 按点踩数排序
@@ -140,19 +142,21 @@ export type patchCompendiumsLineupsLineupIdRes = string
 export type deleteCompendiumsLineupsLineupIdRes = string
 
 /**
- * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口请求Body参数
+ * @description CompendiumLineups/阵容点赞/点踩/收藏（互动切换）--接口请求Body参数
  * @url POST /compendiums/lineups/{lineupId}/reaction
  */
 export interface postLineupsLineupIdReactionBody {
+  /** 登录用户收藏/取消收藏。与 value 二选一。 */
+  action?: 'favorite'
   /** 游客设备标识（前端生成并持久化到 localStorage）。
 未登录时必传；已登录时忽略（以 token 中的 userId 为准）。
  */
   anonymousId?: string
-  value: { [key: string]: any }
+  value?: { [key: string]: any }
 }
 
 /**
- * @description CompendiumLineups/阵容点赞/点踩（态度切换）--接口返回值
+ * @description CompendiumLineups/阵容点赞/点踩/收藏（互动切换）--接口返回值
  * @url POST /compendiums/lineups/{lineupId}/reaction
  */
 export type postLineupsLineupIdReactionRes = string
@@ -360,6 +364,49 @@ export interface getAdminLineupRelationsSourceLineupIdQuery {
  * @url GET /admin/lineup-relations/{sourceLineupId}
  */
 export type getAdminLineupRelationsSourceLineupIdRes = string
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口请求Query参数
+ * @url GET /compendiums/lineup-relations
+ */
+export interface getCompendiumsLineupRelationsQuery {
+  /** 游戏代码或游戏 ID（与 gameId 二选一） */
+  compendiumId: string
+
+  gameId?: string
+  /** 主阵容类型。常用 `占领战防守` / `占领战进攻` */
+  type: string
+  /** 多人物 AND 筛选（Character._id）。
+支持 `id1,id2` 或 JSON 数组字符串。
+ */
+  characterIds?: any
+
+  characterId?: string
+
+  keyword?: string
+  /** 按 locale 返回阵容成员的人物名称及 element/family/awaken 分类名称。 */
+  locale?: string
+  /** 默认仅返回 enabled */
+  status?: string
+  /** 主阵容数据范围。`all` 全部，`mine` 我创建的，`favorites` 我的收藏；默认 `all`。 */
+  scope?: string
+
+  sortBy?: string
+
+  sortOrder?: string
+
+  page?: number
+
+  pageSize?: number
+
+  limit?: number
+}
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口返回值
+ * @url GET /compendiums/lineup-relations
+ */
+export type getCompendiumsLineupRelationsRes = string
 
 /**
  * @description CompendiumLineups/保存阵容映射关系（管理侧）--接口请求Body参数
@@ -593,44 +640,3 @@ export interface postLineupsLineupIdReactionBody {
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
 export type postLineupsLineupIdReactionRes = string
-
-/**
- * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口请求Query参数
- * @url GET /compendiums/lineup-relations
- */
-export interface getCompendiumsLineupRelationsQuery {
-  /** 游戏代码或游戏 ID（与 gameId 二选一） */
-  compendiumId: string
-
-  gameId?: string
-  /** 主阵容类型。常用 `占领战防守` / `占领战进攻` */
-  type: string
-  /** 多人物 AND 筛选（Character._id）。
-支持 `id1,id2` 或 JSON 数组字符串。
- */
-  characterIds?: any
-
-  characterId?: string
-
-  keyword?: string
-
-  locale?: string
-  /** 默认仅返回 enabled */
-  status?: string
-
-  sortBy?: string
-
-  sortOrder?: string
-
-  page?: number
-
-  pageSize?: number
-
-  limit?: number
-}
-
-/**
- * @description CompendiumLineups/获取阵容克制关系板（用户侧）--接口返回值
- * @url GET /compendiums/lineup-relations
- */
-export type getCompendiumsLineupRelationsRes = string

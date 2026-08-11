@@ -20,7 +20,7 @@
         :class="{ active: props.isFavorite }"
         :aria-disabled="props.disabled"
         @click="emitReaction('favorite')">
-        <text>{{ props.isFavorite ? '★' : '☆' }} 收藏</text>
+        <text>{{ props.isFavorite ? '★' : '☆' }} {{ props.favoriteCount }} 收藏</text>
       </view>
     </view>
     <text v-if="props.showScore" class="interaction-score">热度 {{ props.score }}</text>
@@ -33,6 +33,7 @@
       likeCount?: number
       dislikeCount?: number
       score?: number
+      favoriteCount?: number
       myReaction?: number
       isFavorite?: boolean
       showScore?: boolean
@@ -42,6 +43,7 @@
       likeCount: 0,
       dislikeCount: 0,
       score: 0,
+      favoriteCount: 0,
       myReaction: 0,
       isFavorite: false,
       showScore: true,
@@ -57,7 +59,6 @@
 
   const emitReaction = (action: 'like' | 'dislike' | 'favorite') => {
     if (props.disabled) return
-    // BACKEND-CONTRACT-PENDING: 收藏动作等待后端接口与 Apifox 类型生成后接入。
     if (action === 'like') emit('like')
     else if (action === 'dislike') emit('dislike')
     else emit('favorite')

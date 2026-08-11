@@ -95,15 +95,22 @@ export const getPaginationOrDefault = (pagination?: PaginationState | null): Pag
 
 const normalizeInteraction = (source: unknown): LineupInteractionFields => {
   const record = isRecord(source) ? source : {}
+  const interaction = isRecord(record.interaction) ? record.interaction : {}
+  const favorite = isRecord(record.favorite) ? record.favorite : {}
+  const read = (key: string): unknown => record[key] ?? interaction[key]
   return {
-    source: toText(record.source) || 'admin',
-    createdBy: record.createdBy != null ? toText(record.createdBy) : null,
-    updatedBy: record.updatedBy != null ? toText(record.updatedBy) : null,
-    likeCount: toNumber(record.likeCount),
-    dislikeCount: toNumber(record.dislikeCount),
-    score: toNumber(record.score),
-    myReaction: toNumber(record.myReaction),
-    canEdit: Boolean(record.canEdit),
+    source: toText(read('source')) || 'admin',
+    createdBy: read('createdBy') != null ? toText(read('createdBy')) : null,
+    updatedBy: read('updatedBy') != null ? toText(read('updatedBy')) : null,
+    createdAt: toText(read('createdAt')),
+    updatedAt: toText(read('updatedAt')),
+    likeCount: toNumber(read('likeCount')),
+    dislikeCount: toNumber(read('dislikeCount')),
+    score: toNumber(read('score')),
+    myReaction: toNumber(read('myReaction')),
+    favoriteCount: toNumber(read('favoriteCount') ?? favorite.count),
+    isFavorited: Boolean(read('isFavorited') ?? favorite.isFavorited),
+    canEdit: Boolean(read('canEdit')),
   }
 }
 
@@ -373,12 +380,16 @@ export const normalizeRelationDetail = (res: unknown): RelationDetail => {
 
 export const normalizeReactionResult = (res: unknown, lineupId = ''): ReactionResult => {
   const data = extractData(res)
+  const interaction = isRecord(data.interaction) ? data.interaction : data
+  const favorite = isRecord(data.favorite) ? data.favorite : {}
   return {
     id: toText(data.id) || lineupId,
-    likeCount: toNumber(data.likeCount),
-    dislikeCount: toNumber(data.dislikeCount),
-    score: toNumber(data.score),
-    myReaction: toNumber(data.myReaction),
+    likeCount: toNumber(interaction.likeCount),
+    dislikeCount: toNumber(interaction.dislikeCount),
+    score: toNumber(interaction.score),
+    myReaction: toNumber(interaction.myReaction),
+    favoriteCount: toNumber(interaction.favoriteCount ?? favorite.count),
+    isFavorited: Boolean(interaction.isFavorited ?? favorite.isFavorited),
   }
 }
 
@@ -400,6 +411,14 @@ const normalizeRelatedLineupItem = (source: unknown): RelatedLineupItem | null =
     lineup,
     relationId: toText(relation.id || record.relationId),
     relationDescription: toText(relation.description || record.relationDescription || record.description),
+    relationSource: toText(relation.source || record.relationSource),
+    relationCreatedBy:
+      relation.createdBy != null ? toText(relation.createdBy) : record.relationCreatedBy != null ? toText(record.relationCreatedBy) : null,
+    relationUpdatedBy:
+      relation.updatedBy != null ? toText(relation.updatedBy) : record.relationUpdatedBy != null ? toText(record.relationUpdatedBy) : null,
+    relationCreatedAt: toText(relation.createdAt || record.relationCreatedAt),
+    relationUpdatedAt: toText(relation.updatedAt || record.relationUpdatedAt),
+    relationCanEdit: Boolean(relation.canEdit ?? record.relationCanEdit),
   }
 }
 
@@ -423,7 +442,19 @@ export const normalizeRelationGroup = (source: unknown): LineupRelationGroup => 
     lineup: normalizeUserLineupSummary(lineupSource),
     relatedLineups: sortRelatedLineupsByScore(relatedLineups.map(item => item.lineup)).map(sorted => {
       const found = relatedLineups.find(item => item.lineup.id === sorted.id)
-      return found || { lineup: sorted, relationId: '', relationDescription: '' }
+      return (
+        found || {
+          lineup: sorted,
+          relationId: '',
+          relationDescription: '',
+          relationSource: '',
+          relationCreatedBy: null,
+          relationUpdatedBy: null,
+          relationCreatedAt: '',
+          relationUpdatedAt: '',
+          relationCanEdit: false,
+        }
+      )
     }),
   }
 }

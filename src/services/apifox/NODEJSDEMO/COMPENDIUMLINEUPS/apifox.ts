@@ -143,7 +143,7 @@ export const deleteCompendiumsLineupsLineupId = async (
 }
 
 /**
- * @description CompendiumLineups/阵容点赞/点踩（态度切换）
+ * @description CompendiumLineups/阵容点赞/点踩/收藏（互动切换）
  * @url POST /compendiums/lineups/{lineupId}/reaction
  * @host https://app.apifox.com/link/project/7048425/apis/api-480141962
  */
@@ -274,6 +274,19 @@ export const getAdminLineupRelationsSourceLineupId = async (
 ): Promise<Expand<getAdminLineupRelationsSourceLineupIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/admin/lineup-relations/${sourceLineupId}`, params, _config)
+}
+
+/**
+ * @description CompendiumLineups/获取阵容克制关系板（用户侧）
+ * @url GET /compendiums/lineup-relations
+ * @host https://app.apifox.com/link/project/7048425/apis/api-498826867
+ */
+export const getCompendiumsLineupRelations = async (
+  params: Expand<getCompendiumsLineupRelationsQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getCompendiumsLineupRelationsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/compendiums/lineup-relations`, params, _config)
 }
 
 /**
@@ -424,17 +437,4 @@ export const postLineupMappingsContainersLineupsReaction = async (
     data,
     _config,
   )
-}
-
-/**
- * @description CompendiumLineups/获取阵容克制关系板（用户侧）
- * @url GET /compendiums/lineup-relations
- * @host https://app.apifox.com/link/project/7048425/apis/api-498826867
- */
-export const getCompendiumsLineupRelations = async (
-  params: Expand<getCompendiumsLineupRelationsQuery>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getCompendiumsLineupRelationsRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/compendiums/lineup-relations`, params, _config)
 }

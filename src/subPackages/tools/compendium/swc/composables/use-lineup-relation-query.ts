@@ -1,13 +1,9 @@
 import { computed, ref, type Ref } from 'vue'
-import {
-  getCompendiumsLineupRelations,
-  postLineupsLineupIdReaction,
-} from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
-import type { getCompendiumsLineupRelationsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
-import { getAnonymousId } from '@/utils/anonymous-id'
 import type {
   CharacterOption,
+  LineupReactionRequest,
   LineupRelationGroup,
+  LineupScope,
   PaginationState,
   ReactionResult,
   ReactionValue,
@@ -16,6 +12,9 @@ import type {
 } from '../lineup-types'
 import { normalizePublicLineupRelations, normalizeReactionResult } from '../lineup-normalizers'
 import { buildAnonymousRequestConfig, sanitizeQuery } from '../request-options'
+import { getCompendiumsLineupRelations, postLineupsLineupIdReaction } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
+import type { getCompendiumsLineupRelationsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
+import { getAnonymousId } from '@/utils/anonymous-id'
 
 export type LineupCounterMode = '占领战防守' | '占领战进攻'
 export type RelationEmptyReason = 'idle' | 'no_characters' | 'no_lineups' | 'error'
@@ -57,6 +56,8 @@ const applyReaction = (lineup: UserLineupSummary, reaction: ReactionResult): Use
     dislikeCount: reaction.dislikeCount,
     score: reaction.score,
     myReaction: reaction.myReaction,
+    favoriteCount: reaction.favoriteCount,
+    isFavorited: reaction.isFavorited,
   }
 }
 
@@ -69,9 +70,19 @@ const patchGroupsReaction = (groups: LineupRelationGroup[], reaction: ReactionRe
     })),
   }))
 
+const patchGroupsFavorite = (groups: LineupRelationGroup[], reaction: ReactionResult): LineupRelationGroup[] =>
+  groups.map(group => ({
+    lineup: applyReaction(group.lineup, reaction),
+    relatedLineups: group.relatedLineups.map(item => ({
+      ...item,
+      lineup: applyReaction(item.lineup, reaction),
+    })),
+  }))
+
 export const useLineupRelationQuery = (params: { compendiumId: string; locale: Ref<string>; pageSize?: number }) => {
   const pageSize = params.pageSize || DEFAULT_PAGE_SIZE
   const selectedMode = ref<LineupCounterMode>('占领战防守')
+  const selectedScope = ref<LineupScope>('all')
   const selectedCharacters = ref<CharacterOption[]>([])
   const results = ref<LineupRelationGroup[]>([])
   const relationMode = ref('')
@@ -80,7 +91,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
   const loadingMore = ref(false)
   const reactingId = ref('')
   const errorMessage = ref('')
-  const emptyReason = ref<RelationEmptyReason>('no_characters')
+  const emptyReason = ref<RelationEmptyReason>('idle')
   let requestVersion = 0
 
   const selectedCharacterIds = computed(() => selectedCharacters.value.map(item => item.characterId).filter(Boolean))
@@ -110,12 +121,21 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
   }
 
   const clearCharacters = () => {
+    requestVersion += 1
+    loading.value = false
+    loadingMore.value = false
     selectedCharacters.value = []
     results.value = []
     relationMode.value = ''
     pagination.value = createDefaultPagination(pageSize)
     errorMessage.value = ''
-    emptyReason.value = 'no_characters'
+    emptyReason.value = 'idle'
+  }
+
+  const setScope = (scope: LineupScope) => {
+    if (selectedScope.value === scope) return
+    selectedScope.value = scope
+    void refresh()
   }
 
   const applyRouteQuery = (options: Record<string, string | undefined>) => {
@@ -130,15 +150,17 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     if (characterIds.length) {
       selectedCharacters.value = characterIds.map(id => createCharacterOption(id))
     }
+    selectedScope.value = options.scope === 'mine' || options.scope === 'favorites' ? options.scope : 'all'
   }
 
   const buildQuery = (page: number): getCompendiumsLineupRelationsQuery =>
     sanitizeQuery({
       compendiumId: params.compendiumId,
       type: selectedMode.value,
-      characterIds: selectedCharacterIds.value.join(','),
+      characterIds: selectedCharacterIds.value.length ? selectedCharacterIds.value.join(',') : undefined,
       locale: params.locale.value,
       status: 'enabled',
+      scope: selectedScope.value,
       sortBy: 'score',
       sortOrder: 'desc',
       page,
@@ -146,15 +168,6 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     }) as getCompendiumsLineupRelationsQuery
 
   const fetchPage = async (page: number, append: boolean) => {
-    if (!selectedCharacterIds.value.length) {
-      results.value = []
-      relationMode.value = ''
-      pagination.value = createDefaultPagination(pageSize)
-      errorMessage.value = ''
-      emptyReason.value = 'no_characters'
-      return
-    }
-
     const currentVersion = ++requestVersion
     if (append) loadingMore.value = true
     else loading.value = true
@@ -178,10 +191,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
         pagination.value = createDefaultPagination(pageSize)
       }
       emptyReason.value = 'error'
-      const message =
-        typeof error === 'string'
-          ? error
-          : (error as { message?: string })?.message || '查询克制关系失败，请稍后重试'
+      const message = typeof error === 'string' ? error : (error as { message?: string })?.message || '查询克制关系失败，请稍后重试'
       errorMessage.value = message
     } finally {
       if (currentVersion === requestVersion) {
@@ -204,19 +214,11 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     if (!lineup.id || reactingId.value) return
     reactingId.value = lineup.id
     try {
-      const raw = await postLineupsLineupIdReaction(
-        lineup.id,
-        { value, anonymousId: getAnonymousId() } as any,
-        buildAnonymousRequestConfig(),
-      )
+      type GeneratedReactionBody = Parameters<typeof postLineupsLineupIdReaction>[1]
+      const body: LineupReactionRequest = { value, anonymousId: getAnonymousId() }
+      const raw = await postLineupsLineupIdReaction(lineup.id, body as unknown as GeneratedReactionBody, buildAnonymousRequestConfig())
       const result = normalizeReactionResult(raw, lineup.id)
-      results.value = patchGroupsReaction(results.value, {
-        id: result.id || lineup.id,
-        likeCount: result.likeCount,
-        dislikeCount: result.dislikeCount,
-        score: result.score,
-        myReaction: result.myReaction,
-      })
+      results.value = patchGroupsReaction(results.value, result)
     } catch (error) {
       uni.showToast({
         title: typeof error === 'string' ? error : '操作失败，请稍后重试',
@@ -227,12 +229,31 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     }
   }
 
+  const favoritingIds = ref(new Set<string>())
+
+  const handleFavorite = async (lineup: UserLineupSummary) => {
+    if (!lineup.id || favoritingIds.value.has(lineup.id)) return
+    favoritingIds.value.add(lineup.id)
+    try {
+      type GeneratedReactionBody = Parameters<typeof postLineupsLineupIdReaction>[1]
+      const body: LineupReactionRequest = { action: 'favorite' }
+      const raw = await postLineupsLineupIdReaction(lineup.id, body as unknown as GeneratedReactionBody, buildAnonymousRequestConfig())
+      const result = normalizeReactionResult(raw, lineup.id)
+      results.value = patchGroupsFavorite(results.value, result)
+    } catch (error) {
+      uni.showToast({ title: typeof error === 'string' ? error : '收藏操作失败，请稍后重试', icon: 'none' })
+    } finally {
+      favoritingIds.value.delete(lineup.id)
+    }
+  }
+
   const handleRelatedReaction = async (item: RelatedLineupItem, value: ReactionValue) => {
     await handleReaction(item.lineup, value)
   }
 
   return {
     selectedMode,
+    selectedScope,
     selectedCharacters,
     selectedCharacterIds,
     results,
@@ -241,6 +262,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     loading,
     loadingMore,
     reactingId,
+    favoritingIds,
     errorMessage,
     emptyReason,
     isDefenseMode,
@@ -249,6 +271,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     modeHint,
     hasResults,
     setMode,
+    setScope,
     setSelectedCharacters,
     removeCharacter,
     clearCharacters,
@@ -256,6 +279,7 @@ export const useLineupRelationQuery = (params: { compendiumId: string; locale: R
     refresh,
     loadMore,
     handleReaction,
+    handleFavorite,
     handleRelatedReaction,
     createCharacterOption,
   }
