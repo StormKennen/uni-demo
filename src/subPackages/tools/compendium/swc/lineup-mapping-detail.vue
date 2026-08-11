@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="阵容映射详情">
+  <PageLayout title="阵容映射详情" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="mapping-detail-page">
       <StateBlock v-if="loading && !mapping" class="state-block" text="加载映射详情中..." />
 

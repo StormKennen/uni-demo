@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="编辑角色" nav-gradient="linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%)">
+  <PageLayout title="编辑角色" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="edit-page">
       <view v-if="loading" class="state-block">
         <text>加载数据中...</text>

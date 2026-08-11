@@ -1,5 +1,5 @@
 ﻿<template>
-  <PageLayout title="魔灵 wiki-详情">
+  <PageLayout title="魔灵 wiki-详情" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="detail-page">
       <!-- <view class="top-tabs">
       <view

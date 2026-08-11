@@ -188,6 +188,22 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     refreshList()
   }
 
+  const resetFilters = () => {
+    const hasFilters =
+      keyword.value.trim() ||
+      selectedType.value !== ALL_VALUE ||
+      selectedStatus.value !== ALL_VALUE ||
+      selectedScope.value !== 'all' ||
+      selectedCharacterFilters.value.length > 0
+    if (!hasFilters) return
+    keyword.value = ''
+    selectedType.value = ALL_VALUE
+    selectedStatus.value = ALL_VALUE
+    selectedScope.value = 'all'
+    selectedCharacterFilters.value = []
+    refreshList()
+  }
+
   const applyRouteQuery = (options: Record<string, string | undefined>) => {
     keyword.value = options.keyword || ''
     selectedType.value = options.type || ALL_VALUE
@@ -223,6 +239,7 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     selectScope,
     removeCharacterFilter,
     clearCharacterFilters,
+    resetFilters,
     applyRouteQuery,
   }
 }

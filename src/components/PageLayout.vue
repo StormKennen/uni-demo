@@ -25,6 +25,8 @@
     navBgColor?: string
     /** 导航栏初始背景色 */
     navInitBgColor?: string
+    /** 是否显示导航栏底部分隔线 */
+    navDivider?: boolean
     /** 导航栏文字颜色 */
     navTitleColor?: string
     /** 导航栏自定义样式（与 navGradient 合并） */
@@ -45,6 +47,7 @@
     showNav: true,
     navBack: true,
     alwaysTitle: true,
+    navDivider: false,
     bgColor: '',
   })
 
@@ -84,6 +87,10 @@
     const s: Record<string, any> = {}
     if (props.navGradient) s.backgroundImage = props.navGradient
     if (props.navCustomStyle) Object.assign(s, props.navCustomStyle)
+    if (props.navDivider) {
+      s.borderBottom = '1rpx solid var(--theme-border)'
+      s.boxShadow = '0 2rpx 10rpx var(--theme-shadow-xs)'
+    }
     return Object.keys(s).length ? s : undefined
   })
 

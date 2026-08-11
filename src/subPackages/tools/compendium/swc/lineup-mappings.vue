@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="魔灵召唤阵容映射">
+  <PageLayout title="魔灵召唤阵容映射" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="mapping-page">
       <StateBlock
         v-if="accessChecked && !hasLineupFeatureAccess"

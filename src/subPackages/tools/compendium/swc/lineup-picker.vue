@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="选择阵容">
+  <PageLayout title="选择阵容" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="picker-page">
       <view class="toolbar-card">
         <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="violet" @search="refreshList" />

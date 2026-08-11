@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="魔灵召唤" :nav-back="true">
+  <PageLayout title="魔灵召唤" :nav-back="true" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="swc-portal-page">
       <!-- <view class="hero-section">
         <view class="hero-icon">

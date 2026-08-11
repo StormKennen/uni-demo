@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="阵容克制">
+  <PageLayout title="阵容克制" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="counter-page">
       <view class="filter-card">
         <view class="mode-row">
@@ -42,8 +42,8 @@
         <text class="helper-text">阵容需同时包含全部所选人物</text>
 
         <view class="action-row">
-          <button v-if="selectedCharacters.length" class="toolbar-btn" size="mini" @click="clearCharacters">清空魔灵</button>
-          <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="loading" @click="refresh"> 查询 </button>
+          <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="loading" @click="refresh">查询</button>
+          <button class="reset-btn" size="mini" :disabled="!selectedCharacters.length" @click="clearCharacters">重置</button>
         </view>
 
         <button v-if="relationWriteAvailable" class="relation-entry-btn" size="mini" @click="openRelationEditor()">+ 新增克制</button>
@@ -556,7 +556,11 @@
 
   .action-row {
     margin-top: 16rpx;
-    justify-content: flex-end;
+    display: block;
+  }
+
+  .action-row .toolbar-btn.primary {
+    width: 100%;
   }
 
   .relation-entry-btn {
@@ -588,6 +592,25 @@
     border-color: var(--theme-brand);
     background: var(--theme-brand);
     color: #fff;
+  }
+
+  .reset-btn {
+    display: block;
+    width: auto;
+    min-width: 96rpx;
+    height: 56rpx;
+    margin: 8rpx 0 0 auto;
+    padding: 0 12rpx;
+    border: 0;
+    background: transparent;
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    line-height: 56rpx;
+  }
+
+  .reset-btn[disabled],
+  .toolbar-btn[disabled] {
+    opacity: 0.45;
   }
 
   .state-block {

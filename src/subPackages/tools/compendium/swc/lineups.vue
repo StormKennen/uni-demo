@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="魔灵召唤阵容">
+  <PageLayout title="魔灵召唤阵容" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="lineup-page">
       <template>
         <!-- <view class="hero-banner">
@@ -81,23 +81,25 @@
 
             <text class="filter-helper">阵容需同时包含全部所选人物</text>
 
-            <view v-if="selectedCharacterFilters.length" class="action-row filter-action-row">
-              <button class="toolbar-btn" size="mini" @click="clearCharacterFilters">清空人物筛选</button>
+            <view class="filter-action-row">
+              <button class="reset-btn" size="mini" :disabled="!hasResettableFilters" @click="resetFilters">重置</button>
             </view>
           </view>
 
           <view class="action-row counter-entry-row">
-            <button class="toolbar-btn primary" @click="goLineupCounter">阵容克制</button>
+            <button class="toolbar-btn primary" :disabled="!selectedCharacterFilters.length" @click="goLineupCounter">查看阵容克制</button>
           </view>
         </view>
 
-        <view v-if="loading && !lineups.length" class="loading-state">
-          <StateBlock text="加载阵容中..." />
-        </view>
+        <StateBlock v-if="loading && !lineups.length" class="state-card" text="加载阵容中..." />
 
-        <view v-else-if="errorMessage && !lineups.length" class="error-state">
-          <StateBlock :text="errorMessage" action-text="重新加载" theme="amber" @action="refreshList" />
-        </view>
+        <StateBlock
+          v-else-if="errorMessage && !lineups.length"
+          class="state-card"
+          :text="errorMessage"
+          action-text="重新加载"
+          theme="amber"
+          @action="refreshList" />
 
         <view v-else class="content">
           <view class="summary-row">
@@ -109,7 +111,7 @@
             }}</text>
           </view>
 
-          <StateBlock v-if="!lineups.length" class="empty-block" :text="emptyScopeText" />
+          <StateBlock v-if="!lineups.length" class="state-card" :text="emptyScopeText" />
 
           <view v-for="lineup in lineups" :key="lineup.id" class="lineup-card">
             <view class="lineup-ribbons">
@@ -150,6 +152,7 @@
               :show-member-name="false"
               :show-family="false"
               :show-stars="true"
+              star-position="above"
               :show-element="true"
               :show-member-type="true"
               empty-text="暂无成员" />
@@ -182,8 +185,8 @@
             </view>
           </view>
 
-          <view v-if="pagination.hasNext" class="load-more">
-            <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
+          <view class="load-more-status">
+            <text>{{ loadingMore ? '正在加载更多...' : pagination.hasNext ? '继续上拉加载更多' : '已加载全部阵容' }}</text>
           </view>
         </view>
 
@@ -270,7 +273,7 @@
     selectStatus,
     selectScope: selectScopeState,
     removeCharacterFilter,
-    clearCharacterFilters,
+    resetFilters: resetLineupFilters,
     applyRouteQuery,
   } = useAdminLineupList({
     compendiumId: COMPENDIUM_CODE,
@@ -282,6 +285,15 @@
   const isAdmin = computed(() => isAdminUser())
   const isLoggedIn = computed(() => !!getToken())
   const selectedCharacterViews = computed(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
+  const hasResettableFilters = computed(
+    () =>
+      Boolean(keyword.value.trim()) ||
+      selectedType.value !== ALL_VALUE ||
+      selectedStatus.value !== ALL_VALUE ||
+      selectedScope.value !== 'all' ||
+      selectedCharacterFilters.value.length > 0,
+  )
+  const resetFilters = () => resetLineupFilters()
   const canEditLineup = (lineup: UserLineupSummary): boolean => isAdmin.value || canManageLineup(lineup)
   const emptyScopeText = computed(() => {
     if (selectedScope.value === 'mine') return '暂无自己创建的阵容'
@@ -374,6 +386,7 @@
   }
 
   const goLineupCounter = () => {
+    if (!selectedCharacterFilters.value.length) return
     const params = [
       `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
       `locale=${encodeURIComponent(selectedLocale.value)}`,
@@ -587,11 +600,7 @@
   }
 
   .toolbar-card,
-  .lineup-card,
-  .empty-block,
-  .state-block,
-  .error-state,
-  .loading-state {
+  .lineup-card {
     margin: 0 24rpx 20rpx;
     background: var(--theme-surface);
     border: 1rpx solid var(--theme-border);
@@ -731,7 +740,8 @@
 
   .toolbar-btn.primary,
   .card-btn.primary {
-    background: #b45309;
+    border-color: var(--theme-brand);
+    background: var(--theme-brand);
     color: #fff;
   }
 
@@ -754,21 +764,18 @@
     font-weight: 700;
   }
 
-  .state-block,
-  .empty-block,
-  .error-state,
-  .loading-state {
+  .state-card {
+    width: auto;
+    margin: 0 24rpx 20rpx;
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 24rpx;
+    background: var(--theme-surface);
     padding: 48rpx 28rpx;
     text-align: center;
     color: var(--theme-text-secondary);
     font-size: 28rpx;
-  }
-
-  .error-state,
-  .loading-state {
-    box-sizing: border-box;
-    min-height: 148rpx;
-    background: var(--theme-surface);
+    box-shadow: 0 10rpx 30rpx var(--theme-shadow-xs);
   }
 
   .lineup-card {
@@ -779,12 +786,14 @@
 
   .lineup-ribbons {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 14rpx;
+    right: 16rpx;
     z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    gap: 6rpx;
+    max-width: 46%;
   }
 
   .lineup-head {
@@ -823,11 +832,13 @@
   }
 
   .type-badge {
-    width: 126rpx;
-    height: 50rpx;
-    padding: 0 10rpx 0 22rpx;
+    max-width: 100%;
+    min-height: 42rpx;
+    padding: 0 14rpx;
+    overflow: hidden;
+    border-radius: 999rpx;
     color: #fff;
-    clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%, 0 32%);
+    text-overflow: ellipsis;
   }
 
   .type-badge.offense {
@@ -846,7 +857,7 @@
     height: 38rpx;
     margin-top: 6rpx;
     padding: 0 10rpx;
-    border-bottom-left-radius: 10rpx;
+    border-radius: 999rpx;
     font-size: 18rpx;
   }
 
@@ -977,17 +988,46 @@
   }
 
   .filter-action-row {
+    display: flex;
+    align-items: center;
     justify-content: flex-end;
+    min-height: 56rpx;
+    margin-top: 12rpx;
   }
 
   .counter-entry-row {
-    justify-content: flex-end;
+    display: block;
   }
 
-  .load-more {
+  .counter-entry-row .toolbar-btn {
+    width: 100%;
+  }
+
+  .reset-btn {
+    width: auto;
+    min-width: 96rpx;
+    height: 56rpx;
+    margin: 0;
+    padding: 0 12rpx;
+    border: 0;
+    background: transparent;
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    line-height: 56rpx;
+  }
+
+  .reset-btn[disabled],
+  .toolbar-btn[disabled] {
+    opacity: 0.45;
+  }
+
+  .load-more-status {
     display: flex;
     justify-content: center;
     margin-top: 12rpx;
+    padding: 12rpx 0 24rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
   }
 
   .fab {

@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="魔灵召唤·图鉴管理" nav-gradient="linear-gradient(135deg, #0f766e 0%, #38bdf8 100%)">
+  <PageLayout title="魔灵召唤·图鉴管理" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="swc-admin-page">
       <view v-if="!canManage" class="state-block">
         <text>{{ blockedText }}</text>

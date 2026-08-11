@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="选择筛选魔灵">
+  <PageLayout title="选择筛选魔灵" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="character-picker-page">
       <view class="search-section">
         <SearchActionRow v-model="keyword" class="search-row" placeholder="输入人物名称或 code" theme="violet" @search="onSearchSubmit" />

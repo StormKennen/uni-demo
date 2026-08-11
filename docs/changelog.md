@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-12 [tools/compendium-swc,components/PageLayout] 统一魔灵召唤相关页面浅色/深色导航背景与底部分隔；阵容列表改为上拉加载状态提示、单块加载/空态、右上角圆角类型徽标和头像上方星级；新增筛选重置与稳定的克制操作区布局（Codex）
+
 - 2026-08-12 [tools/compendium-swc] Phase B：按本地重新导入的 Apifox 契约接通阵容收藏 action、lineups/relations scope、登录权限、服务端多人物 AND 分页和 counter 无人物查询；补齐互动 ownership/时间字段与 requiredType 快捷创建回填，普通用户克制关系写入仍明确阻断且不调用管理员 API（Codex）
 
 - 2026-08-11 [tools/compendium-swc] Phase A：准备阵容社区互动条、全部/我创建的/我的收藏筛选、阵容选择页与关系编辑器；新增 lineup-picker 路由和隔离回跳上下文，收藏、scope、用户侧关系提交及创建后自动选中保留 BACKEND-CONTRACT-PENDING（Codex）

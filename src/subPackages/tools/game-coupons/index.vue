@@ -1,5 +1,5 @@
 <template>
-  <PageLayout :title="gameConfig.title">
+  <PageLayout :title="gameConfig.title" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="coupon-page">
       <view class="coupon-main">
         <!-- 1. 账号 -->
