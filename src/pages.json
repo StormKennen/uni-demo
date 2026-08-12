@@ -332,6 +332,13 @@
           }
         },
         {
+          "path": "compendium/swc/lineup-relation-edit",
+          "style": {
+            "navigationBarTitleText": "编辑克制关系",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "compendium/swc/lineup-picker",
           "style": {
             "navigationBarTitleText": "选择阵容",

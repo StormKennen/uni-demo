@@ -45,22 +45,7 @@
           <button class="toolbar-btn primary" size="mini" :loading="loading" :disabled="loading" @click="refresh">查询</button>
           <button class="reset-btn" size="mini" :disabled="!selectedCharacters.length" @click="clearCharacters">重置</button>
         </view>
-
-        <button class="relation-entry-btn" size="mini" @click="openRelationEditor()">+ 新增克制</button>
       </view>
-
-      <LineupRelationEditor
-        v-if="relationEditorVisible"
-        :mode="relationDraft.mode"
-        :defense="relationDraft.defense"
-        :offense="relationDraft.offense"
-        :description="relationDraft.description"
-        :saving="relationSaving"
-        @update:description="relationDraft.description = $event"
-        @choose-defense="openRelationPicker('defense')"
-        @choose-offense="openRelationPicker('offense')"
-        @cancel="closeRelationEditor"
-        @save="saveRelationDraft" />
 
       <StateBlock v-if="loading && !results.length" class="state-block" text="查询克制关系中..." />
 
@@ -84,7 +69,7 @@
             <text class="group-title">{{ primaryLabel }}</text>
             <text v-if="group.lineup.name" class="group-name">{{ group.lineup.name }}</text>
             <text class="group-type">{{ getLineupTypeLabel(group.lineup.type) }}</text>
-            <button class="relation-inline-btn" size="mini" @click="openRelationEditor(group)">补充克制</button>
+            <button class="relation-inline-btn" size="mini" @click="openRelationCreate(group)">补充克制</button>
           </view>
 
           <SwcLineup
@@ -171,6 +156,11 @@
           <button class="toolbar-btn" :loading="loadingMore" @click="loadMore">加载更多</button>
         </view>
       </view>
+
+      <view class="fab" @click="openRelationCreate()">
+        <text class="fab-icon">+</text>
+        <text class="fab-text">新增克制</text>
+      </view>
     </view>
   </PageLayout>
 </template>
@@ -182,7 +172,6 @@
   import SwcLineup from './components/swc-lineup.vue'
   import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
   import LineupInteractionBar from './components/lineup-interaction-bar.vue'
-  import LineupRelationEditor from './components/lineup-relation-editor.vue'
   import { getLineupTypeLabel } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
   import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
@@ -196,13 +185,11 @@
     RelatedLineupItem,
   } from './lineup-types'
   import {
-    patchCompendiumsLineupRelationsRelationId,
-    postCompendiumsLineupRelations,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
-  import type {
-    patchCompendiumsLineupRelationsRelationIdBody,
-    postCompendiumsLineupRelationsBody,
-  } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
+    RELATION_EDIT_PREFILL_KEY,
+    RELATION_EDIT_RESULT_KEY,
+    type RelationEditPrefill,
+    type RelationEditResult,
+  } from './lineup-relation-edit-context'
   import { ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, getUserInfo, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { reportToolVisit } from '@/utils/tracker'
@@ -212,36 +199,8 @@
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineup-counter:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:character-picker:result'
   const LINEUP_COUNTER_PREFILL_KEY = 'compendium:swc:lineup-counter:prefill'
-  const RELATION_PICKER_RESULT_KEY = 'compendium:swc:lineup-counter:relation-picker:result'
-  const RELATION_PICKER_CONTEXT_KEY = 'compendium:swc:lineup-counter:relation-picker:context'
-  type RelationSide = 'defense' | 'offense'
-  type RelationEditorMode = 'create' | 'edit'
-
-  interface RelationDraft {
-    relationId: string
-    relationCreatedBy: string | null
-    relationSource: string
-    relationCanEdit: boolean
-    mode: RelationEditorMode
-    defense: LineupOption | null
-    offense: LineupOption | null
-    description: string
-  }
 
   const selectedLocale = ref(DEFAULT_LOCALE)
-  const relationEditorVisible = ref(false)
-  const relationSaving = ref(false)
-  const relationPickerSide = ref<RelationSide>('defense')
-  const relationDraft = ref<RelationDraft>({
-    relationId: '',
-    relationCreatedBy: null,
-    relationSource: '',
-    relationCanEdit: false,
-    mode: 'create',
-    defense: null,
-    offense: null,
-    description: '',
-  })
   const LINEUP_SCOPE_OPTIONS: Array<{ label: string; value: LineupScope }> = [
     { label: '全部', value: 'all' },
     { label: '我创建的', value: 'mine' },
@@ -345,33 +304,27 @@
     return `/subPackages/tools/compendium/swc/lineup-counter?${params.join('&')}`
   }
 
-  const resetRelationDraft = () => {
-    relationDraft.value = {
-      relationId: '',
-      relationCreatedBy: null,
-      relationSource: '',
-      relationCanEdit: false,
-      mode: 'create',
-      defense: null,
-      offense: null,
-      description: '',
-    }
-  }
-
-  const clearRelationPickerState = () => {
-    removeStorageSync(RELATION_PICKER_RESULT_KEY)
-    removeStorageSync(RELATION_PICKER_CONTEXT_KEY)
-  }
-
-  const openRelationEditor = (group?: LineupRelationGroup) => {
+  const navigateToRelationEdit = (prefill?: RelationEditPrefill) => {
     if (!ensureLoginAccess(buildRelationCurrentUrl())) return
-    clearRelationPickerState()
-    resetRelationDraft()
-    if (group) {
-      if (selectedMode.value === '占领战防守') relationDraft.value.defense = toLineupOption(group.lineup)
-      else relationDraft.value.offense = toLineupOption(group.lineup)
+    removeStorageSync(RELATION_EDIT_PREFILL_KEY)
+    if (prefill) setStorageSync(RELATION_EDIT_PREFILL_KEY, prefill)
+    const params = [`mode=${encodeURIComponent(prefill?.mode || 'create')}`, `locale=${encodeURIComponent(selectedLocale.value)}`]
+    if (prefill?.relationId) params.push(`relationId=${encodeURIComponent(prefill.relationId)}`)
+    if (prefill) params.push(`prefillKey=${encodeURIComponent(RELATION_EDIT_PREFILL_KEY)}`)
+    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/lineup-relation-edit?${params.join('&')}` })
+  }
+
+  const openRelationCreate = (group?: LineupRelationGroup) => {
+    if (!group) {
+      navigateToRelationEdit()
+      return
     }
-    relationEditorVisible.value = true
+    navigateToRelationEdit({
+      mode: 'create',
+      defense: selectedMode.value === '占领战防守' ? toLineupOption(group.lineup) : null,
+      offense: selectedMode.value === '占领战进攻' ? toLineupOption(group.lineup) : null,
+      description: '',
+    })
   }
 
   const openRelationEdit = (group: LineupRelationGroup, item: RelatedLineupItem) => {
@@ -382,8 +335,7 @@
     }
     const defense = selectedMode.value === '占领战防守' ? group.lineup : item.lineup
     const offense = selectedMode.value === '占领战防守' ? item.lineup : group.lineup
-    clearRelationPickerState()
-    relationDraft.value = {
+    navigateToRelationEdit({
       relationId: item.relationId,
       relationCreatedBy: item.relationCreatedBy,
       relationSource: item.relationSource,
@@ -392,108 +344,16 @@
       defense: toLineupOption(defense),
       offense: toLineupOption(offense),
       description: item.relationDescription,
-    }
-    relationEditorVisible.value = true
+    })
   }
 
-  const closeRelationEditor = () => {
-    if (relationSaving.value) return
-    relationEditorVisible.value = false
-    resetRelationDraft()
-    clearRelationPickerState()
-  }
-
-  const openRelationPicker = (side: RelationSide) => {
-    relationPickerSide.value = side
-    setStorageSync(RELATION_PICKER_CONTEXT_KEY, { side })
-    removeStorageSync(RELATION_PICKER_RESULT_KEY)
-    const selected = relationDraft.value[side]
-    const params = [
-      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
-      `locale=${encodeURIComponent(selectedLocale.value)}`,
-      'mode=relation',
-      `relationSide=${encodeURIComponent(side)}`,
-      `requiredType=${encodeURIComponent(side === 'defense' ? '占领战防守' : '占领战进攻')}`,
-      `returnKey=${encodeURIComponent(RELATION_PICKER_RESULT_KEY)}`,
-    ]
-    if (selected?.id) params.push(`selectedId=${encodeURIComponent(selected.id)}`)
-    uni.navigateTo({ url: `/subPackages/tools/compendium/swc/lineup-picker?${params.join('&')}` })
-  }
-
-  const resolveRelationMutationError = (error: unknown, fallback: string): string => {
-    if (typeof error === 'string') return error
-    if (!error || typeof error !== 'object') return fallback
-    const detail = error as { code?: number; statusCode?: number; message?: string }
-    if (detail.code === 409 || detail.statusCode === 409) return '该克制关系已存在'
-    return detail.message || fallback
-  }
-
-  const saveRelationDraft = async () => {
-    const draft = relationDraft.value
-    if (!draft.defense || !draft.offense || relationSaving.value) return
-    if (!ensureLoginAccess(buildRelationCurrentUrl())) return
-    if (draft.mode === 'edit') {
-      const currentUserId = getUserInfo()?.id
-      if (
-        !draft.relationId ||
-        !currentUserId ||
-        draft.relationSource !== 'user' ||
-        !draft.relationCanEdit ||
-        draft.relationCreatedBy !== currentUserId
-      ) {
-        uni.showToast({ title: '只能编辑自己创建的克制关系', icon: 'none' })
-        return
-      }
-    }
-
-    relationSaving.value = true
-    try {
-      const description = draft.description.trim()
-      if (draft.mode === 'edit') {
-        const body: patchCompendiumsLineupRelationsRelationIdBody = {
-          sourceLineupId: draft.defense.id,
-          targetLineupId: draft.offense.id,
-          description,
-        }
-        await patchCompendiumsLineupRelationsRelationId(draft.relationId, body)
-        uni.showToast({ title: '修改成功', icon: 'success' })
-      } else {
-        const body: postCompendiumsLineupRelationsBody = {
-          compendiumId: COMPENDIUM_CODE,
-          sourceLineupId: draft.defense.id,
-          targetLineupId: draft.offense.id,
-          description,
-        }
-        await postCompendiumsLineupRelations(body)
-        uni.showToast({ title: '新增成功', icon: 'success' })
-      }
-      relationEditorVisible.value = false
-      resetRelationDraft()
-      clearRelationPickerState()
-      await refresh()
-    } catch (error) {
-      uni.showToast({
-        title: resolveRelationMutationError(error, draft.mode === 'edit' ? '修改失败，请稍后重试' : '新增失败，请稍后重试'),
-        icon: 'none',
-      })
-    } finally {
-      relationSaving.value = false
-    }
-  }
-
-  const readRelationPickerResult = () => {
-    const result = getStorageSync(RELATION_PICKER_RESULT_KEY)
-    if (!result || typeof result !== 'object') return
-    const record = result as { side?: RelationSide; lineup?: LineupOption; selectedLineup?: LineupOption }
-    const lineup = record.lineup || record.selectedLineup
-    if (!lineup || typeof lineup !== 'object' || !lineup.id) return
-    const context = getStorageSync(RELATION_PICKER_CONTEXT_KEY) as { side?: RelationSide } | null
-    const side = record.side || context?.side || relationPickerSide.value
-    if (side !== 'defense' && side !== 'offense') return
-    relationDraft.value[side] = lineup
-    relationEditorVisible.value = true
-    removeStorageSync(RELATION_PICKER_RESULT_KEY)
-    removeStorageSync(RELATION_PICKER_CONTEXT_KEY)
+  const consumeRelationEditResult = () => {
+    const value = getStorageSync(RELATION_EDIT_RESULT_KEY)
+    if (!value || typeof value !== 'object') return
+    const result = value as Partial<RelationEditResult>
+    if (result.changed !== true) return
+    removeStorageSync(RELATION_EDIT_RESULT_KEY)
+    void refresh()
   }
 
   const buildShareQuery = () => ({
@@ -542,7 +402,7 @@
 
   onShow(() => {
     reportToolVisit('compendium-lineup-counter')
-    readRelationPickerResult()
+    consumeRelationEditResult()
 
     const pickerResult = getStorageSync(CHARACTER_PICKER_RESULT_KEY)
     if (Array.isArray(pickerResult)) {
@@ -573,7 +433,8 @@
 <style scoped lang="scss">
   .counter-page {
     min-height: 100vh;
-    padding: 24rpx 24rpx 48rpx;
+    padding: 24rpx 24rpx calc(180rpx + env(safe-area-inset-bottom));
+    box-sizing: border-box;
     background: var(--theme-bg);
     color: var(--theme-text);
   }
@@ -695,17 +556,6 @@
 
   .action-row .toolbar-btn.primary {
     width: 100%;
-  }
-
-  .relation-entry-btn {
-    width: 100%;
-    margin: 18rpx 0 0;
-    border: 1rpx dashed var(--theme-brand);
-    border-radius: 999rpx;
-    background: transparent;
-    color: var(--theme-brand);
-    font-size: 22rpx;
-    font-weight: 700;
   }
 
   .toolbar-btn {
@@ -941,5 +791,37 @@
     display: flex;
     justify-content: center;
     padding: 8rpx 0 12rpx;
+  }
+
+  .fab {
+    position: fixed;
+    right: 32rpx;
+    bottom: calc(60rpx + env(safe-area-inset-bottom));
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    height: 92rpx;
+    padding: 0 32rpx;
+    border-radius: 999rpx;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 12rpx 28rpx rgba(217, 119, 6, 0.4);
+  }
+
+  .fab:active {
+    opacity: 0.85;
+  }
+
+  .fab-icon {
+    color: #fff;
+    font-size: 44rpx;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .fab-text {
+    color: #fff;
+    font-size: 28rpx;
+    font-weight: 700;
   }
 </style>

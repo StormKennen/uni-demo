@@ -8,17 +8,20 @@ Phase A 已完成 UI、页面状态、选择流程和跨页面回跳；Phase B �
 
 在 `subPackages/tools` 分包注册：
 
-| 页面 | 路由 |
-| --- | --- |
-| 阵容选择页 | `subPackages/tools/compendium/swc/lineup-picker` |
+| 页面                      | 路由                                                    |
+| ------------------------- | ------------------------------------------------------- |
+| 阵容选择页                | `subPackages/tools/compendium/swc/lineup-picker`        |
+| 用户侧克制关系新增/编辑页 | `subPackages/tools/compendium/swc/lineup-relation-edit` |
 
 `lineup-picker` 复用现有 `GET /compendiums/lineups` 查询能力，支持关键词、类型、人物精准筛选、全部/我创建的/我的收藏范围筛选、`requiredType` 类型锁定、严格单选、分页、确认返回和快捷创建入口。
+
+`lineup-relation-edit` 通过 `mode=create|edit` 统一承载用户侧新增关系、编辑本人创建的关系和从当前主阵容补充克制；不包含管理员关系管理能力。阵容克制页使用右下角 FAB 进入全局新增，结果卡片的“补充克制”和本人关系“编辑”也统一进入该页面。
 
 ## 2. 本阶段交付
 
 - 新增 `lineup-interaction-bar.vue`，展示点赞、点踩、收藏并通过事件交给页面处理。
 - 阵容列表、阵容克制页增加社区互动 UI、范围筛选状态（全部/我创建的/我的收藏）和 `lineup.canEdit` 编辑入口。
-- 新增 `lineup-relation-editor.vue`，维护固定关系方向：`defense = source`、`offense = target`。
+- `lineup-relation-editor.vue` 作为纯 UI 表单组件，维护固定关系方向：`defense = source`、`offense = target`；页面导航、storage 和 POST/PATCH 由 `lineup-relation-edit.vue` 负责。
 - 阵容选择页与阵容编辑页之间通过隔离 storage key 传递选择结果；编辑页支持 `returnMode`、`returnKey`、`presetType`、`lockType` 路由上下文。
 
 ## 3. 已接入契约
