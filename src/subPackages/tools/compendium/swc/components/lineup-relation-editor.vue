@@ -11,25 +11,55 @@
       <view class="relation-side">
         <text class="side-label">防守阵容</text>
         <view v-if="defense" class="selected-lineup">
-          <view class="selected-main">
-            <text class="selected-name">{{ defense.name || '未命名阵容' }}</text>
-            <text class="selected-desc">{{ defense.description || '暂无描述' }}</text>
+          <view class="selected-head">
+            <text class="selected-hint">已选择</text>
+            <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-defense')">重新选择</button>
           </view>
-          <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-defense')">重新选择</button>
+          <SwcLineup
+            :characters="toMemberViews(defense.characters)"
+            :name="getLineupName(defense.name)"
+            :description="defense.description"
+            :type="defense.type"
+            :show-name="Boolean(getLineupName(defense.name))"
+            :show-description="Boolean(defense.description)"
+            :show-type="true"
+            :columns="5"
+            :avatar-size="76"
+            :show-member-name="false"
+            :show-family="false"
+            :show-stars="true"
+            star-position="above"
+            :show-element="true"
+            empty-text="暂无成员信息" />
         </view>
         <button v-else class="choose-btn" size="mini" :disabled="saving" @click="emit('choose-defense')">选择防守阵容</button>
       </view>
 
-      <text class="relation-arrow">→</text>
+      <text class="relation-arrow">↓</text>
 
       <view class="relation-side">
         <text class="side-label">进攻阵容</text>
         <view v-if="offense" class="selected-lineup">
-          <view class="selected-main">
-            <text class="selected-name">{{ offense.name || '未命名阵容' }}</text>
-            <text class="selected-desc">{{ offense.description || '暂无描述' }}</text>
+          <view class="selected-head">
+            <text class="selected-hint">已选择</text>
+            <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-offense')">重新选择</button>
           </view>
-          <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-offense')">重新选择</button>
+          <SwcLineup
+            :characters="toMemberViews(offense.characters)"
+            :name="getLineupName(offense.name)"
+            :description="offense.description"
+            :type="offense.type"
+            :show-name="Boolean(getLineupName(offense.name))"
+            :show-description="Boolean(offense.description)"
+            :show-type="true"
+            :columns="5"
+            :avatar-size="76"
+            :show-member-name="false"
+            :show-family="false"
+            :show-stars="true"
+            star-position="above"
+            :show-element="true"
+            empty-text="暂无成员信息" />
         </view>
         <button v-else class="choose-btn" size="mini" :disabled="saving" @click="emit('choose-offense')">选择进攻阵容</button>
       </view>
@@ -56,7 +86,9 @@
 </template>
 
 <script setup lang="ts">
-  import type { LineupOption } from '../lineup-types'
+  import type { LineupCharacterPreview, LineupOption } from '../lineup-types'
+  import { toSwcCharacterView } from '../utils'
+  import SwcLineup from './swc-lineup.vue'
 
   defineProps<{
     mode: 'create' | 'edit'
@@ -80,6 +112,9 @@
     }
   }
 
+  const toMemberViews = (characters: LineupCharacterPreview[]) => characters.map(item => toSwcCharacterView(item))
+  const getLineupName = (name: unknown): string => (typeof name === 'string' ? name.trim() : '')
+
   const handleDescriptionInput = (event: TextareaInputEvent) => {
     emit('update:description', event.detail?.value || '')
   }
@@ -95,7 +130,7 @@
   }
 
   .editor-head,
-  .selected-lineup,
+  .selected-head,
   .editor-actions {
     display: flex;
     align-items: center;
@@ -112,7 +147,7 @@
   }
 
   .editor-subtitle,
-  .selected-desc {
+  .selected-hint {
     display: block;
     margin-top: 8rpx;
     color: var(--theme-text-tertiary);
@@ -122,6 +157,7 @@
 
   .relation-row {
     display: flex;
+    flex-direction: column;
     align-items: stretch;
     gap: 12rpx;
     margin-top: 24rpx;
@@ -145,23 +181,14 @@
   }
 
   .selected-lineup {
-    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
     margin-top: 12rpx;
   }
 
-  .selected-main {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .selected-name {
-    display: block;
-    overflow: hidden;
-    color: var(--theme-text);
-    font-size: 24rpx;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .selected-hint {
+    margin-top: 0;
   }
 
   .choose-btn,

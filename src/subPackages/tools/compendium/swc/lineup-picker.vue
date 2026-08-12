@@ -78,14 +78,13 @@
           @click="toggleSelection(option)">
           <view class="option-head">
             <view class="option-title-wrap">
-              <text class="option-name">{{ option.name || '未命名阵容' }}</text>
+              <text v-if="getLineupName(option.name)" class="option-name">{{ getLineupName(option.name) }}</text>
               <text v-if="option.type" class="option-type">{{ getLineupTypeLabel(option.type) }}</text>
             </view>
             <view class="option-check" :class="{ checked: selectedLineup?.id === option.id }">
               <text v-if="selectedLineup?.id === option.id">✓</text>
             </view>
           </view>
-          <text v-if="option.description" class="option-desc">{{ option.description }}</text>
           <SwcLineup
             v-if="option.characters.length"
             class="option-lineup"
@@ -95,9 +94,11 @@
             :show-member-name="false"
             :show-family="false"
             :show-stars="true"
+            star-position="above"
             :show-element="true"
             empty-text="暂无成员" />
           <text v-else class="option-empty">暂无成员信息</text>
+          <text v-if="option.description" class="option-desc">{{ option.description }}</text>
         </view>
 
         <view v-if="pagination.hasNext" class="load-more">
@@ -113,7 +114,7 @@
       </view>
 
       <view class="footer-bar">
-        <text class="footer-selected">{{ selectedLineup ? `已选：${selectedLineup.name || '未命名阵容'}` : '尚未选择阵容' }}</text>
+        <text class="footer-selected">{{ selectedLineupSummary }}</text>
         <button class="footer-cancel" @click="handleCancel">取消</button>
         <button class="footer-confirm" :disabled="!selectedLineup" @click="handleConfirm">确认选择</button>
       </view>
@@ -172,6 +173,12 @@
 
   const isRelationMode = computed(() => pickerMode.value === 'relation')
   const relationSideLabel = computed(() => (relationSide.value === 'offense' ? '进攻阵容' : '防守阵容'))
+  const getLineupName = (name: unknown): string => (typeof name === 'string' ? name.trim() : '')
+  const selectedLineupSummary = computed(() => {
+    if (!selectedLineup.value) return '尚未选择阵容'
+    const name = getLineupName(selectedLineup.value.name)
+    return name ? `已选：${name}` : '已选择阵容'
+  })
   const selectedCharacterViews = computed<SwcCharacterView[]>(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
   const typeOptions = computed(() => {
     if (requiredType.value) return [{ label: getLineupTypeLabel(requiredType.value), value: requiredType.value }]
