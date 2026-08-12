@@ -2,10 +2,9 @@
   <view class="editor-card">
     <view class="editor-head">
       <view>
-        <text class="editor-title">新增克制关系</text>
+        <text class="editor-title">{{ mode === 'edit' ? '编辑克制关系' : '新增克制关系' }}</text>
         <text class="editor-subtitle">关系方向固定为：防守阵容 → 进攻阵容</text>
       </view>
-      <text class="pending-badge">待接入保存接口</text>
     </view>
 
     <view class="relation-row">
@@ -16,9 +15,9 @@
             <text class="selected-name">{{ defense.name || '未命名阵容' }}</text>
             <text class="selected-desc">{{ defense.description || '暂无描述' }}</text>
           </view>
-          <button class="side-btn" size="mini" @click="emit('choose-defense')">重新选择</button>
+          <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-defense')">重新选择</button>
         </view>
-        <button v-else class="choose-btn" size="mini" @click="emit('choose-defense')">选择防守阵容</button>
+        <button v-else class="choose-btn" size="mini" :disabled="saving" @click="emit('choose-defense')">选择防守阵容</button>
       </view>
 
       <text class="relation-arrow">→</text>
@@ -30,9 +29,9 @@
             <text class="selected-name">{{ offense.name || '未命名阵容' }}</text>
             <text class="selected-desc">{{ offense.description || '暂无描述' }}</text>
           </view>
-          <button class="side-btn" size="mini" @click="emit('choose-offense')">重新选择</button>
+          <button class="side-btn" size="mini" :disabled="saving" @click="emit('choose-offense')">重新选择</button>
         </view>
-        <button v-else class="choose-btn" size="mini" @click="emit('choose-offense')">选择进攻阵容</button>
+        <button v-else class="choose-btn" size="mini" :disabled="saving" @click="emit('choose-offense')">选择进攻阵容</button>
       </view>
     </view>
 
@@ -42,18 +41,17 @@
         class="description-input"
         :value="description"
         :maxlength="500"
+        :disabled="saving"
         placeholder="补充适用场景、速度要求或关键打法"
         @input="handleDescriptionInput" />
     </view>
 
     <view class="editor-actions">
-      <button class="action-btn ghost" size="mini" @click="emit('cancel')">取消</button>
+      <button class="action-btn ghost" size="mini" :disabled="saving" @click="emit('cancel')">取消</button>
       <button class="action-btn primary" size="mini" :loading="saving" :disabled="saving || !defense || !offense" @click="emit('save')">
-        保存关系
+        {{ mode === 'edit' ? '保存修改' : '新增关系' }}
       </button>
     </view>
-
-    <text class="pending-tip">BACKEND-CONTRACT-PENDING：保存请求体和用户侧关系接口待后端 Swagger/Apifox 确认。</text>
   </view>
 </template>
 
@@ -61,6 +59,7 @@
   import type { LineupOption } from '../lineup-types'
 
   defineProps<{
+    mode: 'create' | 'edit'
     defense: LineupOption | null
     offense: LineupOption | null
     description: string
@@ -113,22 +112,12 @@
   }
 
   .editor-subtitle,
-  .pending-tip,
   .selected-desc {
     display: block;
     margin-top: 8rpx;
     color: var(--theme-text-tertiary);
     font-size: 21rpx;
     line-height: 1.5;
-  }
-
-  .pending-badge {
-    flex-shrink: 0;
-    padding: 8rpx 12rpx;
-    border-radius: 999rpx;
-    background: var(--theme-surface-2);
-    color: var(--theme-text-tertiary);
-    font-size: 19rpx;
   }
 
   .relation-row {
@@ -227,7 +216,9 @@
     color: #fff;
   }
 
-  .pending-tip {
-    margin-top: 16rpx;
+  .choose-btn[disabled],
+  .side-btn[disabled],
+  .action-btn[disabled] {
+    opacity: 0.5;
   }
 </style>

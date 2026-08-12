@@ -21,6 +21,22 @@
         </view>
 
         <view class="filter-group">
+          <text class="filter-label">范围</text>
+          <scroll-view class="filter-scroll" scroll-x enable-flex>
+            <view class="chip-row">
+              <text
+                v-for="scopeOption in LINEUP_SCOPE_OPTIONS"
+                :key="scopeOption.value"
+                class="chip"
+                :class="{ active: selectedScope === scopeOption.value }"
+                @click="selectScope(scopeOption.value)">
+                {{ scopeOption.label }}
+              </text>
+            </view>
+          </scroll-view>
+        </view>
+
+        <view class="filter-group">
           <view class="filter-head">
             <text class="filter-label">人物精准筛选</text>
             <text v-if="selectedCharacterFilters.length" class="filter-count">已选 {{ selectedCharacterFilters.length }}</text>
@@ -113,12 +129,13 @@
   import SwcCharacterPickerSlots from './components/swc-character-picker-slots.vue'
   import SwcLineup from './components/swc-lineup.vue'
   import { getLineupTypeLabel, LINEUP_TYPE_OPTIONS, LINEUP_TYPE_PRESET_OPTIONS, ALL_VALUE } from './lineup-meta'
-  import type { CharacterOption, LineupCharacterPreview, PaginationState, UserLineupSummary } from './lineup-types'
+  import type { CharacterOption, LineupCharacterPreview, LineupScope, PaginationState, UserLineupSummary } from './lineup-types'
   import { normalizeUserLineupListResult } from './lineup-normalizers'
   import { toSwcCharacterView, type SwcCharacterView } from './utils'
   import { buildAnonymousRequestConfig } from './request-options'
   import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
   import type { getCompendiumsLineupsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
+  import { ensureLoginAccess } from '@/utils/admin'
   import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
 
   type PickerMode = 'lineup' | 'relation'
@@ -130,6 +147,11 @@
   const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:lineup-picker:character-picker:draft'
   const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:lineup-picker:character-picker:result'
   const DEFAULT_RESULT_KEY = 'compendium:swc:lineup-picker:result'
+  const LINEUP_SCOPE_OPTIONS: Array<{ label: string; value: LineupScope }> = [
+    { label: '全部', value: 'all' },
+    { label: '我创建的', value: 'mine' },
+    { label: '我的收藏', value: 'favorites' },
+  ]
 
   const selectedLocale = ref(DEFAULT_LOCALE)
   const pickerMode = ref<PickerMode>('lineup')
@@ -139,6 +161,7 @@
   const initialSelectedId = ref('')
   const keyword = ref('')
   const selectedType = ref(ALL_VALUE)
+  const selectedScope = ref<LineupScope>('all')
   const selectedCharacterFilters = ref<CharacterOption[]>([])
   const options = ref<UserLineupSummary[]>([])
   const selectedLineup = ref<UserLineupSummary | null>(null)
@@ -198,6 +221,7 @@
       compendiumId: COMPENDIUM_CODE,
       locale: selectedLocale.value,
       status: 'enabled',
+      scope: selectedScope.value,
       page,
       pageSize: PAGE_SIZE,
       sortBy: 'updatedAt',
@@ -265,6 +289,31 @@
     if (requiredType.value && value !== requiredType.value) return
     if (selectedType.value === value) return
     selectedType.value = value
+    void refreshList()
+  }
+
+  const buildCurrentUrl = (scope = selectedScope.value): string => {
+    const params = [
+      `compendiumId=${encodeURIComponent(COMPENDIUM_CODE)}`,
+      `locale=${encodeURIComponent(selectedLocale.value)}`,
+      `mode=${encodeURIComponent(pickerMode.value)}`,
+      `relationSide=${encodeURIComponent(relationSide.value)}`,
+      `returnKey=${encodeURIComponent(returnKey.value)}`,
+    ]
+    if (requiredType.value) params.push(`requiredType=${encodeURIComponent(requiredType.value)}`)
+    const selectedId = selectedLineup.value?.id || initialSelectedId.value
+    if (selectedId) params.push(`selectedId=${encodeURIComponent(selectedId)}`)
+    if (keyword.value.trim()) params.push(`keyword=${encodeURIComponent(keyword.value.trim())}`)
+    if (selectedType.value) params.push(`type=${encodeURIComponent(selectedType.value)}`)
+    if (scope !== 'all') params.push(`scope=${encodeURIComponent(scope)}`)
+    if (selectedCharacterIds.value.length) params.push(`characterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}`)
+    return `/subPackages/tools/compendium/swc/lineup-picker?${params.join('&')}`
+  }
+
+  const selectScope = (scope: LineupScope) => {
+    if (selectedScope.value === scope) return
+    if (scope !== 'all' && !ensureLoginAccess(buildCurrentUrl(scope))) return
+    selectedScope.value = scope
     void refreshList()
   }
 
@@ -353,6 +402,8 @@
     const routeType = decodeOption(options.type)
     requiredType.value = decodeOption(options.requiredType)
     selectedType.value = requiredType.value || (routeType === 'all' ? ALL_VALUE : routeType)
+    const routeScope = decodeOption(options.scope)
+    selectedScope.value = routeScope === 'mine' || routeScope === 'favorites' ? routeScope : 'all'
     initialSelectedId.value = decodeOption(options.selectedId || options.selectedLineupId)
     const ids = decodeOption(options.characterIds || options.selectedCharacterIds)
       .split(',')
@@ -360,6 +411,7 @@
       .filter(Boolean)
     selectedCharacterFilters.value = ids.map(createCharacterFilter)
     uni.setNavigationBarTitle({ title: isRelationMode.value ? `选择${relationSideLabel.value}` : '选择阵容' })
+    if (selectedScope.value !== 'all' && !ensureLoginAccess(buildCurrentUrl())) return
     void refreshList()
   })
 

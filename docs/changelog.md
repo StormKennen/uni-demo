@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- 2026-08-12 [tools/compendium-swc] 接入用户侧阵容克制关系 POST/PATCH；登录用户可新增关系并仅编辑自己创建的关系，阵容单选页补充全部/我创建的/我的收藏范围筛选并继续复用 Apifox 用户侧接口（Codex）
+
 - 2026-08-12 [tools/compendium-swc,components/PageLayout] 统一魔灵召唤相关页面浅色/深色导航背景与底部分隔；阵容列表改为上拉加载状态提示、单块加载/空态、右上角圆角类型徽标和头像上方星级；新增筛选重置与稳定的克制操作区布局（Codex）
 
 - 2026-08-12 [tools/compendium-swc] Phase B：按本地重新导入的 Apifox 契约接通阵容收藏 action、lineups/relations scope、登录权限、服务端多人物 AND 分页和 counter 无人物查询；补齐互动 ownership/时间字段与 requiredType 快捷创建回填，普通用户克制关系写入仍明确阻断且不调用管理员 API（Codex）

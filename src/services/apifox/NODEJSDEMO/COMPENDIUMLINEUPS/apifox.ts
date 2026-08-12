@@ -38,6 +38,8 @@ import type {
   patchAdminLineupsLineupIdRes,
   patchCompendiumsLineupMappingsMappingIdBody,
   patchCompendiumsLineupMappingsMappingIdRes,
+  patchCompendiumsLineupRelationsRelationIdBody,
+  patchCompendiumsLineupRelationsRelationIdRes,
   patchCompendiumsLineupsLineupIdBody,
   patchCompendiumsLineupsLineupIdRes,
   postAdminLineupMappingsBody,
@@ -48,6 +50,8 @@ import type {
   postAdminLineupsRes,
   postCompendiumsLineupMappingsBody,
   postCompendiumsLineupMappingsRes,
+  postCompendiumsLineupRelationsBody,
+  postCompendiumsLineupRelationsRes,
   postCompendiumsLineupsBody,
   postCompendiumsLineupsRes,
   postLineupsLineupIdReactionBody,
@@ -434,6 +438,37 @@ export const postLineupMappingsContainersLineupsReaction = async (
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
     `/compendiums/lineup-mappings/${pathParams.mappingId}/containers/${pathParams.containerId}/lineups/${pathParams.lineupId}/reaction`,
+    data,
+    _config,
+  )
+}
+
+/**
+ * @description CompendiumLineups/新增单条阵容克制关系（用户侧）
+ * @url POST /compendiums/lineup-relations
+ * @host https://app.apifox.com/link/project/7048425/apis/api-500506569
+ */
+export const postCompendiumsLineupRelations = async (
+  data: Expand<postCompendiumsLineupRelationsBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postCompendiumsLineupRelationsRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/compendiums/lineup-relations`, data, _config)
+}
+
+/**
+ * @description CompendiumLineups/编辑单条阵容克制关系（用户侧）
+ * @url PATCH /compendiums/lineup-relations/{relationId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-500506570
+ */
+export const patchCompendiumsLineupRelationsRelationId = async (
+  relationId: string,
+  data: Expand<patchCompendiumsLineupRelationsRelationIdBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<patchCompendiumsLineupRelationsRelationIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.patch(
+    `/compendiums/lineup-relations/${relationId}`,
     data,
     _config,
   )

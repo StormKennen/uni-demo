@@ -640,3 +640,44 @@ export interface postLineupsLineupIdReactionBody {
  * @url POST /compendiums/lineup-mappings/{mappingId}/containers/{containerId}/lineups/{lineupId}/reaction
  */
 export type postLineupsLineupIdReactionRes = string
+
+/**
+ * @description CompendiumLineups/新增单条阵容克制关系（用户侧）--接口请求Body参数
+ * @url POST /compendiums/lineup-relations
+ */
+export interface postCompendiumsLineupRelationsBody {
+  /** Game code or game id. */
+  compendiumId?: string
+  /** Optional strategy note for this edge. */
+  description?: string
+  /** Backward-compatible alias of compendiumId. */
+  gameId?: string
+  /** 被克制的启用状态“占领战防守”阵容 ID。 */
+  sourceLineupId: string
+  /** 克制方的启用状态“占领战进攻”阵容 ID。 */
+  targetLineupId: string
+}
+
+/**
+ * @description CompendiumLineups/新增单条阵容克制关系（用户侧）--接口返回值
+ * @url POST /compendiums/lineup-relations
+ */
+export type postCompendiumsLineupRelationsRes = string
+
+/**
+ * @description CompendiumLineups/编辑单条阵容克制关系（用户侧）--接口请求Body参数
+ * @url PATCH /compendiums/lineup-relations/{relationId}
+ */
+export interface patchCompendiumsLineupRelationsRelationIdBody {
+  description?: string
+  /** New enabled defense lineup ID. */
+  sourceLineupId?: string
+  /** New enabled offense lineup ID. */
+  targetLineupId?: string
+}
+
+/**
+ * @description CompendiumLineups/编辑单条阵容克制关系（用户侧）--接口返回值
+ * @url PATCH /compendiums/lineup-relations/{relationId}
+ */
+export type patchCompendiumsLineupRelationsRelationIdRes = string
