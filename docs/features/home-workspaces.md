@@ -42,7 +42,7 @@ export type WorkspaceKey = 'workbench' | 'image' | 'video' | 'swc' | 'qr' | 'rec
 `ToolItem.category` 正式迁移为 `ToolItem.workspace: Exclude<WorkspaceKey, 'workbench'>`。工作台是首页聚合能力，不是工具分类，任何 Tool 都不归属 `workbench`。
 
 - 图片：图片上传、拼接、压缩、隐私清理、格式转换、打乱、水印、文档扫描、PDF 工具箱。
-- 视频：视频压缩、视频链接整理、视频转 GIF。
+- 视频：视频压缩、视频去水印、视频转 GIF。
 - 魔灵召唤：所有 SWC Portal、图鉴管理、阵容、映射、克制、兑换券入口。
 - 二维码、记录、文本、娱乐继续按领域归属；娱乐普通入口只保留台球瞄准器。
 - `disabled`、`hiddenInDirectory`、`unsupportedPlatforms`、`requiresAuth`、`adminOnly` 等规则不变。

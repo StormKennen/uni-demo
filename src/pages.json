@@ -244,7 +244,7 @@
         {
           "path": "watermark/index",
           "style": {
-            "navigationBarTitleText": "视频链接整理",
+            "navigationBarTitleText": "视频去水印",
             "navigationStyle": "custom"
           }
         },

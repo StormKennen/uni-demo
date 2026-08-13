@@ -162,7 +162,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'video',
   },
   'video-watermark': {
-    name: '视频链接整理',
+    name: '视频去水印',
     desc: '提取/复制原始链接',
     icon: 'link',
     gradient: 'linear-gradient(135deg, #07c160 0%, #12d28c 100%)',

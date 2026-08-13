@@ -14,7 +14,7 @@ export interface getVideoPlatformsResPlatformsItem {
 }
 
 /**
- * @description Video/处理视频链接整理--接口请求Body参数
+ * @description Video/处理视频去水印--接口请求Body参数
  * @url POST /video/process
  */
 export interface postVideoProcessBody {
@@ -27,7 +27,7 @@ export interface postVideoProcessBody {
 }
 
 /**
- * @description Video/处理视频链接整理--接口返回值
+ * @description Video/处理视频去水印--接口返回值
  * @url POST /video/process
  */
 export interface postVideoProcessRes {
@@ -40,7 +40,7 @@ export interface postVideoProcessRes {
 }
 
 /**
- * @description Video/批量处理视频链接整理--接口请求Body参数
+ * @description Video/批量处理视频去水印--接口请求Body参数
  * @url POST /video/batch
  */
 export interface postVideoBatchBody {
@@ -49,7 +49,7 @@ export interface postVideoBatchBody {
 }
 
 /**
- * @description Video/批量处理视频链接整理--接口返回值
+ * @description Video/批量处理视频去水印--接口返回值
  * @url POST /video/batch
  */
 export interface postVideoBatchRes {

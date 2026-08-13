@@ -35,7 +35,7 @@ export const getVideoPlatforms = async (
 }
 
 /**
- * @description Video/处理视频链接整理
+ * @description Video/处理视频去水印
  * @url POST /video/process
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075578
  */
@@ -48,7 +48,7 @@ export const postVideoProcess = async (
 }
 
 /**
- * @description Video/批量处理视频链接整理
+ * @description Video/批量处理视频去水印
  * @url POST /video/batch
  * @host https://app.apifox.com/link/project/7048425/apis/api-363075579
  */

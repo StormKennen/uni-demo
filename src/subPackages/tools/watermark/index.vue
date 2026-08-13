@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="视频链接整理" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
+  <PageLayout title="视频去水印" nav-gradient="linear-gradient(135deg, #07c160 0%, #12d28c 100%)">
     <view class="watermark-page">
       <view class="main-content">
         <view class="card input-card" v-if="!parsedVideoUrl">
@@ -53,7 +53,7 @@
   // #endif
 
   const SHARE_PATH = '/subPackages/tools/watermark/index'
-  const SHARE_TITLE = '视频链接整理 · 凉白开工具箱'
+  const SHARE_TITLE = '视频去水印 · 凉白开工具箱'
 
   const extractVideoUrl = (text: string) => {
     if (!text) return ''
