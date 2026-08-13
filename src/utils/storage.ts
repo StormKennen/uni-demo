@@ -1,5 +1,6 @@
 import type { ThemeMode } from '@/utils/theme'
 import { THEME_STORAGE_KEY } from '@/utils/theme'
+import { isWorkspaceKey, type WorkspaceKey } from '@/config/workspaces'
 
 const TokenKey = 'token'
 const WxUserInfo = 'WxUserInfo'
@@ -163,7 +164,7 @@ export const removeRefreshTokenExpiresAt = () => {
  * 检查token是否过期
  * @param bufferMinutes 提前多少分钟认为token过期（默认5分钟）
  */
-export const isTokenExpired = (bufferMinutes: number = 5): boolean => {
+export const isTokenExpired = (bufferMinutes = 5): boolean => {
   const expires = getTokenExpiresAt()
   console.log('expires', expires)
 
@@ -193,11 +194,12 @@ export const isRefreshTokenExpired = (): boolean => {
 export interface UserInfoType {
   id: string
   name: string
-  phone: string
-  role: string
-  isEmailVerified: boolean
-  isPhoneVerified: boolean
-  wechatGender: number
+  avatar?: string
+  phone?: string | null
+  role?: string
+  isEmailVerified?: boolean
+  isPhoneVerified?: boolean
+  wechatGender?: number
 }
 
 const UserInfoKey = 'userInfo'
@@ -231,4 +233,62 @@ export const clearLoginData = () => {
       console.error('Failed to update HTTP headers after clearing login data:', error)
     }
   }, 0)
+}
+
+export const APP_CURRENT_WORKSPACE = 'APP_CURRENT_WORKSPACE'
+export const APP_WORKSPACE_MANUAL_SELECTED = 'APP_WORKSPACE_MANUAL_SELECTED'
+const LegacyWorkspaceUsageKey = 'APP_WORKSPACE_USAGE'
+const WorkspaceFoldStatusKey = 'APP_WORKSPACE_FOLD_STATUS'
+
+export const getCurrentWorkspace = (): WorkspaceKey => {
+  const value = getStorageSync(APP_CURRENT_WORKSPACE)
+  return isWorkspaceKey(value) ? value : 'workbench'
+}
+
+export const setCurrentWorkspace = (workspace: WorkspaceKey): void => {
+  setStorageSync(APP_CURRENT_WORKSPACE, workspace)
+}
+
+const hasLegacyWorkspaceUsage = (): boolean => {
+  const value = getStorageSync(LegacyWorkspaceUsageKey)
+  if (!Array.isArray(value)) return false
+
+  return value.some(item => {
+    if (!item || typeof item !== 'object') return false
+    const record = item as { key?: unknown; lastUsedAt?: unknown }
+    return (
+      isWorkspaceKey(record.key) && typeof record.lastUsedAt === 'number' && Number.isFinite(record.lastUsedAt) && record.lastUsedAt > 0
+    )
+  })
+}
+
+export const getWorkspaceManualSelected = (): boolean => {
+  const value = getStorageSync(APP_WORKSPACE_MANUAL_SELECTED)
+  if (typeof value === 'boolean') {
+    removeStorageSync(LegacyWorkspaceUsageKey)
+    return value
+  }
+
+  const migrated = hasLegacyWorkspaceUsage()
+  removeStorageSync(LegacyWorkspaceUsageKey)
+  if (migrated) setStorageSync(APP_WORKSPACE_MANUAL_SELECTED, true)
+  return migrated
+}
+
+export const setWorkspaceManualSelected = (value: boolean): void => {
+  setStorageSync(APP_WORKSPACE_MANUAL_SELECTED, value)
+}
+
+export const getWorkspaceFoldStatus = (): Partial<Record<WorkspaceKey, boolean>> => {
+  const value = getStorageSync(WorkspaceFoldStatusKey)
+  if (!value || typeof value !== 'object') return {}
+
+  return Object.entries(value as Record<string, unknown>).reduce<Partial<Record<WorkspaceKey, boolean>>>((result, [key, folded]) => {
+    if (isWorkspaceKey(key) && typeof folded === 'boolean') result[key] = folded
+    return result
+  }, {})
+}
+
+export const setWorkspaceFoldStatus = (value: Partial<Record<WorkspaceKey, boolean>>): void => {
+  setStorageSync(WorkspaceFoldStatusKey, value)
 }

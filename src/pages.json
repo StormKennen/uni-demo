@@ -49,6 +49,27 @@
             "navigationBarTitleText": "设置",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "setting/profile",
+          "style": {
+            "navigationBarTitleText": "我的资料",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "setting/account-security",
+          "style": {
+            "navigationBarTitleText": "账号与安全",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "setting/bind-phone",
+          "style": {
+            "navigationBarTitleText": "绑定手机号",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

@@ -1,13 +1,13 @@
 <template>
-  <PageLayout title="工具库" :show-nav="false" :nav-back="false">
+  <PageLayout title="全部工作间" :show-nav="false" :nav-back="false">
     <view class="tools-page">
       <NavBarBase :nav-back="false" custom-class="tools-navbar" :custom-style="{ background: navbarBg }">
         <template #title>
           <view class="tools-navbar-content">
             <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
             <view class="tools-navbar-copy">
-              <text class="navbar-title-single">工具库</text>
-              <text class="navbar-subtitle">TOOL DIRECTORY</text>
+              <text class="navbar-title-single">全部工作间</text>
+              <text class="navbar-subtitle">WORKSPACES</text>
             </view>
           </view>
         </template>
@@ -15,30 +15,30 @@
 
       <view class="section section--summary">
         <view class="summary-card">
-          <text class="summary-title">工具大全</text>
-          <text class="summary-desc">{{ availableTools.length }} 个{{ platformLabel }}可用工具，按任务归档。</text>
+          <text class="summary-title">工作间</text>
+          <text class="summary-desc">{{ availableTools.length }} 个{{ platformLabel }}可用工具，按工作间归档。</text>
         </view>
       </view>
 
-      <view v-for="cat in visibleCategories" :key="cat.key" class="section section--catalog">
+      <view v-for="workspace in visibleWorkspaces" :key="workspace.key" class="section section--catalog">
         <view class="catalog-card">
-          <view class="catalog-head" @click="toggleCategoryFold(cat.key)">
+          <view class="catalog-head" @click="toggleWorkspaceFold(workspace.key)">
             <view class="catalog-head-main">
               <view class="catalog-title-row">
-                <text class="catalog-title">{{ cat.name }}</text>
-                <text class="catalog-subtitle">{{ cat.subtitle }}</text>
+                <text class="catalog-title">{{ workspace.name }}</text>
+                <text class="catalog-subtitle">{{ workspace.subtitle }}</text>
               </view>
-              <text class="catalog-brief">{{ getCategorySummary(cat.key) }}</text>
+              <text class="catalog-brief">{{ workspace.summary }}</text>
             </view>
-            <view class="fold-arrow" :class="{ folded: isFolded(cat.key) }">
+            <view class="fold-arrow" :class="{ folded: isFolded(workspace.key) }">
               <uni-icons type="down" size="18" color="var(--theme-text-tertiary)" />
             </view>
           </view>
 
-          <view v-if="!isFolded(cat.key)" class="catalog-body">
-            <view v-if="cat.layout === 'grid'" class="tools-grid">
+          <view v-if="!isFolded(workspace.key)" class="catalog-body">
+            <view v-if="workspace.directoryLayout === 'grid'" class="tools-grid">
               <view
-                v-for="item in getToolsByCategory(cat.key)"
+                v-for="item in getToolsByWorkspace(workspace.key)"
                 :key="item.key"
                 :class="['tool-card', { disabled: item.tool.disabled }]"
                 @click="handleToolClick(item.key, item.tool)">
@@ -55,7 +55,7 @@
 
             <view v-else class="tools-list">
               <view
-                v-for="item in getToolsByCategory(cat.key)"
+                v-for="item in getToolsByWorkspace(workspace.key)"
                 :key="item.key"
                 :class="['tool-list-item', { disabled: item.tool.disabled }]"
                 @click="handleToolClick(item.key, item.tool)">
@@ -96,17 +96,16 @@
   const {
     navbarBg,
     availableTools,
-    visibleCategories,
+    visibleWorkspaces,
     platformLabel,
-    getToolsByCategory,
-    getCategorySummary,
+    getToolsByWorkspace,
     isFolded,
-    toggleCategoryFold,
+    toggleWorkspaceFold,
     handleToolClick,
   } = useToolDirectory()
 
   const { onShareAppMessage, onShareTimeline } = useShare('tools', {
-    title: 'uni-demo · 工具库',
+    title: '全部工作间 · 凉白开工具箱',
     path: '/pages/tools/index',
   })
 

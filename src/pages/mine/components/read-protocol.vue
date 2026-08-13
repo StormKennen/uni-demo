@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
-  type Props = {}
   const model = defineModel()
   const onPrivacy = () => {
     console.log('🚀 ~ onPrivacy ~ onPrivacy:')

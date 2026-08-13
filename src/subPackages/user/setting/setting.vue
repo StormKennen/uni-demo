@@ -1,14 +1,35 @@
 <script setup lang="ts">
+  import { ref } from 'vue'
+  import { onShow } from '@dcloudio/uni-app'
   import MineListItem from '@/components/mine-list-item.vue'
   import { PrivacyPageUrl, ProtocolPageUrl } from '@/utils/const'
   import ConfirmDialog from '@/components/confirm-dialog.vue'
-  import { ref } from 'vue'
-  import { getToken, removeToken, removeWxUserInfo, setToken, setWxUserInfo } from '@/utils/storage'
-  import { onShow } from '@dcloudio/uni-app'
+  import { getToken, removeToken, removeWxUserInfo } from '@/utils/storage'
+
+  interface SettingListItem {
+    icon: string
+    name: string
+    to?: string
+    needToken?: boolean
+  }
 
   const isLogut = ref(!getToken())
   const appBaseInfo = uni.getAppBaseInfo()
-  const list = ref([
+  const accountList = ref<SettingListItem[]>([
+    {
+      icon: '/static/image/mine/setting.svg',
+      name: '我的资料',
+      to: '/subPackages/user/setting/profile',
+      needToken: true,
+    },
+    {
+      icon: '/static/image/mine/order.svg',
+      name: '账号与安全',
+      to: '/subPackages/user/setting/account-security',
+      needToken: true,
+    },
+  ])
+  const infoList = ref<SettingListItem[]>([
     { icon: '/static/image/mine/protocol.svg', name: '用户服务协议', to: ProtocolPageUrl },
     { icon: '/static/image/mine/privacy.svg', name: '隐私政策', to: PrivacyPageUrl },
     { icon: '/static/image/mine/version.svg', name: `版本号${appBaseInfo.appVersion}` },
@@ -48,12 +69,17 @@
 <template>
   <PageLayout title="设置">
     <view class="setting">
-      <view class="list" hover-class="none" hover-stop-propagation="false">
-        <view v-for="item in list" :key="item.name" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+      <view class="list" hover-class="none" :hover-stop-propagation="false">
+        <view v-for="item in accountList" :key="item.name" class="mine-list-content" hover-class="none" :hover-stop-propagation="false">
           <MineListItem :data="item" />
         </view>
       </view>
-      <view v-if="!isLogut" class="bottom" hover-class="none" hover-stop-propagation="false">
+      <view class="list list--secondary" hover-class="none" :hover-stop-propagation="false">
+        <view v-for="item in infoList" :key="item.name" class="mine-list-content" hover-class="none" :hover-stop-propagation="false">
+          <MineListItem :data="item" />
+        </view>
+      </view>
+      <view v-if="!isLogut" class="bottom" hover-class="none" :hover-stop-propagation="false">
         <button class="btn" @click="logout">退出登录</button>
       </view>
       <ConfirmDialog ref="confirmDialogRef" title="确定要退出当前账号吗？" :confirm="lougouConfirm" />
@@ -70,6 +96,10 @@
     background: var(--theme-bg);
     .list {
       padding: 20rpx 32rpx 32rpx;
+    }
+    .list--secondary {
+      margin-top: 12rpx;
+      padding-top: 0;
     }
     .bottom {
       position: absolute;

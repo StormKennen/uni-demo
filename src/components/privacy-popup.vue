@@ -22,6 +22,14 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
 
+  // #ifdef MP-WEIXIN
+  declare const wx: {
+    onNeedPrivacyAuthorization?: (callback: (resolve: (result: { buttonId: string; event: string }) => void) => void) => void
+    getPrivacySetting?: (options: { success: (result: { privacyContractName?: string }) => void }) => void
+    openPrivacyContract?: (options: { success?: () => void; fail?: (error: unknown) => void }) => void
+  }
+  // #endif
+
   const showPrivacy = ref(false)
   const privacyContractName = ref('用户隐私保护指引')
   let resolvePrivacyAuthorization: ((value: { buttonId: string; event: string }) => void) | null = null
@@ -110,9 +118,11 @@
 
   .privacy-popup {
     width: 560rpx;
+    border: 1rpx solid var(--theme-border);
     background: var(--theme-elevated);
     border-radius: 24rpx;
     padding: 48rpx 40rpx;
+    box-shadow: 0 12rpx 32rpx var(--theme-shadow-sm);
 
     .privacy-title {
       font-size: 34rpx;
@@ -130,8 +140,8 @@
       margin-bottom: 40rpx;
 
       .privacy-link {
-        color: #0046b4;
-        text-decoration: underline;
+        color: var(--theme-brand);
+        font-weight: 500;
       }
     }
 
@@ -143,11 +153,11 @@
     .btn-disagree,
     .btn-agree {
       flex: 1;
-      height: 80rpx;
-      line-height: 80rpx;
-      border-radius: 40rpx;
-      font-size: 30rpx;
-      font-weight: 500;
+      height: 88rpx;
+      line-height: 88rpx;
+      border-radius: 24rpx;
+      font-size: 32rpx;
+      font-weight: 600;
       border: none;
 
       &::after {
@@ -161,8 +171,13 @@
     }
 
     .btn-agree {
-      background: #0046b4;
+      background: var(--theme-brand);
       color: #fff;
+    }
+
+    .btn-disagree:active,
+    .btn-agree:active {
+      opacity: 0.86;
     }
   }
 </style>

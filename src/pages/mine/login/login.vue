@@ -1,10 +1,10 @@
 <script setup lang="ts">
-  import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox'
-  import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface'
-
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
+  import { onLoad, onShow } from '@dcloudio/uni-app'
   import LoginHeaderText from '../components/login-header-text.vue'
   import ReadDialog from '../components/read-dialog.vue'
+  import { postAuthLogin, postAuthRegister, postAuthWechatLogin } from '@/services/apifox/NODEJSDEMO/AUTH/apifox'
+  import type { postAuthWechatLoginBody, postAuthWechatLoginRes } from '@/services/apifox/NODEJSDEMO/AUTH/interface'
   import {
     setIsGoChatCoze,
     setToken,
@@ -14,7 +14,6 @@
     setTokenExpiresAt,
     setRefreshTokenExpiresAt,
   } from '@/utils/storage'
-  import { onLoad, onShow } from '@dcloudio/uni-app'
   import { PrivacyPageUrl, ProtocolPageUrl, TabsRoutes } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
 
@@ -26,6 +25,7 @@
   const authMode = ref<AuthMode>('account')
   const redirectUrl = ref('')
   const wechatLoginLoading = ref(false)
+  const registerErrorMessage = ref('')
   const isMpWeixin = ref(false)
   const pendingAgreementAction = ref<'' | 'wechat'>('')
 
@@ -36,6 +36,7 @@
 
   const changeLoginType = (type: LoginType) => {
     loginType.value = type
+    registerErrorMessage.value = ''
   }
 
   const switchAuthMode = (mode: AuthMode) => {
@@ -189,18 +190,52 @@
     return false
   }
 
-  const mobileNumber = ref()
+  const mobileNumber = ref('')
   // const mobileNumberError = ref(true)
-  const password = ref()
-  const confirmPassword = ref()
+  const password = ref('')
+  const confirmPassword = ref('')
+  const passwordMismatch = computed(() => {
+    return Boolean(password.value && confirmPassword.value) && password.value !== confirmPassword.value
+  })
+  interface ErrorRecord {
+    code?: number | string
+    message?: string
+    msg?: string
+    data?: {
+      message?: string
+      msg?: string
+      errors?: string[]
+    }
+    error?: {
+      message?: string
+    }
+  }
+
+  const readErrorMessage = (error: unknown, fallback: string): string => {
+    if (typeof error === 'string' && error.trim()) return error.trim()
+    if (!error || typeof error !== 'object') return fallback
+    const detail = error as ErrorRecord
+    const candidates = [
+      detail.message,
+      detail.msg,
+      detail.data?.message,
+      detail.data?.msg,
+      detail.error?.message,
+      ...(detail.data?.errors || []),
+    ]
+    return candidates.find(item => typeof item === 'string' && item.trim())?.trim() || fallback
+  }
   const inputMobile = (val: string) => {
     mobileNumber.value = val
+    registerErrorMessage.value = ''
   }
   const inputPassword = (val: string) => {
     password.value = val
+    registerErrorMessage.value = ''
   }
   const inputConfirmPassword = (val: string) => {
     confirmPassword.value = val
+    registerErrorMessage.value = ''
   }
 
   /** 手机号登录 */
@@ -230,20 +265,11 @@
       console.log('🚀 ~ mobileLogin ~ res:', res)
       loginSuccess(res)
       uni.hideLoading()
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('🚀 ~ mobileLogin ~ error:', error)
       uni.hideLoading()
 
-      // 处理不同类型的错误
-      let errorMessage = '登录失败，请稍后重试'
-
-      if (error?.code === 401) {
-        errorMessage = '手机号或密码错误'
-      } else if (error?.message) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
+      const errorMessage = readErrorMessage(error, '登录失败，请稍后重试')
 
       uni.showToast({
         title: errorMessage,
@@ -254,20 +280,46 @@
 
   const getWechatLoginCode = async (): Promise<string> => {
     return new Promise((resolve, reject) => {
+      let settled = false
+      const timeout = setTimeout(() => {
+        settled = true
+        reject(new Error('获取微信登录凭证超时，请检查网络或重启微信'))
+      }, 10000)
+
+      const resolveOnce = (code: string) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        resolve(code)
+      }
+
+      const rejectOnce = (error: unknown) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        reject(new Error(readErrorMessage(error, '获取微信登录凭证失败')))
+      }
+
       uni.login({
         provider: 'weixin',
         success: res => {
           if (res.code) {
-            resolve(res.code)
+            resolveOnce(res.code)
             return
           }
-          reject(new Error('未获取到微信登录凭证'))
+          rejectOnce(new Error('微信未返回登录凭证，请重试'))
         },
         fail: error => {
-          reject(error)
+          rejectOnce(error)
         },
       })
     })
+  }
+
+  const logWechatStage = (message: string) => {
+    if (import.meta.env.VITE_APP_ENV === 'development') {
+      console.info(`[wechat-login] ${message}`)
+    }
   }
 
   const wechatQuickLogin = async () => {
@@ -281,50 +333,49 @@
 
     try {
       wechatLoginLoading.value = true
+      logWechatStage('开始获取凭证')
       uni.showLoading({
         title: '微信登录中...',
         mask: true,
       })
 
       const code = await getWechatLoginCode()
+      logWechatStage('凭证获取成功')
       const payload: postAuthWechatLoginBody = {
         code,
         source: 'mp',
       }
-      const res: postAuthWechatLoginRes = await postAuthWechatLogin(payload)
+      logWechatStage('开始请求后端')
+      const res: postAuthWechatLoginRes = await postAuthWechatLogin(payload, { timeout: 15000 })
+      logWechatStage('后端响应成功')
 
       if (!res?.tokens?.access?.token || !res?.user) {
         throw new Error('登录结果不完整，请稍后重试')
       }
 
+      uni.hideLoading()
       await loginSuccess(res)
-    } catch (error: any) {
+      logWechatStage('用户状态保存成功')
+    } catch (error: unknown) {
       console.warn('🚀 ~ wechatQuickLogin ~ error:', error)
 
-      let errorMessage = '微信登录失败，请稍后重试'
-      if (error?.message) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
-
-      uni.showToast({
-        title: errorMessage,
-        icon: 'none',
-      })
+      const errorMessage = readErrorMessage(error, '微信登录失败，请稍后重试')
+      uni.hideLoading()
+      setTimeout(() => {
+        uni.showToast({
+          title: errorMessage,
+          icon: 'none',
+          duration: 3000,
+        })
+      }, 100)
     } finally {
       wechatLoginLoading.value = false
-      uni.hideLoading()
     }
   }
 
   /** 用户注册 */
   const userRegister = async () => {
-    if (!isRead.value) {
-      pendingAgreementAction.value = ''
-      readDialogRef.value?.open()
-      return
-    }
+    registerErrorMessage.value = ''
     if (!mobileNumber.value || !password.value || !confirmPassword.value) {
       uni.showToast({
         title: '请填写完整信息！',
@@ -332,11 +383,16 @@
       })
       return
     }
-    if (password.value !== confirmPassword.value) {
+    if (passwordMismatch.value) {
       uni.showToast({
         title: '两次密码输入不一致！',
         icon: 'none',
       })
+      return
+    }
+    if (!isRead.value) {
+      pendingAgreementAction.value = ''
+      readDialogRef.value?.open()
       return
     }
     try {
@@ -349,7 +405,8 @@
         password: password.value,
       }
 
-      const registerRes = await postAuthRegister(registerParams)
+      // 当前生成类型仍将 email 标记为必填，但后端手机号注册实际只接受 phone/name/password。
+      const registerRes = await postAuthRegister(registerParams as unknown as Parameters<typeof postAuthRegister>[0])
       console.log('🚀 ~ userRegister ~ registerRes:', registerRes)
 
       // 注册成功后，调用登录API获取完整的用户信息和token
@@ -361,22 +418,12 @@
       const loginRes = await postAuthLogin(loginParams)
       loginSuccess(loginRes)
       uni.hideLoading()
-    } catch (error) {
+    } catch (error: unknown) {
       console.warn('🚀 ~ userRegister ~ error:', error)
       uni.hideLoading()
 
-      // 处理不同类型的错误
-      let errorMessage = '注册失败，请稍后重试'
-
-      if (error?.code === 401) {
-        errorMessage = '注册信息验证失败'
-      } else if (error?.data?.message) {
-        errorMessage = error.data.message
-      } else if (error?.message) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
+      const errorMessage = readErrorMessage(error, '注册失败，请稍后重试')
+      registerErrorMessage.value = errorMessage
 
       uni.showToast({
         title: errorMessage,
@@ -458,7 +505,7 @@
                   :inputBorder="false"
                   :styles="inputStyles"
                   v-model="mobileNumber"
-                  placeholder="请输入手机号"
+                  placeholder="请输入11位手机号，例如：13800138000"
                   @input="inputMobile"></uni-easyinput>
               </view>
               <view class="mobile-password">
@@ -495,7 +542,7 @@
                   :inputBorder="false"
                   :styles="inputStyles"
                   v-model="mobileNumber"
-                  placeholder="请输入手机号"
+                  placeholder="请输入11位手机号，例如：13800138000"
                   @input="inputMobile"></uni-easyinput>
               </view>
               <view class="mobile-password">
@@ -505,7 +552,7 @@
                   :inputBorder="false"
                   :styles="inputStyles"
                   v-model="password"
-                  placeholder="请输入密码"
+                  placeholder="密码至少8位，需包含字母和数字"
                   @input="inputPassword">
                 </uni-easyinput>
               </view>
@@ -516,12 +563,14 @@
                   :inputBorder="false"
                   :styles="inputStyles"
                   v-model="confirmPassword"
-                  placeholder="请确认密码"
+                  placeholder="请再次输入密码"
                   confirm-type="done"
                   @input="inputConfirmPassword"
                   @confirm="handleRegisterPasswordConfirm">
                 </uni-easyinput>
               </view>
+              <text v-if="passwordMismatch" class="auth-error">两次密码输入不一致！</text>
+              <text v-else-if="registerErrorMessage" class="auth-error">{{ registerErrorMessage }}</text>
               <view class="change-login" @click="changeLoginType('mobile')">已有账号，前往登录</view>
               <view class="login-btns">
                 <button class="btn btn-register" @click="userRegister">注册</button>
@@ -567,8 +616,8 @@
       border-radius: 24rpx;
       font-size: 32rpx;
       font-weight: 600;
-      height: 96rpx;
-      line-height: 96rpx;
+      height: 88rpx;
+      line-height: 88rpx;
       &::after {
         display: none;
       }
@@ -618,7 +667,7 @@
     .auth-tab.active {
       background: var(--theme-surface);
       color: var(--theme-brand);
-      box-shadow: 0 8rpx 20rpx var(--theme-shadow-xs);
+      box-shadow: none;
     }
 
     .mobile {
@@ -689,12 +738,20 @@
         cursor: pointer;
       }
 
+      .auth-error {
+        display: block;
+        margin: 18rpx 4rpx -8rpx;
+        color: #d14343;
+        font-size: 24rpx;
+        line-height: 1.5;
+      }
+
       .login-btns {
         .btn-login,
         .btn-register {
-          background: $ga-brand-4;
+          background: var(--theme-brand);
           color: #fff;
-          box-shadow: 0 16rpx 30rpx rgba(0, 70, 180, 0.18);
+          box-shadow: none;
         }
       }
 
@@ -740,9 +797,9 @@
       }
 
       .btn-wechat {
-        background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
+        background: var(--theme-brand);
         color: #fff;
-        box-shadow: 0 16rpx 30rpx rgba(24, 181, 102, 0.18);
+        box-shadow: none;
       }
 
       .quick-login-tip {
@@ -771,10 +828,10 @@
     }
 
     .wechat-auth__btn {
-      margin-top: 120rpx;
-      background: linear-gradient(135deg, #18b566 0%, #39c97b 100%);
+      margin-top: 24rpx;
+      background: var(--theme-brand);
       color: #fff;
-      box-shadow: 0 16rpx 30rpx rgba(24, 181, 102, 0.18);
+      box-shadow: none;
       width: 100%;
     }
 

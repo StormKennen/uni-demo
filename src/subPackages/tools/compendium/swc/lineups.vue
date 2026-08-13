@@ -67,7 +67,7 @@
 
           <view class="filter-group">
             <view class="filter-head">
-              <text class="filter-label">人物精准筛选</text>
+              <text class="filter-label">人物</text>
               <text v-if="selectedCharacterFilters.length" class="filter-count">已选 {{ selectedCharacterFilters.length }}</text>
             </view>
 
@@ -765,13 +765,17 @@
   }
 
   .state-card {
-    width: auto;
+    width: calc(100% - 48rpx);
     margin: 0 24rpx 20rpx;
     box-sizing: border-box;
     border: 1rpx solid var(--theme-border);
     border-radius: 24rpx;
     background: var(--theme-surface);
     padding: 48rpx 28rpx;
+    min-height: 168rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: var(--theme-text-secondary);
     font-size: 28rpx;

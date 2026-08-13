@@ -2055,7 +2055,13 @@
   }
 
   .add-server-picker {
-    align-self: stretch;
+    height: 64rpx;
+  }
+
+  .add-server-picker .server-chip {
+    height: 64rpx;
+    min-height: 0;
+    box-sizing: border-box;
   }
 
   .server-chip {
@@ -2255,6 +2261,7 @@
     flex: 1;
     height: 64rpx;
     padding: 0 20rpx;
+    box-sizing: border-box;
     font-size: 26rpx;
     color: $text-primary;
     background: $card-bg;
@@ -2265,6 +2272,7 @@
     flex-shrink: 0;
     padding: 0 28rpx;
     height: 64rpx;
+    box-sizing: border-box;
     line-height: 64rpx;
     font-size: 24rpx;
     color: #fff;

@@ -14,7 +14,7 @@
       <view class="portal-list">
         <view v-for="entry in portalEntries" :key="entry.id" class="portal-card" @click="openEntry(entry.path)">
           <view class="entry-icon" :style="{ background: entry.accentSoft }">
-            <uni-icons :type="entry.icon" size="22" :color="entry.accent" />
+            <uni-icons :type="entry.icon as any" size="22" :color="entry.accent" />
           </view>
           <view class="entry-main">
             <text class="entry-title">{{ entry.title }}</text>
@@ -32,66 +32,9 @@
   import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import { buildSwcHomeShare } from './share'
   import { reportToolVisit } from '@/utils/tracker'
+  import { SWC_PORTAL_ENTRIES } from '@/config/swc-portal'
 
-  interface PortalEntry {
-    id: string
-    title: string
-    desc: string
-    icon: string
-    accent: string
-    accentSoft: string
-    path: string
-  }
-
-  const allPortalEntries: PortalEntry[] = [
-    {
-      id: 'bestiary',
-      title: '魔灵图鉴',
-      desc: '检索人物、筛选属性、查看详情',
-      icon: 'star',
-      accent: '#f97316',
-      accentSoft: 'rgba(249, 115, 22, 0.14)',
-      path: '/subPackages/tools/compendium/swc/list',
-    },
-    {
-      id: 'coupons',
-      title: '魔灵兑换券',
-      desc: '管理账号并快速兑换礼包码',
-      icon: 'gift',
-      accent: '#e11d48',
-      accentSoft: 'rgba(225, 29, 72, 0.13)',
-      path: '/subPackages/tools/game-coupons/index?gameId=swc&compendiumId=swc',
-    },
-    {
-      id: 'lineups',
-      title: '魔灵阵容',
-      desc: '浏览、发布与管理阵容组合',
-      icon: 'flag',
-      accent: '#d97706',
-      accentSoft: 'rgba(217, 119, 6, 0.14)',
-      path: '/subPackages/tools/compendium/swc/lineups?compendiumId=swc',
-    },
-    // {
-    //   id: 'mappings',
-    //   title: '阵容映射',
-    //   desc: '维护源阵容与目标阵容关系',
-    //   icon: 'link',
-    //   accent: '#0f766e',
-    //   accentSoft: 'rgba(15, 118, 110, 0.14)',
-    //   path: '/subPackages/tools/compendium/swc/lineup-mappings?compendiumId=swc',
-    // },
-    {
-      id: 'counter',
-      title: '阵容克制',
-      desc: '按魔灵查询阵容克制与被克制关系',
-      icon: 'refresh',
-      accent: '#7c3aed',
-      accentSoft: 'rgba(124, 58, 237, 0.14)',
-      path: '/subPackages/tools/compendium/swc/lineup-counter?compendiumId=swc',
-    },
-  ]
-
-  const portalEntries = computed(() => allPortalEntries)
+  const portalEntries = computed(() => SWC_PORTAL_ENTRIES)
 
   function openEntry(path: string) {
     uni.navigateTo({ url: path })

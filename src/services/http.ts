@@ -323,7 +323,7 @@ export class Request {
         console.log('认证接口返回401，不自动跳转，由调用方处理')
         return Promise.reject({
           code: 401,
-          message: '认证失败',
+          message: _data?.message || _data?.msg || '认证失败',
           data: _data,
         })
       }
@@ -347,7 +347,7 @@ export class Request {
       )
     }
 
-    const { code, msg, data } = _data
+    const { code, msg, message, data } = _data || {}
 
     // 处理业务层面的token失效 - 尝试静默刷新token
     if (code === RES_CODE.InvalidToken) {
@@ -361,7 +361,13 @@ export class Request {
     }
 
     if (code !== RES_CODE.Success) {
-      return Promise.reject(msg)
+      const errorMessage = message || msg || data?.message || data?.msg || '请求失败，请稍后重试'
+      return Promise.reject({
+        code: code ?? statusCode,
+        statusCode,
+        message: errorMessage,
+        data: _data,
+      })
     }
     return data
   }

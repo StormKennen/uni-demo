@@ -207,7 +207,7 @@
 
   const ALL_VALUE = 'all'
   const PAGE_SIZE = 100
-  const RENDER_BATCH_SIZE = 50
+  const RENDER_BATCH_SIZE = 100
   const INITIAL_AVATAR_PRELOAD_COUNT = 16
   const DEFAULT_SORT_FIELD = 'stars'
   const DEFAULT_SORT_ORDER: SortOrder = 'desc'

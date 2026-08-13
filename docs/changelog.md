@@ -1,10 +1,29 @@
 # Changelog
 
 > Harness 变更日志。每次修改 `src/` 核心代码的提交必须在此追加一条记录（pre-commit 强制校验）。
+
 - 2026-07-31 [common/webview] 增强协议页标题识别逻辑，支持“小程序服务”“协议”“政策”等常见标题，避免微信平台配置的隐私/服务URL打开时显示空白（Codex）
-> 格式：`- YYYY-MM-DD [模块] 变更意图简述（作者/Agent）`
+  > 格式：`- YYYY-MM-DD [模块] 变更意图简述（作者/Agent）`
 
 ## Unreleased
+
+- 2026-08-13 [home/workspaces] 收口 Workspace 状态规则：Picker 固定按配置顺序排列，移除 Usage 时间排序与旧 Guide 状态，新增手动选择标记；未建立手动偏好的用户可由合法分享 Workspace 建立默认 Seed，已有偏好不被分享覆盖（Codex）
+
+- 2026-08-13 [home/workspaces,tools/directory] 首页正式引入 Workspace「工作间」模型：顶部 Logo 支持自定义工作间切换，新增默认工作间持久化、最近工作间排序、首次切换引导和分享工作间临时恢复；工具目录由 Category 统一迁移为 Workspace，独立图片、视频、魔灵召唤工作间，并由首页与 SWC 综合入口共享公共 Portal 配置（Codex）
+
+- 2026-08-13 [home/workspaces] 收口首页工作间选择器可见性：魔灵召唤仅由公共 Portal 入口决定，避免工具项状态影响 Portal 工作间显示（Codex）
+
+- 2026-08-13 [home/workspaces] 收口最近工作间排序：相同访问时间按默认顺序稳定兜底，兼容旧运行时的排序行为（Codex）
+
+- 2026-08-12 [user/settings] 设置模块新增「我的资料」与「账号与安全」：支持应用昵称/头像查询编辑、复用现有 OSS 公有上传并同步本地用户资料；绑定状态统一来自 `/users/me/bindings`，新增手机号密码绑定及微信小程序主动绑定，H5 保持资料与手机号能力且不引入微信 OAuth（Codex）
+
+- 2026-08-12 [auth/login] 注册时实时校验两次密码是否一致；密码不一致时立即提示，并在协议校验及注册接口调用前拦截提交（Codex）
+
+- 2026-08-12 [auth/login,privacy] 统一登录、注册、微信快捷登录与隐私协议弹窗视觉体系，收敛为品牌蓝 Primary 和中性色 Secondary，移除微信绿色按钮风格并补齐浅色/夜间主题适配（Codex）
+
+- 2026-08-12 [auth/login] 完善手机号注册与微信快捷登录错误提示：兼容接口返回的 message/msg/data.message，增加微信凭证/接口超时处理，并在注册页保留具体失败原因（Codex）
+
+- 2026-08-12 [tools/compendium-swc] 修复阵容列表加载/空态卡片宽度与垂直布局，避免 StateBlock 背景容器收缩或错位（Codex）
 
 - 2026-08-12 [tools/compendium-swc] 将用户侧克制关系新增/编辑迁移到独立页面，阵容克制页新增右下角“新增克制”FAB，并统一补充克制、本人关系编辑、阵容选择与快捷创建回跳流程（Codex）
 
@@ -66,7 +85,7 @@
 
 - 2026-08-08 [tools/compendium-swc] 完善阵容克制页：对齐 GET /compendiums/lineup-relations 返回结构（items + nested related.lineup/relation）、成员嵌套 character 解析、score 排序与下拉刷新（Codex）
 
-- 2026-08-08 [services,tools/compendium-swc] 删除 compendium-lineups/memo API wrapper，SWC 业务直接调用 Apifox；normalize/ViewModel 下沉到 swc 业务目录，generated boundary 收敛为 src/services/apifox/**（Codex）
+- 2026-08-08 [services,tools/compendium-swc] 删除 compendium-lineups/memo API wrapper，SWC 业务直接调用 Apifox；normalize/ViewModel 下沉到 swc 业务目录，generated boundary 收敛为 src/services/apifox/\*\*（Codex）
 
 - 2026-08-08 [tools/compendium-swc] 新增公开页「阵容克制」：防守/进攻模式、魔灵多选、adapter 接入 GET /compendiums/lineup-relations、关联阵容点赞点踩与前端 score 排序；综合入口与工具配置同步（Codex）
 

@@ -2,10 +2,11 @@ import { computed, onMounted, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
-import { getUserInfo } from '@/utils/storage'
+import { getUserInfo, getWorkspaceFoldStatus, setWorkspaceFoldStatus } from '@/utils/storage'
 import { useThemeStore } from '@/stores/theme'
-import { ALL_TOOLS, CATEGORIES, STORAGE_KEY_FOLD_STATUS, STORAGE_KEY_RECENT } from '@/config/tools'
+import { ALL_TOOLS, STORAGE_KEY_RECENT } from '@/config/tools'
 import type { ToolItem } from '@/config/tools'
+import { WORKSPACES, type WorkspaceKey } from '@/config/workspaces'
 import { createToolFlowSession, type ToolFlowId, type ToolFlowStep } from '@/utils/tool-flow'
 
 export interface KeyedToolItem {
@@ -33,15 +34,6 @@ export interface WorkflowScene {
 }
 
 const workbenchFallbackKeys = ['video-watermark', 'qr-generator', 'compendium-swc']
-
-const categorySummaryMap: Record<string, string> = {
-  wiki: '图鉴、阵容和资料整理。',
-  media: '图片、视频等轻量原生处理。',
-  qr: '生成、解析和结果承接。',
-  record: '个人内容与长期记录。',
-  text: '文本补全、转换与分发。',
-  entertainment: '游戏聚合与轻体验入口。',
-}
 
 const workflowBlueprints = [
   {
@@ -83,7 +75,7 @@ export function useToolDirectory() {
   const currentUserRole = ref(getUserInfo()?.role || '')
   const loggedIn = ref(isUserLoggedIn())
   const recentToolKeys = ref<string[]>([])
-  const foldStatus = ref<Record<string, boolean>>({})
+  const foldStatus = ref<Partial<Record<WorkspaceKey, boolean>>>({})
   const currentPlatform = ref<'app' | 'h5' | 'mp-weixin'>('app')
 
   // #ifdef MP-WEIXIN
@@ -114,7 +106,9 @@ export function useToolDirectory() {
     }, {}),
   )
 
-  const visibleCategories = computed(() => CATEGORIES.filter(category => getToolsByCategory(category.key).length > 0))
+  const visibleWorkspaces = computed(() =>
+    WORKSPACES.filter(workspace => workspace.type !== 'workbench' && getToolsByWorkspace(workspace.key).length > 0),
+  )
 
   function isHiddenInWorkbench(tool: ToolItem): boolean {
     return !!tool.hiddenInWorkbenchPlatforms?.includes(currentPlatform.value)
@@ -135,7 +129,7 @@ export function useToolDirectory() {
 
   const heroStatusChips = computed(() => [
     `${availableTools.value.length} 个工具`,
-    `${visibleCategories.value.length} 个分组`,
+    `${visibleWorkspaces.value.length} 个工作间`,
     loggedIn.value ? '已登录' : '本地优先',
   ])
 
@@ -184,7 +178,8 @@ export function useToolDirectory() {
           steps,
         }
       })
-      .filter((item): item is WorkflowScene => !!item),
+      .filter((item): item is NonNullable<typeof item> => !!item)
+      .map(item => item as WorkflowScene),
   )
 
   const workbenchTools = computed<KeyedToolItem[]>(() => {
@@ -202,16 +197,13 @@ export function useToolDirectory() {
     return [...preferred, ...supplement]
   })
 
-  function getToolsByCategory(categoryKey: string): KeyedToolItem[] {
-    return availableTools.value.filter(item => item.tool.category === categoryKey)
+  function getToolsByWorkspace(workspaceKey: WorkspaceKey): KeyedToolItem[] {
+    if (workspaceKey === 'workbench') return []
+    return availableTools.value.filter(item => item.tool.workspace === workspaceKey)
   }
 
-  function getCategorySummary(categoryKey: string): string {
-    return categorySummaryMap[categoryKey] || '同类任务入口集合。'
-  }
-
-  function isFolded(categoryKey: string): boolean {
-    return !!foldStatus.value[categoryKey]
+  function isFolded(workspaceKey: WorkspaceKey): boolean {
+    return !!foldStatus.value[workspaceKey]
   }
 
   function loadRecentTools() {
@@ -238,28 +230,15 @@ export function useToolDirectory() {
   }
 
   function loadFoldStatus() {
-    try {
-      const data = uni.getStorageSync(STORAGE_KEY_FOLD_STATUS)
-      foldStatus.value = data && typeof data === 'object' ? data : {}
-    } catch {
-      foldStatus.value = {}
-    }
+    foldStatus.value = getWorkspaceFoldStatus()
   }
 
-  function saveFoldStatus() {
-    try {
-      uni.setStorageSync(STORAGE_KEY_FOLD_STATUS, foldStatus.value)
-    } catch {
-      /* 静默 */
-    }
-  }
-
-  function toggleCategoryFold(categoryKey: string) {
+  function toggleWorkspaceFold(workspaceKey: WorkspaceKey) {
     foldStatus.value = {
       ...foldStatus.value,
-      [categoryKey]: !foldStatus.value[categoryKey],
+      [workspaceKey]: !foldStatus.value[workspaceKey],
     }
-    saveFoldStatus()
+    setWorkspaceFoldStatus(foldStatus.value)
   }
 
   function openLogin() {
@@ -351,7 +330,7 @@ export function useToolDirectory() {
     loggedIn,
     availableTools,
     availableToolMap,
-    visibleCategories,
+    visibleWorkspaces,
     recentTools,
     platformLabel,
     heroStatusChips,
@@ -360,10 +339,9 @@ export function useToolDirectory() {
     workflowScenes,
     workbenchTools,
     handleWorkflowClick,
-    getToolsByCategory,
-    getCategorySummary,
+    getToolsByWorkspace,
     isFolded,
-    toggleCategoryFold,
+    toggleWorkspaceFold,
     openLogin,
     handleToolClick,
   }
