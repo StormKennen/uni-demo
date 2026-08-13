@@ -65,6 +65,13 @@
           }
         },
         {
+          "path": "setting/about",
+          "style": {
+            "navigationBarTitleText": "关于",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "setting/bind-phone",
           "style": {
             "navigationBarTitleText": "绑定手机号",

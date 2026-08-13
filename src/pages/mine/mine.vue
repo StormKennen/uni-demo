@@ -1,11 +1,11 @@
 <script setup>
   import { ref, computed } from 'vue'
   import { storeToRefs } from 'pinia'
+  import { onShow } from '@dcloudio/uni-app'
   import defaultAvator from '@/static/image/default_avator.svg'
   import rightArrow from '@/static/image/right_arrow.svg'
   import MineListItem from '@/components/mine-list-item.vue'
   import { getToken, getWxUserInfo, getUserInfo, clearLoginData } from '@/utils/storage'
-  import { onShow } from '@dcloudio/uni-app'
   import { useShare } from '@/utils/share'
   import H5TabBar from '@/components/h5-tab-bar.vue'
   import { useThemeStore } from '@/stores/theme'
@@ -16,7 +16,6 @@
   const token = ref()
   const avatar = ref()
   const userInfo = ref()
-  const themeIcon = '/static/image/mine/setting.svg'
 
   onShow(() => {
     token.value = getToken()
@@ -31,6 +30,14 @@
     uni.navigateTo({
       url: '/pages/mine/login/login',
     })
+  }
+
+  const openUserProfile = () => {
+    if (getToken()) {
+      uni.navigateTo({ url: '/subPackages/user/setting/profile' })
+      return
+    }
+    onLogin()
   }
 
   const onLogout = () => {
@@ -57,9 +64,15 @@
   }
 
   const list = ref([
-    // { icon: '/static/image/mine/order.svg', name: '我的订单', to: '/pages/mine/order/order', needToken: true },
-    { icon: '/static/image/mine/setting.svg', name: '设置', to: '/subPackages/user/setting/setting', needToken: true },
+    { icon: '/static/image/mine/setting.svg', name: '我的资料', to: '/subPackages/user/setting/profile', needToken: true },
+    { icon: '/static/image/mine/order.svg', name: '账号与安全', to: '/subPackages/user/setting/account-security', needToken: true },
   ])
+
+  const aboutItem = {
+    icon: '/static/image/mine/version.svg',
+    name: '关于',
+    to: '/subPackages/user/setting/about',
+  }
 
   // 动态计算显示的列表项（退出登录单独放在夜间模式下方）
   const displayList = computed(() => [...list.value])
@@ -103,13 +116,13 @@
       <view :class="['bg', { 'bg--dark': isDark }]" />
       <view class="mine-top" hover-class="none" hover-stop-propagation="false">
         <uni-nav-bar backgroundColor="none" title="" statusBar :border="false"></uni-nav-bar>
-        <view class="mine-user" hover-class="none" hover-stop-propagation="false">
+        <view class="mine-user" hover-class="none" hover-stop-propagation="false" @click="openUserProfile">
           <view class="mine-user-avator" hover-class="none" hover-stop-propagation="false">
             <image
               :class="`${token && (userInfo?.avatarUrl || userInfo?.avatar) ? 'border avator-image' : 'avator-image'}`"
               :src="avatar || defaultAvator"></image>
           </view>
-          <view class="mine-user-name" @click="onLogin" hover-class="none" hover-stop-propagation="false">
+          <view class="mine-user-name" hover-class="none" hover-stop-propagation="false">
             <text class="user-name-text">{{ token ? userInfo?.nickname || userInfo?.name || 'kai用户' : '请登录' }}</text>
             <image v-if="!token" class="user-name-right-arrow" :src="rightArrow" />
           </view>
@@ -122,7 +135,7 @@
         <view class="mine-list-content mine-theme-row" hover-class="none" hover-stop-propagation="false">
           <view class="mine-list-item" hover-class="none" hover-stop-propagation="false">
             <view class="left" hover-class="none" hover-stop-propagation="false">
-              <image class="left-image" :src="themeIcon"> </image>
+              <uni-icons type="settings" size="21" color="var(--theme-text-secondary)" />
             </view>
             <view class="center" hover-class="none" hover-stop-propagation="false">
               <text class="center-text">夜间模式</text>
@@ -131,6 +144,9 @@
               <switch :checked="isDark" color="#0046b4" @change="handleThemeChange" />
             </view>
           </view>
+        </view>
+        <view class="mine-list-content" hover-class="none" hover-stop-propagation="false">
+          <MineListItem :data="aboutItem" @click="handleItemClick(aboutItem)" />
         </view>
         <view v-if="token" class="mine-list-content" hover-class="none" hover-stop-propagation="false">
           <MineListItem :data="logoutItem" @click="handleItemClick(logoutItem)" />

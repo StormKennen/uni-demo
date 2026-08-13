@@ -197,6 +197,10 @@
   }
 
   .submit-button--disabled {
-    opacity: 0.45;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    color: var(--theme-text-tertiary);
+    opacity: 1;
+    box-shadow: none;
   }
 </style>

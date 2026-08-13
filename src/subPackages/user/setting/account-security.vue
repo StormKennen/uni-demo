@@ -41,16 +41,27 @@
 
   const getWechatCode = (): Promise<string> => {
     return new Promise((resolve, reject) => {
+      let settled = false
+      const timeout = setTimeout(() => {
+        settled = true
+        reject(new Error('获取微信登录凭证超时，请重试'))
+      }, 10 * 1000)
       uni.login({
         provider: 'weixin',
         success: result => {
+          if (settled) return
+          clearTimeout(timeout)
           if (result.code) {
             resolve(result.code)
             return
           }
           reject(new Error('微信未返回登录凭证，请重试'))
         },
-        fail: error => reject(new Error(readSettingErrorMessage(error, '获取微信登录凭证失败'))),
+        fail: error => {
+          if (settled) return
+          clearTimeout(timeout)
+          reject(new Error(readSettingErrorMessage(error, '获取微信登录凭证失败')))
+        },
       })
     })
   }

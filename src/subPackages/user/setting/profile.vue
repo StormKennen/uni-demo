@@ -65,9 +65,12 @@
       // #ifdef MP-WEIXIN
       platform = 'wechat'
       // #endif
-      avatar.value = await uploadFile(platform, 'album', {
+      const uploadedAvatar = await uploadFile(platform, 'album', {
         isOssPrivate: false,
       })
+      await patchUsersMe({ avatar: uploadedAvatar })
+      applyProfile(await getUsersMe())
+      uni.showToast({ title: '头像已更新', icon: 'success' })
     } catch (error: unknown) {
       if (!isSelectionCancelled(error)) {
         showSettingError(error, '头像上传失败，请稍后重试')
@@ -260,6 +263,10 @@
   }
 
   .save-button--disabled {
-    opacity: 0.45;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    color: var(--theme-text-tertiary);
+    opacity: 1;
+    box-shadow: none;
   }
 </style>
