@@ -1,9 +1,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { storeToRefs } from 'pinia'
 import { isUserLoggedIn, autoLogin } from '@/utils/autoLogin'
 import { getUserInfo, getWorkspaceFoldStatus, setWorkspaceFoldStatus } from '@/utils/storage'
-import { useThemeStore } from '@/stores/theme'
 import { ALL_TOOLS, STORAGE_KEY_RECENT } from '@/config/tools'
 import type { ToolItem } from '@/config/tools'
 import { WORKSPACES, type WorkspaceKey } from '@/config/workspaces'
@@ -69,9 +67,6 @@ const workflowBlueprints = [
 ]
 
 export function useToolDirectory() {
-  const { isDark } = storeToRefs(useThemeStore())
-  const navbarBg = computed(() => (isDark.value ? 'rgba(2, 6, 23, 0.88)' : 'rgba(2, 6, 23, 0.92)'))
-
   const currentUserRole = ref(getUserInfo()?.role || '')
   const loggedIn = ref(isUserLoggedIn())
   const recentToolKeys = ref<string[]>([])
@@ -326,7 +321,6 @@ export function useToolDirectory() {
   })
 
   return {
-    navbarBg,
     loggedIn,
     availableTools,
     availableToolMap,

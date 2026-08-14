@@ -1,7 +1,10 @@
 <template>
   <PageLayout title="全部工作间" :show-nav="false" :nav-back="false">
     <view class="tools-page">
-      <NavBarBase :nav-back="false" custom-class="tools-navbar" :custom-style="{ background: navbarBg }">
+      <NavBarBase
+        :nav-back="false"
+        custom-class="tools-navbar"
+        :custom-style="{ background: 'var(--theme-surface)', borderBottom: '1rpx solid var(--theme-border)' }">
         <template #title>
           <view class="tools-navbar-content">
             <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
@@ -93,16 +96,8 @@
   import { useShare } from '@/utils/share'
   import { useToolDirectory } from '@/hooks/use-tool-directory'
 
-  const {
-    navbarBg,
-    availableTools,
-    visibleWorkspaces,
-    platformLabel,
-    getToolsByWorkspace,
-    isFolded,
-    toggleWorkspaceFold,
-    handleToolClick,
-  } = useToolDirectory()
+  const { availableTools, visibleWorkspaces, platformLabel, getToolsByWorkspace, isFolded, toggleWorkspaceFold, handleToolClick } =
+    useToolDirectory()
 
   const { onShareAppMessage, onShareTimeline } = useShare('tools', {
     title: '全部工作间 · 凉白开工具箱',
@@ -156,13 +151,13 @@
   }
 
   .navbar-title-single {
-    color: #fff;
+    color: var(--theme-text);
     font-size: 30rpx;
     font-weight: 700;
   }
 
   .navbar-subtitle {
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--theme-text-tertiary);
     font-size: 18rpx;
     letter-spacing: 2rpx;
   }
