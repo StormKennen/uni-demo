@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="魔灵 wiki-图鉴" :nav-back="true" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout title="魔灵 图鉴" :nav-back="true" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="compendium-page">
       <!-- <view class="locale-toolbar">
         <text class="locale-toolbar-label">语言</text>

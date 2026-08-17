@@ -1,5 +1,5 @@
 ﻿<template>
-  <PageLayout title="魔灵 wiki-详情" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout title="魔灵召唤详情" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="detail-page">
       <!-- <view class="top-tabs">
       <view
@@ -132,6 +132,9 @@
           <view class="detail-tab" :class="{ active: activeDetailTab === 'skills' }" @click="activeDetailTab = 'skills'">
             <text>技能</text>
           </view>
+          <view class="detail-tab" :class="{ active: activeDetailTab === 'rta' }" @click="activeDetailTab = 'rta'">
+            <text>RTA</text>
+          </view>
         </view>
 
         <view v-if="activeDetailTab === 'stats'" class="stats-panel">
@@ -255,6 +258,16 @@
           </view>
         </view>
       </view>
+
+      <RtaCharacterPanel
+        ref="rtaPanelRef"
+        v-show="activeDetailTab === 'rta'"
+        :character-id="characterId"
+        :enabled="activeDetailTab === 'rta'"
+        :initial-season="rtaInitialSeason"
+        :initial-tier="rtaInitialTier"
+        :initial-league="rtaInitialLeague"
+        @context-change="handleRtaContextChange" />
     </view>
   </PageLayout>
 </template>
@@ -266,6 +279,8 @@
   import SwcLeaderSkillIcon from './components/swc-leader-skill-icon.vue'
   import SwcStarBadge from './components/swc-star-badge.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
+  import RtaCharacterPanel from './rta/components/rta-character-panel.vue'
+  import type { RtaFilters } from './rta/rta-types'
   import { SWC_ARCHETYPE_LABEL_MAP, buildLeaderSkillIconUrl, normalizeSwcArchetype, type SwcLeaderSkillInput } from './icon-assets'
   import { buildSwcDetailShare } from './share'
   import type { CharacterOption } from './lineup-types'
@@ -501,7 +516,13 @@
     { label: '暗', value: 'dark', color: '#8b5cf6' },
   ]
 
-  const activeDetailTab = ref<'stats' | 'skills'>('stats')
+  type CharacterDetailTab = 'stats' | 'skills' | 'rta'
+
+  interface RtaPanelExpose {
+    refresh: () => Promise<void>
+  }
+
+  const activeDetailTab = ref<CharacterDetailTab>('stats')
   const loading = ref(false)
   const switching = ref(false)
   const errorMessage = ref('')
@@ -509,6 +530,10 @@
   const seedName = ref('')
   const seedAvatar = ref('')
   const selectedLocale = ref(DEFAULT_LOCALE)
+  const rtaInitialSeason = ref<number | undefined>(undefined)
+  const rtaInitialTier = ref<string | undefined>(undefined)
+  const rtaInitialLeague = ref<string | undefined>(undefined)
+  const rtaPanelRef = ref<RtaPanelExpose | null>(null)
   const activeGalleryIndex = ref(0)
   const showDamagePanel = ref(false)
   const damageBonus = ref<DamageBonusForm>({
@@ -1161,7 +1186,6 @@
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
       loading.value = false
-      uni.stopPullDownRefresh()
     }
   }
 
@@ -1249,41 +1273,52 @@
     uni.navigateTo({ url: targetUrl })
   }
 
+  const handleRtaContextChange = (context: RtaFilters) => {
+    rtaInitialSeason.value = context.season
+    rtaInitialTier.value = context.tier
+    rtaInitialLeague.value = context.league
+  }
+
+  const buildDetailShare = () =>
+    buildSwcDetailShare({
+      characterId: characterId.value,
+      name: detail.value.name,
+      avatar: detailAvatarSrc.value,
+      locale: selectedLocale.value,
+      tab: activeDetailTab.value === 'rta' ? 'rta' : undefined,
+      season: activeDetailTab.value === 'rta' ? rtaInitialSeason.value : undefined,
+      tier: activeDetailTab.value === 'rta' ? rtaInitialTier.value : undefined,
+      league: activeDetailTab.value === 'rta' ? rtaInitialLeague.value : undefined,
+    })
+
   onLoad((options: Record<string, string | undefined>) => {
     characterId.value = options.characterId || ''
     seedName.value = decodeURIComponent(options.name || '')
     seedAvatar.value = decodeURIComponent(options.avatar || '')
     selectedLocale.value = options.locale || DEFAULT_LOCALE
+    const parsedSeason = Number(options.season)
+    rtaInitialSeason.value = Number.isInteger(parsedSeason) && parsedSeason > 0 ? parsedSeason : undefined
+    rtaInitialTier.value = options.tier || undefined
+    rtaInitialLeague.value = options.league || undefined
+    activeDetailTab.value = options.tab === 'skills' || options.tab === 'rta' ? options.tab : 'stats'
     detail.value.name = seedName.value
     detail.value.avatar = normalizeUrl(seedAvatar.value)
     uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
     loadDetail()
   })
 
-  onPullDownRefresh(() => {
-    loadDetail()
+  onPullDownRefresh(async () => {
+    try {
+      await Promise.all([loadDetail(), activeDetailTab.value === 'rta' ? rtaPanelRef.value?.refresh() : Promise.resolve()])
+    } finally {
+      uni.stopPullDownRefresh()
+    }
   })
 
   // #ifdef MP-WEIXIN
-  onShareAppMessage(
-    () =>
-      buildSwcDetailShare({
-        characterId: characterId.value,
-        name: detail.value.name,
-        avatar: detailAvatarSrc.value,
-        locale: selectedLocale.value,
-      }).app,
-  )
+  onShareAppMessage(() => buildDetailShare().app)
 
-  onShareTimeline(
-    () =>
-      buildSwcDetailShare({
-        characterId: characterId.value,
-        name: detail.value.name,
-        avatar: detailAvatarSrc.value,
-        locale: selectedLocale.value,
-      }).timeline,
-  )
+  onShareTimeline(() => buildDetailShare().timeline)
   // #endif
 </script>
 

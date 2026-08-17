@@ -76,7 +76,7 @@ src/
 | `list.loadMore` | 继续加载... | Loading more... | pagination |
 | `list.noMore` | 没有更多了 | No more results | pagination |
 | `list.errorLoad` | 图鉴加载失败，请稍后重试 | Failed to load, please try again later | error |
-| `list.navTitle` | 魔灵 wiki-图鉴 | Monster Wiki | nav bar |
+| `list.navTitle` | 魔灵 图鉴 | Monster Wiki | nav bar |
 
 ### 3.4 筛选器选项 — 类型（type）
 

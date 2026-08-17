@@ -25,6 +25,7 @@ const SWC_LINEUP_MAPPING_DETAIL_PATH = '/subPackages/tools/compendium/swc/lineup
 const SWC_LINEUP_RELATIONS_PATH = '/subPackages/tools/compendium/swc/lineup-relations'
 const SWC_LINEUP_COUNTER_PATH = '/subPackages/tools/compendium/swc/lineup-counter'
 const SWC_DETAIL_PATH = '/subPackages/tools/compendium/swc/detail'
+const SWC_RTA_PATH = '/subPackages/tools/compendium/swc/rta/index'
 
 function compactQuery(query: QueryValueMap = {}) {
   return Object.entries(query)
@@ -62,7 +63,20 @@ export function buildSwcListShare(query: QueryValueMap = {}) {
   return createShare('魔灵召唤图鉴：快速查找魔灵资料', SWC_LIST_PATH, query)
 }
 
-export function buildSwcDetailShare(options: { characterId: string; name?: string; avatar?: string; locale?: string }) {
+export function buildSwcRtaShare(query: QueryValueMap = {}) {
+  return createShare('魔灵召唤 RTA 排行榜：查看赛季人物数据', SWC_RTA_PATH, query)
+}
+
+export function buildSwcDetailShare(options: {
+  characterId: string
+  name?: string
+  avatar?: string
+  locale?: string
+  tab?: 'stats' | 'skills' | 'rta'
+  season?: number
+  tier?: string
+  league?: string
+}) {
   const title = `魔灵召唤｜${options.name || '魔灵详情'}`
   const imageUrl = options.avatar || SWC_SHARE_IMAGE
   return createShare(
@@ -73,6 +87,10 @@ export function buildSwcDetailShare(options: { characterId: string; name?: strin
       name: options.name,
       avatar: options.avatar,
       locale: options.locale,
+      tab: options.tab,
+      season: options.season,
+      tier: options.tier,
+      league: options.league,
     },
     imageUrl,
   )

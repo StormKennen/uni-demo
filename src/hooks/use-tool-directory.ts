@@ -83,19 +83,34 @@ export function useToolDirectory() {
 
   const isAdmin = computed(() => currentUserRole.value === 'admin')
 
+  const isToolAvailable = (tool: ToolItem): boolean => {
+    if (tool.adminOnly && !isAdmin.value) return false
+    if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) return false
+    return true
+  }
+
   const availableTools = computed<KeyedToolItem[]>(() =>
     Object.entries(ALL_TOOLS)
-      .filter(([, tool]) => {
-        if (tool.adminOnly && !isAdmin.value) return false
-        if (tool.unsupportedPlatforms?.includes(currentPlatform.value)) return false
-        if (tool.hiddenInDirectory) return false
-        return true
-      })
+      .filter(([, tool]) => isToolAvailable(tool) && !tool.hiddenInDirectory)
+      .map(([key, tool]) => ({ key, tool })),
+  )
+
+  // 综合入口隐藏在工具目录，但仍作为首页工作台的稳定聚合入口保留。
+  const workbenchAvailableTools = computed<KeyedToolItem[]>(() =>
+    Object.entries(ALL_TOOLS)
+      .filter(([key, tool]) => isToolAvailable(tool) && (!tool.hiddenInDirectory || key === 'compendium-swc'))
       .map(([key, tool]) => ({ key, tool })),
   )
 
   const availableToolMap = computed<Record<string, KeyedToolItem>>(() =>
     availableTools.value.reduce<Record<string, KeyedToolItem>>((map, item) => {
+      map[item.key] = item
+      return map
+    }, {}),
+  )
+
+  const workbenchAvailableToolMap = computed<Record<string, KeyedToolItem>>(() =>
+    workbenchAvailableTools.value.reduce<Record<string, KeyedToolItem>>((map, item) => {
       map[item.key] = item
       return map
     }, {}),
@@ -110,7 +125,7 @@ export function useToolDirectory() {
   }
 
   const recentTools = computed<KeyedToolItem[]>(() => {
-    const available = new Set(availableTools.value.map(item => item.key))
+    const available = new Set(workbenchAvailableTools.value.map(item => item.key))
     return recentToolKeys.value
       .filter(key => available.has(key) && ALL_TOOLS[key] && !isHiddenInWorkbench(ALL_TOOLS[key]))
       .map(key => ({ key, tool: ALL_TOOLS[key] }))
@@ -140,7 +155,7 @@ export function useToolDirectory() {
 
     return preferredKeys
       .map((key, index) => {
-        const item = availableToolMap.value[key]
+        const item = workbenchAvailableToolMap.value[key]
         if (!item) return null
         return {
           id: `hero-${key}`,
@@ -181,12 +196,12 @@ export function useToolDirectory() {
     if (recentTools.value.length > 0) return recentTools.value.slice(0, 6)
 
     const preferred = workbenchFallbackKeys
-      .map(key => availableToolMap.value[key])
+      .map(key => workbenchAvailableToolMap.value[key])
       .filter((item): item is KeyedToolItem => !!item && !isHiddenInWorkbench(item.tool))
     if (preferred.length >= 3) return preferred.slice(0, 6)
 
     const preferredKeys = new Set(preferred.map(item => item.key))
-    const supplement = availableTools.value
+    const supplement = workbenchAvailableTools.value
       .filter(item => !preferredKeys.has(item.key) && !isHiddenInWorkbench(item.tool))
       .slice(0, Math.max(0, 6 - preferred.length))
     return [...preferred, ...supplement]

@@ -12,7 +12,7 @@
 
 ## 1. Scope
 
-将首页和工具目录原有 Tool Category 统一为正式 Workspace 模型。首页顶部通过自定义 Workspace Switcher 切换当前工作间；工作台保留常用工具和推荐流程，普通工作间展示一行一个工具，魔灵召唤工作间直接展示公共 Portal 能力。
+将首页和工具目录原有 Tool Category 统一为正式 Workspace 模型。首页顶部通过自定义 Workspace Switcher 切换当前工作间；工作台保留常用工具和推荐流程，普通工作间展示工具卡片，魔灵召唤工作间直接展示五个具体工具入口。
 
 本功能不新增页面和路由，不修改 `src/pages.json`。
 
@@ -29,13 +29,13 @@ export type WorkspaceKey = 'workbench' | 'image' | 'video' | 'swc' | 'qr' | 'rec
 | `workbench`     | 工作台   | `workbench` | 1        |
 | `image`         | 图片     | `tools`     | 2        |
 | `video`         | 视频     | `tools`     | 3        |
-| `swc`           | 魔灵召唤 | `portal`    | 4        |
+| `swc`           | 魔灵召唤 | `tools`     | 4        |
 | `qr`            | 二维码   | `tools`     | 5        |
 | `record`        | 记录     | `tools`     | 6        |
 | `text`          | 文本     | `tools`     | 7        |
 | `entertainment` | 娱乐     | `tools`     | 8        |
 
-当前平台无可用入口的普通工作间不出现在首页选择器。`swc` 的可见性由公共 `SWC_PORTAL_ENTRIES` 决定。
+当前平台无可用入口的普通工作间不出现在首页选择器。`swc` 的可见性由五个具体工具入口决定。
 
 ## 3. Tool → Workspace
 
@@ -43,7 +43,7 @@ export type WorkspaceKey = 'workbench' | 'image' | 'video' | 'swc' | 'qr' | 'rec
 
 - 图片：图片上传、拼接、压缩、隐私清理、格式转换、打乱、水印、文档扫描、PDF 工具箱。
 - 视频：视频压缩、视频去水印、视频转 GIF。
-- 魔灵召唤：所有 SWC Portal、图鉴管理、阵容、映射、克制、兑换券入口。
+- 魔灵召唤工作间：魔灵图鉴、RTA排行榜、魔灵兑换券、魔灵阵容、阵容克制五个具体入口；综合页、图鉴管理和阵容映射保留路由但不在目录展示。
 - 二维码、记录、文本、娱乐继续按领域归属；娱乐普通入口只保留台球瞄准器。
 - `disabled`、`hiddenInDirectory`、`unsupportedPlatforms`、`requiresAuth`、`adminOnly` 等规则不变。
 
@@ -53,9 +53,9 @@ export type WorkspaceKey = 'workbench' | 'image' | 'video' | 'swc' | 'qr' | 'rec
 
 `APP_RECENT_TOOLS` 是具体工具访问历史，只用于工作台常用工具；禁止由工作间切换写入或由 Workspace History 驱动。
 
-## 5. SWC Portal Workspace
+## 5. SWC 综合入口
 
-`src/config/swc-portal.ts` 的 `SWC_PORTAL_ENTRIES` 是 SWC 公共入口唯一数据源，同时供现有 SWC 综合入口页和首页 `swc` 工作间读取。首页不展示管理员入口，也不先展示“魔灵召唤”再多跳一层。
+`src/config/swc-portal.ts` 继续作为 SWC 综合入口页的静态入口数据源；工具目录不再展示“魔灵召唤”综合入口，而是直接展示五个具体工具。首页工作台的“魔灵召唤”主入口仍可进入综合页。
 
 ## 6. Current Workspace 与手动偏好
 

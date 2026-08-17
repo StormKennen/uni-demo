@@ -7,6 +7,30 @@
 
 ## Unreleased
 
+- 2026-08-15 [tools/compendium-swc/rta] 将 SWC 人物详情与 RTA 人物详情统一到 `swc/detail`：新增懒加载 RTA Tab、继承排行榜赛季/段位/联赛上下文、形态切换时失效旧 RTA 数据，并保留旧 RTA 详情路由兼容（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] 将最低场次筛选文案改为“场次”，并改用与联赛一致的横向选项交互；段位选项继续完整读取 RTA 配置接口返回值（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] RTA 人物卡片改用直接属性图标组件，消除徽标行盒留白并确保图标贴合头像右上角（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] 五行属性图标调整为头像容器的纯右上角零偏移定位（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] 将人物卡片五行属性图标贴近头像右上角，并将头像下方人物名称改为居中展示（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] RTA 人物卡片右上角五行属性改为仅展示无背景属性图标（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] RTA 排行榜新增最低场次筛选，默认 ≥100，支持不限、≥500、≥1,000、≥5,000，并将筛选状态贯穿分页、排序、刷新和分享参数（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] 为 RTA 排行榜补充微信分享与朋友圈分享，分享链接携带当前赛季、段位、联赛和排序状态（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] RTA排行榜行属性改为头像右上角绝对定位的图标+文字徽标，减少对人物名称区域的占用（Codex）
+
+- 2026-08-14 [tools/compendium-swc/rta] RTA 排行榜人物名称优先展示 `chaRTA排行榜family.name`，回退到 `character.name`，两者均为空时保持空字符串（Codex）
+
+- 2026-08-14 [home/tools/workspaces] 调整RTA排行榜：工具目录直接展示魔灵图鉴、RTA 排行榜、兑换券、阵容和阵容克制五个具体入口，综合页保留为独立聚合入口（Codex）
+
+- 2026-08-14 [tools/compendium-swc] 新增 RTA 排行榜与人物 RTA 详情：动态赛季/段位/联赛、四指标排序、无限分页、下拉刷新、stale 缓存提示及 capability 守卫；入口收敛在魔灵召唤综合页，直接复用 Apifox RTA 接口并隔离 Swagger 类型缺口（Codex）
+
 - 2026-08-13 [user/settings,mine] 修复头像上传改用现有 OSS 签名直传并在上传后立即同步 `/users/me`；将资料与账号安全入口上移到我的页，夜间模式下新增关于页承载协议、隐私政策与版本号，旧设置页仅保留兼容路由（Codex）
 - 2026-08-13 [user/settings,mine,upload] 收口资料与账号安全交互：头像上传复用文件上传工具的 OSS 签名直传 hook 并移除临时路径日志；旧设置路由仅做兼容跳转；我的页头像昵称整块进入资料页；微信绑定仅通过小程序 `uni.login` 获取一次性 code，并增加超时重试保护（Codex）
 - 2026-08-13 [user/settings] 增强资料保存与手机号绑定按钮的禁用态：改用主题次级背景、弱化文字和边框表现，避免未满足提交条件时看起来仍可点击（Codex）

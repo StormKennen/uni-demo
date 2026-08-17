@@ -47,10 +47,10 @@ export const WORKSPACES: WorkspaceConfig[] = [
     key: 'swc',
     name: '魔灵召唤',
     icon: 'star',
-    type: 'portal',
+    type: 'tools',
     defaultOrder: 4,
     subtitle: 'SUMMONERS WAR',
-    summary: '图鉴、兑换券、阵容与克制。',
+    summary: '图鉴、RTA、兑换券、阵容与克制。',
     directoryLayout: 'grid',
   },
   {

@@ -298,9 +298,26 @@
           }
         },
         {
+          "path": "compendium/swc/rta/index",
+          "style": {
+            "navigationBarTitleText": "RTA排行榜",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "compendium/swc/rta/detail",
+          "style": {
+            "navigationBarTitleText": "人物 RTA 详情",
+            "enablePullDownRefresh": true,
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "compendium/swc/list",
           "style": {
-            "navigationBarTitleText": "魔灵 wiki-图鉴",
+            "navigationBarTitleText": "魔灵 图鉴",
             "enablePullDownRefresh": true,
             "onReachBottomDistance": 120,
             "navigationStyle": "custom"
@@ -309,7 +326,7 @@
         {
           "path": "compendium/swc/detail",
           "style": {
-            "navigationBarTitleText": "魔灵 wiki-详情",
+            "navigationBarTitleText": "魔灵召唤详情",
             "enablePullDownRefresh": true,
             "navigationStyle": "custom"
           }

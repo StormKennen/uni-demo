@@ -19,6 +19,15 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     path: '/subPackages/tools/compendium/swc/list',
   },
   {
+    id: 'rta-ranking',
+    title: 'RTA排行榜',
+    desc: '查看赛季排行与人物 RTA 数据',
+    icon: 'bars',
+    accent: '#2563eb',
+    accentSoft: 'rgba(37, 99, 235, 0.13)',
+    path: '/subPackages/tools/compendium/swc/rta/index',
+  },
+  {
     id: 'coupons',
     title: '魔灵兑换券',
     desc: '管理账号并快速兑换礼包码',
