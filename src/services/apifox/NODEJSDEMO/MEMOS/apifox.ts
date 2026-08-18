@@ -5,6 +5,7 @@ import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteMemosMemoIdPermanentRes,
   deleteMemosMemoIdRes,
+  deleteMemosMemoIdShareRes,
   getAdminMemosMemoIdRes,
   getAdminMemosQuery,
   getAdminMemosRes,
@@ -12,6 +13,8 @@ import type {
   getMemosMemoIdRes,
   getMemosPublicDetailQuery,
   getMemosPublicDetailRes,
+  getMemosPublicListQuery,
+  getMemosPublicListRes,
   getMemosQuery,
   getMemosRes,
   getMemosStatsRes,
@@ -21,12 +24,14 @@ import type {
   patchMemosMemoIdBody,
   patchMemosMemoIdRes,
   postMemosBody,
+  postMemosGuestMigrateRes,
   postMemosMemoIdArchiveRes,
   postMemosMemoIdFavoriteRes,
   postMemosMemoIdMoveBody,
   postMemosMemoIdMoveRes,
   postMemosMemoIdPinRes,
   postMemosMemoIdRestoreRes,
+  postMemosMemoIdShareRes,
   postMemosRes,
 } from './interface'
 const baseURL = undefined
@@ -264,4 +269,55 @@ export const getAdminMemosMemoId = async (
 ): Promise<Expand<getAdminMemosMemoIdRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/admin/memos/${memoId}`, {}, _config)
+}
+
+/**
+ * @description Memos/Get memos received by the current guest
+ * @url GET /memos/public/list
+ * @host https://app.apifox.com/link/project/7048425/apis/api-503198086
+ */
+export const getMemosPublicList = async (
+  params: Expand<getMemosPublicListQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getMemosPublicListRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/memos/public/list`, params, _config)
+}
+
+/**
+ * @description Memos/Migrate guest memo shares to the logged-in user
+ * @url POST /memos/guest/migrate
+ * @host https://app.apifox.com/link/project/7048425/apis/api-503198087
+ */
+export const postMemosGuestMigrate = async (
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postMemosGuestMigrateRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/memos/guest/migrate`, {}, _config)
+}
+
+/**
+ * @description Memos/Enable sharing and get a share token
+ * @url POST /memos/{memoId}/share
+ * @host https://app.apifox.com/link/project/7048425/apis/api-503198088
+ */
+export const postMemosMemoIdShare = async (
+  memoId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postMemosMemoIdShareRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/memos/${memoId}/share`, {}, _config)
+}
+
+/**
+ * @description Memos/Disable sharing
+ * @url DELETE /memos/{memoId}/share
+ * @host https://app.apifox.com/link/project/7048425/apis/api-503198089
+ */
+export const deleteMemosMemoIdShare = async (
+  memoId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<deleteMemosMemoIdShareRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete(`/memos/${memoId}/share`, {}, _config)
 }

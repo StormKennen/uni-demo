@@ -151,6 +151,8 @@ export type deleteMemosMemoIdRes = string
 export interface getMemosPublicDetailQuery {
   /** 备忘录ID */
   id: string
+  /** POST /memos/{memoId}/share 返回的随机分享凭证 */
+  shareToken?: string
 }
 
 /**
@@ -345,3 +347,41 @@ export interface getAdminMemosRes {
  * @url GET /admin/memos/{memoId}
  */
 export type getAdminMemosMemoIdRes = string
+
+/**
+ * @description Memos/Get memos received by the current guest--接口请求Query参数
+ * @url GET /memos/public/list
+ */
+export interface getMemosPublicListQuery {
+  search?: string
+
+  sortBy?: string
+
+  page?: number
+
+  limit?: number
+}
+
+/**
+ * @description Memos/Get memos received by the current guest--接口返回值
+ * @url GET /memos/public/list
+ */
+export type getMemosPublicListRes = object
+
+/**
+ * @description Memos/Migrate guest memo shares to the logged-in user--接口返回值
+ * @url POST /memos/guest/migrate
+ */
+export type postMemosGuestMigrateRes = object
+
+/**
+ * @description Memos/Enable sharing and get a share token--接口返回值
+ * @url POST /memos/{memoId}/share
+ */
+export type postMemosMemoIdShareRes = object
+
+/**
+ * @description Memos/Disable sharing--接口返回值
+ * @url DELETE /memos/{memoId}/share
+ */
+export type deleteMemosMemoIdShareRes = object

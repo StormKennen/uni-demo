@@ -12,7 +12,7 @@
           <view class="section-header">
             <text class="section-title">常用工具</text>
             <view class="section-link" @click="openToolsTab">
-              <text class="section-link-text">全部工作间</text>
+              <text class="section-link-text">工作间</text>
               <uni-icons type="right" size="14" color="var(--theme-text-tertiary)" />
             </view>
           </view>

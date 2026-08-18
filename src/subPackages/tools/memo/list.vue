@@ -1,9 +1,9 @@
 <template>
-  <PageLayout title="我的备忘录" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+  <PageLayout :title="isGuestMode ? '备忘录' : '我的备忘录'" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
     <view class="memo-list-page">
       <!-- 导航栏 -->
       <!-- 操作栏（导航栏下方独立一行） -->
-      <view class="action-bar">
+      <view v-if="isLoggedIn" class="action-bar">
         <view class="action-bar-left">
           <view class="action-btn folder-toggle" :class="{ active: !folderPanelCollapsed }" @click="toggleFolderPanel">
             <text class="icon">{{ folderPanelCollapsed ? '☰' : '✕' }}</text>
@@ -20,7 +20,7 @@
 
       <view class="content-wrapper">
         <!-- 左侧文件夹树（可折叠） -->
-        <view class="folder-panel" :class="{ collapsed: folderPanelCollapsed }">
+        <view v-if="isLoggedIn" class="folder-panel" :class="{ collapsed: folderPanelCollapsed }">
           <view class="panel-header">
             <text class="panel-title">分类</text>
             <view class="panel-actions">
@@ -60,7 +60,7 @@
         <!-- 右侧备忘录列表 -->
         <view class="memo-list-panel">
           <!-- 数据隔离视角切换 -->
-          <view class="scope-tabs">
+          <view v-if="isLoggedIn" class="scope-tabs">
             <view
               v-for="option in scopeOptions"
               :key="option.value"
@@ -72,9 +72,9 @@
           </view>
 
           <!-- 搜索和筛选 -->
-          <view class="search-bar">
+          <view v-if="isLoggedIn || isGuestMode" class="search-bar">
             <input class="search-input" v-model="searchKeyword" placeholder="搜索备忘录..." @confirm="searchMemos" @input="onSearchInput" />
-            <view class="filter-actions">
+            <view v-if="isLoggedIn" class="filter-actions">
               <view class="filter-btn" :class="{ active: filterPinned }" @click="toggleFilter('pinned')"> 📌 </view>
               <view class="filter-btn" :class="{ active: filterFavorite }" @click="toggleFilter('favorite')"> ⭐ </view>
               <view class="filter-btn" :class="{ active: showTagFilter }" @click="toggleTagFilter"> 🏷️ </view>
@@ -108,8 +108,12 @@
 
             <view v-else-if="memos.length === 0" class="empty-state">
               <text class="empty-icon">📝</text>
-              <text class="empty-text">暂无备忘录</text>
-              <view class="empty-action" @click="createNewMemo">
+              <text class="empty-text">{{ isGuestMode ? '暂无收到的备忘录分享' : !isLoggedIn ? '登录后查看备忘录' : '暂无备忘录' }}</text>
+              <text v-if="isGuestMode" class="empty-hint">通过好友分享打开过的备忘录会显示在这里</text>
+              <view v-if="!isLoggedIn" class="empty-action" @click="goToLogin">
+                <text>登录</text>
+              </view>
+              <view v-else-if="!isGuestMode" class="empty-action" @click="createNewMemo">
                 <text>创建第一个备忘录</text>
               </view>
             </view>
@@ -190,25 +194,31 @@
 </template>
 
 <script setup lang="ts">
+  import { ref, onMounted, onUnmounted, computed } from 'vue'
+  import { onShow } from '@dcloudio/uni-app'
+  import { buildMemoDetailPath } from './navigation'
   import {
     getMemosTags,
     getMemos,
+    getMemosPublicList,
     getAdminMemos,
-    postMemos,
     deleteMemosMemoId,
     postMemosMemoIdPin,
     postMemosMemoIdFavorite,
-    postMemosMemoIdArchive,
-    postMemosMemoIdRestore,
   } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
-
-  import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
-  import { onShow } from '@dcloudio/uni-app'
+  import { getToken } from '@/utils/storage'
   import { reportToolVisit } from '@/utils/tracker'
   import { isAdminUser } from '@/utils/admin'
+  import type { getMemosQuery } from '@/services/apifox/NODEJSDEMO/MEMOS/interface'
 
   onShow(() => {
     reportToolVisit('memo')
+    const nextAuthState = Boolean(getToken())
+    if (hasLoaded.value && nextAuthState !== lastAuthState.value) {
+      resetListForIdentityChange()
+      return
+    }
+    lastAuthState.value = nextAuthState
   })
 
   // 类型定义
@@ -220,7 +230,7 @@
     children?: Folder[]
   }
 
-  type AccessRole = 'owner' | 'shared' | 'admin'
+  type AccessRole = 'owner' | 'shared' | 'admin' | 'guest'
 
   interface Memo {
     id: string
@@ -239,6 +249,13 @@
     canEdit?: boolean
     canDelete?: boolean
     canArchive?: boolean
+  }
+
+  interface MemoListResponse {
+    page?: number
+    totalPages?: number
+    totalResults?: number
+    results?: Memo[]
   }
 
   // 数据隔离视角：all=我创建的+分享给我的；owned=仅我创建的；shared=仅分享给我的；admin=全局只读（仅管理员）
@@ -272,6 +289,14 @@
 
   // 数据隔离视角
   const isAdmin = computed(() => isAdminUser())
+  const isMpWeixin = ref(false)
+  // #ifdef MP-WEIXIN
+  isMpWeixin.value = true
+  // #endif
+  const isLoggedIn = computed(() => Boolean(getToken()))
+  const isGuestMode = computed(() => isMpWeixin.value && !isLoggedIn.value)
+  const hasLoaded = ref(false)
+  const lastAuthState = ref(false)
   const viewScope = ref<ViewScope>('all')
   const scopeOptions = computed<{ value: ViewScope; label: string }[]>(() => {
     const base: { value: ViewScope; label: string }[] = [
@@ -285,8 +310,23 @@
 
   // 是否为「新数据隔离」返回的记录（带 accessRole）；旧数据缺省时沿用旧行为（可编辑）
   const hasAccessInfo = (memo: Memo) => !!memo.accessRole
-  const canEditMemo = (memo: Memo) => (hasAccessInfo(memo) ? memo.canEdit === true : true)
-  const canDeleteMemo = (memo: Memo) => (hasAccessInfo(memo) ? memo.canDelete === true : true)
+  const canEditMemo = (memo: Memo) => {
+    if (isGuestMode.value || memo.accessRole === 'shared' || memo.accessRole === 'admin' || memo.accessRole === 'guest') return false
+    if (viewScope.value === 'shared' || viewScope.value === 'admin') return false
+    if (memo.canEdit === false) return false
+    return memo.accessRole === 'owner' || memo.canEdit === true || !hasAccessInfo(memo)
+  }
+  const canDeleteMemo = (memo: Memo) => {
+    if (isGuestMode.value || memo.accessRole === 'shared' || memo.accessRole === 'admin' || memo.accessRole === 'guest') return false
+    if (viewScope.value === 'shared' || viewScope.value === 'admin') return false
+    return hasAccessInfo(memo) ? memo.canDelete === true : true
+  }
+
+  const goToLogin = () => {
+    uni.navigateTo({
+      url: '/pages/mine/login/login?redirectUrl=%2FsubPackages%2Ftools%2Fmemo%2Flist',
+    })
+  }
 
   // 切换文件夹面板
   const toggleFolderPanel = () => {
@@ -305,6 +345,7 @@
 
   // 选择文件夹
   const selectFolder = (folderId: string | null) => {
+    if (isGuestMode.value) return
     selectedFolderId.value = folderId
     currentPage.value = 1
     memos.value = []
@@ -313,6 +354,7 @@
 
   // 切换筛选
   const toggleFilter = (type: 'pinned' | 'favorite') => {
+    if (isGuestMode.value) return
     if (type === 'pinned') {
       filterPinned.value = !filterPinned.value
     } else {
@@ -325,11 +367,13 @@
 
   // 切换标签筛选面板
   const toggleTagFilter = () => {
+    if (isGuestMode.value) return
     showTagFilter.value = !showTagFilter.value
   }
 
   // 切换标签选择
   const toggleTagSelection = (tag: string) => {
+    if (isGuestMode.value) return
     const index = selectedTags.value.indexOf(tag)
     if (index > -1) {
       selectedTags.value.splice(index, 1)
@@ -343,6 +387,7 @@
 
   // 清除标签筛选
   const clearTagFilter = () => {
+    if (isGuestMode.value) return
     selectedTags.value = []
     currentPage.value = 1
     memos.value = []
@@ -368,15 +413,14 @@
 
   // 加载文件夹树（使用标签作为分类）
   const loadFolders = async () => {
+    if (isGuestMode.value || !isLoggedIn.value) return
     try {
       // 调用 getMemosTags 获取所有标签作为分类
       const res = await getMemosTags()
 
       // 处理返回数据
       let tags: string[] = []
-      if (res && res.data) {
-        tags = Array.isArray(res.data) ? res.data : []
-      } else if (Array.isArray(res)) {
+      if (Array.isArray(res)) {
         tags = res
       }
 
@@ -430,9 +474,16 @@
   const loadMemos = async () => {
     if (loading.value) return
 
+    if (!isLoggedIn.value && !isGuestMode.value) {
+      memos.value = []
+      hasMore.value = false
+      totalCount.value = 0
+      return
+    }
+
     loading.value = true
     try {
-      const params: any = {
+      const params: getMemosQuery = {
         page: currentPage.value,
         limit: pageSize.value,
         status: 'active',
@@ -445,7 +496,7 @@
 
       // 如果有选中的标签筛选
       if (selectedTags.value.length > 0) {
-        params.tags = selectedTags.value
+        params.tags = selectedTags.value.join(',')
       }
 
       if (filterPinned.value) {
@@ -460,27 +511,26 @@
         params.search = searchKeyword.value
       }
 
-      // 按视角调用不同接口：admin=全局只读；其余走用户侧列表并携带 viewScope
-      let res: any
-      if (viewScope.value === 'admin') {
+      // Guest 只调用公开关系列表，不携带用户侧筛选字段。
+      let res: unknown
+      if (isGuestMode.value) {
+        res = await getMemosPublicList({
+          page: currentPage.value,
+          limit: pageSize.value,
+          ...(searchKeyword.value ? { search: searchKeyword.value } : {}),
+          sortBy: 'createdAt:desc',
+        })
+      } else if (viewScope.value === 'admin') {
         res = await getAdminMemos(params)
       } else {
         params.viewScope = viewScope.value
         res = await getMemos(params)
       }
 
-      // 处理返回数据
-      if (res && res.results) {
-        memos.value = [...memos.value, ...res.results]
-        hasMore.value = res.page < res.totalPages
-        totalCount.value = res.totalResults
-      } else {
-        // 如果返回格式不同，直接使用返回值
-        const results = Array.isArray(res) ? res : []
-        memos.value = [...memos.value, ...results]
-        hasMore.value = false
-        totalCount.value = results.length
-      }
+      const normalized = normalizeMemoListResponse(res)
+      memos.value = [...memos.value, ...normalized.results]
+      hasMore.value = normalized.page !== undefined && normalized.totalPages !== undefined ? normalized.page < normalized.totalPages : false
+      totalCount.value = normalized.totalResults ?? normalized.results.length
     } catch (error) {
       console.error('加载备忘录失败:', error)
       uni.showToast({
@@ -496,6 +546,31 @@
     }
   }
 
+  const normalizeMemoListResponse = (
+    response: unknown,
+  ): Required<Pick<MemoListResponse, 'results'>> & Omit<MemoListResponse, 'results'> => {
+    if (Array.isArray(response)) {
+      return { results: response as Memo[] }
+    }
+    if (!response || typeof response !== 'object') {
+      return { results: [] }
+    }
+
+    const source = response as Record<string, unknown>
+    if (source.data && typeof source.data === 'object') {
+      return normalizeMemoListResponse(source.data)
+    }
+
+    const resultItems = Array.isArray(source.results) ? source.results : Array.isArray(source.items) ? source.items : source.memos
+
+    return {
+      page: typeof source.page === 'number' ? source.page : undefined,
+      totalPages: typeof source.totalPages === 'number' ? source.totalPages : undefined,
+      totalResults: typeof source.totalResults === 'number' ? source.totalResults : undefined,
+      results: Array.isArray(resultItems) ? (resultItems as Memo[]) : [],
+    }
+  }
+
   // 加载更多
   const loadMore = () => {
     if (!hasMore.value || loading.value) return
@@ -507,13 +582,6 @@
   const createNewMemo = () => {
     uni.navigateTo({
       url: '/subPackages/tools/memo/editor',
-    })
-  }
-
-  // 查看备忘录（预览模式）
-  const viewMemo = (id: string) => {
-    uni.navigateTo({
-      url: `/subPackages/tools/memo/detail?id=${id}`,
     })
   }
 
@@ -536,13 +604,19 @@
 
   // 打开备忘录：创建者进编辑页；分享/管理员进只读详情
   const openMemo = (memo: Memo) => {
+    if (isGuestMode.value) {
+      uni.navigateTo({
+        url: buildMemoDetailPath({ id: memo.id, mode: 'public', readonly: true }),
+      })
+      return
+    }
     if (canEditMemo(memo)) {
       editMemo(memo.id)
       return
     }
     const mode = memo.accessRole === 'admin' || viewScope.value === 'admin' ? 'admin' : 'private'
     uni.navigateTo({
-      url: `/subPackages/tools/memo/detail?id=${memo.id}&mode=${mode}&readonly=1`,
+      url: buildMemoDetailPath({ id: memo.id, mode, readonly: true }),
     })
   }
 
@@ -550,7 +624,7 @@
   const togglePin = async (id: string, isPinned: boolean) => {
     try {
       // 调用 API 切换置顶状态
-      const result = await postMemosMemoIdPin(id)
+      await postMemosMemoIdPin(id)
 
       // 更新本地列表数据
       const memo = memos.value.find(m => m.id === id)
@@ -582,7 +656,7 @@
   const toggleFavorite = async (id: string, isFavorite: boolean) => {
     try {
       // 调用 API 切换收藏状态
-      const result = await postMemosMemoIdFavorite(id)
+      await postMemosMemoIdFavorite(id)
 
       // 更新本地列表数据
       const memo = memos.value.find(m => m.id === id)
@@ -632,7 +706,8 @@
             console.error('删除失败:', error)
             uni.hideLoading()
             uni.showToast({
-              title: error.message || '删除失败',
+              title:
+                error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : '删除失败',
               icon: 'none',
             })
           }
@@ -699,8 +774,23 @@
     memos.value = []
     hasMore.value = true
     await loadMemos()
-    await loadFolders()
+    if (!isGuestMode.value && isLoggedIn.value) await loadFolders()
     loadFolderStats()
+  }
+
+  const resetListForIdentityChange = () => {
+    lastAuthState.value = isLoggedIn.value
+    viewScope.value = 'all'
+    selectedFolderId.value = null
+    selectedTags.value = []
+    showTagFilter.value = false
+    filterPinned.value = false
+    filterFavorite.value = false
+    searchKeyword.value = ''
+    currentPage.value = 1
+    hasMore.value = true
+    memos.value = []
+    void refreshData()
   }
 
   // 页面显示时刷新（从编辑器返回时）
@@ -710,11 +800,13 @@
 
   // 页面加载
   onMounted(async () => {
+    lastAuthState.value = isLoggedIn.value
     // 先加载备忘录数据
     await loadMemos()
     // 然后基于备忘录数据加载分类和统计
-    await loadFolders()
+    if (!isGuestMode.value && isLoggedIn.value) await loadFolders()
     loadFolderStats()
+    hasLoaded.value = true
 
     // 监听页面显示事件
     uni.$on('memo-list-refresh', onPageShow)

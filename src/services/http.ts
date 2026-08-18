@@ -9,7 +9,16 @@ import { getAppTokenFromQuery } from '@/utilsH5/env'
 import { getAppOsByPlatform, getYhIdByPlatform } from '@/utils/env'
 import { getCookie } from '@/utilsH5/cookie'
 import { getAnonymousId } from '@/utils/anonymous-id'
-import { clearGuestToken, ensureGuestSession, refreshGuestSession, type GuestSessionResponse } from '@/utils/guest-session'
+import {
+  clearGuestToken,
+  ensureGuestSession,
+  getGuestToken,
+  isGuestTokenValid,
+  refreshGuestSession,
+  type GuestSessionResponse,
+} from '@/utils/guest-session'
+
+type RequestIdentity = 'normal' | 'guest' | 'auth-transition' | 'guest-migration'
 
 type Methods = 'OPTIONS' | 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'TRACE' | 'CONNECT'
 
@@ -17,6 +26,7 @@ interface InternalRequestConfig extends ParticalUniAppRequestOptions {
   _guestRetryAfterRefresh?: number
   _guestToken?: string
   _isAuthRequest?: boolean
+  _isGuestMigration?: boolean
   _skipGuestSession?: boolean
   _usedGuestToken?: boolean
 }
@@ -107,7 +117,11 @@ export class Request {
     }
 
     _config.header['X-Anonymous-Id'] = getAnonymousId()
-    if (!token && guestToken) {
+    const identity = this.getRequestIdentity(url)
+    const shouldSendGuestToken = Boolean(
+      guestToken && (identity === 'guest' || identity === 'auth-transition' || identity === 'guest-migration'),
+    )
+    if (shouldSendGuestToken) {
       _config.header['X-Guest-Token'] = guestToken
     } else {
       delete _config.header['X-Guest-Token']
@@ -123,25 +137,30 @@ export class Request {
       method,
       // 添加标记，用于在响应拦截器中识别登录相关接口
       _isAuthRequest: this.isAuthRequest(url),
-      _usedGuestToken: Boolean(!token && guestToken),
-      _guestToken: !token ? guestToken : '',
+      _isGuestMigration: identity === 'guest-migration',
+      _usedGuestToken: Boolean(identity === 'guest' && guestToken),
+      _guestToken: shouldSendGuestToken ? guestToken : '',
     }
     // 返回组装的配置
     return configs
   }
 
-  // 判断是否为认证相关的接口
+  private getRequestIdentity(url: string): RequestIdentity {
+    if (url.includes('/memos/guest/migrate')) return 'guest-migration'
+    if (url.includes('/auth/guest-session')) return 'guest'
+    if (['/auth/login', '/auth/register', '/auth/wechat-login'].some(endpoint => url.includes(endpoint))) {
+      return 'auth-transition'
+    }
+    if (['/auth/refresh-tokens', '/auth/forgot-password', '/auth/reset-password'].some(endpoint => url.includes(endpoint))) {
+      return 'normal'
+    }
+    if (url.includes('/auth/')) return 'normal'
+    return 'guest'
+  }
+
+  // 认证接口不自动触发 Guest Session，也不触发正式登录弹窗。
   private isAuthRequest(url: string): boolean {
-    const authEndpoints = [
-      '/auth/login',
-      '/auth/guest-session',
-      '/auth/wechat-login',
-      '/auth/register',
-      '/auth/refresh-tokens',
-      '/auth/forgot-password',
-      '/auth/reset-password',
-    ]
-    return authEndpoints.some(endpoint => url.includes(endpoint))
+    return this.getRequestIdentity(url) === 'auth-transition' || url.includes('/auth/guest-session')
   }
 
   private async createGuestSession(code: string): Promise<GuestSessionResponse> {
@@ -159,9 +178,15 @@ export class Request {
   }
 
   private async prepareGuestToken(url: string, config: InternalRequestConfig): Promise<string> {
-    if (config._skipGuestSession || this.isAuthRequest(url) || getTokenByPlatform()) {
+    if (config._skipGuestSession) {
       return ''
     }
+
+    const identity = this.getRequestIdentity(url)
+    if (identity === 'auth-transition' || identity === 'guest-migration') {
+      return isGuestTokenValid() ? getGuestToken() : ''
+    }
+    if (getTokenByPlatform()) return ''
 
     let guestToken = ''
     // #ifdef MP-WEIXIN
@@ -319,7 +344,7 @@ export class Request {
     // 处理HTTP状态码401 - 未授权
     if (statusCode === RES_CODE.Unauthorized) {
       // 如果是认证相关接口的401错误，不自动跳转登录页，让调用方处理
-      if (requestConfig?._isAuthRequest) {
+      if (requestConfig?._isAuthRequest || requestConfig?._isGuestMigration) {
         console.log('认证接口返回401，不自动跳转，由调用方处理')
         return Promise.reject({
           code: 401,
@@ -393,10 +418,11 @@ export class Request {
       method,
       ...config,
       _isAuthRequest: _config._isAuthRequest,
+      _isGuestMigration: _config._isGuestMigration,
       _usedGuestToken: _config._usedGuestToken,
       _guestToken: _config._guestToken,
     }
-    const { _guestToken, _isAuthRequest, _skipGuestSession, _usedGuestToken, _guestRetryAfterRefresh, ...uniRequestConfig } = _config
+    const { _guestToken, _isAuthRequest, _isGuestMigration, _skipGuestSession, _usedGuestToken, _guestRetryAfterRefresh, ...uniRequestConfig } = _config
 
     // Promise 封装
     return new Promise((resolve, reject) => {

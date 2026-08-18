@@ -17,6 +17,9 @@
   import { PrivacyPageUrl, ProtocolPageUrl, TabsRoutes } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
   import { safeBack } from '@/utils/navigation'
+  import http from '@/services/http'
+  import { postMemosGuestMigrate } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
+  import { clearGuestToken, getGuestToken } from '@/utils/guest-session'
 
   type LoginType = 'mobile' | 'register'
   type AuthMode = 'wechat' | 'account'
@@ -60,6 +63,11 @@
     try {
       uni.showLoading({ title: '检查登录状态...', mask: true })
 
+      // 登录页进入时尽早准备游客身份；失败不阻塞正式登录或自动登录。
+      await http.prewarmGuestSession().catch(error => {
+        console.warn('[memo-guest] 登录页预热失败:', error)
+      })
+
       // 设置超时保护，避免一直loading
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Auto login timeout')), 5000)
@@ -67,12 +75,13 @@
 
       const autoLoginPromise = autoLogin()
 
-      const { isLoggedIn, user, needManualLogin } = (await Promise.race([autoLoginPromise, timeoutPromise])) as any
+      const { isLoggedIn, user } = (await Promise.race([autoLoginPromise, timeoutPromise])) as any
 
       uni.hideLoading()
 
       if (isLoggedIn && user) {
         console.log('🚀 ~ checkAutoLogin ~ 自动登录成功:', user)
+        await migrateGuestMemoRelations()
 
         if (redirectUrl.value) {
           const targetUrl = decodeURIComponent(redirectUrl.value)
@@ -94,6 +103,21 @@
       console.warn('🚀 ~ checkAutoLogin ~ error:', error)
       uni.hideLoading()
       // 出错时继续显示登录页面
+    }
+  }
+
+  const migrateGuestMemoRelations = async (): Promise<void> => {
+    const guestToken = getGuestToken()
+    if (!guestToken) return
+
+    try {
+      await postMemosGuestMigrate()
+      // 仅清理本次迁移使用的会话，避免并发流程覆盖更新后的 Guest Token。
+      if (getGuestToken() === guestToken) {
+        clearGuestToken()
+      }
+    } catch (error) {
+      console.warn('[memo-guest] Guest 关系迁移失败，保留 Guest Token:', error)
     }
   }
 
@@ -132,6 +156,8 @@
       setUserInfo(data.user)
       setWxUserInfo(data.user) // 保持兼容性
     }
+
+    await migrateGuestMemoRelations()
 
     uni.showToast({
       title: '登录成功',
@@ -262,9 +288,12 @@
         password: password.value,
       }
       console.log('🚀 ~ mobileLogin ~ loginParams:', loginParams)
-      const res = await postAuthLogin(loginParams)
+      await http.prewarmGuestSession().catch(error => {
+        console.warn('[memo-guest] 手机号登录前预热失败:', error)
+      })
+      const res = await postAuthLogin(loginParams as unknown as Parameters<typeof postAuthLogin>[0])
       console.log('🚀 ~ mobileLogin ~ res:', res)
-      loginSuccess(res)
+      await loginSuccess(res)
       uni.hideLoading()
     } catch (error: unknown) {
       console.warn('🚀 ~ mobileLogin ~ error:', error)
@@ -340,6 +369,10 @@
         mask: true,
       })
 
+      // 先完成游客会话预热，再单独获取正式微信登录 code，避免复用临时 code。
+      await http.prewarmGuestSession().catch(error => {
+        console.warn('[memo-guest] 微信登录前预热失败:', error)
+      })
       const code = await getWechatLoginCode()
       logWechatStage('凭证获取成功')
       const payload: postAuthWechatLoginBody = {
@@ -399,6 +432,10 @@
     try {
       uni.showLoading()
 
+      await http.prewarmGuestSession().catch(error => {
+        console.warn('[memo-guest] 注册前预热失败:', error)
+      })
+
       // 使用标准注册API
       const registerParams = {
         phone: mobileNumber.value,
@@ -416,8 +453,8 @@
         password: password.value,
       }
 
-      const loginRes = await postAuthLogin(loginParams)
-      loginSuccess(loginRes)
+      const loginRes = await postAuthLogin(loginParams as unknown as Parameters<typeof postAuthLogin>[0])
+      await loginSuccess(loginRes)
       uni.hideLoading()
     } catch (error: unknown) {
       console.warn('🚀 ~ userRegister ~ error:', error)

@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+- 2026-08-18 [tools/memo,auth/http,auth/login] 接入备忘录游客访问闭环：游客列表走公开关系接口，详情支持 shareToken，Owner 分享先获取凭证并用于 H5/微信分享；Guest Session 支持登录过渡与 Guest Migration 双身份请求，登录/自动登录后幂等补偿迁移并在失败时保留游客会话，Guest/Shared/Admin 全部只读且登录回流后列表自动切换（Codex）
+
 - 2026-08-18 [navigation/safe-back] 新增统一 `safeBack()`：公共导航栏在有真实页面栈时保持 `navigateBack`，单页栈按页面 `back-fallback` 使用 `redirectTo` 或 TabBar `switchTab`，失败时回退工具入口；登录页、H5 WebView 与 SWC/日历/备忘录高频详情接入业务兜底，保留 picker、编辑保存和登录 redirect 原有流程（Codex）
 
 - 2026-08-18 [tools/compendium-swc/detail,components/PageLayout] 修复魔灵详情分享被公共页面容器默认配置覆盖后丢失人物 ID：容器支持透传分享图片与朋友圈 query，详情会话/朋友圈分享统一携带当前人物真实 ID 和页签，并兼容旧链接的 `id` 参数（Codex）

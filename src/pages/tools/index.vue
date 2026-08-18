@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="全部工作间" :show-nav="false" :nav-back="false">
+  <PageLayout title="工作间" :show-nav="false" :nav-back="false">
     <view class="tools-page">
       <NavBarBase
         :nav-back="false"
@@ -7,21 +7,21 @@
         :custom-style="{ background: 'var(--theme-surface)', borderBottom: '1rpx solid var(--theme-border)' }">
         <template #title>
           <view class="tools-navbar-content">
-            <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" />
+            <!-- <image class="navbar-logo" src="/static/logo.png" mode="aspectFit" /> -->
             <view class="tools-navbar-copy">
-              <text class="navbar-title-single">全部工作间</text>
-              <text class="navbar-subtitle">WORKSPACES</text>
+              <text class="navbar-title-single">工作间</text>
+              <!-- <text class="navbar-subtitle">WORKSPACES</text> -->
             </view>
           </view>
         </template>
       </NavBarBase>
 
-      <view class="section section--summary">
+      <!-- <view class="section section--summary">
         <view class="summary-card">
           <text class="summary-title">工作间</text>
           <text class="summary-desc">{{ availableTools.length }} 个{{ platformLabel }}可用工具，按工作间归档。</text>
         </view>
-      </view>
+      </view> -->
 
       <view v-for="workspace in visibleWorkspaces" :key="workspace.key" class="section section--catalog">
         <view class="catalog-card">
@@ -100,7 +100,7 @@
     useToolDirectory()
 
   const { onShareAppMessage, onShareTimeline } = useShare('tools', {
-    title: '全部工作间 · 凉白开工具箱',
+    title: '工作间 · 凉白开工具箱',
     path: '/pages/tools/index',
   })
 

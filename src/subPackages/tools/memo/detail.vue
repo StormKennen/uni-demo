@@ -18,7 +18,7 @@
           <text class="icon">导出</text>
         </view>
         <!-- 分享按钮 -->
-        <view class="action-btn ghost" @click="shareMemo" v-if="memoData">
+        <view class="action-btn ghost" @click="shareMemo" v-if="memoData && canShareDetail">
           <text class="icon">分享</text>
         </view>
         <!-- 编辑按钮（仅创建者；分享/管理员/只读视角隐藏） -->
@@ -26,7 +26,7 @@
           <text class="icon">编辑</text>
         </view>
         <!-- 只读标识（分享给我的 / 管理员全局查看） -->
-        <view class="action-btn ghost readonly-tag" v-else-if="memoData && (accessRole === 'shared' || accessRole === 'admin')">
+        <view class="action-btn ghost readonly-tag" v-else-if="memoData && !canEditDetail">
           <text class="icon">{{ accessRole === 'admin' ? '管理员只读' : '只读' }}</text>
         </view>
       </view>
@@ -39,7 +39,7 @@
       <!-- 未登录提示 -->
       <view v-if="!settings.hideNavActions && !loading && !isLoggedIn" class="login-tip">
         <text class="tip-text">👀 您正在以访客模式查看</text>
-        <button class="login-btn" @click="goToLogin">登录后可编辑</button>
+        <button class="login-btn" @click="goToLogin">登录后可同步到账号</button>
       </view>
 
       <!-- 备忘录内容（预览模式） - 作为海报导出区域 -->
@@ -472,19 +472,20 @@
 </template>
 
 <script setup lang="ts">
-  import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
-
   import { ref, reactive, computed, nextTick, getCurrentInstance } from 'vue'
   import { marked } from 'marked'
   import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { buildMemoDetailPath } from './navigation'
   import { getToken } from '@/utils/storage'
+  import { openMapNavigation, openExternalLink } from '@/utils/map'
+  import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
   import {
     getMemosPublicDetail,
     getMemosMemoIdPublic,
     getMemosMemoId,
     getAdminMemosMemoId,
+    postMemosMemoIdShare,
   } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
-  import { openMapNavigation, openExternalLink } from '@/utils/map'
 
   // 获取组件实例用于 uni.createSelectorQuery()
   const instance = getCurrentInstance()
@@ -498,7 +499,21 @@
   // 强制只读（分享给我的 / 管理员视角进入时隐藏编辑入口）
   const forceReadonly = ref(false)
   // 后端返回的访问角色标识
-  const accessRole = ref<'owner' | 'shared' | 'admin' | ''>('')
+  const accessRole = ref<'owner' | 'shared' | 'admin' | 'guest' | ''>('')
+  const activeShareToken = ref('')
+
+  interface ShareResponse {
+    memoId?: string
+    shareToken?: string
+    shareEnabled?: boolean
+    canShare?: boolean
+    data?: {
+      memoId?: string
+      shareToken?: string
+      shareEnabled?: boolean
+      canShare?: boolean
+    }
+  }
 
   // 设置（从 memoData 中读取）
   // 浪漫弹窗状态
@@ -927,14 +942,22 @@
 
   // 检查登录状态
   const isLoggedIn = computed(() => !!getToken())
+  const isGuestViewer = computed(() => !isLoggedIn.value && detailSource.value === 'public')
 
-  // 是否可进入编辑：强制只读 / 分享 / 管理员视角均不可编辑；
-  // 后端明确 canEdit=false 时不可编辑；公开分享（无 accessRole）沿用「登录即可编辑」旧逻辑。
+  // 编辑权限以后端返回为准；游客、分享用户和管理员永远只读。
   const canEditDetail = computed(() => {
-    if (forceReadonly.value) return false
+    if (forceReadonly.value || isGuestViewer.value) return false
     if (accessRole.value === 'shared' || accessRole.value === 'admin') return false
     if (memoData.value && memoData.value.canEdit === false) return false
-    return true
+    return accessRole.value === 'owner' || memoData.value?.canEdit === true
+  })
+
+  const canShareDetail = computed(() => {
+    const backendCanShare = memoData.value?.canShare
+    if (backendCanShare === false) return false
+    if (backendCanShare === true) return true
+    if (accessRole.value === 'owner' || memoData.value?.canEdit === true) return true
+    return detailSource.value === 'public' && Boolean(activeShareToken.value)
   })
 
   // 备忘录标题
@@ -966,6 +989,7 @@
     if (options.readonly === '1' || options.readonly === 'true') {
       forceReadonly.value = true
     }
+    activeShareToken.value = options.shareToken || ''
     if (options.id) {
       memoId.value = options.id
       loadMemoData()
@@ -986,7 +1010,11 @@
       } else if (detailSource.value === 'private') {
         res = await getMemosMemoId(memoId.value)
       } else {
-        res = await getMemosPublicDetail({ id: memoId.value })
+        // Legacy compatibility: list entries currently do not return a new shareToken.
+        res = await getMemosPublicDetail({
+          id: memoId.value,
+          ...(activeShareToken.value ? { shareToken: activeShareToken.value } : {}),
+        })
       }
       if (res) {
         memoData.value = res
@@ -1777,7 +1805,12 @@
 
   // 去登录
   const goToLogin = () => {
-    const currentUrl = `/subPackages/tools/memo/detail?id=${memoId.value}`
+    const currentUrl = buildMemoDetailPath({
+      id: memoId.value,
+      shareToken: activeShareToken.value,
+      mode: detailSource.value,
+      readonly: true,
+    })
     uni.navigateTo({
       url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(currentUrl)}`,
     })
@@ -2222,7 +2255,37 @@
   }
 
   // 分享备忘录
-  const shareMemo = () => {
+  const readShareResponse = (response: unknown): ShareResponse => {
+    if (!response || typeof response !== 'object') return {}
+    const value = response as ShareResponse
+    return value.data && typeof value.data === 'object' ? { ...value, ...value.data } : value
+  }
+
+  const ensureShareToken = async (): Promise<string> => {
+    if (activeShareToken.value) return activeShareToken.value
+    if (memoData.value?.canShare === false) return ''
+    if (accessRole.value !== 'owner' && memoData.value?.canEdit !== true && memoData.value?.canShare !== true) return ''
+    const response = await postMemosMemoIdShare(memoId.value)
+    const share = readShareResponse(response)
+    if (!share.shareToken) throw new Error('后端未返回分享凭证')
+    activeShareToken.value = share.shareToken
+    return share.shareToken
+  }
+
+  const shareMemo = async () => {
+    let shareToken = ''
+    try {
+      shareToken = await ensureShareToken()
+    } catch (shareError) {
+      console.warn('准备备忘录分享失败:', shareError)
+      uni.showToast({ title: '分享准备失败，请稍后重试', icon: 'none' })
+      return
+    }
+    if (!shareToken) {
+      uni.showToast({ title: '当前内容不可再次分享', icon: 'none' })
+      return
+    }
+
     // #ifdef MP-WEIXIN
     // 微信小程序使用右上角分享
     uni.showToast({
@@ -2233,7 +2296,8 @@
 
     // #ifdef H5
     // H5使用复制链接
-    const shareUrl = `${window.location.origin}/subPackages/tools/memo/detail?id=${memoId.value}`
+    const sharePath = buildMemoDetailPath({ id: memoId.value, shareToken })
+    const shareUrl = `${window.location.origin}${sharePath}`
     // @ts-ignore
     if (navigator.clipboard) {
       // @ts-ignore
@@ -2267,7 +2331,7 @@
   onShareAppMessage(() => {
     return {
       title: memoTitle.value,
-      path: `/subPackages/tools/memo/detail?id=${memoId.value}`,
+      path: buildMemoDetailPath({ id: memoId.value, shareToken: activeShareToken.value }),
       imageUrl: '',
     }
   })
@@ -2275,7 +2339,7 @@
   onShareTimeline(() => {
     return {
       title: memoTitle.value,
-      query: `id=${memoId.value}`,
+      query: `id=${encodeURIComponent(memoId.value)}&shareToken=${encodeURIComponent(activeShareToken.value)}`,
     }
   })
   // #endif
