@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- 2026-08-18 [navigation/safe-back] 新增统一 `safeBack()`：公共导航栏在有真实页面栈时保持 `navigateBack`，单页栈按页面 `back-fallback` 使用 `redirectTo` 或 TabBar `switchTab`，失败时回退工具入口；登录页、H5 WebView 与 SWC/日历/备忘录高频详情接入业务兜底，保留 picker、编辑保存和登录 redirect 原有流程（Codex）
+
+- 2026-08-18 [tools/compendium-swc/detail,components/PageLayout] 修复魔灵详情分享被公共页面容器默认配置覆盖后丢失人物 ID：容器支持透传分享图片与朋友圈 query，详情会话/朋友圈分享统一携带当前人物真实 ID 和页签，并兼容旧链接的 `id` 参数（Codex）
+
+- 2026-08-17 [tools/compendium-swc/equipment] 上传 40 个符文与神器图标至 SWC OSS 目录并接入统一缓存图片容器，移除会被打入微信小程序包的前端静态副本；人物详情新增单行高辨识度的“属性 / 技能 / 符文 / RTA”切换页签，按场景展示推荐套装、2/4/6 号位、副属性优先级及神器推荐，补齐懒加载、切换失效、刷新、错误与空态（Codex）
+
 - 2026-08-15 [tools/compendium-swc/rta] 将 SWC 人物详情与 RTA 人物详情统一到 `swc/detail`：新增懒加载 RTA Tab、继承排行榜赛季/段位/联赛上下文、形态切换时失效旧 RTA 数据，并保留旧 RTA 详情路由兼容（Codex）
 
 - 2026-08-14 [tools/compendium-swc/rta] 将最低场次筛选文案改为“场次”，并改用与联赛一致的横向选项交互；段位选项继续完整读取 RTA 配置接口返回值（Codex）

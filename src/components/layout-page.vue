@@ -5,6 +5,7 @@
     <view class="layout-page-header" :style="headerStyle" v-if="slots.header || title">
       <NavBarBase
         :beforeBack="beforeBack"
+        :backFallback="backFallback"
         :customGoBack="customGoBack"
         :navBack="navBack"
         @back="goBack"
@@ -48,6 +49,7 @@
       headerBgColor?: string
       showFooter?: boolean
       beforeBack?: () => boolean | Promise<boolean>
+      backFallback?: string
     }>(),
     {
       navBack: true,

@@ -1,5 +1,9 @@
 <template>
-  <PageLayout title="阵容克制" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="阵容克制"
+    back-fallback="/subPackages/tools/compendium/swc/lineups"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="counter-page">
       <view class="filter-card">
         <view class="mode-row">

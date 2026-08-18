@@ -1,8 +1,9 @@
 <script setup lang="ts">
-  import { getStatusBarHeight, getSystemInfo } from '@/utils/env'
   import { defineProps } from 'vue'
+  import { getStatusBarHeight, getSystemInfo } from '@/utils/env'
   import appDsBridge from '@/utilsH5/appDsBridge'
   import { isYinheAppEnv } from '@/utilsH5/env'
+  import { safeBack } from '@/utils/navigation'
 
   interface Props {
     bgColor?: string
@@ -14,6 +15,7 @@
     customGoBack?: boolean
     // true 可以返回，false 不可以返回
     beforeBack?: () => boolean | Promise<boolean>
+    backFallback?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -46,15 +48,15 @@
     if (props.customGoBack) {
       return emit('back')
     }
-    const pages = getCurrentPages?.() ?? []
+    // eslint-disable-next-line no-undef
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
     // #ifdef WEB
     if (pages.length <= 1 && isYinheAppEnv()) {
       return appDsBridge.backToAppPreView()
     }
     // #endif
 
-    console.log('返回上一页', pages)
-    uni.navigateBack()
+    safeBack({ fallbackUrl: props.backFallback })
   }
 </script>
 

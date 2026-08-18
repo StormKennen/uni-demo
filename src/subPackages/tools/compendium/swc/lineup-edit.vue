@@ -1,5 +1,9 @@
 <template>
-  <PageLayout title="编辑阵容" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="编辑阵容"
+    back-fallback="/subPackages/tools/compendium/swc/lineups"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="lineup-edit-page">
       <view class="hero-card">
         <text class="hero-title">{{ isEditMode ? form.name || '编辑阵容' : '创建新阵容' }}</text>

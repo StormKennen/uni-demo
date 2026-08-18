@@ -1,5 +1,8 @@
 <template>
-  <PageLayout title="家族族谱树形图（快照）" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+  <PageLayout
+    title="家族族谱树形图（快照）"
+    back-fallback="/subPackages/tools/family-tree/index"
+    nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
     <view class="snapshot-placeholder">
       <uni-icons type="info" size="44" color="#667eea" />
       <text class="placeholder-title">族谱图谱正在升级</text>

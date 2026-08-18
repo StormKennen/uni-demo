@@ -15,6 +15,10 @@
     shareTitle?: string
     /** 自定义分享路径，默认取当前页面路由 */
     sharePath?: string
+    /** 自定义分享图片 */
+    shareImageUrl?: string
+    /** 自定义朋友圈分享 query */
+    shareTimelineQuery?: string
     /** 是否显示自定义导航栏 */
     showNav?: boolean
     /** 导航栏渐变背景（设置后自动应用 light class） */
@@ -39,6 +43,8 @@
     customGoBack?: boolean
     /** 返回前拦截 */
     beforeBack?: () => boolean | Promise<boolean>
+    /** 页面栈不足时返回的业务父页面 */
+    backFallback?: string
     /** 页面底色 */
     bgColor?: string
   }
@@ -69,12 +75,12 @@
     const pages = getCurrentPages() // eslint-disable-line no-undef
     const currentPage = pages[pages.length - 1]
     const path = props.sharePath || '/' + currentPage.route
-    return { title: shareTitle, path }
+    return { title: shareTitle, path, imageUrl: props.shareImageUrl }
   })
 
   onShareTimeline(() => {
     const shareTitle = props.shareTitle || `${props.title} · 凉白开工具箱`
-    return { title: shareTitle, query: '' }
+    return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareImageUrl }
   })
   // #endif
 
@@ -120,6 +126,7 @@
       :title-color="navTitleColor"
       :custom-go-back="customGoBack"
       :before-back="beforeBack"
+      :back-fallback="backFallback"
       @back="handleBack">
       <template #right>
         <slot name="nav-right" />

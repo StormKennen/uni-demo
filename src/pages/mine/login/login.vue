@@ -16,6 +16,7 @@
   } from '@/utils/storage'
   import { PrivacyPageUrl, ProtocolPageUrl, TabsRoutes } from '@/utils/const'
   import { autoLogin } from '@/utils/autoLogin'
+  import { safeBack } from '@/utils/navigation'
 
   type LoginType = 'mobile' | 'register'
   type AuthMode = 'wechat' | 'account'
@@ -460,7 +461,7 @@
     isRead.value = true
   }
   const onBack = () => {
-    uni.navigateBack()
+    safeBack()
   }
 
   const handleLoginPasswordConfirm = () => {

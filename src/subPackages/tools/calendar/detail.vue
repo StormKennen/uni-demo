@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="黄历" nav-bg-color="#C83C3C" nav-title-color="#fff">
+  <PageLayout title="黄历" back-fallback="/subPackages/tools/calendar/index" nav-bg-color="#C83C3C" nav-title-color="#fff">
     <view class="detail-page">
       <!-- 顶部导航 -->
       <view class="nav-header">
@@ -202,6 +202,7 @@
   import { ref, computed } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getTodayStr, formatDate } from '@/utils/lunar'
+  import { safeBack } from '@/utils/navigation'
 
   const currentDate = ref(getTodayStr())
   const data = ref<any>(null)
@@ -265,7 +266,7 @@
   }
 
   const goBack = () => {
-    uni.navigateBack()
+    safeBack({ fallbackUrl: '/subPackages/tools/calendar/index' })
   }
 
   const onDateChange = async (e: any) => {

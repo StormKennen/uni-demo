@@ -1,5 +1,10 @@
 <template>
-  <PageLayout :title="pageTitle" :nav-back="true" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    :title="pageTitle"
+    :nav-back="true"
+    back-fallback="/subPackages/tools/compendium/swc/rta/index"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="detail-page">
       <view v-if="loading && !detail" class="detail-loading">
         <view class="loading-avatar" />
@@ -91,6 +96,7 @@
   import { formatCount, formatRate, getRtaErrorMessage } from './rta-normalizers'
   import type { RtaConfig, RtaMonsterDetail, RtaMonsterDetailQuery } from './rta-types'
   import { reportToolVisit } from '@/utils/tracker'
+  import { safeBack } from '@/utils/navigation'
 
   interface MetricView {
     label: string
@@ -180,7 +186,7 @@
   }
 
   const goBack = () => {
-    uni.navigateBack()
+    safeBack({ fallbackUrl: '/subPackages/tools/compendium/swc/rta/index' })
   }
 
   onLoad((options: Record<string, string | undefined>) => {

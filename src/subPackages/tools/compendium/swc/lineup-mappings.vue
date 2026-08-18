@@ -1,5 +1,9 @@
 <template>
-  <PageLayout title="魔灵召唤阵容映射" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="魔灵召唤阵容映射"
+    back-fallback="/subPackages/tools/compendium/swc/lineups"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="mapping-page">
       <StateBlock
         v-if="accessChecked && !hasLineupFeatureAccess"
@@ -100,6 +104,7 @@
   import { onLoad, onShow, onReachBottom, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import StateBlock from './components/state-block.vue'
   import { reportToolVisit } from '@/utils/tracker'
+  import { safeBack } from '@/utils/navigation'
   import {
     deleteAdminLineupMappingsMappingId,
     getCompendiumsLineupMappings,
@@ -199,7 +204,7 @@
   }
 
   const goBack = () => {
-    uni.navigateBack()
+    safeBack({ fallbackUrl: '/subPackages/tools/compendium/swc/lineups' })
   }
 
   const closeCreate = () => {

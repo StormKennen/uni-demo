@@ -1,5 +1,9 @@
 <template>
-  <PageLayout title="阵容克制关系" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="阵容克制关系"
+    back-fallback="/subPackages/tools/compendium/swc/lineups"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="relation-page">
       <view class="hero-card">
         <text class="hero-title">阵容映射关系</text>

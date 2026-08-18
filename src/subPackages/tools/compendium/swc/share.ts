@@ -72,7 +72,7 @@ export function buildSwcDetailShare(options: {
   name?: string
   avatar?: string
   locale?: string
-  tab?: 'stats' | 'skills' | 'rta'
+  tab?: 'stats' | 'skills' | 'equipment' | 'rta'
   season?: number
   tier?: string
   league?: string

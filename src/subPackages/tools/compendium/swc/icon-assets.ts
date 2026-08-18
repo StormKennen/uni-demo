@@ -1,6 +1,26 @@
-export type SwcSquareIconKind = 'archetype' | 'element' | 'buff' | 'debuff' | 'leader-skill'
+export type SwcSquareIconKind =
+  | 'archetype'
+  | 'element'
+  | 'buff'
+  | 'debuff'
+  | 'leader-skill'
+  | 'rune'
+  | 'rune-slot'
+  | 'artifact-slot'
+  | 'artifact-attribute'
+  | 'artifact-type'
 
-export type SwcIconFolder = 'arche-types' | 'elements' | 'buffs' | 'debuffs' | 'leader-skills'
+export type SwcIconFolder =
+  | 'arche-types'
+  | 'elements'
+  | 'buffs'
+  | 'debuffs'
+  | 'leader-skills'
+  | 'runes'
+  | 'rune-slots'
+  | 'artifact-slots'
+  | 'artifacts/attribute'
+  | 'artifacts/type'
 
 export interface SwcUploadAssetItem {
   kind: SwcSquareIconKind
@@ -136,6 +156,56 @@ export const SWC_ICON_FILE_MAP = {
     leader_skill_Resistance_Arena: 'leader_skill_Resistance_Arena.png',
     leader_skill_Resistance_Wind: 'leader_skill_Resistance_Wind.png',
   },
+  rune: {
+    energy: 'energy.png',
+    guard: 'guard.png',
+    swift: 'swift.png',
+    blade: 'blade.png',
+    rage: 'rage.png',
+    focus: 'focus.png',
+    endure: 'endure.png',
+    fatal: 'fatal.png',
+    despair: 'despair.png',
+    vampire: 'vampire.png',
+    violent: 'violent.png',
+    nemesis: 'nemesis.png',
+    will: 'will.png',
+    shield: 'shield.png',
+    revenge: 'revenge.png',
+    destroy: 'destroy.png',
+    fight: 'fight.png',
+    determination: 'determination.png',
+    enhance: 'enhance.png',
+    accuracy: 'accuracy.png',
+    tolerance: 'tolerance.png',
+    seal: 'seal.png',
+    intangible: 'intangible.png',
+  },
+  'rune-slot': {
+    '1': 'slot-1.png',
+    '2': 'slot-2.png',
+    '3': 'slot-3.png',
+    '4': 'slot-4.png',
+    '5': 'slot-5.png',
+    '6': 'slot-6.png',
+  },
+  'artifact-slot': {
+    attribute: 'attribute.png',
+    type: 'type.png',
+  },
+  'artifact-attribute': {
+    fire: 'fire.png',
+    water: 'water.png',
+    wind: 'wind.png',
+    light: 'light.png',
+    dark: 'dark.png',
+  },
+  'artifact-type': {
+    attack: 'attack.png',
+    defense: 'defense.png',
+    hp: 'hp.png',
+    support: 'support.png',
+  },
 } as const satisfies Record<SwcSquareIconKind, Record<string, string>>
 
 export const SWC_ICON_FOLDER_MAP: Record<SwcSquareIconKind, SwcIconFolder> = {
@@ -144,18 +214,29 @@ export const SWC_ICON_FOLDER_MAP: Record<SwcSquareIconKind, SwcIconFolder> = {
   buff: 'buffs',
   debuff: 'debuffs',
   'leader-skill': 'leader-skills',
+  rune: 'runes',
+  'rune-slot': 'rune-slots',
+  'artifact-slot': 'artifact-slots',
+  'artifact-attribute': 'artifacts/attribute',
+  'artifact-type': 'artifacts/type',
 }
+
+const SWC_GENERAL_ICON_KINDS: SwcSquareIconKind[] = ['archetype', 'element', 'buff', 'debuff', 'leader-skill']
+const SWC_EQUIPMENT_ICON_KINDS: SwcSquareIconKind[] = ['rune', 'rune-slot', 'artifact-slot', 'artifact-attribute', 'artifact-type']
 
 const resolveNormalizedIconKey = (kind: SwcSquareIconKind, iconKey?: string): string => {
   if (kind === 'archetype') return normalizeSwcArchetype(iconKey)
   if (kind === 'element') return normalizeSwcElement(iconKey)
+  if (kind === 'artifact-attribute') return normalizeSwcElement(iconKey)
+  if (kind === 'artifact-type') return normalizeSwcArchetype(iconKey)
+  if (kind === 'rune-slot') return normalizeIconKey(iconKey).replace(/^slot-/, '')
   return normalizeIconKey(iconKey)
 }
 
 export const getSwcIconFileName = (kind: SwcSquareIconKind, iconKey?: string): string => {
   const normalizedKey = resolveNormalizedIconKey(kind, iconKey)
   if (!normalizedKey) return ''
-  const fileNameMap = SWC_ICON_FILE_MAP[kind]
+  const fileNameMap = SWC_ICON_FILE_MAP[kind] as Record<string, string>
   if (fileNameMap[normalizedKey]) return fileNameMap[normalizedKey]
 
   const caseInsensitiveKey = Object.keys(fileNameMap).find(key => key.toLowerCase() === normalizedKey.toLowerCase())
@@ -174,8 +255,8 @@ export const getSwcIconObjectKey = (kind: SwcSquareIconKind, iconKey?: string, p
   return `${prefix}/${relativePath}`
 }
 
-export const listSwcUploadAssets = (prefix = SWC_OSS_BASE_PREFIX): SwcUploadAssetItem[] =>
-  (Object.keys(SWC_ICON_FILE_MAP) as SwcSquareIconKind[]).flatMap(kind => {
+const listIconAssets = (kinds: SwcSquareIconKind[], prefix: string): SwcUploadAssetItem[] =>
+  kinds.flatMap(kind => {
     const folder = SWC_ICON_FOLDER_MAP[kind]
     return Object.entries(SWC_ICON_FILE_MAP[kind]).map(([iconKey, fileName]) => {
       const relativePath = `${folder}/${fileName}`
@@ -189,6 +270,11 @@ export const listSwcUploadAssets = (prefix = SWC_OSS_BASE_PREFIX): SwcUploadAsse
       }
     })
   })
+
+export const listSwcUploadAssets = (prefix = SWC_OSS_BASE_PREFIX): SwcUploadAssetItem[] => listIconAssets(SWC_GENERAL_ICON_KINDS, prefix)
+
+export const listSwcEquipmentUploadAssets = (prefix = SWC_OSS_BASE_PREFIX): SwcUploadAssetItem[] =>
+  listIconAssets(SWC_EQUIPMENT_ICON_KINDS, prefix)
 
 export const resolveSwcSquareIcon = (kind: SwcSquareIconKind, iconKey?: string): string => {
   const fileName = getSwcIconFileName(kind, iconKey)
@@ -224,4 +310,3 @@ export const formatLeaderSkillAmountText = (amount?: number | string | null): st
   if (amount === null || amount === undefined || amount === '') return ''
   return `${amount}%`
 }
-

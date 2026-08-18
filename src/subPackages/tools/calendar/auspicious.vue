@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="择吉日" nav-bg-color="#C83C3C" nav-title-color="#fff">
+  <PageLayout title="择吉日" back-fallback="/subPackages/tools/calendar/index" nav-bg-color="#C83C3C" nav-title-color="#fff">
     <view class="auspicious-page">
       <!-- 顶部导航栏 -->
       <!-- 操作按钮栏 -->

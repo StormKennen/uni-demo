@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="编辑角色" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout title="编辑角色" back-fallback="/subPackages/tools/compendium/swc/list" nav-init-bg-color="var(--theme-surface)" nav-divider>
     <view class="edit-page">
       <view v-if="loading" class="state-block">
         <text>加载数据中...</text>

@@ -1,5 +1,5 @@
 <template>
-  <PageLayout :title="memoTitle" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+  <PageLayout :title="memoTitle" back-fallback="/pages/tools/index" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
     <view class="memo-detail-page" :style="pageStyle">
       <!-- 背景图层 -->
       <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>

@@ -2,6 +2,7 @@
   import { onLoad } from '@dcloudio/uni-app'
   import { ref } from 'vue'
   import { getAgreementMeta, type AgreementSection, type AgreementType } from '../agreement/content'
+  import { safeBack } from '@/utils/navigation'
 
   type Option = {
     title?: string
@@ -99,7 +100,7 @@
   })
 
   const goBack = () => {
-    uni.navigateBack()
+    safeBack()
   }
 
   const onIframeLoad = () => {
@@ -125,7 +126,7 @@
     // 强制重新加载iframe
     const iframe = document.querySelector('.h5-iframe') as HTMLIFrameElement
     if (iframe) {
-      iframe.src = iframe.src
+      iframe.src = webviewSrc.value
     }
   }
 </script>

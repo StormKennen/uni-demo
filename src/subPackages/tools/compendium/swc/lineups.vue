@@ -1,5 +1,9 @@
 <template>
-  <PageLayout title="魔灵召唤阵容" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="魔灵召唤阵容"
+    back-fallback="/subPackages/tools/compendium/swc/index"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="lineup-page">
       <template>
         <!-- <view class="hero-banner">

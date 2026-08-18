@@ -1,5 +1,5 @@
 <template>
-  <PageLayout title="节日" nav-bg-color="#C83C3C" nav-title-color="#fff">
+  <PageLayout title="节日" back-fallback="/subPackages/tools/calendar/index" nav-bg-color="#C83C3C" nav-title-color="#fff">
     <view class="festivals-page">
       <!-- 顶部导航栏 -->
       <!-- 法定节假日 -->

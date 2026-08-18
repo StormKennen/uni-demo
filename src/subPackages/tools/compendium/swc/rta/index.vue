@@ -1,5 +1,10 @@
 <template>
-  <PageLayout title="RTA排行榜" :nav-back="true" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="RTA排行榜"
+    :nav-back="true"
+    back-fallback="/subPackages/tools/compendium/swc/index"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="rta-page">
       <view class="page-intro">
         <view class="intro-main">

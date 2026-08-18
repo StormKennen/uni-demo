@@ -17,6 +17,7 @@
     onBack?: () => void
     customGoBack?: boolean
     beforeBack?: () => boolean | Promise<boolean>
+    backFallback?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -34,10 +35,6 @@
   const navBgColor = ref(props.initBgColor)
   const navTitle = ref(props.alwaysTitle ? props.title : '')
 
-  const onBack = () => {
-    uni.navigateBack()
-    props?.onBack()
-  }
   onPageScroll((event: any) => {
     const scrollTop = event.scrollTop // 获取滚动距离
     if (scrollTop > 10) {
@@ -63,6 +60,7 @@
     :nav-back="props.navBack"
     :custom-go-back="props.customGoBack"
     :before-back="props.beforeBack"
+    :back-fallback="props.backFallback"
     :title-color="props.titleColor"
     @back="emit('back')">
     <template #title>

@@ -1,5 +1,13 @@
 ﻿<template>
-  <PageLayout title="魔灵召唤详情" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout
+    title="魔灵召唤详情"
+    :share-title="detailShare.app.title"
+    :share-path="detailShare.app.path"
+    :share-image-url="detailShare.app.imageUrl"
+    :share-timeline-query="detailShare.timeline.query"
+    :back-fallback="activeDetailTab === 'rta' ? '/subPackages/tools/compendium/swc/rta/index' : '/subPackages/tools/compendium/swc/list'"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-divider>
     <view class="detail-page">
       <!-- <view class="top-tabs">
       <view
@@ -126,13 +134,36 @@
         </view>
 
         <view class="detail-tabs">
-          <view class="detail-tab" :class="{ active: activeDetailTab === 'stats' }" @click="activeDetailTab = 'stats'">
+          <view
+            class="detail-tab"
+            :class="{ active: activeDetailTab === 'stats' }"
+            hover-class="detail-tab--pressed"
+            :hover-stay-time="80"
+            @click="selectDetailTab('stats')">
             <text>属性</text>
           </view>
-          <view class="detail-tab" :class="{ active: activeDetailTab === 'skills' }" @click="activeDetailTab = 'skills'">
+          <view
+            class="detail-tab"
+            :class="{ active: activeDetailTab === 'skills' }"
+            hover-class="detail-tab--pressed"
+            :hover-stay-time="80"
+            @click="selectDetailTab('skills')">
             <text>技能</text>
           </view>
-          <view class="detail-tab" :class="{ active: activeDetailTab === 'rta' }" @click="activeDetailTab = 'rta'">
+          <view
+            class="detail-tab"
+            :class="{ active: activeDetailTab === 'equipment' }"
+            hover-class="detail-tab--pressed"
+            :hover-stay-time="80"
+            @click="selectDetailTab('equipment')">
+            <text>符文</text>
+          </view>
+          <view
+            class="detail-tab"
+            :class="{ active: activeDetailTab === 'rta' }"
+            hover-class="detail-tab--pressed"
+            :hover-stay-time="80"
+            @click="selectDetailTab('rta')">
             <text>RTA</text>
           </view>
         </view>
@@ -257,6 +288,16 @@
             </view>
           </view>
         </view>
+
+        <EquipmentRecommendationsPanel
+          v-else-if="activeDetailTab === 'equipment'"
+          :loading="equipmentLoading"
+          :error-message="equipmentErrorMessage"
+          :runes="equipmentRecommendations.runes"
+          :artifacts="equipmentRecommendations.artifacts"
+          :element-key="detail.elementKey"
+          :archetype="detail.archetype"
+          @retry="loadEquipment(true)" />
       </view>
 
       <RtaCharacterPanel
@@ -279,14 +320,17 @@
   import SwcLeaderSkillIcon from './components/swc-leader-skill-icon.vue'
   import SwcStarBadge from './components/swc-star-badge.vue'
   import SwcSquareIcon from './components/swc-square-icon.vue'
+  import EquipmentRecommendationsPanel from './components/equipment-recommendations-panel.vue'
   import RtaCharacterPanel from './rta/components/rta-character-panel.vue'
   import type { RtaFilters } from './rta/rta-types'
   import { SWC_ARCHETYPE_LABEL_MAP, buildLeaderSkillIconUrl, normalizeSwcArchetype, type SwcLeaderSkillInput } from './icon-assets'
   import { buildSwcDetailShare } from './share'
   import type { CharacterOption } from './lineup-types'
+  import { normalizeEquipmentRecommendations, type EquipmentRecommendationsViewModel } from './equipment-normalizers'
   import { calculateSkillDamage, parseNumber, type DamageStats, type SkillDamageResult } from '@/engine/swc-damage-calculator'
   import { getCompendiumsCharacter } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/apifox'
   import type { getCompendiumsCharacterQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMS/interface'
+  import { getCompendiumsCharacterEquipment } from '@/services/apifox/NODEJSDEMO/EQUIPMENT/apifox'
   import { removeStorageSync, setStorageSync } from '@/utils/storage'
 
   type RawRecord = Record<string, any>
@@ -516,7 +560,7 @@
     { label: '暗', value: 'dark', color: '#8b5cf6' },
   ]
 
-  type CharacterDetailTab = 'stats' | 'skills' | 'rta'
+  type CharacterDetailTab = 'stats' | 'skills' | 'equipment' | 'rta'
 
   interface RtaPanelExpose {
     refresh: () => Promise<void>
@@ -536,6 +580,10 @@
   const rtaPanelRef = ref<RtaPanelExpose | null>(null)
   const activeGalleryIndex = ref(0)
   const showDamagePanel = ref(false)
+  const equipmentLoading = ref(false)
+  const equipmentErrorMessage = ref('')
+  const equipmentLoadedCharacterId = ref('')
+  const equipmentRecommendations = ref<EquipmentRecommendationsViewModel>({ runes: [], artifacts: [] })
   const damageBonus = ref<DamageBonusForm>({
     hp: '',
     attack: '',
@@ -974,7 +1022,8 @@
 
   const parseAttributeNumber = (attribute: RawAttribute | undefined, fallback = 0): number => {
     if (!attribute) return fallback
-    const parsed = parseNumber(attribute.value ?? attribute.displayValue ?? '')
+    const rawValue = attribute.value ?? attribute.displayValue ?? ''
+    const parsed = parseNumber(typeof rawValue === 'boolean' ? (rawValue ? 1 : 0) : rawValue)
     return parsed || fallback
   }
 
@@ -1163,6 +1212,58 @@
     loadDetail()
   }
 
+  let equipmentRequestToken = 0
+
+  const resetEquipment = () => {
+    equipmentRequestToken += 1
+    equipmentLoading.value = false
+    equipmentErrorMessage.value = ''
+    equipmentLoadedCharacterId.value = ''
+    equipmentRecommendations.value = { runes: [], artifacts: [] }
+  }
+
+  const getRequestErrorMessage = (error: unknown, fallback: string): string => {
+    if (typeof error === 'string' && error.trim()) return error
+    if (isRecord(error)) {
+      const message = readRecordString(error, ['message', 'msg'])
+      if (message) return message
+    }
+    return fallback
+  }
+
+  const loadEquipment = async (force = false) => {
+    const currentCharacterId = detail.value.id || characterId.value
+    if (!currentCharacterId) {
+      equipmentErrorMessage.value = '缺少魔灵 ID'
+      return
+    }
+    if (!force && equipmentLoadedCharacterId.value === currentCharacterId) return
+
+    const requestToken = ++equipmentRequestToken
+    equipmentLoading.value = true
+    equipmentErrorMessage.value = ''
+
+    try {
+      const response = await getCompendiumsCharacterEquipment({
+        compendiumId: COMPENDIUM_CODE,
+        characterId: currentCharacterId,
+      })
+      if (requestToken !== equipmentRequestToken) return
+      equipmentRecommendations.value = normalizeEquipmentRecommendations(response)
+      equipmentLoadedCharacterId.value = currentCharacterId
+    } catch (error) {
+      if (requestToken !== equipmentRequestToken) return
+      equipmentErrorMessage.value = getRequestErrorMessage(error, '推荐符文与神器加载失败，请稍后重试')
+    } finally {
+      if (requestToken === equipmentRequestToken) equipmentLoading.value = false
+    }
+  }
+
+  const selectDetailTab = (tab: CharacterDetailTab) => {
+    activeDetailTab.value = tab
+    if (tab === 'equipment') void loadEquipment()
+  }
+
   const loadDetail = async () => {
     if (!characterId.value) {
       errorMessage.value = '缺少魔灵 ID'
@@ -1182,6 +1283,7 @@
       const res = await getCompendiumsCharacter(query)
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
+      if (activeDetailTab.value === 'equipment') await loadEquipment(true)
     } catch (error) {
       errorMessage.value = typeof error === 'string' ? error : '详情加载失败，请稍后重试'
     } finally {
@@ -1198,6 +1300,7 @@
     switching.value = true
     errorMessage.value = ''
     activeGalleryIndex.value = 0
+    resetEquipment()
     characterId.value = form.id
     seedName.value = form.name
     seedAvatar.value = form.avatar
@@ -1214,6 +1317,7 @@
       detail.value = normalizeDetail(res)
       uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
       switching.value = false
+      if (activeDetailTab.value === 'equipment') void loadEquipment()
     } catch (error) {
       if (requestToken !== switchRequestToken) return
       errorMessage.value = typeof error === 'string' ? error : '切换形态失败，请稍后重试'
@@ -1279,20 +1383,21 @@
     rtaInitialLeague.value = context.league
   }
 
-  const buildDetailShare = () =>
+  const detailShare = computed(() =>
     buildSwcDetailShare({
-      characterId: characterId.value,
+      characterId: detail.value.id || characterId.value,
       name: detail.value.name,
       avatar: detailAvatarSrc.value,
       locale: selectedLocale.value,
-      tab: activeDetailTab.value === 'rta' ? 'rta' : undefined,
+      tab: activeDetailTab.value === 'stats' ? undefined : activeDetailTab.value,
       season: activeDetailTab.value === 'rta' ? rtaInitialSeason.value : undefined,
       tier: activeDetailTab.value === 'rta' ? rtaInitialTier.value : undefined,
       league: activeDetailTab.value === 'rta' ? rtaInitialLeague.value : undefined,
-    })
+    }),
+  )
 
   onLoad((options: Record<string, string | undefined>) => {
-    characterId.value = options.characterId || ''
+    characterId.value = options.characterId || options.id || ''
     seedName.value = decodeURIComponent(options.name || '')
     seedAvatar.value = decodeURIComponent(options.avatar || '')
     selectedLocale.value = options.locale || DEFAULT_LOCALE
@@ -1300,7 +1405,7 @@
     rtaInitialSeason.value = Number.isInteger(parsedSeason) && parsedSeason > 0 ? parsedSeason : undefined
     rtaInitialTier.value = options.tier || undefined
     rtaInitialLeague.value = options.league || undefined
-    activeDetailTab.value = options.tab === 'skills' || options.tab === 'rta' ? options.tab : 'stats'
+    activeDetailTab.value = options.tab === 'skills' || options.tab === 'equipment' || options.tab === 'rta' ? options.tab : 'stats'
     detail.value.name = seedName.value
     detail.value.avatar = normalizeUrl(seedAvatar.value)
     uni.setNavigationBarTitle({ title: detail.value.name || '魔灵详情' })
@@ -1309,16 +1414,17 @@
 
   onPullDownRefresh(async () => {
     try {
-      await Promise.all([loadDetail(), activeDetailTab.value === 'rta' ? rtaPanelRef.value?.refresh() : Promise.resolve()])
+      await loadDetail()
+      await Promise.all([activeDetailTab.value === 'rta' ? rtaPanelRef.value?.refresh() : Promise.resolve()])
     } finally {
       uni.stopPullDownRefresh()
     }
   })
 
   // #ifdef MP-WEIXIN
-  onShareAppMessage(() => buildDetailShare().app)
+  onShareAppMessage(() => detailShare.value.app)
 
-  onShareTimeline(() => buildDetailShare().timeline)
+  onShareTimeline(() => detailShare.value.timeline)
   // #endif
 </script>
 
@@ -1781,31 +1887,39 @@
   }
 
   .detail-tabs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    margin: 12rpx 20rpx 0;
-    border-radius: 12rpx;
-    background: var(--theme-surface-2);
-    border: 1rpx solid var(--theme-border);
-    padding: 5rpx;
-    gap: 5rpx;
+    display: flex;
+    align-items: stretch;
+    gap: 8rpx;
+    margin: 14rpx 20rpx 0;
   }
 
   .detail-tab {
+    min-width: 0;
+    height: 68rpx;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 60rpx;
-    border-radius: 9rpx;
+    border: 2rpx solid var(--theme-border);
+    border-radius: 8rpx;
     color: var(--theme-text-secondary);
+    background: var(--theme-surface);
     font-size: 26rpx;
-    font-weight: 700;
+    font-weight: 800;
+    white-space: nowrap;
+    box-sizing: border-box;
+    box-shadow: 0 3rpx 8rpx rgba(40, 52, 76, 0.06);
   }
 
   .detail-tab.active {
     color: #fff;
-    background: #4b9df4;
-    box-shadow: 0 4rpx 12rpx rgba(75, 157, 244, 0.25);
+    border-color: var(--theme-brand);
+    background: var(--theme-brand);
+    box-shadow: 0 5rpx 12rpx rgba(75, 157, 244, 0.28);
+  }
+
+  .detail-tab--pressed {
+    opacity: 0.72;
   }
 
   .stats-panel {
