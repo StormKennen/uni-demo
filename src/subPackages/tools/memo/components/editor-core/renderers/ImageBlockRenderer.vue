@@ -55,8 +55,24 @@
       </swiper-item>
     </swiper>
 
-    <!-- free 布局：垂直堆叠 -->
-    <view v-else class="ibr-free">
+    <!-- 有限布局：单图、横向滑动、一大两小；旧 free 会在读取时归一化为 single -->
+    <scroll-view v-else-if="isHorizontal" class="ibr-horizontal" scroll-x>
+      <view class="ibr-horizontal-track" :style="{ gap: `${gap}rpx` }">
+        <view v-for="(item, idx) in block.children" :key="idx" class="ibr-horizontal-item">
+          <image v-if="item.url && !errorItems.has(idx)" :src="item.url" class="ibr-img" mode="aspectFill" @error="onImgError(idx)" />
+          <view v-else class="ibr-empty" @click.stop="openPickerForItem(idx)"
+            ><text class="ibr-empty-plus">+</text><text>选择图片</text></view
+          >
+          <view class="ibr-item-actions">
+            <view class="ibr-item-btn" @click.stop="openPickerForItem(idx)">↻</view>
+            <view class="ibr-item-btn" @click.stop="$emit('select-item', blockIndex, idx)">设置</view>
+            <view class="ibr-item-btn" @click.stop="removeItem(idx)">×</view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view v-else class="ibr-free" :class="{ 'ibr-feature': isFeature }" :style="{ gap: `${gap}rpx` }">
       <view v-for="(item, idx) in block.children" :key="idx" class="ibr-free-row">
         <image v-if="item.url && !errorItems.has(idx)" :src="item.url" class="ibr-free-img" mode="widthFix" @error="onImgError(idx)" />
         <view v-else-if="item.url && errorItems.has(idx)" class="ibr-error ibr-free-empty" @click.stop="openPickerForItem(idx)">
@@ -142,13 +158,16 @@
 
   const isGrid = computed(() => props.block.layout?.type === 'grid')
   const isCarousel = computed(() => props.block.layout?.type === 'carousel')
+  const isHorizontal = computed(() => props.block.layout?.type === 'horizontal')
+  const isFeature = computed(() => props.block.layout?.type === 'feature')
 
   const columns = computed(() => Math.max(1, props.block.layout?.columns || 2))
   const gap = computed(() => props.block.layout?.gap ?? 12)
 
   const layoutLabel = computed(() => {
     const t = props.block.layout?.type
-    return t === 'grid' ? '网格' : t === 'carousel' ? '轮播' : '自由'
+    const labels: Record<string, string> = { single: '单图', grid: '网格', horizontal: '横向', carousel: '轮播', feature: '一大两小' }
+    return labels[t || 'grid'] || '单图'
   })
 
   const rootStyle = computed(() => {
@@ -293,6 +312,45 @@
 
   .ibr-free-row {
     position: relative;
+  }
+
+  .ibr-horizontal {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .ibr-horizontal-track {
+    display: inline-flex;
+  }
+
+  .ibr-horizontal-item {
+    position: relative;
+    width: 300rpx;
+    height: 240rpx;
+    overflow: hidden;
+    border-radius: 8rpx;
+    background: var(--theme-surface-2);
+    flex-shrink: 0;
+  }
+
+  .ibr-feature {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: repeat(2, 180rpx);
+  }
+
+  .ibr-feature .ibr-free-row:first-child {
+    grid-row: 1 / span 2;
+  }
+
+  .ibr-feature .ibr-free-row:nth-child(n + 4) {
+    display: none;
+  }
+
+  .ibr-feature .ibr-free-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .ibr-free-empty {

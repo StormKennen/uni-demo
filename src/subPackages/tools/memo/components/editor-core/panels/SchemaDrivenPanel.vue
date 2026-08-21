@@ -1,13 +1,13 @@
 <!--
   SchemaDrivenPanel —— Phase 1 通用控制面板。
-  
+
   职责：
     - 接收 BlockSchema + 当前 block 数据
     - 进入面板时基于 block 深拷贝出 draft（草稿）
     - 用户在面板里改 draft，原 block 不动
     - 点"保存" → emit('save', draft)，由父组件决定如何写回
     - 点"取消" → 丢弃 draft
-  
+
   这是迁移期的"草稿协议"实现，让 schema 驱动的面板与现有
   useDraftPanel 协议保持一致的 UX（防误改 + 可撤销）。
 -->
@@ -20,26 +20,10 @@
       </view>
 
       <scroll-view class="sdp-body" scroll-y>
-        <!-- block 模式：渲染 style + business 两组 -->
-        <template v-if="mode === 'block'">
-          <view v-if="(schema.styleSchema || []).length" class="sdp-section">
-            <text class="sdp-section-title">样式</text>
-            <SchemaForm :schema="schema.styleSchema!" :model-value="draft" />
-          </view>
-
-          <view v-if="(schema.businessSchema || []).length" class="sdp-section">
-            <text class="sdp-section-title">业务</text>
-            <SchemaForm :schema="schema.businessSchema!" :model-value="draft" />
-          </view>
-        </template>
-
-        <!-- item 模式：渲染 itemSchema 单组 -->
-        <template v-else-if="mode === 'item'">
-          <view v-if="(schema.itemSchema || []).length" class="sdp-section">
-            <text class="sdp-section-title">条目配置</text>
-            <SchemaForm :schema="schema.itemSchema!" :model-value="draft" />
-          </view>
-        </template>
+        <view v-for="section in groupedSections" :key="section.key" class="sdp-section">
+          <text class="sdp-section-title">{{ section.label }}</text>
+          <SchemaForm :schema="section.fields" :model-value="draft" />
+        </view>
 
         <!-- 既无 style 也无 business 时友好提示 -->
         <view v-if="isEmpty" class="sdp-empty">
@@ -58,6 +42,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import type { BlockSchema } from '../../../schemas'
+  import type { SchemaField, SchemaFieldGroup } from '../schemas/schema-field'
   import SchemaForm from '../forms/SchemaForm.vue'
 
   interface Props {
@@ -126,6 +111,28 @@
     const a = props.schema.styleSchema?.length || 0
     const b = props.schema.businessSchema?.length || 0
     return a + b === 0
+  })
+
+  const groupOrder: Array<{ key: SchemaFieldGroup; label: string }> = [
+    { key: 'content', label: '内容' },
+    { key: 'layout', label: '布局' },
+    { key: 'style', label: '样式' },
+    { key: 'interaction', label: '交互' },
+    { key: 'advanced', label: '高级' },
+  ]
+
+  const groupedSections = computed(() => {
+    if (!props.schema) return []
+    const fields: SchemaField[] =
+      props.mode === 'item'
+        ? props.schema.itemSchema || []
+        : [
+            ...(props.schema.businessSchema || []).map(field => ({ ...field, group: field.group || ('content' as const) })),
+            ...(props.schema.styleSchema || []).map(field => ({ ...field, group: field.group || ('style' as const) })),
+          ]
+    return groupOrder
+      .map(group => ({ ...group, fields: fields.filter(field => (field.group || 'content') === group.key) }))
+      .filter(group => group.fields.length > 0)
   })
 
   const onCancel = () => {

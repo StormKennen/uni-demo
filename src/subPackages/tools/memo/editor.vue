@@ -58,7 +58,7 @@
             <text class="empty-text">点击右下角 "+" 添加内容块</text>
           </view>
 
-          <view v-for="(block, idx) in doc" :key="idx" class="block-row" :class="{ 'is-locked': block.locked }">
+          <view v-for="(block, idx) in doc" :key="block.anchor || idx" class="block-row" :class="{ 'is-locked': block.locked }">
             <!-- 锚点徽章 -->
             <view v-if="block.anchor" class="anchor-badge" @click="copyAnchor(block.anchor)">
               <text class="anchor-tag">#{{ block.anchor }}</text>
@@ -67,27 +67,14 @@
               :block="block"
               :block-index="idx"
               :selected="selectedIndex === idx"
-              @select="selectedIndex = idx"
+              @select="selectBlock"
               @select-item="onSelectItem"
-              @add-item="onAddItem" />
-            <!-- 块操作按钮 -->
-            <view v-if="settings.showBlockActions" class="block-row-actions">
-              <view v-if="idx > 0 && !block.locked" class="row-btn" @click="moveBlock(idx, -1)">↑</view>
-              <view v-if="idx < doc.length - 1 && !block.locked" class="row-btn" @click="moveBlock(idx, 1)">↓</view>
-              <picker
-                v-if="!block.locked"
-                mode="selector"
-                :range="getMovePositions(idx)"
-                range-key="label"
-                @change="onMoveBlockPick(idx, Number($event.detail.value))">
-                <view class="row-btn" @click.stop>≡</view>
-              </picker>
-              <view class="row-btn" :class="{ 'row-lock-active': block.locked }" @click="toggleBlockLock(idx)">{{
-                block.locked ? '🔒' : '🔓'
-              }}</view>
-              <view class="row-btn" @click="openBlockPanel(idx)">⚙️</view>
-              <view v-if="(block as any).type === 'route'" class="row-btn row-json" @click="openJsonImport(idx)">JSON</view>
-              <view v-if="!block.locked" class="row-btn row-del" @click="removeBlock(idx)">×</view>
+              @add-item="onAddItem"
+              @configure-block="openBlockPanel"
+              @update:block="doc.splice(idx, 1, $event)" />
+            <view v-if="block.locked" class="block-lock-shield" @click.stop="selectBlock(idx)"></view>
+            <view v-if="settings.showBlockActions && selectedIndex === idx" class="block-row-actions">
+              <view class="row-btn row-more" @click.stop="openBlockActions(idx)">⋯</view>
             </view>
           </view>
         </view>
@@ -112,6 +99,31 @@
           <view class="more-menu-item" :class="{ disabled: !canRedo }" @click="handleMoreRedo">重做</view>
           <view class="more-menu-item" @click="handleMoreSettings">设置</view>
           <view class="more-menu-item" @click="handleMorePoster">海报</view>
+        </view>
+      </view>
+
+      <view v-if="blockActionsVisible && activeBlock" class="block-actions-overlay" @click="closeBlockActions">
+        <view class="block-actions-panel" @click.stop>
+          <view class="block-actions-title">
+            <text>{{ activeBlockLabel }}</text>
+            <text v-if="activeBlock.anchor" class="block-actions-anchor">#{{ activeBlock.anchor }}</text>
+          </view>
+          <view class="block-action-item" @click="runBlockAction('settings')">设置</view>
+          <view class="block-action-item" @click="runBlockAction('duplicate')">复制</view>
+          <view class="block-action-item" :class="{ disabled: !canMoveActiveBlockUp }" @click="runBlockAction('up')">上移</view>
+          <view class="block-action-item" :class="{ disabled: !canMoveActiveBlockDown }" @click="runBlockAction('down')">下移</view>
+          <picker
+            v-if="!activeBlock.locked"
+            mode="selector"
+            :range="getMovePositions(activeBlockIndex)"
+            range-key="label"
+            @change="onActiveBlockMovePick(Number($event.detail.value))">
+            <view class="block-action-item">移动到</view>
+          </picker>
+          <view class="block-action-item" @click="runBlockAction('lock')">{{ activeBlock.locked ? '解锁' : '锁定' }}</view>
+          <view v-if="activeBlock.type === 'route'" class="block-action-item" @click="runBlockAction('json')">导入路径 JSON</view>
+          <view class="block-action-item danger" :class="{ disabled: activeBlock.locked }" @click="runBlockAction('delete')">删除</view>
+          <view class="block-action-cancel" @click="closeBlockActions">取消</view>
         </view>
       </view>
 
@@ -382,6 +394,8 @@
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'
   import { getAllBlockSchemas, getBlockSchema } from './schemas'
+  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
+  import { uploadWithOssSignature } from '@/hooks/use-oss-upload'
 
   // ===== 备忘录元信息 =====
   const memoId = ref<string | null>(null)
@@ -413,32 +427,7 @@
   const settingsVisible = ref(false)
   const activeTab = ref<'appearance' | 'layout' | 'typography'>('appearance')
 
-  const settings = reactive({
-    padding: { top: 32, bottom: 32, left: 32, right: 32 },
-    border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
-    appearance: {
-      backgroundColor: '#ffffff',
-      backgroundImage: '',
-      backgroundBlur: 0,
-      backgroundOpacity: 1,
-      enableBlob: false,
-      blobBlur: 80,
-      enableCyberGrid: false,
-    },
-    typography: {
-      fontSize: 'standard' as 'standard' | 'medium' | 'large',
-      lineHeight: 1.6,
-    },
-    layout: {
-      contentWidth: 'full' as 'full' | 'narrow',
-    },
-    features: {
-      showWatermark: false,
-    },
-    showBlockActions: true,
-    showEditButtons: true,
-    showBackToTop: true,
-  })
+  const settings = reactive(createDefaultMemoSettings())
 
   type SettingsShape = typeof settings
   const settingsDraft = reactive<SettingsShape>(JSON.parse(JSON.stringify(settings)))
@@ -453,7 +442,7 @@
     settingsDraft.features = JSON.parse(JSON.stringify(settings.features))
     settingsDraft.showBlockActions = settings.showBlockActions
     settingsDraft.showEditButtons = settings.showEditButtons
-    settingsDraft.showBackToTop = (settings as any).showBackToTop
+    settingsDraft.showBackToTop = settings.showBackToTop
     activeTab.value = 'appearance'
     settingsVisible.value = true
   }
@@ -471,30 +460,12 @@
     Object.assign(settings.features, settingsDraft.features)
     settings.showBlockActions = settingsDraft.showBlockActions
     settings.showEditButtons = settingsDraft.showEditButtons
-    ;(settings as any).showBackToTop = (settingsDraft as any).showBackToTop
+    settings.showBackToTop = settingsDraft.showBackToTop
     settingsVisible.value = false
   }
 
   // ===== 设置重置 =====
-  const SETTINGS_DEFAULTS = {
-    padding: { top: 32, bottom: 32, left: 32, right: 32 },
-    border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
-    appearance: {
-      backgroundColor: '#ffffff',
-      backgroundImage: '',
-      backgroundBlur: 0,
-      backgroundOpacity: 1,
-      enableBlob: false,
-      blobBlur: 80,
-      enableCyberGrid: false,
-    },
-    typography: { fontSize: 'standard' as const, lineHeight: 1.6 },
-    layout: { contentWidth: 'full' as const },
-    features: { showWatermark: false },
-    showBlockActions: true,
-    showEditButtons: true,
-    showBackToTop: true,
-  }
+  const SETTINGS_DEFAULTS = createDefaultMemoSettings()
 
   const resetSettings = () => {
     const d = JSON.parse(JSON.stringify(SETTINGS_DEFAULTS))
@@ -506,7 +477,7 @@
     settingsDraft.features = d.features
     settingsDraft.showBlockActions = d.showBlockActions
     settingsDraft.showEditButtons = d.showEditButtons
-    ;(settingsDraft as any).showBackToTop = d.showBackToTop
+    settingsDraft.showBackToTop = d.showBackToTop
     uni.showToast({ title: '已重置为默认设置', icon: 'none' })
   }
 
@@ -593,6 +564,7 @@
     const block = doc[idx] as any
     if (!block) return
     block.locked = !block.locked
+    pushUndoSnapshot()
     uni.showToast({ title: block.locked ? '块已锁定' : '块已解锁', icon: 'none' })
   }
 
@@ -625,16 +597,7 @@
     memoName.value = snap.memoName
     tags.value.splice(0, tags.value.length, ...snap.tags)
     doc.splice(0, doc.length, ...snap.content)
-    const s = snap.settings || {}
-    if (s.padding) Object.assign(settings.padding, s.padding)
-    if (s.border) Object.assign(settings.border, s.border)
-    if (s.appearance) Object.assign(settings.appearance, s.appearance)
-    if (s.typography) Object.assign(settings.typography, s.typography)
-    if (s.layout) Object.assign(settings.layout, s.layout)
-    if (s.features) Object.assign(settings.features, s.features)
-    if ('showBlockActions' in s) settings.showBlockActions = s.showBlockActions
-    if ('showEditButtons' in s) settings.showEditButtons = s.showEditButtons
-    if ('showBackToTop' in s) (settings as any).showBackToTop = s.showBackToTop
+    applySettings(snap.settings)
     setTimeout(() => {
       isRestoring = false
     }, 0)
@@ -718,18 +681,8 @@
     if (!draft) return
     if (typeof draft.memoName === 'string') memoName.value = draft.memoName
     if (Array.isArray(draft.tags)) tags.value.splice(0, tags.value.length, ...draft.tags)
-    if (Array.isArray(draft.content)) doc.splice(0, doc.length, ...draft.content)
-    if (draft.settings) {
-      const s = draft.settings
-      if (s.padding) Object.assign(settings.padding, s.padding)
-      if (s.border) Object.assign(settings.border, s.border)
-      if (s.appearance) Object.assign(settings.appearance, s.appearance)
-      if (s.typography) Object.assign(settings.typography, s.typography)
-      if (s.layout) Object.assign(settings.layout, s.layout)
-      if (s.features) Object.assign(settings.features, s.features)
-      if ('showBlockActions' in s) settings.showBlockActions = s.showBlockActions
-      if ('showBackToTop' in s) (settings as any).showBackToTop = s.showBackToTop
-    }
+    if (draft.content) doc.splice(0, doc.length, ...normalizeMemoContent(draft.content))
+    if (draft.settings) applySettings(draft.settings)
   }
 
   const checkAndPromptDraftRestore = () => {
@@ -781,10 +734,19 @@
       count: 1,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
-      success: res => {
+      success: async res => {
         const tempPath = res.tempFilePaths[0]
-        settingsDraft.appearance.backgroundImage = tempPath
-        uni.showToast({ title: '已设置背景图（仅预览）', icon: 'none' })
+        if (!tempPath) return
+        try {
+          uni.showLoading({ title: '上传中...', mask: true })
+          settingsDraft.appearance.backgroundImage = await uploadWithOssSignature(tempPath, { dirName: 'common/memo-backgrounds/' })
+          uni.showToast({ title: '背景图已上传', icon: 'success' })
+        } catch (error) {
+          console.error('[editor-v2] 背景图上传失败:', error)
+          uni.showToast({ title: '背景图上传失败', icon: 'none' })
+        } finally {
+          uni.hideLoading()
+        }
       },
     })
   }
@@ -828,6 +790,8 @@
     const block = schema.createDefault() as any
     block.anchor = generateNextAnchor()
     doc.push(block)
+    selectedIndex.value = doc.length - 1
+    pushUndoSnapshot()
   }
 
   const addBlockAndClose = (type: string) => {
@@ -841,6 +805,7 @@
       return
     }
     doc.splice(idx, 1)
+    pushUndoSnapshot()
     if (selectedIndex.value === idx) selectedIndex.value = -1
   }
 
@@ -856,6 +821,7 @@
     doc.splice(idx, 1)
     doc.splice(target, 0, tmp)
     if (selectedIndex.value === idx) selectedIndex.value = target
+    pushUndoSnapshot()
   }
 
   const getMovePositions = (currentIdx: number) => {
@@ -870,10 +836,73 @@
       uni.showToast({ title: '锁定块无法移动', icon: 'none' })
       return
     }
+    if ((doc[toIdx] as any)?.locked) {
+      uni.showToast({ title: '不能移动到锁定块位置', icon: 'none' })
+      return
+    }
     const tmp = doc[fromIdx]
     doc.splice(fromIdx, 1)
     doc.splice(toIdx, 0, tmp)
     if (selectedIndex.value === fromIdx) selectedIndex.value = toIdx
+    pushUndoSnapshot()
+  }
+
+  const selectBlock = (idx: number) => {
+    selectedIndex.value = idx
+  }
+
+  const blockActionsVisible = ref(false)
+  const activeBlockIndex = ref(-1)
+  const activeBlock = computed(() => (activeBlockIndex.value >= 0 ? doc[activeBlockIndex.value] : null))
+  const activeBlockLabel = computed(() => getBlockSchema(activeBlock.value?.type || '')?.label || '内容块')
+  const canMoveActiveBlockUp = computed(() =>
+    Boolean(activeBlock.value && !activeBlock.value.locked && activeBlockIndex.value > 0 && !doc[activeBlockIndex.value - 1]?.locked),
+  )
+  const canMoveActiveBlockDown = computed(() =>
+    Boolean(
+      activeBlock.value && !activeBlock.value.locked && activeBlockIndex.value < doc.length - 1 && !doc[activeBlockIndex.value + 1]?.locked,
+    ),
+  )
+
+  const openBlockActions = (idx: number) => {
+    activeBlockIndex.value = idx
+    selectedIndex.value = idx
+    blockActionsVisible.value = true
+  }
+
+  const closeBlockActions = () => {
+    blockActionsVisible.value = false
+  }
+
+  const duplicateBlock = (idx: number) => {
+    const source = doc[idx]
+    if (!source) return
+    const copy = JSON.parse(JSON.stringify(source))
+    copy.anchor = generateNextAnchor()
+    copy.locked = false
+    doc.splice(idx + 1, 0, copy)
+    selectedIndex.value = idx + 1
+    pushUndoSnapshot()
+    uni.showToast({ title: '已复制内容块', icon: 'success' })
+  }
+
+  const runBlockAction = (action: 'settings' | 'duplicate' | 'up' | 'down' | 'lock' | 'json' | 'delete') => {
+    const idx = activeBlockIndex.value
+    const block = doc[idx]
+    if (!block) return
+    if (action === 'settings') openBlockPanel(idx)
+    if (action === 'duplicate') duplicateBlock(idx)
+    if (action === 'up' && canMoveActiveBlockUp.value) moveBlock(idx, -1)
+    if (action === 'down' && canMoveActiveBlockDown.value) moveBlock(idx, 1)
+    if (action === 'lock') toggleBlockLock(idx)
+    if (action === 'json') openJsonImport(idx)
+    if (action === 'delete' && !block.locked) removeBlock(idx)
+    closeBlockActions()
+  }
+
+  const onActiveBlockMovePick = (toIdx: number) => {
+    onMoveBlockPick(activeBlockIndex.value, toIdx)
+    closeBlockActions()
   }
 
   // ===== 控制面板 =====
@@ -889,6 +918,10 @@
   })
 
   const openBlockPanel = (idx: number) => {
+    if (doc[idx]?.locked) {
+      uni.showToast({ title: '请先解锁内容块', icon: 'none' })
+      return
+    }
     editingIndex.value = idx
     selectedIndex.value = idx
     panelMode.value = 'block'
@@ -896,6 +929,10 @@
   }
 
   const onSelectItem = (blockIndex: number, itemIndex: number) => {
+    if (doc[blockIndex]?.locked) {
+      uni.showToast({ title: '请先解锁内容块', icon: 'none' })
+      return
+    }
     editingIndex.value = blockIndex
     selectedIndex.value = blockIndex
     editingItemIndex.value = itemIndex
@@ -906,6 +943,10 @@
   const onAddItem = (blockIndex: number) => {
     const block = doc[blockIndex]
     if (!block) return
+    if (block.locked) {
+      uni.showToast({ title: '请先解锁内容块', icon: 'none' })
+      return
+    }
     const schema = getBlockSchema(block.type)
     if (!schema || !schema.createDefaultItem) {
       uni.showToast({ title: '该 Block 不支持添加 item', icon: 'none' })
@@ -914,6 +955,8 @@
     const arrKey = schema.itemArrayKey || 'children'
     const arr: any[] = block[arrKey] || []
     arr.push(schema.createDefaultItem())
+    block[arrKey] = arr
+    pushUndoSnapshot()
   }
 
   const onPanelSave = (payload: any) => {
@@ -927,6 +970,24 @@
     } else {
       doc.splice(editingIndex.value, 1, payload)
     }
+    pushUndoSnapshot()
+  }
+
+  const applySettings = (source: unknown) => {
+    const normalized = normalizeMemoSettings(source)
+    settings.editorVersion = normalized.editorVersion
+    Object.assign(settings.padding, normalized.padding)
+    Object.assign(settings.border, normalized.border)
+    Object.assign(settings.appearance, normalized.appearance)
+    Object.assign(settings.romanticEffects, normalized.romanticEffects)
+    Object.assign(settings.typography, normalized.typography)
+    Object.assign(settings.layout, normalized.layout)
+    Object.assign(settings.features, normalized.features)
+    Object.assign(settings.globalAttachment, normalized.globalAttachment)
+    settings.showBlockActions = normalized.showBlockActions
+    settings.showEditButtons = normalized.showEditButtons
+    settings.showBackToTop = normalized.showBackToTop
+    settings.hideNavActions = normalized.hideNavActions
   }
 
   // ===== API 对接 =====
@@ -964,9 +1025,8 @@
         memoName.value = memo.name || ''
         tags.value = memo.tags || []
 
-        if (memo.content && Array.isArray(memo.content)) {
-          doc.splice(0, doc.length, ...memo.content)
-        }
+        doc.splice(0, doc.length, ...normalizeMemoContent(memo.content))
+        applySettings(memo.settings)
         console.log('[editor-v2] 加载成功:', memo.id)
       }
     } catch (error: any) {
@@ -978,7 +1038,7 @@
     }
   }
 
-  const saveData = async () => {
+  const saveData = async (): Promise<boolean> => {
     if (!memoName.value.trim()) {
       memoName.value = generateDefaultMemoName()
     }
@@ -990,6 +1050,7 @@
         name: memoName.value,
         content: JSON.parse(JSON.stringify(doc)),
         tags: tags.value,
+        settings: JSON.parse(JSON.stringify(normalizeMemoSettings(settings))),
       }
 
       const isCreate = !memoId.value
@@ -1009,16 +1070,18 @@
       uni.showToast({ title: isCreate ? '创建成功' : '更新成功', icon: 'success' })
       clearLocalDraft()
       uni.$emit('memo-list-refresh')
+      return true
     } catch (error: any) {
       uni.hideLoading()
       console.error('[editor-v2] 保存失败:', error)
       uni.showToast({ title: error?.message || '保存失败', icon: 'none' })
+      return false
     }
   }
 
   const saveAndGoToDetail = async () => {
-    await saveData()
-    if (memoId.value) {
+    const saved = await saveData()
+    if (saved && memoId.value) {
       uni.navigateTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}` })
     }
   }
@@ -1166,6 +1229,7 @@
     right: 16rpx;
     display: flex;
     gap: 8rpx;
+    z-index: 4;
   }
 
   .row-btn {
@@ -1178,6 +1242,17 @@
     justify-content: center;
     font-size: 26rpx;
     box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  }
+
+  .row-more {
+    font-size: 34rpx;
+    font-weight: 700;
+  }
+
+  .block-lock-shield {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
   }
 
   .row-del {
@@ -1347,6 +1422,73 @@
 
   .more-menu-item.disabled {
     color: var(--theme-text-tertiary);
+    background: var(--theme-surface-2);
+  }
+
+  .block-actions-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 24rpx;
+    padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+    background: rgba(0, 0, 0, 0.4);
+    box-sizing: border-box;
+  }
+
+  .block-actions-panel {
+    width: 100%;
+    max-height: 78vh;
+    overflow-y: auto;
+    border-radius: 16rpx;
+    background: var(--theme-elevated);
+    box-shadow: 0 -8rpx 32rpx var(--theme-shadow-md);
+  }
+
+  .block-actions-title {
+    min-height: 88rpx;
+    padding: 0 28rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--theme-text);
+    font-size: 28rpx;
+    font-weight: 600;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
+
+  .block-actions-anchor {
+    color: var(--theme-text-tertiary);
+    font-family: monospace;
+    font-size: 22rpx;
+    font-weight: 400;
+  }
+
+  .block-action-item,
+  .block-action-cancel {
+    min-height: 88rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--theme-text);
+    font-size: 28rpx;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
+
+  .block-action-item.disabled {
+    color: var(--theme-text-tertiary);
+    background: var(--theme-surface-2);
+  }
+
+  .block-action-item.danger {
+    color: #d64545;
+  }
+
+  .block-action-cancel {
+    margin-top: 12rpx;
+    color: var(--theme-text-secondary);
+    border-bottom: none;
     background: var(--theme-surface-2);
   }
 

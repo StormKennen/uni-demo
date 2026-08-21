@@ -113,57 +113,7 @@
                       }}</text>
                     </view>
                   </view>
-                  <!-- 图片块 -->
-                  <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
-                    <!-- grid 布局 -->
-                    <view
-                      v-if="!block.layout || block.layout.type === 'grid'"
-                      class="image-grid"
-                      :style="{
-                        display: 'grid',
-                        gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
-                        gap: `${block.layout?.gap || 12}rpx`,
-                      }">
-                      <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
-                        <view
-                          class="image-preview"
-                          v-if="item.url || (item.value && item.value.url)"
-                          @click.stop="previewImage(item.url || item.value.url)">
-                          <view class="image-container">
-                            <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
-                          </view>
-                        </view>
-                      </view>
-                    </view>
-
-                    <!-- carousel 布局 -->
-                    <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
-                      <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
-                        <view class="swiper-item-content" @click.stop="previewImage(item.url || item.value.url)">
-                          <image
-                            v-if="item.url || (item.value && item.value.url)"
-                            :src="item.url || item.value.url"
-                            class="swiper-image"
-                            mode="aspectFill" />
-                        </view>
-                      </swiper-item>
-                    </swiper>
-
-                    <!-- free 布局：垂直堆叠 -->
-                    <view v-else class="image-free">
-                      <view
-                        v-for="(item, itemIndex) in block.children"
-                        :key="itemIndex"
-                        class="image-free-item"
-                        @click.stop="previewImage(item.url || item.value.url)">
-                        <image
-                          v-if="item.url || (item.value && item.value.url)"
-                          :src="item.url || item.value.url"
-                          class="free-image"
-                          mode="widthFix" />
-                      </view>
-                    </view>
-                  </view>
+                  <ImageContentRenderer v-if="block.type === 'image'" :block="block" @action="handleContentAction" />
                 </view>
               </view>
             </view>
@@ -225,57 +175,7 @@
                 </view>
               </view>
 
-              <!-- 图片块 - 与editor.vue结构一致 -->
-              <view v-if="block.type === 'image'" class="image-block" :style="getBlockStyle(block.style)">
-                <!-- grid 布局 -->
-                <view
-                  v-if="!block.layout || block.layout.type === 'grid'"
-                  class="image-grid"
-                  :style="{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${block.layout?.columns || 2}, 1fr)`,
-                    gap: `${block.layout?.gap || 12}rpx`,
-                  }">
-                  <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="image-item">
-                    <view
-                      class="image-preview"
-                      v-if="item.url || (item.value && item.value.url)"
-                      @click="previewImage(item.url || item.value.url)">
-                      <view class="image-container">
-                        <image :src="item.url || item.value.url" :style="getImageStyle(item.style)" :mode="getImageMode(item.style)" />
-                      </view>
-                    </view>
-                  </view>
-                </view>
-
-                <!-- carousel 布局 -->
-                <swiper v-else-if="block.layout.type === 'carousel'" class="image-swiper" indicator-dots circular :autoplay="false">
-                  <swiper-item v-for="(item, itemIndex) in block.children" :key="itemIndex">
-                    <view class="swiper-item-content" @click="previewImage(item.url || item.value.url)">
-                      <image
-                        v-if="item.url || (item.value && item.value.url)"
-                        :src="item.url || item.value.url"
-                        class="swiper-image"
-                        mode="aspectFill" />
-                    </view>
-                  </swiper-item>
-                </swiper>
-
-                <!-- free 布局：垂直堆叠 -->
-                <view v-else class="image-free">
-                  <view
-                    v-for="(item, itemIndex) in block.children"
-                    :key="itemIndex"
-                    class="image-free-item"
-                    @click="previewImage(item.url || item.value.url)">
-                    <image
-                      v-if="item.url || (item.value && item.value.url)"
-                      :src="item.url || item.value.url"
-                      class="free-image"
-                      mode="widthFix" />
-                  </view>
-                </view>
-              </view>
+              <ImageContentRenderer v-if="block.type === 'image'" :block="block" @action="handleContentAction" />
 
               <!-- 路径块 - 垂直时间轴 -->
               <view v-if="block.type === 'route'" class="route-container" :style="getBlockStyle(block.style)">
@@ -337,7 +237,7 @@
                   @click="openAttachment(item)">
                   <view class="capsule-icon" :class="{ 'tencent-icon': isTencentDocUrl(item.url) }">📄</view>
                   <view class="capsule-content">
-                    <text class="capsule-title">{{ item.title || '未命名附件' }}</text>
+                    <text class="capsule-title">{{ item.name || item.title || '未命名附件' }}</text>
                     <text class="capsule-hint">{{ isTencentDocUrl(item.url) ? '点击打开腾讯文档' : '点击查看文档' }}</text>
                   </view>
                   <view class="capsule-arrow">›</view>
@@ -349,7 +249,7 @@
                 <view v-for="(item, itemIndex) in block.children" :key="itemIndex" class="media-item">
                   <text v-if="item.title" class="media-title">{{ item.title }}</text>
                   <video
-                    v-if="item.url && (item.url.includes('.mp4') || item.url.includes('.mov') || item.url.includes('.avi'))"
+                    v-if="item.url && item.mediaType === 'video'"
                     :src="item.url"
                     class="media-video"
                     :controls="item.controls !== false"
@@ -358,15 +258,25 @@
                     :show-center-play-btn="true"
                     :show-play-btn="true"></video>
                   <view
-                    v-else-if="item.url && (item.url.includes('.mp3') || item.url.includes('.m4a') || item.url.includes('.wav'))"
+                    v-else-if="item.url && item.mediaType === 'audio'"
                     class="media-audio-wrapper"
                     :class="{ 'has-controls': item.controls !== false }">
-                    <view class="audio-icon">🎵</view>
-                    <text class="audio-name">{{ item.title || '音频文件' }}</text>
-                    <text v-if="item.loop" class="audio-loop-tag">循环</text>
+                    <AudioContentPlayer
+                      :src="item.url"
+                      :title="item.title || '音频文件'"
+                      :controls="item.controls !== false"
+                      :autoplay="item.autoplay === true"
+                      :loop="item.loop === true" />
                   </view>
                 </view>
               </view>
+
+              <StructuredBlockRenderer
+                v-if="isStructuredBlock(block)"
+                :block="block"
+                :block-index="Number(blockIndex)"
+                mode="readonly"
+                @action="handleContentAction" />
             </template>
           </view>
         </view>
@@ -476,6 +386,13 @@
   import { marked } from 'marked'
   import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { buildMemoDetailPath } from './navigation'
+  import StructuredBlockRenderer from './components/editor-core/renderers/StructuredBlockRenderer.vue'
+  import ImageContentRenderer from './components/editor-core/renderers/ImageContentRenderer.vue'
+  import AudioContentPlayer from './components/editor-core/renderers/AudioContentPlayer.vue'
+  import { executeContentAction } from './content-action'
+  import type { ContentAction, StructuredMemoBlock } from './content-model'
+  import type { NormalizedMemoBlock } from './normalizers'
+  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
   import { getToken } from '@/utils/storage'
   import { openMapNavigation, openExternalLink } from '@/utils/map'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
@@ -521,41 +438,7 @@
   const glassModalContent = ref('')
   const glassModalAnimation = ref('zoom-in')
 
-  const settings = reactive({
-    padding: { top: 32, bottom: 32, left: 32, right: 32 },
-    border: { top: 0, bottom: 0, left: 0, right: 0, color: '#eeeeee' },
-    appearance: {
-      backgroundColor: '#ffffff',
-      backgroundImage: '',
-      backgroundBlur: 0,
-      backgroundOpacity: 1,
-      enableBlob: false,
-      blobBlur: 80,
-      enableCyberGrid: false,
-    },
-    romanticEffects: {
-      popupAnimation: 'zoom-in', // 'zoom-in' | 'slide-up'
-      enableGlassBlur: true,
-    },
-    typography: {
-      fontSize: 'standard' as 'standard' | 'medium' | 'large',
-      lineHeight: 1.6,
-    },
-    layout: {
-      contentWidth: 'full' as 'full' | 'narrow',
-    },
-    features: {
-      showWatermark: false,
-      enableComments: false,
-    },
-    showBackToTop: true,
-    hideNavActions: false,
-    globalAttachment: {
-      enabled: false,
-      url: '',
-      title: '查看原始文档',
-    },
-  })
+  const settings = reactive(createDefaultMemoSettings())
 
   // 智能主题识别
   const currentSmartTheme = computed(() => {
@@ -891,28 +774,29 @@
           .select(`#${anchorId}`)
           .boundingClientRect(data => {
             console.log('Anchor element data:', data)
-            if (data) {
+            const rect = Array.isArray(data) ? data[0] : data
+            if (rect) {
               let targetScrollTop = 0
 
               // 平台特定的滚动位置计算
               // #ifdef H5
               // H5环境：需要考虑已滚动的偏移量
               const currentScrollTop = window?.pageYOffset || document.documentElement.scrollTop || 0
-              targetScrollTop = data.top + currentScrollTop - 80 // H5减去60px顶栏间距
-              console.log('H5 scrolling - current:', currentScrollTop, 'element top:', data.top, 'target:', targetScrollTop)
+              targetScrollTop = rect.top + currentScrollTop - 80 // H5减去60px顶栏间距
+              console.log('H5 scrolling - current:', currentScrollTop, 'element top:', rect.top, 'target:', targetScrollTop)
               // #endif
 
               // #ifdef MP-WEIXIN
               // 微信小程序环境：直接使用元素的top值
-              targetScrollTop = data.top - 70 // 微信小程序减去50px顶栏间距
-              console.log('WeChat scrolling - element top:', data.top, 'target:', targetScrollTop)
+              targetScrollTop = rect.top - 70 // 微信小程序减去50px顶栏间距
+              console.log('WeChat scrolling - element top:', rect.top, 'target:', targetScrollTop)
               // #endif
 
               // #ifndef H5
               // #ifndef MP-WEIXIN
               // 其他平台（如其他小程序）
-              targetScrollTop = data.top - 70
-              console.log('Other platform scrolling - element top:', data.top, 'target:', targetScrollTop)
+              targetScrollTop = rect.top - 70
+              console.log('Other platform scrolling - element top:', rect.top, 'target:', targetScrollTop)
               // #endif
               // #endif
 
@@ -969,17 +853,11 @@
   // 解析内容 - content 已经是数组，无需再次解析
   const parsedContent = computed(() => {
     if (!memoData.value || !memoData.value.content) return []
-    // 如果是字符串则解析，否则直接返回
-    if (typeof memoData.value.content === 'string') {
-      try {
-        return JSON.parse(memoData.value.content)
-      } catch (e) {
-        console.error('解析内容失败:', e)
-        return []
-      }
-    }
-    return memoData.value.content
+    return normalizeMemoContent(memoData.value.content)
   })
+
+  const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock =>
+    block.type === 'list' || block.type === 'table' || block.type === 'callout' || block.type === 'linkCard'
 
   // 页面加载
   onLoad((options: any) => {
@@ -1025,44 +903,17 @@
           title: res?.name ?? '备忘录详情',
         })
 
-        // 加载设置
-        if (res.settings) {
-          if (res.settings.padding) {
-            settings.padding.top = res.settings.padding.top ?? 32
-            settings.padding.bottom = res.settings.padding.bottom ?? 32
-            settings.padding.left = res.settings.padding.left ?? 32
-            settings.padding.right = res.settings.padding.right ?? 32
-          }
-          if (res.settings.border) {
-            settings.border.top = res.settings.border.top ?? 0
-            settings.border.bottom = res.settings.border.bottom ?? 0
-            settings.border.left = res.settings.border.left ?? 0
-            settings.border.right = res.settings.border.right ?? 0
-            settings.border.color = res.settings.border.color || '#eeeeee'
-          }
-          if (res.settings.appearance) {
-            settings.appearance.backgroundColor = res.settings.appearance.backgroundColor || '#ffffff'
-            settings.appearance.backgroundImage = res.settings.appearance.backgroundImage || ''
-            settings.appearance.backgroundBlur = res.settings.appearance.backgroundBlur ?? 0
-            settings.appearance.backgroundOpacity = res.settings.appearance.backgroundOpacity ?? 1
-            settings.appearance.enableBlob = res.settings.appearance.enableBlob === true
-            settings.appearance.blobBlur = res.settings.appearance.blobBlur ?? 80
-            settings.appearance.enableCyberGrid = res.settings.appearance.enableCyberGrid === true
-          }
-          if (res.settings.typography) {
-            settings.typography.fontSize = res.settings.typography.fontSize || 'standard'
-            settings.typography.lineHeight = res.settings.typography.lineHeight ?? 1.6
-          }
-          if (res.settings.layout) {
-            settings.layout.contentWidth = res.settings.layout.contentWidth || 'full'
-          }
-          if (res.settings.features) {
-            settings.features.showWatermark = res.settings.features.showWatermark === true
-            settings.features.enableComments = res.settings.features.enableComments === true
-          }
-          settings.showBackToTop = res.settings.showBackToTop !== false
-          settings.hideNavActions = res.settings.hideNavActions === true
-        }
+        const normalizedSettings = normalizeMemoSettings(res.settings)
+        Object.assign(settings.padding, normalizedSettings.padding)
+        Object.assign(settings.border, normalizedSettings.border)
+        Object.assign(settings.appearance, normalizedSettings.appearance)
+        Object.assign(settings.romanticEffects, normalizedSettings.romanticEffects)
+        Object.assign(settings.typography, normalizedSettings.typography)
+        Object.assign(settings.layout, normalizedSettings.layout)
+        Object.assign(settings.features, normalizedSettings.features)
+        Object.assign(settings.globalAttachment, normalizedSettings.globalAttachment)
+        settings.showBackToTop = normalizedSettings.showBackToTop
+        settings.hideNavActions = normalizedSettings.hideNavActions
       } else {
         error.value = '备忘录不存在'
       }
@@ -1708,6 +1559,11 @@
       return
     }
 
+    if (item.action?.type && item.action.type !== 'none') {
+      handleContentAction(item.action)
+      return
+    }
+
     // 2. 处理其他链接跳转
     if (item.linkInfo && (item.linkInfo.url || item.linkInfo.linkType)) {
       handleLinkClick(item.linkInfo)
@@ -1783,7 +1639,8 @@
       if (block.type === 'image') {
         for (const item of block.children || []) {
           // 兼容新旧数据结构：item.url（新）或 item.value.url（旧）
-          const url = item.url || item.value?.url
+          const legacyUrl = typeof item.value === 'object' ? item.value?.url : item.value
+          const url = item.url || legacyUrl
           if (url) {
             urls.push(url)
           }
@@ -1800,6 +1657,14 @@
     uni.previewImage({
       urls,
       current: current >= 0 ? current : 0,
+    })
+  }
+
+  const handleContentAction = (action: ContentAction) => {
+    executeContentAction(action, {
+      previewImage,
+      scrollToAnchor,
+      showPopup: content => openGlassModal(content),
     })
   }
 
@@ -1916,10 +1781,10 @@
 
       // 任务四：增加超时控制到 60 秒
       const apiTimeout = 60000 // 60秒超时
-      let generateRes
+      let generateRes: Awaited<ReturnType<typeof postPainterGenerateInfo>> | undefined
 
       try {
-        const timeoutPromise = new Promise((_, reject) => {
+        const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('接口调用超时(60秒)')), apiTimeout)
         })
 
@@ -3257,23 +3122,10 @@
       }
 
       .media-audio-wrapper {
-        display: flex;
-        align-items: center;
         padding: 32rpx;
         background: rgba(118, 75, 162, 0.08);
         border: 2rpx solid rgba(118, 75, 162, 0.2);
         border-radius: 12rpx;
-
-        .audio-icon {
-          font-size: 48rpx;
-          margin-right: 20rpx;
-        }
-
-        .audio-name {
-          font-size: 28rpx;
-          color: var(--theme-text);
-          font-weight: 500;
-        }
       }
     }
   }

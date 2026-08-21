@@ -9,7 +9,7 @@
 
       <!-- 视频 -->
       <video
-        v-if="isVideo(item.url)"
+        v-if="item.mediaType === 'video'"
         :src="item.url"
         class="mbr-video"
         :autoplay="!!item.autoplay"
@@ -17,15 +17,20 @@
         :loop="!!item.loop" />
 
       <!-- 音频 -->
-      <view v-else-if="isAudio(item.url)" class="mbr-audio">
-        <view class="mbr-audio-icon">🎵</view>
-        <view class="mbr-audio-info">
-          <text class="mbr-audio-name">{{ item.title || '音频文件' }}</text>
+      <view v-else-if="item.mediaType === 'audio'" class="mbr-audio">
+        <view class="mbr-audio-meta">
+          <view class="mbr-audio-icon">🎵</view>
           <view class="mbr-audio-flags">
             <text v-if="item.autoplay" class="mbr-flag">自动播放</text>
             <text v-if="item.loop" class="mbr-flag">循环</text>
           </view>
         </view>
+        <AudioContentPlayer
+          :src="item.url"
+          :title="item.title || '音频文件'"
+          :controls="item.controls !== false"
+          :autoplay="!!item.autoplay"
+          :loop="!!item.loop" />
       </view>
 
       <!-- 有 URL 但未识别格式：显示链接 -->
@@ -56,7 +61,11 @@
     </view>
 
     <!-- 资源选择弹窗 -->
-    <ResourcePicker v-model:visible="pickerVisible" accept="video" title="选择媒体文件" @confirm="onResourceConfirm" />
+    <ResourcePicker
+      v-model:visible="pickerVisible"
+      :accept="pickerAccept"
+      :title="pickerAccept === 'audio' ? '选择音频文件' : '选择视频文件'"
+      @confirm="onResourceConfirm" />
   </view>
 </template>
 
@@ -64,6 +73,7 @@
   import { computed, ref } from 'vue'
   import type { MediaBlockData } from '../../../schemas'
   import ResourcePicker from '../components/ResourcePicker.vue'
+  import AudioContentPlayer from './AudioContentPlayer.vue'
 
   interface Props {
     block: MediaBlockData
@@ -84,6 +94,10 @@
   // ===== ResourcePicker 集成 =====
   const pickerVisible = ref(false)
   const pickerTargetIdx = ref(-1)
+  const pickerAccept = computed<'video' | 'audio'>(() => {
+    if (pickerTargetIdx.value < 0) return 'video'
+    return props.block.children[pickerTargetIdx.value]?.mediaType || 'video'
+  })
 
   const openPickerForAdd = () => {
     pickerTargetIdx.value = -1
@@ -104,6 +118,7 @@
       props.block.children.push({
         title: payload.name || '新媒体',
         url: payload.url,
+        mediaType: 'video',
         autoplay: false,
         controls: true,
         loop: false,
@@ -116,9 +131,6 @@
     if (props.block.style?.backgroundColor) r.backgroundColor = props.block.style.backgroundColor
     return r
   })
-
-  const isVideo = (url?: string) => !!url && /\.(mp4|mov|webm|m3u8)(\?|$)/i.test(url)
-  const isAudio = (url?: string) => !!url && /\.(mp3|wav|ogg|aac|m4a)(\?|$)/i.test(url)
 </script>
 
 <style scoped>
@@ -160,26 +172,24 @@
   }
   .mbr-audio {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 16rpx;
     padding: 16rpx;
     background: var(--theme-surface);
     border-radius: 8rpx;
   }
+  .mbr-audio-meta {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
   .mbr-audio-icon {
     font-size: 40rpx;
-  }
-  .mbr-audio-info {
-    flex: 1;
-  }
-  .mbr-audio-name {
-    font-size: 26rpx;
-    color: var(--theme-text);
   }
   .mbr-audio-flags {
     display: flex;
     gap: 8rpx;
-    margin-top: 4rpx;
+    margin-left: auto;
   }
   .mbr-flag {
     font-size: 18rpx;

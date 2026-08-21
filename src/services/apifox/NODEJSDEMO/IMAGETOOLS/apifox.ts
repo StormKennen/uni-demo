@@ -3,6 +3,8 @@
 import http from '@/services/http'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
+  postImageToolsComplianceBody,
+  postImageToolsComplianceRes,
   postImageToolsStitchBody,
   postImageToolsStitchRes,
 } from './interface'
@@ -20,4 +22,17 @@ export const postImageToolsStitch = async (
 ): Promise<Expand<postImageToolsStitchRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(`/image-tools/stitch`, data, _config)
+}
+
+/**
+ * @description ImageTools/图片上传合规处理
+ * @url POST /image-tools/compliance
+ * @host https://app.apifox.com/link/project/7048425/apis/api-504615541
+ */
+export const postImageToolsCompliance = async (
+  data: Expand<postImageToolsComplianceBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postImageToolsComplianceRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/image-tools/compliance`, data, _config)
 }

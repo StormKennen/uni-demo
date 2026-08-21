@@ -9,15 +9,9 @@
  * 注意：Phase 1 仅实现 input/switch/slider/radio/select 五种渲染器，
  *       textarea/color/unit 已在类型中保留位，后续扩展时直接新增 Field 组件即可。
  */
-export type SchemaFieldType =
-  | 'input'
-  | 'textarea'
-  | 'switch'
-  | 'slider'
-  | 'radio'
-  | 'select'
-  | 'color'
-  | 'unit'
+export type SchemaFieldType = 'input' | 'textarea' | 'switch' | 'slider' | 'radio' | 'select' | 'color' | 'unit'
+
+export type SchemaFieldGroup = 'content' | 'layout' | 'style' | 'interaction' | 'advanced'
 
 export interface SchemaFieldOption {
   /** 显示文案 */
@@ -38,6 +32,9 @@ export interface SchemaField {
 
   /** 字段渲染类型 */
   type: SchemaFieldType
+
+  /** 面向用户的配置分组，由 SchemaDrivenPanel 统一排序展示。 */
+  group?: SchemaFieldGroup
 
   /** 默认值（当 draft 中该路径未定义时使用） */
   default?: any
