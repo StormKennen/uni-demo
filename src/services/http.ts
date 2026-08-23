@@ -1,10 +1,10 @@
 // request.js
 
 // lodash 合并函数，也可以自己实现
-import { getToken, getWxUserInfo, clearLoginData } from '@/utils/storage'
-import { refreshAccessToken } from '@/utils/autoLogin'
 import { merge } from 'lodash-es'
 import type { Options, ParticalUniAppRequestOptions } from './interface'
+import { getToken, getWxUserInfo, clearLoginData } from '@/utils/storage'
+import { refreshAccessToken } from '@/utils/autoLogin'
 import { getAppTokenFromQuery } from '@/utilsH5/env'
 import { getAppOsByPlatform, getYhIdByPlatform } from '@/utils/env'
 import { getCookie } from '@/utilsH5/cookie'
@@ -29,6 +29,17 @@ interface InternalRequestConfig extends ParticalUniAppRequestOptions {
   _isGuestMigration?: boolean
   _skipGuestSession?: boolean
   _usedGuestToken?: boolean
+}
+
+export interface UploadFileOptions {
+  filePath: string
+  name: string
+  formData?: Record<string, string>
+}
+
+interface InternalUploadConfig extends InternalRequestConfig {
+  _uploadGuestRetryAfterRefresh?: number
+  _uploadRetryAfterRefresh?: number
 }
 
 enum RES_CODE {
@@ -78,6 +89,7 @@ export class Request {
   private maxRetryAfterRefresh = 1
   // 防止重复弹出登录弹窗
   private isShowingLoginDialog = false
+
   constructor(options = {}) {
     // 合并用户自定义配置
     this.config = merge({}, DEFAULT_CONFIG, options)
@@ -325,7 +337,8 @@ export class Request {
 
   // 响应拦截，这里只是做了示例，可以根据自己情况进行扩展
   async responseInterceptor(res: any, requestConfig?: InternalRequestConfig & { url?: string; data?: any; method?: Methods }) {
-    const { data: _data, statusCode } = res
+    const { data: rawData, statusCode } = res
+    const _data = typeof rawData === 'string' ? this.parseUploadResponse(rawData) : rawData
     if (import.meta.env.VITE_APP_ENV === 'development') {
       console.log('[http] response', { url: requestConfig?.url, statusCode })
     }
@@ -422,7 +435,15 @@ export class Request {
       _usedGuestToken: _config._usedGuestToken,
       _guestToken: _config._guestToken,
     }
-    const { _guestToken, _isAuthRequest, _isGuestMigration, _skipGuestSession, _usedGuestToken, _guestRetryAfterRefresh, ...uniRequestConfig } = _config
+    const {
+      _guestToken,
+      _isAuthRequest,
+      _isGuestMigration,
+      _skipGuestSession,
+      _usedGuestToken,
+      _guestRetryAfterRefresh,
+      ...uniRequestConfig
+    } = _config
 
     // Promise 封装
     return new Promise((resolve, reject) => {
@@ -448,6 +469,112 @@ export class Request {
         complete: () => {
           // 关闭Loading
           // uni.hideLoading();
+        },
+      })
+    })
+  }
+
+  private parseUploadResponse(data: unknown): unknown {
+    if (typeof data !== 'string') return data
+    try {
+      return JSON.parse(data || '{}')
+    } catch {
+      return { code: -1, message: data || '服务端返回格式异常' }
+    }
+  }
+
+  private async retryUploadAfterTokenRefresh<T>(retryCount: number, retry: () => Promise<T>): Promise<T> {
+    if (retryCount >= this.maxRetryAfterRefresh) {
+      await this.showLoginDialog()
+      return Promise.reject({ code: 401, message: '登录已过期，请重新登录' })
+    }
+
+    try {
+      if (!this.refreshInFlight) {
+        this.refreshInFlight = refreshAccessToken().finally(() => {
+          this.refreshInFlight = null
+        })
+      }
+      const refreshResult = await this.refreshInFlight
+      if (refreshResult?.success) return retry()
+
+      await this.showLoginDialog()
+      return Promise.reject({ code: 401, message: '登录已过期' })
+    } catch (error) {
+      await this.showLoginDialog()
+      return Promise.reject({ code: 401, message: '登录已过期', error })
+    }
+  }
+
+  /**
+   * multipart 文件上传。身份请求头、Guest Session 与 401 重试语义与普通请求保持一致。
+   */
+  async upload<T = unknown>(url: string, options: UploadFileOptions, config: InternalUploadConfig = {}): Promise<T> {
+    const guestToken = await this.prepareGuestToken(url, config)
+    const intercepted = this.requestInterceptor(url, {}, config, 'POST', guestToken)
+    const requestSnapshot: InternalRequestConfig & { url: string; data: object; method: Methods } = {
+      ...config,
+      url,
+      data: {},
+      method: 'POST',
+      _isAuthRequest: intercepted._isAuthRequest,
+      _isGuestMigration: intercepted._isGuestMigration,
+      _usedGuestToken: intercepted._usedGuestToken,
+      _guestToken: intercepted._guestToken,
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      uni.uploadFile({
+        filePath: options.filePath,
+        name: options.name,
+        formData: options.formData || {},
+        header: intercepted.header,
+        timeout: intercepted.timeout,
+        url: intercepted.url,
+        success: result => {
+          const response = { ...result, data: this.parseUploadResponse(result.data) }
+
+          if (
+            result.statusCode === RES_CODE.Unauthorized &&
+            intercepted._usedGuestToken &&
+            !intercepted._isAuthRequest &&
+            !intercepted._isGuestMigration
+          ) {
+            const retryCount = config._uploadGuestRetryAfterRefresh || 0
+            if (retryCount >= 1) {
+              clearGuestToken()
+              reject({ code: 401, message: '游客会话无效或已过期' })
+              return
+            }
+            refreshGuestSession(code => this.createGuestSession(code), intercepted._guestToken)
+              .then(() =>
+                this.upload<T>(url, options, {
+                  ...config,
+                  _uploadGuestRetryAfterRefresh: retryCount + 1,
+                }),
+              )
+              .then(resolve)
+              .catch(reject)
+            return
+          }
+
+          if (result.statusCode === RES_CODE.Unauthorized && !intercepted._isAuthRequest && !intercepted._isGuestMigration) {
+            const retryCount = config._uploadRetryAfterRefresh || 0
+            this.retryUploadAfterTokenRefresh(retryCount, () =>
+              this.upload<T>(url, options, {
+                ...config,
+                _uploadRetryAfterRefresh: retryCount + 1,
+              }),
+            )
+              .then(resolve)
+              .catch(reject)
+            return
+          }
+
+          this.responseInterceptor(response, requestSnapshot).then(value => resolve(value as T)).catch(reject)
+        },
+        fail: error => {
+          reject({ code: -1, message: error.errMsg || '文件上传失败', error })
         },
       })
     })

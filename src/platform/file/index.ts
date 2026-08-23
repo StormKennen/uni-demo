@@ -3,6 +3,10 @@ import { wechatFilePicker } from './wechat'
 import type { FilePicker } from './types'
 
 export type { FilePicker, PickFileOptions, PickImageOptions, SelectedFile } from './types'
+export { downloadFileDirect } from './download'
+export type { DirectDownloadOptions } from './download'
+export { uploadFileDirect } from './upload'
+export type { DirectUploadOptions, DirectUploadResult, DirectUploadTask } from './upload'
 
 let platformFilePicker: FilePicker = webFilePicker
 

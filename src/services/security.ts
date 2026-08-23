@@ -1,3 +1,4 @@
+import http from '@/services/http'
 import { getToken } from '@/utils/storage'
 import { getAppTokenFromQuery } from '@/utilsH5/env'
 
@@ -5,18 +6,20 @@ declare const uni: any
 
 type SecuritySuggestion = 'pass' | 'review' | 'block'
 
+interface RawSecurityResult {
+  errCode?: number
+  errMsg?: string
+  message?: string
+  requestId?: string
+  result?: SecuritySuggestion
+  safe?: boolean
+  suggestion?: SecuritySuggestion
+  traceId?: string
+}
+
 interface RawSecurityResponse {
   code?: number
-  data?: {
-    errCode?: number
-    errMsg?: string
-    message?: string
-    requestId?: string
-    result?: SecuritySuggestion
-    safe?: boolean
-    suggestion?: SecuritySuggestion
-    traceId?: string
-  }
+  data?: RawSecurityResult
   message?: string
   msg?: string
 }
@@ -47,9 +50,11 @@ function buildSecurityHeaders(): Record<string, string> {
   return authorization ? { Authorization: authorization } : {}
 }
 
-function normalizeMediaSecurityResponse(payload: RawSecurityResponse | RawSecurityResponse['data']): MediaSecurityCheckResult {
-  const response = (payload as RawSecurityResponse)?.data || payload || {}
-  const suggestion = response.suggestion || response.result || (response.safe === false ? 'block' : 'pass')
+function normalizeMediaSecurityResponse(payload: RawSecurityResponse | RawSecurityResult): MediaSecurityCheckResult {
+  const envelope = payload as RawSecurityResponse
+  const response: RawSecurityResult = envelope.data || (payload as RawSecurityResult)
+  const suggestion = response.suggestion || response.result || (response.safe === true ? 'pass' : response.safe === false ? 'block' : undefined)
+  if (!suggestion) throw new Error(response.message || response.errMsg || envelope.message || envelope.msg || '内容安全检查结果无效')
   const safe = typeof response.safe === 'boolean' ? response.safe : suggestion === 'pass'
 
   return {
@@ -62,42 +67,16 @@ function normalizeMediaSecurityResponse(payload: RawSecurityResponse | RawSecuri
 }
 
 export function checkMediaSecurity(filePath: string, scene = 'image_compress'): Promise<MediaSecurityCheckResult> {
-  const baseURL = String(import.meta.env.VITE_APP_BASE_URL || '').replace(/\/$/, '')
-  const url = `${baseURL}/security/media-check`
-
-  return new Promise((resolve, reject) => {
-    uni.uploadFile({
+  return http
+    .upload<RawSecurityResponse | RawSecurityResult>('/security/media-check', {
       filePath,
       formData: {
         mediaType: 'image',
         scene,
       },
-      header: buildSecurityHeaders(),
       name: 'media',
-      success: (res: any) => {
-        try {
-          const payload = typeof res.data === 'string' ? JSON.parse(res.data || '{}') : res.data
-          if (res.statusCode !== 200) {
-            reject(new Error(payload?.message || payload?.msg || '内容安全校验失败'))
-            return
-          }
-
-          if (payload?.code && payload.code !== 200) {
-            reject(new Error(payload?.message || payload?.msg || '内容安全校验失败'))
-            return
-          }
-
-          resolve(normalizeMediaSecurityResponse(payload))
-        } catch (error) {
-          reject(error)
-        }
-      },
-      fail: (error: any) => {
-        reject(error)
-      },
-      url,
     })
-  })
+    .then(normalizeMediaSecurityResponse)
 }
 
 export function checkTextSecurity(content: string, scene = 'default'): Promise<TextSecurityCheckResult> {

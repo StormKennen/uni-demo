@@ -144,6 +144,20 @@
           }
         },
         {
+          "path": "image-compliance/index",
+          "style": {
+            "navigationBarTitleText": "图片达标助手",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/index",
+          "style": {
+            "navigationBarTitleText": "跨设备快传",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-privacy/index",
           "style": {
             "navigationBarTitleText": "图片隐私清理",

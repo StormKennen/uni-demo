@@ -19,6 +19,8 @@
     shareImageUrl?: string
     /** 自定义朋友圈分享 query */
     shareTimelineQuery?: string
+    /** 自定义朋友圈分享标题；不传时复用分享标题 */
+    shareTimelineTitle?: string
     /** 是否显示自定义导航栏 */
     showNav?: boolean
     /** 导航栏渐变背景（设置后自动应用 light class） */
@@ -79,7 +81,7 @@
   })
 
   onShareTimeline(() => {
-    const shareTitle = props.shareTitle || `${props.title} · 凉白开工具箱`
+    const shareTitle = props.shareTimelineTitle || props.shareTitle || `${props.title} · 凉白开工具箱`
     return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareImageUrl }
   })
   // #endif

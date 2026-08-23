@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+- 2026-08-21 [tools/image-compliance,http,security] 新增“图片达标助手”：提供常用/自定义/最近使用规格、10MB 原图预检、逐项合规分析、必要时启用的固定比例 normalized crop、游客/JWT multipart 合规处理、H5 Blob 与微信临时文件结果适配、保持原图尺寸在内的前端二次达标校验、跨端保存及相同规则处理下一张；公共 `http.upload` 同步复用 Guest Session、身份请求头和 401 恢复机制，媒体安全检查接入同一身份通道并区分明确拦截与检查异常，避免将接口故障误报为违规（Codex）
+
+- 2026-08-22 [tools/quick-transfer] 新增跨设备快传 V1：微信 Guest/User 与 H5 登录用户可发送文本、链接、单文件，H5/微信均可匿名领取；接入 Quick Transfer Apifox 生成接口、文件平台层 OSS 直传/下载、六位提取码、shareToken 二次确认、动态过期倒计时、发送状态轮询、取消及 Complete 重试，并保留凭证仅在页面内存（Codex）
+
+- 2026-08-22 [tools/quick-transfer,http] 修复微信小程序直出响应被公共 `code=200` 解包规则误判导致的“接口不可用”，改为 Quick Transfer Apifox 调用显式声明直出响应格式，普通请求继续遵循公共响应解包规范；补充安全的开发态请求摘要和分层错误文案；统一普通工具分享与 Sender Ready Transfer 分享，Receiver、终态和无效凭证均降级为工具分享，朋友圈固定为工具分享，显式分享按钮与右上角分享共用同一规则（Codex）
+
+- 2026-08-23 [tools/quick-transfer] 后端已统一 Quick Transfer 为公共响应包装；前端移除直出响应特判、统一请求底层扩展和专用请求日志，五个 Apifox 接口恢复遵循公共 `{ code: 200, data }` 响应规范（Codex）
+
 - 2026-08-20 [tools/memo] 完善备忘录内容设计器 V2：建立旧内容与 settings 归一化、统一 ContentAction、结构化 Block 与复用 Renderer，并治理 Block 操作、图片布局/点击、多媒体类型、附件职责和 V2 持久化（Codex）
 
 - 2026-08-18 [tools/memo,auth/http,auth/login] 接入备忘录游客访问闭环：游客列表走公开关系接口，详情支持 shareToken，Owner 分享先获取凭证并用于 H5/微信分享；Guest Session 支持登录过渡与 Guest Migration 双身份请求，登录/自动登录后幂等补偿迁移并在失败时保留游客会话，Guest/Shared/Admin 全部只读且登录回流后列表自动切换（Codex）

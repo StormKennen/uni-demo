@@ -3,7 +3,18 @@ import type { FilePicker } from './types'
 
 interface FileSelectionResult {
   tempFilePaths?: string[]
-  tempFiles?: RawSelectedFile[]
+  tempFiles?: Array<RawSelectedFile | File>
+}
+
+const normalizeWebFile = (file: RawSelectedFile | File): RawSelectedFile => {
+  const candidate = file as RawSelectedFile & File
+  return {
+    name: candidate.name,
+    path: candidate.path,
+    size: candidate.size,
+    type: candidate.type,
+    raw: file,
+  }
 }
 
 export const webFilePicker: FilePicker = {
@@ -25,7 +36,7 @@ export const webFilePicker: FilePicker = {
       type: type ?? 'all',
     })) as FileSelectionResult
 
-    const rawFiles = result.tempFiles || (result.tempFilePaths || []).map(path => ({ path }))
+    const rawFiles = result.tempFiles ? result.tempFiles.map(normalizeWebFile) : (result.tempFilePaths || []).map(path => ({ path }))
     return normalizeFiles(rawFiles, 'file')
   },
 }

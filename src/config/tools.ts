@@ -121,6 +121,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/oss-upload/index',
     workspace: 'image',
   },
+  'image-compliance': {
+    name: '图片达标',
+    desc: '按尺寸、格式和文件大小一键处理',
+    icon: 'checkbox-filled',
+    gradient: 'linear-gradient(135deg, #16845b 0%, #4a86e8 100%)',
+    path: '/subPackages/tools/image-compliance/index',
+    workspace: 'image',
+    isNew: true,
+  },
   'image-stitch': {
     name: '图片拼接',
     desc: '多图合成长图',
@@ -289,6 +298,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     path: '/subPackages/tools/markdown/index',
     workspace: 'text',
+  },
+  'quick-transfer': {
+    name: '跨设备快传',
+    desc: '文本、链接、文件跨设备传递',
+    icon: 'paperclip',
+    gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/quick-transfer/index',
+    workspace: 'text',
+    isNew: true,
   },
   'magnet-link': {
     name: '磁力链接',
