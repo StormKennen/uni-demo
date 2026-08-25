@@ -7,6 +7,16 @@
 
 ## Unreleased
 
+- 2026-08-25 [tools/quick-transfer,reference] 将快船前端从 V1 单类型发送器重构为 V2 固定内容包：支持留言、多个链接、多个文件和业务引用；接入 share inspect、逐文件上传/Complete/Policy/Access、多文件队列、Claim Token 内存会话与 Reference Registry，并更新 Sender/Receiver 页面流程（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页微信好友与朋友圈分享使用顶部魔灵召唤主视觉作为分享卡片封面（Codex）
+
+- 2026-08-25 [tools/quick-transfer,file] 收口快船 V1 稳定性：规范微信文件 MIME 与空文件校验，补齐上传失败/Complete 重试和放弃恢复、兼容多层错误码与 content 返回结构，修复 H5 未登录 Gate、Timer 清理及微信分享按钮（Codex）
+
+- 2026-08-25 [tools/quick-transfer] 将用户侧“跨设备快传”产品化为“快船”：统一送船/收船文案与分享标题，收口发送结果态，增加“船来了→打开快船”领取流程，移除文件自动下载并细分收船错误提示（Codex）
+
+- 2026-08-25 [navigation/safe-back] 将无上一页且无业务 `backFallback` 时的全局兜底从工具大全调整为首页，并将最终 `relaunch` 恢复函数改为 `relaunchHome`；保留已有业务父级返回关系（Codex）
+
 - 2026-08-25 [tools/image-compress,security] 修复图片压缩小程序选图时大于 1MB 的正常图片因微信安全接口超限被误判为“含违规信息”：先生成不超过 1MB 的临时送检副本，原图仍用于后续压缩；同时兼容旧版 `pass/reason` 结果及 HTTP 200 未包装响应，检查异常改为提示检查暂不可用并继续阻断处理（Codex）
 
 - 2026-08-21 [tools/image-compliance,http,security] 新增“图片达标助手”：提供常用/自定义/最近使用规格、10MB 原图预检、逐项合规分析、必要时启用的固定比例 normalized crop、游客/JWT multipart 合规处理、H5 Blob 与微信临时文件结果适配、保持原图尺寸在内的前端二次达标校验、跨端保存及相同规则处理下一张；公共 `http.upload` 同步复用 Guest Session、身份请求头和 401 恢复机制，媒体安全检查接入同一身份通道并区分明确拦截与检查异常，避免将接口故障误报为违规（Codex）

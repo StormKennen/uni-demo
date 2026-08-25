@@ -1,24 +1,38 @@
 import type {
   QuickTransferCreatePayload,
   QuickTransferCreateResult,
-  QuickTransferDownloadDescriptor,
-  QuickTransferFileMetadata,
+  QuickTransferFileAccessResult,
+  QuickTransferInspectResult,
   QuickTransferResolvedResult,
   QuickTransferStatusResult,
   QuickTransferStatus,
+  QuickTransferSummary,
   QuickTransferUploadDescriptor,
 } from './types'
 import { QUICK_TRANSFER_DEFAULT_MAX_CLAIMS } from './constants'
 import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims } from './helpers'
+import { normalizeQuickTransferResolvedResult } from './response'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import {
   deleteQuickTransfersTransferId,
   getQuickTransfersTransferId,
   postQuickTransfers,
+  postQuickTransfersFilesAccess,
+  postQuickTransfersFilesComplete,
+  postQuickTransfersFilesUploadPolicy,
   postQuickTransfersResolve,
-  postQuickTransfersTransferIdComplete,
+  postQuickTransfersShareInspect,
 } from '@/services/apifox/NODEJSDEMO/QUICKTRANSFER/apifox'
-import type { postQuickTransfersBody, postQuickTransfersResolveBody } from '@/services/apifox/NODEJSDEMO/QUICKTRANSFER/interface'
+import type {
+  postFilesFileIdAccessBody,
+  postFilesFileIdAccessPathQuery,
+  postFilesFileIdCompletePathQuery,
+  postFilesFileIdUploadPolicyPathQuery,
+  postQuickTransfersBody,
+  postQuickTransfersResolveBody,
+  postQuickTransfersShareInspectBody,
+} from '@/services/apifox/NODEJSDEMO/QUICKTRANSFER/interface'
+
 const receiveRequestConfig = { _skipGuestSession: true } as unknown as ParticalUniAppRequestOptions
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
@@ -38,47 +52,16 @@ const asRuntimeValue = (value: unknown): unknown => {
 const unwrapData = (value: unknown): Record<string, unknown> => {
   const parsed = asRuntimeValue(value)
   const record = asRecord(parsed)
-  if (!record) throw new Error('快传接口返回格式异常')
-  if (typeof record.transferId === 'string' || typeof record.status === 'string' || typeof record.code === 'string') return record
-  return asRecord(record.data) || record
+  if (!record) throw new Error('快船接口返回格式异常')
+  const data = asRecord(record.data)
+  if (data && (record.code === undefined || record.status === undefined) && Object.keys(data).length > 0) return data
+  return record
 }
 
 const requiredString = (record: Record<string, unknown>, key: string): string => {
   const value = record[key]
-  if (typeof value !== 'string' || !value) throw new Error(`快传接口缺少 ${key}`)
+  if (typeof value !== 'string' || !value) throw new Error(`快船接口缺少 ${key}`)
   return value
-}
-
-const normalizeFile = (value: unknown): QuickTransferFileMetadata | undefined => {
-  const record = asRecord(value)
-  if (!record) return undefined
-  const name = typeof record.name === 'string' ? record.name : ''
-  const size = typeof record.size === 'number' ? record.size : Number(record.size)
-  const mimeType = typeof record.mimeType === 'string' ? record.mimeType : ''
-  if (!name || !Number.isFinite(size) || !mimeType) return undefined
-  return { name, size, mimeType }
-}
-
-const normalizeUpload = (value: unknown): QuickTransferUploadDescriptor | undefined => {
-  const record = asRecord(value)
-  if (!record) return undefined
-  const fieldsRecord = asRecord(record.fields)
-  const url = typeof record.url === 'string' ? record.url : ''
-  const expiresAt = typeof record.expiresAt === 'string' ? record.expiresAt : ''
-  const fileField = typeof record.fileField === 'string' ? record.fileField : ''
-  const successStatus = Number(record.successStatus)
-  if (!fieldsRecord || !url || !expiresAt || !fileField || !Number.isFinite(successStatus)) return undefined
-
-  const fields: Record<string, string> = {}
-  Object.entries(fieldsRecord).forEach(([key, fieldValue]) => {
-    fields[key] = typeof fieldValue === 'string' ? fieldValue : String(fieldValue ?? '')
-  })
-  return { method: 'POST', url, fileField, fields, successStatus, expiresAt }
-}
-
-const normalizeType = (value: unknown): 'text' | 'url' | 'file' => {
-  if (value === 'text' || value === 'url' || value === 'file') return value
-  throw new Error('快传接口返回了未知内容类型')
 }
 
 const normalizeStatusValue = (value: unknown): QuickTransferStatus => {
@@ -93,12 +76,66 @@ const normalizeStatusValue = (value: unknown): QuickTransferStatus => {
   ) {
     return value
   }
-  throw new Error('快传接口返回了未知状态')
+  throw new Error('快船接口返回了未知状态')
+}
+
+const normalizeUpload = (value: unknown, fallbackClientFileId = ''): QuickTransferUploadDescriptor | undefined => {
+  const record = asRecord(value)
+  if (!record) return undefined
+  const policy = asRecord(record.uploadPolicy) || asRecord(record.policy) || asRecord(record.upload) || record
+  const fieldsRecord = asRecord(policy.fields)
+  const clientFileId = typeof record.clientFileId === 'string' ? record.clientFileId : fallbackClientFileId
+  const fileId =
+    typeof record.fileId === 'string'
+      ? record.fileId
+      : typeof record.id === 'string'
+        ? record.id
+        : typeof policy.fileId === 'string'
+          ? policy.fileId
+          : ''
+  const url = typeof policy.url === 'string' ? policy.url : ''
+  const expiresAt = typeof policy.expiresAt === 'string' ? policy.expiresAt : ''
+  const fileField = typeof policy.fileField === 'string' ? policy.fileField : typeof policy.name === 'string' ? policy.name : 'file'
+  const successStatus = Number(policy.successStatus ?? policy.success_status ?? 201)
+  if (!fieldsRecord || !clientFileId || !fileId || !url || !expiresAt || !Number.isFinite(successStatus)) return undefined
+
+  const fields: Record<string, string> = {}
+  Object.entries(fieldsRecord).forEach(([key, fieldValue]) => {
+    fields[key] = typeof fieldValue === 'string' ? fieldValue : String(fieldValue ?? '')
+  })
+  return { method: 'POST', clientFileId, fileId, url, fileField, fields, successStatus, expiresAt }
+}
+
+const normalizeStatusResponse = (
+  response: unknown,
+  fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+  fallbackTransferId = '',
+  fallbackExpiresAt = '',
+): QuickTransferStatusResult => {
+  const record = unwrapData(response)
+  return {
+    claimCount: normalizeQuickTransferClaimCount(record.claimCount),
+    transferId:
+      typeof record.transferId === 'string' && record.transferId
+        ? record.transferId
+        : fallbackTransferId || requiredString(record, 'transferId'),
+    status: normalizeStatusValue(record.status),
+    maxClaims: normalizeQuickTransferMaxClaims(record.maxClaims, fallbackMaxClaims),
+    expiresAt:
+      typeof record.expiresAt === 'string' && record.expiresAt
+        ? record.expiresAt
+        : fallbackExpiresAt || requiredString(record, 'expiresAt'),
+    consumedAt: typeof record.consumedAt === 'string' ? record.consumedAt : undefined,
+    cancelledAt: typeof record.cancelledAt === 'string' ? record.cancelledAt : undefined,
+  }
 }
 
 export const createQuickTransfer = async (payload: QuickTransferCreatePayload): Promise<QuickTransferCreateResult> => {
   const response = await postQuickTransfers(payload as unknown as postQuickTransfersBody)
   const record = unwrapData(response)
+  const uploads = Array.isArray(record.uploads)
+    ? record.uploads.map(value => normalizeUpload(value)).filter((value): value is QuickTransferUploadDescriptor => Boolean(value))
+    : []
   return {
     code: requiredString(record, 'code'),
     claimCount: normalizeQuickTransferClaimCount(record.claimCount),
@@ -107,17 +144,30 @@ export const createQuickTransfer = async (payload: QuickTransferCreatePayload): 
     shareToken: requiredString(record, 'shareToken'),
     status: record.status === 'uploading' ? 'uploading' : 'ready',
     transferId: requiredString(record, 'transferId'),
-    type: normalizeType(record.type),
-    upload: normalizeUpload(record.upload),
+    uploads,
   }
 }
 
-export const completeQuickTransfer = async (
+export const completeQuickTransferFile = async (
   transferId: string,
-  fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+  fileId: string,
+  fallbackExpiresAt = '',
 ): Promise<QuickTransferStatusResult> => {
-  const response = await postQuickTransfersTransferIdComplete(transferId)
-  return normalizeStatusResponse(response, fallbackMaxClaims)
+  const pathParams = { transferId, fileId } as postFilesFileIdCompletePathQuery
+  const response = await postQuickTransfersFilesComplete(pathParams)
+  return normalizeStatusResponse(response, QUICK_TRANSFER_DEFAULT_MAX_CLAIMS, transferId, fallbackExpiresAt)
+}
+
+export const refreshQuickTransferUploadPolicy = async (
+  transferId: string,
+  fileId: string,
+  clientFileId: string,
+): Promise<QuickTransferUploadDescriptor> => {
+  const pathParams = { transferId, fileId } as postFilesFileIdUploadPolicyPathQuery
+  const response = await postQuickTransfersFilesUploadPolicy(pathParams)
+  const upload = normalizeUpload({ ...(unwrapData(response) as Record<string, unknown>), fileId }, clientFileId)
+  if (!upload) throw new Error('快船接口返回的上传凭证不可用')
+  return upload
 }
 
 export const getQuickTransferStatus = async (
@@ -136,43 +186,43 @@ export const cancelQuickTransfer = async (
   return normalizeStatusResponse(response, fallbackMaxClaims)
 }
 
-const normalizeStatusResponse = (response: unknown, fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): QuickTransferStatusResult => {
+export const inspectQuickTransferShare = async (shareToken: string): Promise<QuickTransferInspectResult> => {
+  const response = await postQuickTransfersShareInspect({ shareToken } as postQuickTransfersShareInspectBody, receiveRequestConfig)
   const record = unwrapData(response)
-  const status = normalizeStatusValue(record.status)
-  return {
-    claimCount: normalizeQuickTransferClaimCount(record.claimCount),
-    transferId: requiredString(record, 'transferId'),
-    type: normalizeType(record.type),
-    status,
-    maxClaims: normalizeQuickTransferMaxClaims(record.maxClaims, fallbackMaxClaims),
-    expiresAt: requiredString(record, 'expiresAt'),
-    file: normalizeFile(record.file),
-    consumedAt: typeof record.consumedAt === 'string' ? record.consumedAt : undefined,
-    cancelledAt: typeof record.cancelledAt === 'string' ? record.cancelledAt : undefined,
+  const rawSummary = asRecord(record.summary) || {}
+  const summary: QuickTransferSummary = {
+    hasText: Boolean(rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text),
+    links: Number(rawSummary.links ?? record.links ?? 0) || 0,
+    files: Number(rawSummary.files ?? record.files ?? 0) || 0,
+    references: Number(rawSummary.references ?? record.references ?? 0) || 0,
   }
-}
-
-const normalizeDownload = (value: unknown): QuickTransferDownloadDescriptor | undefined => {
-  const record = asRecord(value)
-  if (!record || typeof record.url !== 'string' || typeof record.expiresAt !== 'string') return undefined
-  return { url: record.url, expiresAt: record.expiresAt }
+  return {
+    transferId: typeof record.transferId === 'string' ? record.transferId : undefined,
+    expiresAt: requiredString(record, 'expiresAt'),
+    remainingClaims: normalizeQuickTransferClaimCount(record.remainingClaims ?? record.claimsRemaining),
+    summary,
+  }
 }
 
 export const resolveQuickTransfer = async (input: { code?: string; shareToken?: string }): Promise<QuickTransferResolvedResult> => {
   const payload = input.shareToken ? { shareToken: input.shareToken } : { code: input.code || '' }
   const response = await postQuickTransfersResolve(payload as unknown as postQuickTransfersResolveBody, receiveRequestConfig)
+  return normalizeQuickTransferResolvedResult(response)
+}
+
+export const accessQuickTransferFile = async (
+  transferId: string,
+  fileId: string,
+  claimToken: string,
+): Promise<QuickTransferFileAccessResult> => {
+  const pathParams = { transferId, fileId } as postFilesFileIdAccessPathQuery
+  const body = { claimToken } as postFilesFileIdAccessBody
+  const response = await postQuickTransfersFilesAccess(pathParams, body, receiveRequestConfig)
   const record = unwrapData(response)
-  const type = normalizeType(record.type)
-  const fileRecord = asRecord(record.file)
-  const download = normalizeDownload(record.download) || normalizeDownload(fileRecord?.download)
-  const file = normalizeFile(record.file)
+  const url = typeof record.url === 'string' ? record.url : typeof record.signedUrl === 'string' ? record.signedUrl : ''
+  if (!url) throw new Error('快船接口缺少 url')
   return {
-    transferId: requiredString(record, 'transferId'),
-    type,
-    text:
-      typeof record.text === 'string' ? record.text : type === 'text' && typeof record.content === 'string' ? record.content : undefined,
-    url: typeof record.url === 'string' ? record.url : undefined,
-    file,
-    download,
+    url,
+    expiresAt: requiredString(record, 'expiresAt'),
   }
 }

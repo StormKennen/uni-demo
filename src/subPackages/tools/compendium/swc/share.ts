@@ -99,7 +99,7 @@ export function buildSwcDetailShare(options: {
 }
 
 export function buildSwcCouponsShare(query: QueryValueMap = {}) {
-  return createShare('魔灵召唤兑换券：快速兑换礼包码', SWC_COUPONS_PATH, query)
+  return createShare('魔灵召唤兑换券：快速兑换礼包码', SWC_COUPONS_PATH, query, SWC_GAME_COUPON_CONFIG.managementHeroImage)
 }
 
 export function buildSwcCouponDetailShare(options: {

@@ -1,80 +1,140 @@
-# 跨设备快传 Quick Transfer V1 需求规格书
+# 快船 Quick Transfer V2 需求规格书
 
-## 0. 元信息
+## 0. 范围
 
-| 项目     | 内容                                           |
-| -------- | ---------------------------------------------- |
-| 功能名称 | 跨设备快传                                     |
-| 所属域   | `subPackages/tools/quick-transfer`             |
-| 发布端   | H5 + mp-weixin                                 |
-| 状态     | 开发中                                         |
-| 关联接口 | `src/services/apifox/NODEJSDEMO/QUICKTRANSFER` |
+快船 V2 覆盖 V1，不兼容 `type=text/url/file` 三选一模型。每艘快船固定包含四类内容，顺序固定为：留言、链接、文件、引用。V2 不做排序、自由布局、历史记录、收藏、文件夹或多船管理。
 
-## 1. 产品范围与路由
+页面归属 `subPackages/tools/quick-transfer`，发布端为 H5 与微信小程序，路由保持：
 
-临时传递文本、链接和单个文件，发送方生成六位提取码并可设置最多领取次数，接收方无需登录即可领取。当前继续归属 `text` workspace；不新增文件或传输 workspace。V1 不做历史记录、文件管理、多文件和 H5 匿名发送。
+```text
+subPackages/tools/quick-transfer/index
+```
 
-| 页面   | 路由路径                                 | 跳转方式         | 来源入口         |
-| ------ | ---------------------------------------- | ---------------- | ---------------- |
-| 快传页 | `subPackages/tools/quick-transfer/index` | `uni.navigateTo` | 文本工作区工具卡 |
+## 1. 前端模型
 
-- `src/pages.json` 在 `subPackages/tools` 分包注册 `quick-transfer/index`，标题为“跨设备快传”，使用 `navigationStyle: custom`。
-- `src/config/tools.ts` 注册 `quick-transfer`，归属 `text` workspace，描述为“手机电脑互传文本、链接和文件”，标记 `isNew: true`，不设置 `requiresAuth`，发送权限在页面内按平台和登录态判断。
-- 页面 query 支持 `mode=receive&shareToken=...`；打开分享链接只切换到接收态，不自动消费。
+Sender Draft：
 
-## 2. 支持矩阵
+```ts
+interface QuickShipDraft {
+  text: string
+  links: Array<{ localId: string; title: string; url: string }>
+  files: QuickShipFileDraft[]
+  references: Array<{
+    localId: string
+    type: string
+    resourceId?: string
+    params?: Record<string, unknown>
+    title: string
+    subtitle?: string
+  }>
+  expiresIn: 600 | 3600 | 86400
+  maxClaims: number
+}
+```
 
-| 场景             | 发送                   | 接收                                   |
-| ---------------- | ---------------------- | -------------------------------------- |
-| 微信小程序未登录 | Guest Session          | 支持，resolve 前不初始化 Guest Session |
-| 微信小程序登录   | User Token             | 支持                                   |
-| H5 已登录        | User Token             | 支持                                   |
-| H5 未登录        | 不支持，跳转既有登录页 | 支持                                   |
+文件 Draft 仅在页面内存保留本地选择结果；Create 请求只发送 `clientFileId/name/size/mimeType`，禁止发送 `localPath`、`rawFile`。
 
-微信发送沿用 `src/services/http.ts` 的 Guest Session；接收请求使用 `_skipGuestSession`，不把 `X-Anonymous-Id` 作为 Owner。
+## 2. API Adapter
 
-## 3. API 契约
+业务只经 `src/features/quick-transfer/api.ts` 调用已导入的 Apifox 方法，生成目录不手工编辑：
 
-页面业务直接调用 Apifox 生成方法，不新增 `src/services/quick-transfer.ts`：
+| 能力          | Apifox 方法                           |
+| ------------- | ------------------------------------- |
+| Create        | `postQuickTransfers`                  |
+| Share Inspect | `postQuickTransfersShareInspect`      |
+| Resolve       | `postQuickTransfersResolve`           |
+| Sender Status | `getQuickTransfersTransferId`         |
+| Cancel        | `deleteQuickTransfersTransferId`      |
+| File Complete | `postQuickTransfersFilesComplete`     |
+| Upload Policy | `postQuickTransfersFilesUploadPolicy` |
+| File Access   | `postQuickTransfersFilesAccess`       |
 
-| 功能         | 方法与路径                                   | 生成方法                               |
-| ------------ | -------------------------------------------- | -------------------------------------- |
-| 创建         | `POST /quick-transfers`                      | `postQuickTransfers`                   |
-| 完成文件上传 | `POST /quick-transfers/:transferId/complete` | `postQuickTransfersTransferIdComplete` |
-| 匿名领取     | `POST /quick-transfers/resolve`              | `postQuickTransfersResolve`            |
-| 发送方状态   | `GET /quick-transfers/:transferId`           | `getQuickTransfersTransferId`          |
-| 取消         | `DELETE /quick-transfers/:transferId`        | `deleteQuickTransfersTransferId`       |
+Response 为字符串或包装对象时，由 Adapter 统一解析。Resolve 统一为：
 
-生成类型中的 request/response schema 存在字符串或 `any` 缺口，当前生成文件尚未包含 `maxClaims/claimCount`，业务层在 `features/quick-transfer/api.ts` 做运行时收窄，不修改生成目录。文件创建只提交 name、size、mimeType 元数据；OSS `upload.fields` 全量原样提交，成功状态严格比较 `upload.successStatus`。
+```text
+transferId
+claimToken
+content.text
+content.links[]
+content.files[]
+content.references[]
+```
 
-## 4. 交互与状态
+## 3. Sender
 
-- 页面一级入口只有“我要发送”和“我要接收”。微信和 H5 登录用户默认发送；H5 未登录默认接收。
-- 发送类型支持 text、url、file；有效期固定为 10 分钟、1 小时、24 小时，默认 10 分钟；发送方可设置 `maxClaims`，范围 1～10，默认 1，三种内容类型都会提交该字段。
-- 文件通过 `src/platform/file/filePicker` 选择，限制 50 MiB；文件链路为 Create → OSS POST → Complete → ready，Complete 暂时校验失败只重试 Complete，不重新上传。
-- 发送成功后展示六位提取码、后端 `expiresAt` 倒计时、领取进度、复制提取码、复制分享链接和取消；ready 后每 3 秒轮询完整发送状态，后端返回 `status=ready` 时即使已有领取仍继续 ready 和分享，只有 `status=consumed/expired/cancelled/deleted` 才停止。
-- 接收码自动过滤空格但不自动提交最后一位；shareToken 必须经过“确认领取”后才 resolve。Resolve 成功后按后端领取次数继续保持或结束 Transfer；文件立即使用返回的 signed URL 下载；下载失败只复用当前 signed URL，不再次 resolve。Receiver 不展示领取额度。
-- code、shareToken、OSS fields、签名 URL 只保留在页面内存，不写入 storage、Pinia 或日志。
+页面固定展示“留言 / 链接 / 文件 / 引用”四个区域。留言允许为空；链接仅接受 `http/https`，支持添加、修改、删除；文件一行一个，不渲染图片宫格；引用只能由业务页面带入，不在快船页内浏览资源。
 
-领取状态机：`ready` 且 `claimCount < maxClaims` 时继续 ready；达到最大次数后以后端 `status=consumed` 为准结束；到期进入 `expired`，发送方取消进入 `cancelled`。多次领取尚未结束时继续允许 Transfer 分享，consumed 后降级为工具分享。
+至少存在一项内容才允许发送，并在前端提前校验：单文件不超过 50 MiB，最多 10 个文件，合计不超过 500 MiB；后端仍是最终校验来源。微信的 `image/fileType` 标签必须经过文件名推断为标准 MIME，0 字节文件禁止添加。
 
-## 5. 跨端实现
+Create 后：
 
-- 选择文件统一使用 `src/platform/file`；H5 选择结果保留浏览器 `File`，微信使用临时路径。
-- 微信使用 `uni.uploadFile` 直传 OSS；H5 因 `uni.chooseFile` 返回浏览器 `File`、而小程序路径上传契约不同，使用平台层 FormData/XHR fallback，页面不包含平台分支。
-- H5 文件领取直接打开 signed URL，不代理和读取文件正文；微信使用 `uni.downloadFile`，图片预览，PDF/Office 尝试 `uni.openDocument`，其他类型只提示文件已准备。
-- 微信具体快传分享仅放 `shareToken` 在 path query；朋友圈只分享普通工具页，不携带 transfer 凭证。
+- 无文件：直接进入 `ready`。
+- 有文件：按 `uploads[].clientFileId` 对应本地 Draft。
+- Upload Queue 并发为 2，每个文件独立维护 pending/uploading/uploaded/completing/ready/error。
+- 每个文件执行 OSS 直传后立即调用该文件的 Complete。
+- 单文件上传失败只重新获取该文件 Policy 并重传；Complete 暂时失败只重新校验。
+- `UPLOAD_DANGEROUS_CONTENT`、`UPLOAD_CONTENT_TYPE_MISMATCH` 等确定性错误不自动重试。
 
-## 6. 验收清单
+Ready 后显示收船码、倒计时、领取进度；H5 显示复制分享链接，微信只显示复制收船码和“分享给好友”。ready 状态不显示“再送一艘”，只有 consumed/expired/cancelled 才显示。
 
-- [ ] 微信 Guest/User 发送 text/url/file，H5 登录用户发送 text/url/file
-- [ ] 微信/H5 匿名接收，shareToken 打开不自动 resolve
-- [ ] 文件 50 MiB 校验、原样 fields、动态 successStatus、Complete 重试
-- [ ] 发送方倒计时、polling、cancel 及页面生命周期清理
-- [ ] `maxClaims` 默认 1，范围 1～10，text/url/file 创建请求均透传；Create/Status 读取后端 `claimCount/maxClaims`
-- [ ] `claimCount/maxClaims` 在 Sender 实时更新；`1/3`、`2/3` 且后端 ready 时继续 ready 和 Transfer 分享，后端 consumed 后停止 polling 并降级工具分享
-- [ ] Receiver 不展示领取次数，且页面不再使用“仅可领取一次”“领取后即失效”等旧文案
-- [ ] 文件 Resolve 后立即下载、失败复用 signed URL
-- [ ] 纯逻辑测试覆盖 TTL、码、URL、文件大小、MIME、状态机、路由解析、错误映射和权限
-- [ ] `pnpm lint`、`pnpm type-check`、双端构建及仓库检查完成并区分既有错误
-- [ ] 微信 uploadFile/downloadFile 合法域名及生产 H5 OSS CORS 由人工配置
+## 4. Receiver
+
+手工输入 6 位收船码直接 `resolve({ code })`，不调用 Inspect。微信/H5 分享打开后先 `inspect({ shareToken })`，展示摘要、剩余领取次数和有效期；不提前展示正文、URL、文件名或引用标题。Inspect 成功后点击“收船”才 Resolve。
+
+Resolve 成功后只保存当前页面内存中的 `claimToken`，先显示“船来了”，点击“打开快船”才展开内容，不重复 Resolve。展开后严格按留言、链接、文件、引用顺序展示；缺少的区块隐藏。
+
+文件不随 Resolve 自动下载。点击文件时调用 `file/access(transferId,fileId,claimToken)` 获取 Signed URL，再交给平台文件 Adapter：图片预览，PDF/Office 打开文档，其他类型下载或提示。`CLAIM_TOKEN_INVALID/EXPIRED` 不自动 Resolve。
+
+## 5. Reference Registry
+
+`src/features/quick-transfer/reference/registry.ts` 是唯一打开入口。Reference 核心数据只包含 `type/resourceId/params/title/subtitle`，禁止持久化 `path/route/navigateUrl`，禁止任意 `uni.navigateTo(reference.path)`。
+
+当前正式注册：
+
+- `memoDetail`：打开备忘录详情。
+- `summonersWarCharacter`：打开魔灵召唤人物详情。
+- `rtaRanking`：打开 RTA 榜单。
+
+未知类型显示“当前版本暂不支持打开该内容”。备忘录详情已接入“用快船发送”，通过页面内存 transient state 把一个 Reference 带入 Sender，不把完整 JSON 放进 query。
+
+## 6. 鉴权与生命周期
+
+- 微信游客发送沿用 Guest Token；登录发送沿用 User Token。
+- H5 未登录默认收船，主动送船显示登录 Gate；登录返回后自动刷新并关闭 Gate。
+- Receiver 请求跳过 Guest Session，不把匿名 Owner 身份带入。
+- `claimToken`、shareToken、OSS fields、Signed URL 只保留当前页面内存。
+- Sender 的 poll/countdown 在 consumed/expired/cancelled、reset、hide/unload 时清理。
+
+## 7. 错误映射
+
+Adapter 兼容 `error.code`、`error.data.code`、`error.data.reason`、嵌套 error 及 HTTP 状态码。至少覆盖：
+
+```text
+TRANSFER_NOT_AVAILABLE
+TRANSFER_NOT_FOUND
+TRANSFER_ACTIVE_QUOTA_EXCEEDED
+TRANSFER_DAILY_FILE_QUOTA_EXCEEDED
+TRANSFER_UPLOAD_NOT_AVAILABLE
+TRANSFER_FILE_NOT_FOUND
+TRANSFER_FILE_ALREADY_READY
+TRANSFER_OBJECT_NOT_FOUND
+UPLOAD_VERIFICATION_FAILED
+UPLOAD_DANGEROUS_CONTENT
+UPLOAD_CONTENT_TYPE_MISMATCH
+UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE
+CLAIM_TOKEN_INVALID
+CLAIM_TOKEN_EXPIRED
+QUICK_TRANSFER_OSS_NOT_CONFIGURED
+```
+
+网络错误、429、上传错误、Complete 校验错误、Claim Token 失效保持独立提示，不全部降级为服务不可用。
+
+## 8. 验收
+
+- 纯留言、纯链接、纯文件、纯引用及四类混合发送。
+- 多图片/普通文件上传、单文件重传、逐文件 Complete、Complete 重试。
+- 手工 code Resolve、分享 Inspect → Resolve、Inspect 后被其他人抢先领取。
+- 文件 access、图片预览、文档打开、Claim Token 失效。
+- Reference 合法打开、未知类型安全提示、备忘录入口带入。
+- 微信游客/登录用户、H5 未登录/登录用户。
+- `pnpm lint`、`pnpm type-check`、Quick Transfer 测试、`pnpm build:mp-weixin`、`pnpm build:h5` 及仓库检查，并区分既有基线错误。

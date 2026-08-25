@@ -1,6 +1,8 @@
 import mime from 'mime'
 import {
+  MAX_QUICK_TRANSFER_FILE_COUNT,
   MAX_QUICK_TRANSFER_FILE_SIZE,
+  MAX_QUICK_TRANSFER_TOTAL_FILE_SIZE,
   QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
   QUICK_TRANSFER_MAX_MAX_CLAIMS,
   QUICK_TRANSFER_MIN_MAX_CLAIMS,
@@ -8,30 +10,41 @@ import {
   QUICK_TRANSFER_TERMINAL_STATUSES,
 } from './constants'
 import type {
+  QuickShipDraft,
+  QuickShipFileDraft,
+  QuickShipReferenceDraft,
   QuickTransferFileMetadata,
   QuickTransferPageQuery,
   QuickTransferSendState,
   QuickTransferStatus,
-  QuickTransferType,
+  QuickTransferTtl,
 } from './types'
+import type { SelectedFile } from '@/platform/file'
+
+let clientFileSequence = 0
 
 export const normalizeQuickTransferCode = (value: string): string => value.replace(/\s+/g, '').replace(/\D/g, '').slice(0, 6)
 
 export const isValidQuickTransferCode = (value: string): boolean => /^\d{6}$/.test(normalizeQuickTransferCode(value))
 
-export const isValidQuickTransferUrl = (value: string): boolean => {
-  const trimmed = value.trim()
-  return /^https?:\/\/[^\s]+$/i.test(trimmed)
-}
+export const isValidQuickTransferUrl = (value: string): boolean => /^https?:\/\/[^\s]+$/i.test(value.trim())
 
 export const getQuickTransferMimeType = (fileName: string, selectedType?: string): string => {
-  const type = selectedType?.trim()
-  return type || mime.getType(fileName) || 'application/octet-stream'
+  const type = selectedType?.trim().toLowerCase() || ''
+  return /^[^/\s]+\/[^/\s]+$/.test(type) ? type : mime.getType(fileName) || 'application/octet-stream'
 }
 
 export const validateQuickTransferFile = (size: number | undefined): string | null => {
-  if (size === undefined || !Number.isFinite(size) || size < 0) return '无法读取文件大小，请重新选择'
+  if (size === undefined || !Number.isFinite(size) || size <= 0) return '文件不能为空，请重新选择'
   return size <= MAX_QUICK_TRANSFER_FILE_SIZE ? null : '文件不能超过 50 MiB'
+}
+
+export const validateQuickTransferFiles = (files: ReadonlyArray<Pick<QuickShipFileDraft, 'size'>>): string | null => {
+  if (files.length > MAX_QUICK_TRANSFER_FILE_COUNT) return `最多添加 ${MAX_QUICK_TRANSFER_FILE_COUNT} 个文件`
+  const invalidFile = files.find(file => validateQuickTransferFile(file.size))
+  if (invalidFile) return validateQuickTransferFile(invalidFile.size)
+  const totalSize = files.reduce((total, file) => total + file.size, 0)
+  return totalSize > MAX_QUICK_TRANSFER_TOTAL_FILE_SIZE ? '所有文件合计不能超过 500 MiB' : null
 }
 
 export const isValidQuickTransferMaxClaims = (value: unknown): value is number =>
@@ -55,6 +68,41 @@ export const createQuickTransferFileMetadata = (
   name: name.trim() || '未命名文件',
   size: size ?? 0,
   mimeType: getQuickTransferMimeType(name, selectedType),
+})
+
+export const createQuickTransferClientFileId = (): string => {
+  clientFileSequence += 1
+  return `quick-file-${Date.now()}-${clientFileSequence}`
+}
+
+export const createQuickShipFileDraft = (file: SelectedFile): QuickShipFileDraft => ({
+  clientFileId: createQuickTransferClientFileId(),
+  name: file.name || '未命名文件',
+  size: file.size ?? 0,
+  mimeType: getQuickTransferMimeType(file.name, file.type),
+  localPath: file.path || undefined,
+  rawFile: file.raw,
+  selectedFile: file,
+  uploadState: 'pending',
+})
+
+export const createQuickShipDraft = (expiresIn: QuickTransferTtl = 600, maxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): QuickShipDraft => ({
+  text: '',
+  links: [],
+  files: [],
+  references: [],
+  expiresIn,
+  maxClaims,
+})
+
+export const hasQuickShipContent = (draft: Pick<QuickShipDraft, 'text' | 'links' | 'files' | 'references'>): boolean =>
+  Boolean(draft.text.trim() || draft.links.length || draft.files.length || draft.references.length)
+
+export const normalizeQuickShipReference = (reference: QuickShipReferenceDraft): QuickShipReferenceDraft => ({
+  ...reference,
+  title: reference.title.trim() || '未命名引用',
+  subtitle: reference.subtitle?.trim() || undefined,
+  resourceId: reference.resourceId?.trim() || undefined,
 })
 
 export const formatQuickTransferFileSize = (size: number): string => {
@@ -92,12 +140,6 @@ export const parseQuickTransferPageQuery = (query: QuickTransferPageQuery): { mo
     mode: query.mode === 'receive' || shareToken ? 'receive' : 'send',
     shareToken,
   }
-}
-
-export const getQuickTransferTypeLabel = (type: QuickTransferType): string => {
-  if (type === 'text') return '文本'
-  if (type === 'url') return '链接'
-  return '文件'
 }
 
 export const buildQuickTransferSharePath = (shareToken: string): string =>

@@ -1,17 +1,25 @@
 import type { QuickTransferErrorInfo } from './types'
 
 const ERROR_MESSAGES: Record<string, string> = {
-  TRANSFER_NOT_AVAILABLE: '提取码无效或内容已失效',
-  TRANSFER_ACTIVE_QUOTA_EXCEEDED: '当前快传数量已达上限',
-  TRANSFER_DAILY_FILE_QUOTA_EXCEEDED: '今日文件快传额度已用完',
-  TRANSFER_UPLOAD_NOT_AVAILABLE: '上传凭证已失效，请重新发送',
-  TRANSFER_OBJECT_NOT_FOUND: '尚未检测到上传文件，请稍后重试',
-  UPLOAD_VERIFICATION_FAILED: '文件校验失败',
-  UPLOAD_DANGEROUS_CONTENT: '该文件暂不支持传输',
-  UPLOAD_CONTENT_TYPE_MISMATCH: '文件类型与实际内容不一致',
-  UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE: '文件校验暂时失败，请重试',
-  QUICK_TRANSFER_OSS_NOT_CONFIGURED: '文件快传服务暂不可用',
-  QUICK_TRANSFER_API_UNAVAILABLE: '快传服务暂不可用',
+  TRANSFER_NOT_AVAILABLE: '这艘快船已经不在了',
+  TRANSFER_NOT_FOUND: '这艘快船已经不在了',
+  TRANSFER_ACTIVE_QUOTA_EXCEEDED: '当前快船数量已达上限',
+  TRANSFER_DAILY_FILE_QUOTA_EXCEEDED: '今日文件快船额度已用完',
+  TRANSFER_UPLOAD_NOT_AVAILABLE: '文件上传凭证已失效，请重新校验',
+  TRANSFER_FILE_NOT_FOUND: '文件已不存在，请重新准备快船',
+  TRANSFER_FILE_ALREADY_READY: '文件已经完成校验',
+  TRANSFER_OBJECT_NOT_FOUND: '尚未检测到上传文件，请重新校验',
+  UPLOAD_VERIFICATION_FAILED: '文件校验失败，本次快船无法发送',
+  UPLOAD_DANGEROUS_CONTENT: '文件校验失败，本次快船无法发送',
+  UPLOAD_CONTENT_TYPE_MISMATCH: '文件类型与实际内容不一致，本次快船无法发送',
+  UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE: '文件校验暂时失败，请重新校验',
+  UPLOAD_FAILED: '文件上传失败，请重试',
+  DIRECT_UPLOAD_FAILED: '文件上传失败，请重试',
+  DIRECT_UPLOAD_ABORTED: '文件上传已取消',
+  CLAIM_TOKEN_INVALID: '文件访问凭证已失效',
+  CLAIM_TOKEN_EXPIRED: '文件访问凭证已失效',
+  QUICK_TRANSFER_OSS_NOT_CONFIGURED: '文件快船服务暂不可用',
+  QUICK_TRANSFER_API_UNAVAILABLE: '快船服务暂不可用',
 }
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
@@ -19,26 +27,50 @@ const asRecord = (value: unknown): Record<string, unknown> | null => {
   return value as Record<string, unknown>
 }
 
+const getStatusCode = (error: unknown): number | undefined => {
+  const root = asRecord(error)
+  const data = asRecord(root?.data)
+  const candidates = [root?.statusCode, root?.status, root?.code, data?.statusCode, data?.status]
+  return candidates.find(candidate => typeof candidate === 'number') as number | undefined
+}
+
 export const getQuickTransferErrorCode = (error: unknown): string => {
   const root = asRecord(error)
   const data = asRecord(root?.data)
   const nested = asRecord(root?.error)
-  const codeCandidates = [root?.code, data?.code, nested?.code]
-  const code = codeCandidates.find(candidate => typeof candidate === 'string')
+  const nestedData = asRecord(nested?.data)
+  const response = asRecord(root?.response)
+  const responseData = asRecord(response?.data)
+  const candidates = [
+    root?.code,
+    root?.reason,
+    data?.code,
+    data?.reason,
+    nested?.code,
+    nested?.reason,
+    nestedData?.code,
+    nestedData?.reason,
+    response?.code,
+    response?.reason,
+    responseData?.code,
+    responseData?.reason,
+  ]
+  const code = candidates.find(candidate => typeof candidate === 'string' && candidate.trim())
   return typeof code === 'string' ? code : ''
 }
 
-export const getQuickTransferErrorMessage = (error: unknown, fallback = '快传操作失败，请稍后重试'): string => {
+export const getQuickTransferErrorMessage = (error: unknown, fallback = '快船操作失败，请稍后重试'): string => {
   const code = getQuickTransferErrorCode(error)
   if (code && ERROR_MESSAGES[code]) return ERROR_MESSAGES[code]
 
   const root = asRecord(error)
   const data = asRecord(root?.data)
-  const statusCode = root?.statusCode ?? (typeof root?.code === 'number' ? root.code : undefined)
-  if (statusCode === 401) return '游客会话初始化失败，请稍后重试'
-  if (statusCode === 404) return '快传服务暂不可用'
+  const statusCode = getStatusCode(error)
+  if (statusCode === 401) return '登录状态已失效，请重新登录'
+  if (statusCode === 404) return '快船服务暂不可用'
+  if (statusCode === 429) return '请求太频繁了，请稍后再试'
   if (statusCode === -1) return '网络连接失败，请检查网络后重试'
-  const message = root?.message ?? data?.message
+  const message = root?.message ?? data?.message ?? root?.reason ?? data?.reason
   if (typeof message === 'string' && message.trim()) {
     if (/network|timeout|fail|网络|超时/i.test(message)) return '网络连接失败，请检查网络后重试'
     return message
@@ -46,11 +78,34 @@ export const getQuickTransferErrorMessage = (error: unknown, fallback = '快传�
   return fallback
 }
 
+const isCompleteRetryCode = (code: string): boolean =>
+  code === 'TRANSFER_OBJECT_NOT_FOUND' || code === 'UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE' || code === 'TRANSFER_FILE_ALREADY_READY'
+
+const isUploadRetryCode = (code: string): boolean =>
+  code === 'TRANSFER_UPLOAD_NOT_AVAILABLE' ||
+  code === 'UPLOAD_FAILED' ||
+  code === 'DIRECT_UPLOAD_FAILED' ||
+  code === 'DIRECT_UPLOAD_ABORTED'
+
 export const toQuickTransferErrorInfo = (error: unknown, fallback?: string): QuickTransferErrorInfo => {
   const code = getQuickTransferErrorCode(error)
   return {
     code,
     message: getQuickTransferErrorMessage(error, fallback),
-    canRetryComplete: code === 'UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE',
+    canRetryComplete: isCompleteRetryCode(code),
+    canRetryUpload: isUploadRetryCode(code),
   }
+}
+
+export const toQuickTransferReceiveErrorInfo = (error: unknown): QuickTransferErrorInfo => {
+  const code = getQuickTransferErrorCode(error)
+  if (code === 'TRANSFER_NOT_AVAILABLE' || code === 'TRANSFER_NOT_FOUND') return { code, message: '这艘快船已经不在了' }
+  if (getStatusCode(error) === 429) return { code: '429', message: '收船太频繁了，请稍后再试' }
+  if (code === 'CLAIM_TOKEN_INVALID' || code === 'CLAIM_TOKEN_EXPIRED') return { code, message: '文件访问凭证已失效' }
+
+  const message = getQuickTransferErrorMessage(error, '暂时联系不上快船')
+  if (getStatusCode(error) === -1 || message === '网络连接失败，请检查网络后重试') {
+    return { code: code || 'NETWORK_ERROR', message: '暂时联系不上快船' }
+  }
+  return { code, message }
 }

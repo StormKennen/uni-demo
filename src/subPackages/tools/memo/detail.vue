@@ -21,6 +21,9 @@
         <view class="action-btn ghost" @click="shareMemo" v-if="memoData && canShareDetail">
           <text class="icon">分享</text>
         </view>
+        <view class="action-btn ghost" @click="sendMemoWithQuickShip" v-if="memoData">
+          <text class="icon">用快船</text>
+        </view>
         <!-- 编辑按钮（仅创建者；分享/管理员/只读视角隐藏） -->
         <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData && canEditDetail">
           <text class="icon">编辑</text>
@@ -395,6 +398,7 @@
   import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
   import { getToken } from '@/utils/storage'
   import { openMapNavigation, openExternalLink } from '@/utils/map'
+  import { openQuickShipWithReference } from '@/features/quick-transfer/reference/registry'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
   import {
     getMemosPublicDetail,
@@ -843,6 +847,17 @@
     if (accessRole.value === 'owner' || memoData.value?.canEdit === true) return true
     return detailSource.value === 'public' && Boolean(activeShareToken.value)
   })
+
+  const sendMemoWithQuickShip = () => {
+    if (!memoData.value || !memoId.value) return
+    openQuickShipWithReference({
+      localId: `memo-${memoId.value}`,
+      type: 'memoDetail',
+      resourceId: memoId.value,
+      title: memoData.value.name || '未命名备忘录',
+      subtitle: '备忘录',
+    })
+  }
 
   // 备忘录标题
   const memoTitle = computed(() => {
