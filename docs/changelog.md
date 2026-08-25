@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+- 2026-08-25 [tools/image-compress,security] 修复图片压缩小程序选图时大于 1MB 的正常图片因微信安全接口超限被误判为“含违规信息”：先生成不超过 1MB 的临时送检副本，原图仍用于后续压缩；同时兼容旧版 `pass/reason` 结果及 HTTP 200 未包装响应，检查异常改为提示检查暂不可用并继续阻断处理（Codex）
+
 - 2026-08-21 [tools/image-compliance,http,security] 新增“图片达标助手”：提供常用/自定义/最近使用规格、10MB 原图预检、逐项合规分析、必要时启用的固定比例 normalized crop、游客/JWT multipart 合规处理、H5 Blob 与微信临时文件结果适配、保持原图尺寸在内的前端二次达标校验、跨端保存及相同规则处理下一张；公共 `http.upload` 同步复用 Guest Session、身份请求头和 401 恢复机制，媒体安全检查接入同一身份通道并区分明确拦截与检查异常，避免将接口故障误报为违规（Codex）
 
 - 2026-08-22 [tools/quick-transfer] 新增跨设备快传 V1：微信 Guest/User 与 H5 登录用户可发送文本、链接、单文件，H5/微信均可匿名领取；接入 Quick Transfer Apifox 生成接口、文件平台层 OSS 直传/下载、六位提取码、shareToken 二次确认、动态过期倒计时、发送状态轮询、取消及 Complete 重试，并保留凭证仅在页面内存（Codex）
