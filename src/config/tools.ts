@@ -301,7 +301,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   },
   'quick-transfer': {
     name: '跨设备快传',
-    desc: '文本、链接、文件跨设备传递',
+    desc: '手机电脑互传文本、链接和文件',
     icon: 'paperclip',
     gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
     path: '/subPackages/tools/quick-transfer/index',

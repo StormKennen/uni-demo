@@ -1,5 +1,12 @@
 import mime from 'mime'
-import { MAX_QUICK_TRANSFER_FILE_SIZE, QUICK_TRANSFER_SEND_TRANSITIONS, QUICK_TRANSFER_TERMINAL_STATUSES } from './constants'
+import {
+  MAX_QUICK_TRANSFER_FILE_SIZE,
+  QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+  QUICK_TRANSFER_MAX_MAX_CLAIMS,
+  QUICK_TRANSFER_MIN_MAX_CLAIMS,
+  QUICK_TRANSFER_SEND_TRANSITIONS,
+  QUICK_TRANSFER_TERMINAL_STATUSES,
+} from './constants'
 import type {
   QuickTransferFileMetadata,
   QuickTransferPageQuery,
@@ -25,6 +32,19 @@ export const getQuickTransferMimeType = (fileName: string, selectedType?: string
 export const validateQuickTransferFile = (size: number | undefined): string | null => {
   if (size === undefined || !Number.isFinite(size) || size < 0) return '无法读取文件大小，请重新选择'
   return size <= MAX_QUICK_TRANSFER_FILE_SIZE ? null : '文件不能超过 50 MiB'
+}
+
+export const isValidQuickTransferMaxClaims = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= QUICK_TRANSFER_MIN_MAX_CLAIMS && value <= QUICK_TRANSFER_MAX_MAX_CLAIMS
+
+export const normalizeQuickTransferMaxClaims = (value: unknown, fallback = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): number => {
+  const candidate = typeof value === 'string' && value.trim() ? Number(value) : value
+  return isValidQuickTransferMaxClaims(candidate) ? candidate : fallback
+}
+
+export const normalizeQuickTransferClaimCount = (value: unknown, fallback = 0): number => {
+  const candidate = typeof value === 'string' && value.trim() ? Number(value) : value
+  return typeof candidate === 'number' && Number.isInteger(candidate) && candidate >= 0 ? candidate : fallback
 }
 
 export const createQuickTransferFileMetadata = (

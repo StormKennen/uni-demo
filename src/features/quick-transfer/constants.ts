@@ -3,6 +3,9 @@ import type { QuickTransferSendState, QuickTransferStatus, QuickTransferTtl } fr
 export const QUICK_TRANSFER_ROUTE = '/subPackages/tools/quick-transfer/index'
 export const QUICK_TRANSFER_TITLE = '跨设备快传'
 export const MAX_QUICK_TRANSFER_FILE_SIZE = 50 * 1024 * 1024
+export const QUICK_TRANSFER_DEFAULT_MAX_CLAIMS = 1
+export const QUICK_TRANSFER_MIN_MAX_CLAIMS = 1
+export const QUICK_TRANSFER_MAX_MAX_CLAIMS = 10
 export const QUICK_TRANSFER_POLL_INTERVAL = 3000
 export const QUICK_TRANSFER_TTL_OPTIONS: ReadonlyArray<{ label: string; value: QuickTransferTtl }> = [
   { label: '10 分钟', value: 600 },

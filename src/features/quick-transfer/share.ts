@@ -15,6 +15,8 @@ export interface QuickTransferShareInput {
   sendState: QuickTransferSendState
   shareToken: string
   expiresAt: string
+  claimCount?: number
+  maxClaims?: number
   now?: number
 }
 

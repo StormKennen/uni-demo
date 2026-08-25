@@ -7,6 +7,7 @@
 
   interface Props {
     bgColor?: string
+    overlay?: boolean
     title?: string
     titleColor?: string
     customStyle?: Record<string, any>
@@ -20,6 +21,7 @@
 
   const props = withDefaults(defineProps<Props>(), {
     bgColor: 'transparent',
+    overlay: false,
     navBack: true,
     customGoBack: false,
     titleColor: undefined,
@@ -94,7 +96,7 @@
     </view>
   </view>
   <!-- 占位块：撑开页面内容，防止被固定导航栏遮挡 -->
-  <view class="nav-placeholder" :style="{ height: navHeight + (getStatusBarHeight() || 0) + 'px' }"></view>
+  <view v-if="!props.overlay" class="nav-placeholder" :style="{ height: navHeight + (getStatusBarHeight() || 0) + 'px' }"></view>
 </template>
 <style scoped lang="scss">
   .nav-container {

@@ -15,7 +15,7 @@ import type {
   QuickTransferReceiveState,
   QuickTransferResolvedResult,
   QuickTransferSendState,
-  QuickTransferStatus,
+  QuickTransferStatusResult,
 } from './types'
 import type { SelectedFile } from '@/platform/file'
 import { downloadFileDirect, uploadFileDirect } from '@/platform/file'
@@ -31,7 +31,7 @@ export const useQuickTransfer = () => {
   const expiresAt = ref('')
   const sendType = ref<QuickTransferCreatePayload['type']>('file')
   const uploadProgress = ref<number | null>(null)
-  const senderStatus = ref<QuickTransferStatus | null>(null)
+  const senderStatus = ref<QuickTransferStatusResult | null>(null)
   const receivedResult = ref<QuickTransferResolvedResult | null>(null)
   const downloadDescriptor = ref<QuickTransferDownloadDescriptor | null>(null)
   const countdown = ref('')
@@ -76,8 +76,9 @@ export const useQuickTransfer = () => {
     countdownTimer = setInterval(updateCountdown, 1000)
   }
 
-  const applySenderStatus = (status: QuickTransferStatus) => {
-    senderStatus.value = status
+  const applySenderStatus = (result: QuickTransferStatusResult) => {
+    senderStatus.value = result
+    const status = result.status
     if (status === 'consumed' && canTransitionQuickTransferSendState(sendState.value, 'consumed')) sendState.value = 'consumed'
     if (status === 'expired' && canTransitionQuickTransferSendState(sendState.value, 'expired')) sendState.value = 'expired'
     if (status === 'cancelled' || status === 'deleted') {
@@ -90,8 +91,8 @@ export const useQuickTransfer = () => {
   const pollSenderStatus = async () => {
     if (!transferId.value || sendState.value !== 'ready') return
     try {
-      const status = await getQuickTransferStatus(transferId.value)
-      applySenderStatus(status.status)
+      const status = await getQuickTransferStatus(transferId.value, senderStatus.value?.maxClaims)
+      applySenderStatus(status)
     } catch (error) {
       sendError.value = toQuickTransferErrorInfo(error, '状态暂时无法刷新，稍后将继续重试')
     }
@@ -125,8 +126,8 @@ export const useQuickTransfer = () => {
     sendError.value = null
     sendState.value = 'completing'
     try {
-      const result = await completeQuickTransfer(transferId.value)
-      applySenderStatus(result.status)
+      const result = await completeQuickTransfer(transferId.value, senderStatus.value?.maxClaims)
+      applySenderStatus(result)
       if (result.status !== 'ready') {
         const errorInfo: QuickTransferErrorInfo = {
           code: 'TRANSFER_OBJECT_NOT_FOUND',
@@ -172,6 +173,14 @@ export const useQuickTransfer = () => {
       code.value = created.code
       shareToken.value = created.shareToken
       expiresAt.value = created.expiresAt
+      senderStatus.value = {
+        claimCount: created.claimCount,
+        transferId: created.transferId,
+        type: created.type,
+        status: created.status,
+        maxClaims: created.maxClaims,
+        expiresAt: created.expiresAt,
+      }
 
       if (payload.type === 'file') {
         if (!file || !created.upload) throw new Error('文件上传信息不可用，请重新发送')
@@ -216,9 +225,8 @@ export const useQuickTransfer = () => {
     uploadAbort = null
     clearTimers()
     try {
-      await cancelQuickTransfer(transferId.value)
-      sendState.value = 'cancelled'
-      senderStatus.value = 'cancelled'
+      const result = await cancelQuickTransfer(transferId.value, senderStatus.value?.maxClaims)
+      applySenderStatus(result)
       return true
     } catch (error) {
       sendError.value = toQuickTransferErrorInfo(error, '取消失败，请稍后重试')

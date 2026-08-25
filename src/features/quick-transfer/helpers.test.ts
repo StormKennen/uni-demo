@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { QUICK_TRANSFER_TTL_OPTIONS } from './constants'
+import {
+  QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+  QUICK_TRANSFER_MAX_MAX_CLAIMS,
+  QUICK_TRANSFER_MIN_MAX_CLAIMS,
+  QUICK_TRANSFER_TTL_OPTIONS,
+} from './constants'
 import { getQuickTransferErrorMessage } from './errors'
 import { getQuickTransferSharePayload } from './share'
 import {
@@ -9,8 +14,11 @@ import {
   createQuickTransferFileMetadata,
   getQuickTransferMimeType,
   isQuickTransferDownloadValid,
+  isValidQuickTransferMaxClaims,
   isQuickTransferTerminalStatus,
   isValidQuickTransferUrl,
+  normalizeQuickTransferClaimCount,
+  normalizeQuickTransferMaxClaims,
   normalizeQuickTransferCode,
   parseQuickTransferPageQuery,
   validateQuickTransferFile,
@@ -38,6 +46,24 @@ describe('quick transfer helpers', () => {
     expect(getQuickTransferMimeType('report.pdf')).toBe('application/pdf')
     expect(getQuickTransferMimeType('unknown.qtf')).toBe('application/octet-stream')
     expect(createQuickTransferFileMetadata('report.pdf', 12)).toMatchObject({ name: 'report.pdf', size: 12, mimeType: 'application/pdf' })
+  })
+
+  it('normalizes the 1 to 10 claim limit and non-negative claim count', () => {
+    expect(QUICK_TRANSFER_DEFAULT_MAX_CLAIMS).toBe(1)
+    expect(QUICK_TRANSFER_MIN_MAX_CLAIMS).toBe(1)
+    expect(QUICK_TRANSFER_MAX_MAX_CLAIMS).toBe(10)
+    expect(isValidQuickTransferMaxClaims(1)).toBe(true)
+    expect(isValidQuickTransferMaxClaims(10)).toBe(true)
+    expect(isValidQuickTransferMaxClaims(0)).toBe(false)
+    expect(isValidQuickTransferMaxClaims(-1)).toBe(false)
+    expect(isValidQuickTransferMaxClaims(11)).toBe(false)
+    expect(isValidQuickTransferMaxClaims(1.5)).toBe(false)
+    expect(isValidQuickTransferMaxClaims(Number.NaN)).toBe(false)
+    expect(isValidQuickTransferMaxClaims(Number.POSITIVE_INFINITY)).toBe(false)
+    expect(normalizeQuickTransferMaxClaims('3')).toBe(3)
+    expect(normalizeQuickTransferMaxClaims('')).toBe(1)
+    expect(normalizeQuickTransferClaimCount('2')).toBe(2)
+    expect(normalizeQuickTransferClaimCount(-1)).toBe(0)
   })
 
   it('covers send state transitions and terminal sender states', () => {
@@ -70,13 +96,32 @@ describe('quick transfer helpers', () => {
 
   it('shares only a live sender transfer and otherwise shares the tool', () => {
     const expiresAt = new Date(20_000).toISOString()
-    const transfer = getQuickTransferSharePayload({ mode: 'send', sendState: 'ready', shareToken: 'a/b', expiresAt, now: 10_000 })
+    const transfer = getQuickTransferSharePayload({
+      mode: 'send',
+      sendState: 'ready',
+      shareToken: 'a/b',
+      expiresAt,
+      claimCount: 0,
+      maxClaims: 3,
+      now: 10_000,
+    })
     expect(transfer.kind).toBe('transfer')
     expect(transfer.title).toBe('给你发了一个临时快传')
     expect(transfer.path).toContain('mode=receive')
     expect(transfer.path).toContain('shareToken=a%2Fb')
     expect(transfer.path).not.toContain('mode=send')
     expect(transfer.path).not.toContain('transferId')
+
+    const partiallyClaimedTransfer = getQuickTransferSharePayload({
+      mode: 'send',
+      sendState: 'ready',
+      shareToken: 'token-2',
+      expiresAt,
+      claimCount: 2,
+      maxClaims: 3,
+      now: 10_000,
+    })
+    expect(partiallyClaimedTransfer.kind).toBe('transfer')
 
     const states = ['idle', 'creating', 'uploading', 'completing', 'consumed', 'expired', 'cancelled'] as const
     states.forEach(sendState => {

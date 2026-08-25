@@ -23,6 +23,8 @@
     shareTimelineTitle?: string
     /** 是否显示自定义导航栏 */
     showNav?: boolean
+    /** 导航栏是否覆盖在页面内容上方；开启后不占用页面内容高度 */
+    navOverlay?: boolean
     /** 导航栏渐变背景（设置后自动应用 light class） */
     navGradient?: string
     /** 导航栏 class；不传时若有 navGradient 则自动 'light' */
@@ -53,6 +55,7 @@
 
   const props = withDefaults(defineProps<Props>(), {
     showNav: true,
+    navOverlay: false,
     navBack: true,
     alwaysTitle: true,
     navDivider: false,
@@ -118,6 +121,7 @@
   <view class="page-layout" :style="layoutStyle">
     <NavBar
       v-if="showNav"
+      :overlay="navOverlay"
       :always-title="alwaysTitle"
       :title="title"
       :custom-class="effectiveNavClass"

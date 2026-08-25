@@ -1,4 +1,5 @@
 import type { ShareConfig } from '@/utils/share'
+import { SWC_GAME_COUPON_CONFIG } from '@/subPackages/tools/game-coupons/config'
 
 export interface TimelineShareConfig {
   title: string
@@ -19,6 +20,7 @@ const SWC_SHARE_IMAGE = '/static/logo.png'
 const SWC_HOME_PATH = '/subPackages/tools/compendium/swc/index'
 const SWC_LIST_PATH = '/subPackages/tools/compendium/swc/list'
 const SWC_COUPONS_PATH = '/subPackages/tools/game-coupons/index'
+export const SWC_COUPON_DETAIL_PATH = '/subPackages/tools/game-coupons/detail'
 const SWC_LINEUPS_PATH = '/subPackages/tools/compendium/swc/lineups'
 const SWC_LINEUP_MAPPINGS_PATH = '/subPackages/tools/compendium/swc/lineup-mappings'
 const SWC_LINEUP_MAPPING_DETAIL_PATH = '/subPackages/tools/compendium/swc/lineup-mapping-detail'
@@ -98,6 +100,32 @@ export function buildSwcDetailShare(options: {
 
 export function buildSwcCouponsShare(query: QueryValueMap = {}) {
   return createShare('魔灵召唤兑换券：快速兑换礼包码', SWC_COUPONS_PATH, query)
+}
+
+export function buildSwcCouponDetailShare(options: {
+  couponId: string
+  code?: string
+  reward?: string
+  gameId?: string
+  compendiumId?: string
+  sharerName?: string
+  imageUrl?: string
+}) {
+  const sharerName = String(options.sharerName || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const normalizedSharerName = sharerName.length > 12 ? `${sharerName.slice(0, 12)}…` : sharerName
+  const title = `${normalizedSharerName || '好友'}分享了魔灵召唤兑换券给你`
+  return createShare(
+    title,
+    SWC_COUPON_DETAIL_PATH,
+    {
+      couponId: options.couponId,
+      gameId: options.gameId || 'swc',
+      compendiumId: options.compendiumId || 'swc',
+    },
+    options.imageUrl || SWC_GAME_COUPON_CONFIG.detailPoster.heroImage,
+  )
 }
 
 export function buildSwcLineupsShare(query: QueryValueMap = {}) {

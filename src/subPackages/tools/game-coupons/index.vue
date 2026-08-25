@@ -1,5 +1,6 @@
 <template>
-  <PageLayout :title="gameConfig.title" nav-init-bg-color="var(--theme-surface)" nav-divider>
+  <PageLayout title="" nav-bg-color="transparent" nav-init-bg-color="transparent" nav-custom-class="light" nav-overlay>
+    <image class="coupon-management-hero" :src="gameConfig.managementHeroImage" mode="widthFix" />
     <view class="coupon-page">
       <view class="coupon-main">
         <!-- 1. 账号 -->
@@ -182,11 +183,17 @@
                   <text class="quick-code">{{ item.code }}</text>
                   <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
                 </view>
+                <view class="quick-view-btn" @click.stop="openCouponDetail(item)">查看</view>
               </view>
             </view>
             <text v-if="combinedCodes.length > codePreviewLimit" class="list-toggle" @click="showAllCodes = !showAllCodes">
               {{ showAllCodes ? '收起' : `更多 ${combinedCodes.length - codePreviewLimit} 个` }}
             </text>
+          </view>
+          <view v-else-if="loadingCodes" class="code-loading-state">
+            <view class="code-loading-spinner">…</view>
+            <text class="code-loading-title">正在加载可用券码</text>
+            <text class="code-loading-desc">正在同步最新兑换券，请稍候</text>
           </view>
           <view v-else-if="!loadingCodes" class="empty-tip soft">暂无可用券码，可先粘贴添加</view>
         </view>
@@ -282,14 +289,25 @@
   import { getGameCouponConfig } from './config'
   import type { GameCouponConfig } from './config'
   import {
-    deleteGameIdAccountsAccountId,
-    getGameIdAccountsAccountId,
+    createLocalGameCouponAccountId,
+    getGameCouponAccountMatchKeys,
+    getGameCouponDefaultServer,
+    getGameCouponServerShortLabel,
+    maskGameCouponAccountId,
+    parseStoredGameCouponAccounts,
+    persistGameCouponLocalAccount,
+    saveGameCouponLocalAccounts,
+  } from './useGameCouponAccounts'
+  import type { GameCouponAccount } from './useGameCouponAccounts'
+  import {
+    deleteGameCouponsAccounts,
+    getGameCouponsAccounts,
     getGameCouponsGameIdAccounts,
     getGameCouponsGameIdCodes,
     getGameCouponsGameIdProfile,
     getGameCouponsGameIdRedeemRecords,
-    postAccountsAccountIdAutoRedeem,
-    postAccountsAccountIdVerify,
+    postGameCouponsAccountsAutoRedeem,
+    postGameCouponsAccountsVerify,
     postGameIdAccountsClaimGuest,
     postGameCouponsGameIdAccounts,
     postGameCouponsGameIdRedeem,
@@ -311,21 +329,8 @@
   import { buildSwcCouponsShare } from '@/subPackages/tools/compendium/swc/share'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
-  type AccountStatus = 'active' | 'invalid' | 'pending' | 'disabled'
   type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
-  interface AccountVM {
-    /** 托管账号为后端 ObjectId，游客为本地临时 ID */
-    id: string
-    /** 是否后端托管账号 */
-    managed: boolean
-    server: string
-    /** 游客模式存明文 Hive ID，托管模式为空 */
-    accountId: string
-    /** 托管模式的脱敏展示值 */
-    accountIdMasked?: string
-    accountLabel?: string
-    nickname?: string
-    status?: AccountStatus
+  interface AccountVM extends GameCouponAccount {
     autoRedeemEnabled?: boolean
     verifying?: boolean
     syncing?: boolean
@@ -507,7 +512,7 @@
   }
 
   function getDefaultServer(): string {
-    return gameConfig.value.defaultServer || gameConfig.value.servers[0]?.value || 'global'
+    return getGameCouponDefaultServer(gameConfig.value)
   }
 
   function getServerIndex(server: string) {
@@ -518,11 +523,11 @@
   }
 
   function getServerShortLabel(server: string) {
-    return gameConfig.value.servers[getServerIndex(server)]?.shortLabel || server
+    return getGameCouponServerShortLabel(gameConfig.value, server)
   }
 
   function localId() {
-    return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    return createLocalGameCouponAccountId()
   }
 
   function getStorageKey() {
@@ -675,6 +680,20 @@
     }
   }
 
+  function openCouponDetail(item: getGameCouponsGameIdCodesResCodes) {
+    const couponId = String(item.id || '').trim()
+    if (!couponId) {
+      toast('当前券码缺少详情标识，请刷新列表后重试')
+      return
+    }
+    const query = [
+      `couponId=${encodeURIComponent(couponId)}`,
+      `gameId=${encodeURIComponent(gameConfig.value.gameId)}`,
+      `compendiumId=${encodeURIComponent(gameConfig.value.compendiumId)}`,
+    ]
+    uni.navigateTo({ url: `/subPackages/tools/game-coupons/detail?${query.join('&')}` })
+  }
+
   function goLogin() {
     uni.navigateTo({ url: `/pages/mine/login/login?redirectUrl=${encodeURIComponent(buildCurrentPageUrl())}` })
   }
@@ -683,69 +702,16 @@
 
   function saveLocalAccounts() {
     if (isLoggedIn.value) return
-    try {
-      uni.setStorageSync(
-        getStorageKey(),
-        accounts.value
-          .filter(item => !item.managed)
-          .map(item => ({
-            id: item.id,
-            server: item.server,
-            accountId: item.accountId,
-            nickname: item.nickname,
-            status: item.status,
-          })),
-      )
-    } catch {
-      /* 缓存失败不阻断 */
-    }
+    saveGameCouponLocalAccounts(gameConfig.value, accounts.value)
   }
 
   function persistLocalAccount(account: AccountVM) {
-    if (account.managed) return
-    try {
-      const stored = uni.getStorageSync(getStorageKey())
-      const list = Array.isArray(stored) ? stored : []
-      const snapshot = {
-        id: account.id,
-        server: account.server,
-        accountId: account.accountId,
-        nickname: account.nickname,
-        status: account.status,
-      }
-      const hasStoredAccount = list.some(item => item && item.id === account.id)
-      uni.setStorageSync(
-        getStorageKey(),
-        hasStoredAccount ? list.map(item => (item && item.id === account.id ? snapshot : item)) : [...list, snapshot],
-      )
-    } catch {
-      /* 单个本地账号缓存失败不阻断 */
-    }
-  }
-
-  function normalizeStoredAccountStatus(status: unknown): AccountStatus | undefined {
-    if (status === 'active' || status === 'invalid' || status === 'pending' || status === 'disabled') return status
-    return undefined
+    persistGameCouponLocalAccount(gameConfig.value, account)
   }
 
   /** 读取并解析本地缓存账号为 VM（managed=false） */
   function parseStoredAccounts(): AccountVM[] {
-    try {
-      const stored = uni.getStorageSync(getStorageKey())
-      const list = Array.isArray(stored) ? stored : []
-      return list
-        .filter(item => item && typeof item === 'object')
-        .map(item => ({
-          id: typeof item.id === 'string' && item.id ? item.id : localId(),
-          managed: false,
-          server: gameConfig.value.servers.some(s => s.value === item.server) ? item.server : getDefaultServer(),
-          accountId: typeof item.accountId === 'string' ? item.accountId : '',
-          nickname: typeof item.nickname === 'string' ? item.nickname : undefined,
-          status: normalizeStoredAccountStatus(item.status),
-        }))
-    } catch {
-      return []
-    }
+    return parseStoredGameCouponAccounts(gameConfig.value)
   }
 
   function loadLocalAccounts() {
@@ -783,6 +749,7 @@
           accountId: typeof item.accountId === 'string' ? item.accountId.trim() : '',
           accountIdMasked: item.accountIdMasked,
           accountLabel: item.accountLabel,
+          isDefault: item.isDefault,
           nickname: item.nickname,
           status: item.status,
           autoRedeemEnabled: item.autoRedeemEnabled,
@@ -826,20 +793,11 @@
   }
 
   function maskAccountId(accountId: string): string {
-    const value = accountId.trim()
-    if (!value) return ''
-    if (value.length <= 4) return `${value[0] || ''}***`
-    return `${value.slice(0, 3)}****${value.slice(-3)}`
+    return maskGameCouponAccountId(accountId)
   }
 
   function getAccountMatchKeys(account: AccountVM): string[] {
-    const server = account.server.trim().toLowerCase()
-    const keys: string[] = []
-    const accountId = account.accountId.trim().toLowerCase()
-    const masked = account.accountIdMasked?.trim()
-    if (accountId) keys.push(`${server}:plain:${accountId}`, `${server}:masked:${maskAccountId(accountId)}`)
-    if (masked) keys.push(`${server}:masked:${masked}`)
-    return keys.filter(Boolean)
+    return getGameCouponAccountMatchKeys(account)
   }
 
   function findUnclaimedGuestAccounts(managed: AccountVM[]): AccountVM[] {
@@ -1027,7 +985,7 @@
 
     if (account.managed) {
       try {
-        await deleteGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
+        await deleteGameCouponsAccounts({ gameId: gameConfig.value.gameId, accountId: account.id })
         accounts.value.splice(index, 1)
         selectedAccountIds.value = selectedAccountIds.value.filter(id => id !== account.id)
         normalizeAccountSelections()
@@ -1054,7 +1012,7 @@
     const account = accounts.value[index]
     if (!account || !account.managed) return
     try {
-      const detail = await getGameIdAccountsAccountId({ gameId: gameConfig.value.gameId, accountId: account.id })
+      const detail = await getGameCouponsAccounts({ gameId: gameConfig.value.gameId, accountId: account.id })
       account.server = detail.server || account.server
       account.accountIdMasked = detail.accountIdMasked
       account.nickname = detail.nickname
@@ -1071,7 +1029,7 @@
     account.verifying = true
     try {
       if (account.managed) {
-        await postAccountsAccountIdVerify({ gameId: gameConfig.value.gameId, accountId: account.id })
+        await postGameCouponsAccountsVerify({ gameId: gameConfig.value.gameId, accountId: account.id })
         await refreshManagedAccount(index)
         toast(account.nickname ? `已验证：${account.nickname}` : '验证完成')
       } else {
@@ -1113,7 +1071,7 @@
     try {
       await Promise.all(
         managed.map(account =>
-          postAccountsAccountIdAutoRedeem({ gameId: gameConfig.value.gameId, accountId: account.id }, { enabled: next }),
+          postGameCouponsAccountsAutoRedeem({ gameId: gameConfig.value.gameId, accountId: account.id }, { enabled: next }),
         ),
       )
       managed.forEach(account => {
@@ -1474,6 +1432,12 @@
     box-sizing: border-box;
   }
 
+  .coupon-management-hero {
+    display: block;
+    width: 100%;
+    background: #090a0c;
+  }
+
   .checkout-card {
     padding: 24rpx;
   }
@@ -1731,6 +1695,18 @@
     gap: 12rpx;
   }
 
+  .quick-view-btn {
+    flex-shrink: 0;
+    min-width: 72rpx;
+    height: 52rpx;
+    border-radius: 10rpx;
+    background: $accent;
+    color: #fff;
+    font-size: 22rpx;
+    line-height: 52rpx;
+    text-align: center;
+  }
+
   .code-check {
     width: 34rpx;
     height: 34rpx;
@@ -1753,6 +1729,46 @@
 
   .quick-codes {
     margin-top: 18rpx;
+  }
+
+  .code-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 18rpx;
+    padding: 40rpx 20rpx;
+    border: 1rpx solid $border;
+    border-radius: 14rpx;
+    background: $field-bg;
+    text-align: center;
+  }
+
+  .code-loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58rpx;
+    height: 58rpx;
+    border: 5rpx solid rgba(79, 110, 242, 0.2);
+    border-top-color: $accent;
+    border-radius: 50%;
+    color: transparent;
+    font-size: 0;
+  }
+
+  .code-loading-title {
+    display: block;
+    margin-top: 16rpx;
+    color: $text-primary;
+    font-size: 26rpx;
+    font-weight: 600;
+  }
+
+  .code-loading-desc {
+    display: block;
+    margin-top: 6rpx;
+    color: $text-hint;
+    font-size: 22rpx;
   }
 
   .quick-head {

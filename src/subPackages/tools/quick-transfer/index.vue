@@ -3,10 +3,18 @@
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
   import PageLayout from '@/components/PageLayout.vue'
   import { filePicker, isFilePickerCancel } from '@/platform/file'
+  import type { SelectedFile } from '@/platform/file'
   import { getToken } from '@/utils/storage'
   import { buildQuickTransferBrowserShareUrl } from '@/utilsH5/quick-transfer-share'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
-  import { QUICK_TRANSFER_ROUTE, QUICK_TRANSFER_TITLE, QUICK_TRANSFER_TTL_OPTIONS } from '@/features/quick-transfer/constants'
+  import {
+    QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+    QUICK_TRANSFER_MAX_MAX_CLAIMS,
+    QUICK_TRANSFER_MIN_MAX_CLAIMS,
+    QUICK_TRANSFER_ROUTE,
+    QUICK_TRANSFER_TITLE,
+    QUICK_TRANSFER_TTL_OPTIONS,
+  } from '@/features/quick-transfer/constants'
   import { getQuickTransferErrorMessage } from '@/features/quick-transfer/errors'
   import {
     buildQuickTransferSharePath,
@@ -14,7 +22,9 @@
     createQuickTransferFileMetadata,
     formatQuickTransferFileSize,
     getQuickTransferTypeLabel,
+    isValidQuickTransferMaxClaims,
     isValidQuickTransferUrl,
+    normalizeQuickTransferMaxClaims,
     normalizeQuickTransferCode,
     parseQuickTransferPageQuery,
     validateQuickTransferFile,
@@ -29,9 +39,11 @@
   const isLoggedIn = ref(false)
   const selectedType = ref<'text' | 'url' | 'file'>('file')
   const selectedTtl = ref<(typeof QUICK_TRANSFER_TTL_OPTIONS)[number]['value']>(600)
+  const selectedMaxClaims = ref(QUICK_TRANSFER_DEFAULT_MAX_CLAIMS)
   const textContent = ref('')
   const urlContent = ref('')
   const selectedFile = ref<QuickTransferSelectedFile | null>(null)
+  const showFileSourceSheet = ref(false)
   const receiveCode = ref('')
   const shareToken = ref('')
   const showShareConfirm = ref(false)
@@ -79,6 +91,14 @@
   const receivedFile = computed(() => quickTransfer.receivedResult.value?.file || null)
   const receivedText = computed(() => quickTransfer.receivedResult.value?.text || '')
   const receivedUrl = computed(() => quickTransfer.receivedResult.value?.url || '')
+  const senderClaimCount = computed(() => quickTransfer.senderStatus.value?.claimCount ?? 0)
+  const senderMaxClaims = computed(() => quickTransfer.senderStatus.value?.maxClaims ?? selectedMaxClaims.value)
+  const senderClaimLabel = computed(() => {
+    if (quickTransfer.sendState.value === 'consumed') {
+      return senderMaxClaims.value > 1 ? '✓ 已全部领取' : '✓ 对方已领取'
+    }
+    return senderMaxClaims.value > 1 ? `领取进度 ${senderClaimCount.value} / ${senderMaxClaims.value}` : '等待领取'
+  })
 
   const refreshLoginState = () => {
     isLoggedIn.value = Boolean(getToken())
@@ -89,26 +109,50 @@
       uni.getFileInfo({ filePath: path, success: result => resolve(result.size), fail: reject })
     })
 
-  const pickQuickTransferFile = async () => {
+  const applyPickedFile = async (file: SelectedFile | undefined) => {
+    if (!file) return
+    const size = file.size ?? (file.path ? await readFileSize(file.path) : undefined)
+    const sizeError = validateQuickTransferFile(size)
+    if (sizeError) {
+      fileError.value = sizeError
+      return
+    }
+    selectedFile.value = {
+      ...file,
+      size,
+      mimeType: createQuickTransferFileMetadata(file.name, size, file.type).mimeType,
+    }
+  }
+
+  const pickQuickTransferFile = async (source: 'local' | 'chat' = 'local') => {
     if (isSending.value) return
     fileError.value = ''
+    showFileSourceSheet.value = false
     try {
-      const [file] = await filePicker.pickFile({ count: 1, type: 'all' })
-      if (!file) return
-      const size = file.size ?? (file.path ? await readFileSize(file.path) : undefined)
-      const sizeError = validateQuickTransferFile(size)
-      if (sizeError) {
-        fileError.value = sizeError
-        return
-      }
-      selectedFile.value = {
-        ...file,
-        size,
-        mimeType: createQuickTransferFileMetadata(file.name, size, file.type).mimeType,
-      }
+      const files =
+        source === 'chat'
+          ? await filePicker.pickFile({ count: 1, type: 'all' })
+          : isMiniProgram.value
+            ? await filePicker.pickImage({ count: 1, sizeType: ['original'], sourceType: ['album'] })
+            : await filePicker.pickFile({ count: 1, type: 'all' })
+      await applyPickedFile(files[0])
     } catch (error) {
       if (!isFilePickerCancel(error)) fileError.value = getQuickTransferErrorMessage(error, '选择文件失败，请重试')
     }
+  }
+
+  const openFileSourceSheet = () => {
+    if (isSending.value) return
+    fileError.value = ''
+    if (isMiniProgram.value) {
+      showFileSourceSheet.value = true
+      return
+    }
+    void pickQuickTransferFile('local')
+  }
+
+  const closeFileSourceSheet = () => {
+    showFileSourceSheet.value = false
   }
 
   const clearSelectedFile = () => {
@@ -117,12 +161,25 @@
     fileError.value = ''
   }
 
+  const decreaseMaxClaims = () => {
+    selectedMaxClaims.value = Math.max(QUICK_TRANSFER_MIN_MAX_CLAIMS, selectedMaxClaims.value - 1)
+  }
+
+  const increaseMaxClaims = () => {
+    selectedMaxClaims.value = Math.min(QUICK_TRANSFER_MAX_MAX_CLAIMS, selectedMaxClaims.value + 1)
+  }
+
   const submitSend = async () => {
     if (!canSend.value) {
       showSendGate.value = true
       return
     }
     fileError.value = ''
+    const maxClaims = normalizeQuickTransferMaxClaims(selectedMaxClaims.value)
+    if (!isValidQuickTransferMaxClaims(maxClaims)) {
+      fileError.value = '领取次数需设置为 1～10 次'
+      return
+    }
     if (selectedType.value === 'text' && !textContent.value.trim()) {
       fileError.value = '请输入要发送的文本'
       return
@@ -139,13 +196,14 @@
     const file = selectedFile.value
     const payload =
       selectedType.value === 'text'
-        ? { type: 'text' as const, text: textContent.value.trim(), expiresIn: selectedTtl.value }
+        ? { type: 'text' as const, text: textContent.value.trim(), expiresIn: selectedTtl.value, maxClaims }
         : selectedType.value === 'url'
-          ? { type: 'url' as const, url: urlContent.value.trim(), expiresIn: selectedTtl.value }
+          ? { type: 'url' as const, url: urlContent.value.trim(), expiresIn: selectedTtl.value, maxClaims }
           : {
               type: 'file' as const,
               file: file ? { name: file.name, size: file.size || 0, mimeType: file.mimeType } : undefined,
               expiresIn: selectedTtl.value,
+              maxClaims,
             }
 
     await quickTransfer.send(payload, file || undefined)
@@ -208,6 +266,7 @@
 
   const resetToSend = () => {
     quickTransfer.resetSendResult()
+    selectedMaxClaims.value = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS
     mode.value = 'send'
   }
 
@@ -287,7 +346,7 @@
           </view>
 
           <view v-if="selectedType === 'file'" class="field-block">
-            <view v-if="!selectedFile" class="file-picker" @click="pickQuickTransferFile">
+            <view v-if="!selectedFile" class="file-picker" @click="openFileSourceSheet">
               <text class="file-picker-icon">＋</text>
               <text class="file-picker-title">选择要传送的文件</text>
               <text class="file-picker-desc">单个文件最大 50 MiB</text>
@@ -300,11 +359,11 @@
               </view>
               <button class="text-button" @click="clearSelectedFile">移除</button>
             </view>
-            <view v-if="selectedFile" class="change-file" @click="pickQuickTransferFile">重新选择</view>
+            <view v-if="selectedFile" class="change-file" @click="openFileSourceSheet">重新选择</view>
           </view>
 
           <view class="ttl-block">
-            <view class="field-label"><text>有效期</text><text class="field-hint">领取后即失效</text></view>
+            <view class="field-label"><text>有效期</text><text class="field-hint">到期或领完后失效</text></view>
             <view class="ttl-options">
               <view
                 v-for="item in QUICK_TRANSFER_TTL_OPTIONS"
@@ -315,6 +374,20 @@
                 <text>{{ item.label }}</text>
               </view>
             </view>
+          </view>
+
+          <view class="claims-block">
+            <view class="field-label"><text>领取次数</text><text class="field-hint">设置提取码最多可成功领取的次数</text></view>
+            <view class="claims-stepper">
+              <button class="stepper-button" :disabled="selectedMaxClaims <= QUICK_TRANSFER_MIN_MAX_CLAIMS" @click="decreaseMaxClaims"
+                >−</button
+              >
+              <text class="claims-value">{{ selectedMaxClaims }} 次</text>
+              <button class="stepper-button" :disabled="selectedMaxClaims >= QUICK_TRANSFER_MAX_MAX_CLAIMS" @click="increaseMaxClaims"
+                >＋</button
+              >
+            </view>
+            <text class="claims-range">1～10 次</text>
           </view>
 
           <view v-if="fileError" class="inline-error">{{ fileError }}</view>
@@ -330,7 +403,9 @@
           <text class="ready-label">提取码</text>
           <text class="ready-code" selectable>{{ quickTransfer.code.value }}</text>
           <text v-if="quickTransfer.sendState.value === 'ready'" class="ready-expiry">{{ quickTransfer.countdown.value }} 后失效</text>
-          <text v-if="quickTransfer.sendState.value === 'consumed'" class="consumed-label">✓ 对方已领取</text>
+          <text class="ready-claims" :class="{ 'consumed-label': quickTransfer.sendState.value === 'consumed' }">{{
+            senderClaimLabel
+          }}</text>
           <view class="action-row">
             <button class="primary-button" @click="copyCode">复制提取码</button>
             <button v-if="sharePayload.kind === 'transfer'" class="secondary-button" @click="copyShareUrl">复制分享链接</button>
@@ -346,7 +421,7 @@
       <view v-else class="content-card receive-card">
         <view v-if="showShareConfirm" class="share-confirm-panel">
           <text class="share-confirm-title">收到一个临时快传</text>
-          <text class="share-confirm-desc">该内容仅可领取一次，确认后将立即消费。</text>
+          <text class="share-confirm-desc">该内容为临时快传，确认后即可领取。</text>
           <button class="primary-button" :disabled="isReceiving" @click="claim">确认领取</button>
         </view>
         <template v-else-if="quickTransfer.receiveState.value !== 'received'">
@@ -394,6 +469,30 @@
             >
           </view>
           <view v-if="receiveErrorMessage" class="inline-error">{{ receiveErrorMessage }}</view>
+        </view>
+      </view>
+
+      <view v-if="showFileSourceSheet" class="file-source-mask" @click="closeFileSourceSheet">
+        <view class="file-source-sheet" @click.stop>
+          <view class="file-source-header">
+            <text class="file-source-title">选择文件来源</text>
+            <text class="file-source-close" @click="closeFileSourceSheet">×</text>
+          </view>
+          <view class="file-source-option" @click="pickQuickTransferFile('local')">
+            <view class="file-source-option-text">
+              <text class="file-source-option-title">选择文件</text>
+              <text class="file-source-option-desc">从手机图库选择图片</text>
+            </view>
+            <text class="file-source-arrow">›</text>
+          </view>
+          <view class="file-source-option" @click="pickQuickTransferFile('chat')">
+            <view class="file-source-option-text">
+              <text class="file-source-option-title">选择聊天记录</text>
+              <text class="file-source-option-desc">从微信聊天记录选择文件</text>
+            </view>
+            <text class="file-source-arrow">›</text>
+          </view>
+          <view class="file-source-cancel" @click="closeFileSourceSheet">取消</view>
         </view>
       </view>
     </view>
@@ -493,7 +592,8 @@
   }
 
   .field-block,
-  .ttl-block {
+  .ttl-block,
+  .claims-block {
     margin-bottom: 26rpx;
   }
 
@@ -544,6 +644,91 @@
     border: 2rpx dashed var(--theme-border);
     border-radius: 18rpx;
     background: var(--theme-surface-muted);
+  }
+
+  .file-source-mask {
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.42);
+  }
+
+  .file-source-sheet {
+    width: 100%;
+    padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+    border-radius: 28rpx 28rpx 0 0;
+    background: var(--theme-surface);
+    box-sizing: border-box;
+  }
+
+  .file-source-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4rpx 8rpx 20rpx;
+  }
+
+  .file-source-title {
+    color: var(--theme-text);
+    font-size: 30rpx;
+    font-weight: 600;
+  }
+
+  .file-source-close {
+    padding: 4rpx 12rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 42rpx;
+    line-height: 1;
+  }
+
+  .file-source-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24rpx 8rpx;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .file-source-option-text {
+    min-width: 0;
+  }
+
+  .file-source-option-title,
+  .file-source-option-desc {
+    display: block;
+  }
+
+  .file-source-option-title {
+    color: var(--theme-text);
+    font-size: 28rpx;
+  }
+
+  .file-source-option-desc {
+    margin-top: 8rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 23rpx;
+  }
+
+  .file-source-arrow {
+    margin-left: 20rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 38rpx;
+    line-height: 1;
+  }
+
+  .file-source-cancel {
+    margin-top: 16rpx;
+    padding: 24rpx 8rpx;
+    border-radius: 16rpx;
+    color: var(--theme-brand);
+    background: var(--theme-surface-muted);
+    font-size: 28rpx;
+    text-align: center;
   }
 
   .file-picker-icon {
@@ -648,6 +833,51 @@
     text-align: center;
   }
 
+  .claims-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24rpx;
+  }
+
+  .stepper-button {
+    width: 76rpx;
+    height: 76rpx;
+    margin: 0;
+    padding: 0;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 16rpx;
+    color: var(--theme-brand);
+    background: var(--theme-surface-muted);
+    font-size: 42rpx;
+    line-height: 72rpx;
+  }
+
+  .stepper-button::after {
+    border: 0;
+  }
+
+  .stepper-button[disabled] {
+    color: var(--theme-text-tertiary);
+    opacity: 0.5;
+  }
+
+  .claims-value {
+    min-width: 140rpx;
+    color: var(--theme-text);
+    font-size: 32rpx;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .claims-range {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 23rpx;
+    text-align: center;
+  }
+
   .primary-button,
   .secondary-button {
     min-width: 0;
@@ -734,6 +964,7 @@
 
   .ready-label,
   .ready-expiry,
+  .ready-claims,
   .consumed-label {
     display: block;
     color: var(--theme-text-secondary);

@@ -37,6 +37,7 @@ export interface QuickTransferUploadDescriptor {
 export interface QuickTransferCreatePayload {
   type: QuickTransferType
   expiresIn: QuickTransferTtl
+  maxClaims: number
   text?: string
   url?: string
   file?: QuickTransferFileMetadata
@@ -49,6 +50,8 @@ export interface QuickTransferCreateResult {
   status: 'uploading' | 'ready'
   transferId: string
   type: QuickTransferType
+  claimCount: number
+  maxClaims: number
   upload?: QuickTransferUploadDescriptor
 }
 
@@ -56,6 +59,8 @@ export interface QuickTransferStatusResult {
   transferId: string
   type: QuickTransferType
   status: QuickTransferStatus
+  claimCount: number
+  maxClaims: number
   expiresAt: string
   file?: QuickTransferFileMetadata
   consumedAt?: string

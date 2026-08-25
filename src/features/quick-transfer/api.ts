@@ -8,6 +8,8 @@ import type {
   QuickTransferStatus,
   QuickTransferUploadDescriptor,
 } from './types'
+import { QUICK_TRANSFER_DEFAULT_MAX_CLAIMS } from './constants'
+import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims } from './helpers'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import {
   deleteQuickTransfersTransferId,
@@ -99,7 +101,9 @@ export const createQuickTransfer = async (payload: QuickTransferCreatePayload): 
   const record = unwrapData(response)
   return {
     code: requiredString(record, 'code'),
+    claimCount: normalizeQuickTransferClaimCount(record.claimCount),
     expiresAt: requiredString(record, 'expiresAt'),
+    maxClaims: normalizeQuickTransferMaxClaims(record.maxClaims, payload.maxClaims),
     shareToken: requiredString(record, 'shareToken'),
     status: record.status === 'uploading' ? 'uploading' : 'ready',
     transferId: requiredString(record, 'transferId'),
@@ -108,28 +112,39 @@ export const createQuickTransfer = async (payload: QuickTransferCreatePayload): 
   }
 }
 
-export const completeQuickTransfer = async (transferId: string): Promise<QuickTransferStatusResult> => {
+export const completeQuickTransfer = async (
+  transferId: string,
+  fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+): Promise<QuickTransferStatusResult> => {
   const response = await postQuickTransfersTransferIdComplete(transferId)
-  return normalizeStatusResponse(response)
+  return normalizeStatusResponse(response, fallbackMaxClaims)
 }
 
-export const getQuickTransferStatus = async (transferId: string): Promise<QuickTransferStatusResult> => {
+export const getQuickTransferStatus = async (
+  transferId: string,
+  fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+): Promise<QuickTransferStatusResult> => {
   const response = await getQuickTransfersTransferId(transferId)
-  return normalizeStatusResponse(response)
+  return normalizeStatusResponse(response, fallbackMaxClaims)
 }
 
-export const cancelQuickTransfer = async (transferId: string): Promise<QuickTransferStatusResult> => {
+export const cancelQuickTransfer = async (
+  transferId: string,
+  fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
+): Promise<QuickTransferStatusResult> => {
   const response = await deleteQuickTransfersTransferId(transferId)
-  return normalizeStatusResponse(response)
+  return normalizeStatusResponse(response, fallbackMaxClaims)
 }
 
-const normalizeStatusResponse = (response: unknown): QuickTransferStatusResult => {
+const normalizeStatusResponse = (response: unknown, fallbackMaxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): QuickTransferStatusResult => {
   const record = unwrapData(response)
   const status = normalizeStatusValue(record.status)
   return {
+    claimCount: normalizeQuickTransferClaimCount(record.claimCount),
     transferId: requiredString(record, 'transferId'),
     type: normalizeType(record.type),
     status,
+    maxClaims: normalizeQuickTransferMaxClaims(record.maxClaims, fallbackMaxClaims),
     expiresAt: requiredString(record, 'expiresAt'),
     file: normalizeFile(record.file),
     consumedAt: typeof record.consumedAt === 'string' ? record.consumedAt : undefined,

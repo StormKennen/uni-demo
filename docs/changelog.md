@@ -15,6 +15,40 @@
 
 - 2026-08-23 [tools/quick-transfer] 后端已统一 Quick Transfer 为公共响应包装；前端移除直出响应特判、统一请求底层扩展和专用请求日志，五个 Apifox 接口恢复遵循公共 `{ code: 200, data }` 响应规范（Codex）
 
+- 2026-08-23 [tools/quick-transfer] 支持发送方设置 1～10 次领取次数（默认 1），text/url/file 创建请求统一透传 `maxClaims`；Sender 读取并轮询 `claimCount/maxClaims`，达到后端 `consumed` 前保持 ready 和 Transfer 分享，更新领取进度、有效期及接收文案；继续归属 `text` workspace，不新增 workspace（Codex）
+
+- 2026-08-24 [tools/quick-transfer] 微信小程序文件发送先展示底部文件来源浮窗；“选择文件”使用图库选图，“选择聊天记录”使用微信聊天文件选择，H5 继续使用本地文件选择器（Codex）
+
+- 2026-08-24 [tools/game-coupons] 新增魔灵召唤兑换券单券详情与分享领取页：按 couponId 加载券详情，支持游客/登录账号复用、昵称验证、单账号单券领取、成功/已领取/失败状态、区服限制与微信分享；详情分享标题改为“昵称分享了魔灵召唤兑换券给你”，无昵称时回退为“好友分享了魔灵召唤兑换券给你”（Codex）
+
+- 2026-08-24 [tools/game-coupons] 兑换券详情页接入 OSS 海报资源：顶部展示魔灵召唤官方礼品主视觉，兑换券背景图叠加券码、奖励、有效期、区服与状态；微信好友/朋友圈分享卡片使用官方礼品主视觉（Codex）
+
+- 2026-08-24 [tools/game-coupons] 精简兑换券详情页账号领取区：区服选择器、Hive ID 输入框和验证按钮统一紧凑高度，确认与分享操作减少纵向占用（Codex）
+
+- 2026-08-24 [tools/game-coupons] 增强兑换券详情页禁用领取按钮的中性灰背景和边框对比，明确不可点击状态（Codex）
+
+- 2026-08-24 [tools/game-coupons] 合并详情页校验与领取流程：仅保留常亮“领取”按钮，缺少必填账号时在固定位置显示红色提示，填写完整后自动先校验再领取（Codex）
+
+- 2026-08-24 [tools/game-coupons] 将兑换券详情账号与领取交互整合进海报容器；新增 Hive ID 输入防抖/节流自动校验、固定高度昵称展示，并在兑换券过期时禁用领取按钮（Codex）
+
+- 2026-08-24 [tools/game-coupons] 将兑换券背景图按原始券面比例铺设并拉伸覆盖账号交互容器，保持券面信息布局稳定（Codex）
+
+- 2026-08-24 [tools/game-coupons] 优化兑换券海报详情视觉：券码改用黄橙色，移除页面外层留白，导航栏保持透明并隐藏标题（Codex）
+
+- 2026-08-24 [tools/game-coupons] 详情页返回按钮继续复用统一安全返回逻辑，并将页面栈不足时的 fallback 动态指向当前游戏的兑换券管理页（Codex）
+
+- 2026-08-25 [components/PageLayout,tools/game-coupons] 新增导航栏覆盖内容模式；兑换券详情页让顶部海报从页面最顶端开始、使用白色返回图标，并以海报深色主调填充底部空白（Codex）
+
+- 2026-08-25 [tools/game-coupons] 让兑换券第二张海报容器至少填满图一之后的剩余视口高度，确保图二背景延伸到页面底部而不露出页面底色（Codex）
+
+- 2026-08-25 [tools/game-coupons] 优化兑换券海报信息层级：主标题改为更醒目的“魔灵召唤活动兑换券”，放大兑换码标签和值，并将分享与查看其他兑换券改为高对比操作按钮组（Codex）
+
+- 2026-08-25 [tools/game-coupons] 精简海报二标题与游客模式文案，放大奖励信息并统一券码、账号、奖励和操作区的左右对齐；加载阶段预先展示两张海报并在海报二内显示深色加载状态（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页无券码时增加可用券码加载动画；详情页将券码容器下移并预留海报二顶部视觉间距（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页导航栏改为透明覆盖模式并隐藏标题，顶部接入 OSS 主视觉；券码列表行改为选中/反选，新增独立蓝色“查看”按钮进入详情（Codex）
+
 - 2026-08-20 [tools/memo] 完善备忘录内容设计器 V2：建立旧内容与 settings 归一化、统一 ContentAction、结构化 Block 与复用 Renderer，并治理 Block 操作、图片布局/点击、多媒体类型、附件职责和 V2 持久化（Codex）
 
 - 2026-08-18 [tools/memo,auth/http,auth/login] 接入备忘录游客访问闭环：游客列表走公开关系接口，详情支持 shareToken，Owner 分享先获取凭证并用于 H5/微信分享；Guest Session 支持登录过渡与 Guest Migration 双身份请求，登录/自动登录后幂等补偿迁移并在失败时保留游客会话，Guest/Shared/Admin 全部只读且登录回流后列表自动切换（Codex）

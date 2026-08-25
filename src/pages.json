@@ -449,6 +449,13 @@
             "navigationBarTitleText": "游戏兑换券",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "game-coupons/detail",
+          "style": {
+            "navigationBarTitleText": "兑换券详情",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

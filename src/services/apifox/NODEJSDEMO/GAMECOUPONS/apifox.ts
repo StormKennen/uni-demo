@@ -5,6 +5,8 @@ import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   deleteGameIdAccountsAccountIdPathQuery,
   deleteGameIdAccountsAccountIdRes,
+  getGameCouponsCodesDetailQuery,
+  getGameCouponsCodesDetailRes,
   getGameCouponsGameIdAccountsQuery,
   getGameCouponsGameIdAccountsRes,
   getGameCouponsGameIdCodesQuery,
@@ -133,7 +135,7 @@ export const postGameCouponsGameIdAccounts = async (
  * @url GET /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831029
  */
-export const getGameIdAccountsAccountId = async (
+export const getGameCouponsAccounts = async (
   pathParams: Expand<getGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<getGameIdAccountsAccountIdRes>> => {
@@ -150,7 +152,7 @@ export const getGameIdAccountsAccountId = async (
  * @url PATCH /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831030
  */
-export const patchGameIdAccountsAccountId = async (
+export const patchGameCouponsAccounts = async (
   pathParams: Expand<patchGameIdAccountsAccountIdPathQuery>,
   data: Expand<patchGameIdAccountsAccountIdBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
@@ -168,7 +170,7 @@ export const patchGameIdAccountsAccountId = async (
  * @url DELETE /game-coupons/{gameId}/accounts/{accountId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831031
  */
-export const deleteGameIdAccountsAccountId = async (
+export const deleteGameCouponsAccounts = async (
   pathParams: Expand<deleteGameIdAccountsAccountIdPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<deleteGameIdAccountsAccountIdRes>> => {
@@ -185,7 +187,7 @@ export const deleteGameIdAccountsAccountId = async (
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/verify
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831032
  */
-export const postAccountsAccountIdVerify = async (
+export const postGameCouponsAccountsVerify = async (
   pathParams: Expand<postAccountsAccountIdVerifyPathQuery>,
   config?: Expand<ParticalUniAppRequestOptions>,
 ): Promise<Expand<postAccountsAccountIdVerifyRes>> => {
@@ -202,7 +204,7 @@ export const postAccountsAccountIdVerify = async (
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/auto-redeem
  * @host https://app.apifox.com/link/project/7048425/apis/api-479831033
  */
-export const postAccountsAccountIdAutoRedeem = async (
+export const postGameCouponsAccountsAutoRedeem = async (
   pathParams: Expand<postAccountsAccountIdAutoRedeemPathQuery>,
   data: Expand<postAccountsAccountIdAutoRedeemBody>,
   config?: Expand<ParticalUniAppRequestOptions>,
@@ -264,4 +266,17 @@ export const postGameIdAccountsClaimGuest = async (
     data,
     _config,
   )
+}
+
+/**
+ * @description GameCoupons/获取单个兑换券详情
+ * @url GET /game-coupons/codes/detail
+ * @host https://app.apifox.com/link/project/7048425/apis/api-505509459
+ */
+export const getGameCouponsCodesDetail = async (
+  params: Expand<getGameCouponsCodesDetailQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getGameCouponsCodesDetailRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/game-coupons/codes/detail`, params, _config)
 }
