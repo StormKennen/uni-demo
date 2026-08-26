@@ -37,7 +37,20 @@ export const postQuickTransfers = async (
 }
 
 /**
- * @description QuickTransfer/通过 code 或 shareToken 收船
+ * @description QuickTransfer/检查分享飞船是否可接收
+ * @url POST /quick-transfers/share/inspect
+ * @host https://app.apifox.com/link/project/7048425/apis/api-506511449
+ */
+export const postQuickTransfersShareInspect = async (
+  data: Expand<postQuickTransfersShareInspectBody>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<postQuickTransfersShareInspectRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.post(`/quick-transfers/share/inspect`, data, _config)
+}
+
+/**
+ * @description QuickTransfer/通过 code 或 shareToken 接收飞船
  * @url POST /quick-transfers/resolve
  * @host https://app.apifox.com/link/project/7048425/apis/api-505270930
  */
@@ -63,19 +76,6 @@ export const postQuickTransfersTransferIdComplete = async (
 }
 
 /**
- * @description QuickTransfer/检查分享飞船是否可领取
- * @url POST /quick-transfers/share/inspect
- * @host https://app.apifox.com/link/project/7048425/apis/api-506511449
- */
-export const postQuickTransfersShareInspect = async (
-  data: Expand<postQuickTransfersShareInspectBody>,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<postQuickTransfersShareInspectRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.post(`/quick-transfers/share/inspect`, data, _config)
-}
-
-/**
  * @description QuickTransfer/完成单个文件上传校验
  * @url POST /quick-transfers/{transferId}/files/{fileId}/complete
  * @host https://app.apifox.com/link/project/7048425/apis/api-506511450
@@ -90,19 +90,6 @@ export const postQuickTransfersFilesComplete = async (
     {},
     _config,
   )
-}
-
-/**
- * @description QuickTransfer/Owner 查看飞船状态
- * @url GET /quick-transfers/{transferId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-505270932
- */
-export const getQuickTransfersTransferId = async (
-  transferId: string,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<getQuickTransfersTransferIdRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.get(`/quick-transfers/${transferId}`, {}, _config)
 }
 
 /**
@@ -123,19 +110,6 @@ export const postQuickTransfersFilesUploadPolicy = async (
 }
 
 /**
- * @description QuickTransfer/Owner 召回整艘飞船
- * @url DELETE /quick-transfers/{transferId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-505270933
- */
-export const deleteQuickTransfersTransferId = async (
-  transferId: string,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<deleteQuickTransfersTransferIdRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/quick-transfers/${transferId}`, {}, _config)
-}
-
-/**
  * @description QuickTransfer/按需获取文件 Signed URL
  * @url POST /quick-transfers/{transferId}/files/{fileId}/access
  * @host https://app.apifox.com/link/project/7048425/apis/api-506511452
@@ -151,4 +125,30 @@ export const postQuickTransfersFilesAccess = async (
     data,
     _config,
   )
+}
+
+/**
+ * @description QuickTransfer/Owner 查看飞船状态
+ * @url GET /quick-transfers/{transferId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-505270932
+ */
+export const getQuickTransfersTransferId = async (
+  transferId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getQuickTransfersTransferIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/quick-transfers/${transferId}`, {}, _config)
+}
+
+/**
+ * @description QuickTransfer/Owner 召回整艘飞船
+ * @url DELETE /quick-transfers/{transferId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-505270933
+ */
+export const deleteQuickTransfersTransferId = async (
+  transferId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<deleteQuickTransfersTransferIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete(`/quick-transfers/${transferId}`, {}, _config)
 }

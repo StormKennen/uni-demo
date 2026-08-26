@@ -47,13 +47,27 @@ export interface postQuickTransfersBodyContent {
 export type postQuickTransfersRes = string
 
 /**
- * @description QuickTransfer/通过 code 或 shareToken 收船--接口请求Body参数
+ * @description QuickTransfer/检查分享飞船是否可接收--接口请求Body参数
+ * @url POST /quick-transfers/share/inspect
+ */
+export interface postQuickTransfersShareInspectBody {
+  shareToken: string
+}
+
+/**
+ * @description QuickTransfer/检查分享飞船是否可接收--接口返回值
+ * @url POST /quick-transfers/share/inspect
+ */
+export type postQuickTransfersShareInspectRes = string
+
+/**
+ * @description QuickTransfer/通过 code 或 shareToken 接收飞船--接口请求Body参数
  * @url POST /quick-transfers/resolve
  */
 export type postQuickTransfersResolveBody = string
 
 /**
- * @description QuickTransfer/通过 code 或 shareToken 收船--接口返回值
+ * @description QuickTransfer/通过 code 或 shareToken 接收飞船--接口返回值
  * @url POST /quick-transfers/resolve
  */
 export type postQuickTransfersResolveRes = string
@@ -63,20 +77,6 @@ export type postQuickTransfersResolveRes = string
  * @url POST /quick-transfers/{transferId}/complete
  */
 export type postQuickTransfersTransferIdCompleteRes = string
-
-/**
- * @description QuickTransfer/检查分享飞船是否可领取--接口请求Body参数
- * @url POST /quick-transfers/share/inspect
- */
-export interface postQuickTransfersShareInspectBody {
-  shareToken: string
-}
-
-/**
- * @description QuickTransfer/检查分享飞船是否可领取--接口返回值
- * @url POST /quick-transfers/share/inspect
- */
-export type postQuickTransfersShareInspectRes = string
 
 /**
  * @description QuickTransfer/完成单个文件上传校验--接口路径参数
@@ -95,12 +95,6 @@ export interface postFilesFileIdCompletePathQuery {
 export type postFilesFileIdCompleteRes = string
 
 /**
- * @description QuickTransfer/Owner 查看飞船状态--接口返回值
- * @url GET /quick-transfers/{transferId}
- */
-export type getQuickTransfersTransferIdRes = string
-
-/**
  * @description QuickTransfer/重新获取单文件 OSS 上传凭证--接口路径参数
  * @url POST /quick-transfers/{transferId}/files/{fileId}/upload-policy
  */
@@ -115,12 +109,6 @@ export interface postFilesFileIdUploadPolicyPathQuery {
  * @url POST /quick-transfers/{transferId}/files/{fileId}/upload-policy
  */
 export type postFilesFileIdUploadPolicyRes = string
-
-/**
- * @description QuickTransfer/Owner 召回整艘飞船--接口返回值
- * @url DELETE /quick-transfers/{transferId}
- */
-export type deleteQuickTransfersTransferIdRes = string
 
 /**
  * @description QuickTransfer/按需获取文件 Signed URL--接口路径参数
@@ -145,3 +133,15 @@ export interface postFilesFileIdAccessBody {
  * @url POST /quick-transfers/{transferId}/files/{fileId}/access
  */
 export type postFilesFileIdAccessRes = string
+
+/**
+ * @description QuickTransfer/Owner 查看飞船状态--接口返回值
+ * @url GET /quick-transfers/{transferId}
+ */
+export type getQuickTransfersTransferIdRes = string
+
+/**
+ * @description QuickTransfer/Owner 召回整艘飞船--接口返回值
+ * @url DELETE /quick-transfers/{transferId}
+ */
+export type deleteQuickTransfersTransferIdRes = string
