@@ -1,14 +1,14 @@
 import type { QuickShipFileDraft, QuickTransferReceiveState, QuickTransferSendState, QuickTransferSummary } from './types'
 
 export const QUICK_TRANSFER_COPY = {
-  heroDescription: '留言、链接、文件和引用，一艘飞船一起送到。',
-  sendTab: '送船',
-  receiveTab: '收船',
-  sendButton: '让飞船出发',
-  receiveButton: '收船',
-  receiveLoading: '正在收船…',
-  receivedTitle: '船来了！',
-  receivedDescription: '飞船已经到达，打开看看带来了什么。',
+  heroDescription: '跨设备快速传递内容',
+  sendTab: '发送',
+  receiveTab: '接收',
+  sendButton: '发送',
+  receiveButton: '接收',
+  receiveLoading: '正在接收…',
+  receivedTitle: '飞船已到达',
+  receivedDescription: '内容已经安全送达，打开查看本次传输。',
   openReceived: '打开飞船',
 } as const
 
@@ -20,7 +20,7 @@ export const getQuickTransferSendButtonLabel = (state: QuickTransferSendState, u
 }
 
 export const getQuickTransferSenderTitle = (state: QuickTransferSendState): string => {
-  if (state === 'ready') return '飞船航行中'
+  if (state === 'ready') return '飞船已出发'
   if (state === 'consumed') return '飞船任务完成 ✓'
   if (state === 'expired') return '飞船已返航'
   if (state === 'cancelled') return '飞船已召回'
@@ -37,8 +37,8 @@ export const getQuickTransferSenderDescription = (state: QuickTransferSendState)
 
 export const getQuickTransferSenderClaimLabel = (state: QuickTransferSendState, claimCount: number, maxClaims: number): string => {
   if (state === 'consumed') return maxClaims > 1 ? '飞船任务完成 ✓' : '对方已收船 ✓'
-  if (state === 'ready' && maxClaims > 1 && claimCount > 0) return `已收船 ${claimCount} / ${maxClaims} 次`
-  return '等待对方收船'
+  if (state === 'ready') return `已领取 ${claimCount} / ${maxClaims}`
+  return '等待对方领取'
 }
 
 export const formatQuickTransferSummary = (summary: QuickTransferSummary): string => {
@@ -57,6 +57,26 @@ export const getQuickTransferFileStateLabel = (file: QuickShipFileDraft): string
   if (file.uploadState === 'ready') return '已完成 ✓'
   if (file.uploadState === 'error') return file.error || '上传失败'
   return '等待上传'
+}
+
+export const getQuickTransferFileTypeLabel = (mimeType: string): string => {
+  const normalized = mimeType.trim().toLowerCase()
+  const knownTypes: Record<string, string> = {
+    'application/pdf': 'PDF',
+    'application/msword': 'DOC',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+    'application/vnd.ms-excel': 'XLS',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+    'application/vnd.ms-powerpoint': 'PPT',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+    'application/zip': 'ZIP',
+    'text/plain': 'TXT',
+  }
+  if (knownTypes[normalized]) return knownTypes[normalized]
+  if (normalized.startsWith('image/')) return normalized.slice('image/'.length).toUpperCase()
+  if (normalized.startsWith('video/')) return normalized.slice('video/'.length).toUpperCase()
+  if (normalized.startsWith('audio/')) return normalized.slice('audio/'.length).toUpperCase()
+  return '文件'
 }
 
 export const isQuickTransferReceivedContentVisible = (state: QuickTransferReceiveState, isOpened: boolean): boolean =>

@@ -141,8 +141,10 @@ QUICK_TRANSFER_NOT_CONFIGURED
 - 微信游客/登录用户、H5 未登录/登录用户。
 - `pnpm lint`、`pnpm type-check`、Quick Transfer 测试、`pnpm build:mp-weixin`、`pnpm build:h5` 及仓库检查，并区分既有基线错误。
 
-## 9. 飞船视觉层
+## 9. 飞船视觉层（UI V3）
 
-飞船页面统一使用 `src/features/quick-transfer/visual.ts` 中的公开 OSS PNG，并由 `QuickShipVisual` 组件负责展示。组件只处理视觉状态、CSS 动画和图片加载失败兜底，不参与 API、上传、领取或定时器。
+飞船页面采用“科技海报 Hero + 上浮操作舱”结构。Hero 由 CSS 渐变、光晕和轨迹装饰组成，不使用海报图片、Canvas 或粒子库；沉浸式导航通过 `PageLayout` 的 `navOverlay`、透明背景和 `light` 导航样式实现。Hero 只展示“飞船 / 跨设备快速传递内容”和“发送 / 接收”切换，不展示常驻飞船 PNG。
 
-业务状态只映射为视觉状态：送船表单为 `idle`，创建/上传/Complete 为 `loading`，Ready 首次进入为 `departing` 后转为 `traveling`，收船成功为 `arrived`，过期为 `returned`，召回为 `cancelled`。H5 的 reduced-motion 环境关闭动画；图片加载失败时隐藏视觉但不影响业务流程。
+`src/features/quick-transfer/visual.ts` 只公开现有 OSS PNG 和两种 UI Transition 类型：`depart`、`arrive`。`QuickShipTransition` 是 fixed Overlay，仅负责一次性 CSS 动画、图片加载失败兜底和 `finished` 事件，不参与 API、上传、领取或定时器。发送按钮点击后立即播放 `depart`；Resolve 成功后播放 `arrive`；动画结束或图片加载失败均收口 Overlay。H5 的 reduced-motion 环境关闭动画，但仍由生命周期定时器触发完成事件。
+
+业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用收船码票据样式，接收成功后再展开留言、链接、文件、引用内容。

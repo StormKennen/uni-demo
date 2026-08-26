@@ -1,7 +1,11 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
-  import QuickShipVisual from './components/QuickShipVisual.vue'
+  import QuickShipReceivePanel from './components/QuickShipReceivePanel.vue'
+  import QuickShipReceivedContent from './components/QuickShipReceivedContent.vue'
+  import QuickShipSendForm from './components/QuickShipSendForm.vue'
+  import QuickShipSendResult from './components/QuickShipSendResult.vue'
+  import QuickShipTransition from './components/QuickShipTransition.vue'
   import PageLayout from '@/components/PageLayout.vue'
   import { filePicker, isFilePickerCancel } from '@/platform/file'
   import type { SelectedFile } from '@/platform/file'
@@ -11,9 +15,7 @@
   import {
     MAX_QUICK_TRANSFER_FILE_COUNT,
     QUICK_TRANSFER_MAX_MAX_CLAIMS,
-    QUICK_TRANSFER_MIN_MAX_CLAIMS,
     QUICK_TRANSFER_ROUTE,
-    QUICK_TRANSFER_TITLE,
     QUICK_TRANSFER_TTL_OPTIONS,
   } from '@/features/quick-transfer/constants'
   import { getQuickTransferErrorMessage } from '@/features/quick-transfer/errors'
@@ -21,8 +23,6 @@
     buildQuickTransferSharePath,
     createQuickShipDraft,
     createQuickShipFileDraft,
-    formatQuickTransferExpiry,
-    formatQuickTransferFileSize,
     hasQuickShipContent,
     isValidQuickTransferMaxClaims,
     isValidQuickTransferUrl,
@@ -34,7 +34,6 @@
   import { getQuickTransferSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import {
     formatQuickTransferSummary,
-    getQuickTransferFileStateLabel,
     getQuickTransferSenderDescription,
     getQuickTransferSenderTitle,
     getQuickTransferSendButtonLabel,
@@ -49,8 +48,9 @@
     QuickShipLinkDraft,
     QuickTransferContentReference,
     QuickTransferPageQuery,
+    QuickTransferTtl,
   } from '@/features/quick-transfer/types'
-  import { getQuickShipVisualState, type QuickShipVisualState } from '@/features/quick-transfer/visual'
+  import type { QuickShipTransitionType } from '@/features/quick-transfer/visual'
 
   interface LinkEditor {
     localId: string
@@ -70,6 +70,7 @@
   const isReceivedContentOpened = ref(false)
   const showFileSourceSheet = ref(false)
   const linkEditor = ref<LinkEditor | null>(null)
+  const shipTransition = ref<QuickShipTransitionType | null>(null)
 
   // #ifdef MP-WEIXIN
   isMiniProgram.value = true
@@ -129,9 +130,7 @@
     return receiveErrorMessage.value
   })
   const receiveErrorDescription = computed(() => {
-    if (isReceiveUnavailable.value) {
-      return '内容可能已经过期、被召回或已经领取完。'
-    }
+    if (isReceiveUnavailable.value) return '内容可能已经过期、被召回或已经领取完。'
     if (isClaimTokenError.value) return '重新收船可能会再次占用一次领取次数。'
     if (receiveErrorCode.value === '429') return '稍后再试。'
     if (receiveErrorCode.value === 'NETWORK_ERROR') return '检查网络后再试一次。'
@@ -144,14 +143,6 @@
   const receiveSummaryText = computed(() =>
     quickTransfer.inspectResult.value ? formatQuickTransferSummary(quickTransfer.inspectResult.value.summary) : '',
   )
-  const receivedText = computed(() => receivedContent.value?.text || '')
-  const receivedLinks = computed(() => receivedContent.value?.links || [])
-  const receivedFiles = computed(() => receivedContent.value?.files || [])
-  const receivedReferences = computed(() => receivedContent.value?.references || [])
-  const quickShipVisualState = computed<QuickShipVisualState>(() => {
-    return getQuickShipVisualState(mode.value, quickTransfer.sendState.value, quickTransfer.receiveState.value)
-  })
-  const quickShipVisualCompact = computed(() => mode.value === 'receive' || isSendResultVisible.value)
 
   const refreshLoginState = () => {
     isLoggedIn.value = Boolean(getToken())
@@ -248,12 +239,20 @@
     if (!isSending.value) draft.value.links = draft.value.links.filter(item => item.localId !== link.localId)
   }
 
-  const decreaseMaxClaims = () => {
-    draft.value.maxClaims = Math.max(QUICK_TRANSFER_MIN_MAX_CLAIMS, draft.value.maxClaims - 1)
+  const removeReference = (localId: string) => {
+    if (!isSending.value) draft.value.references = draft.value.references.filter(item => item.localId !== localId)
   }
 
-  const increaseMaxClaims = () => {
-    draft.value.maxClaims = Math.min(QUICK_TRANSFER_MAX_MAX_CLAIMS, draft.value.maxClaims + 1)
+  const updateDraftText = (value: string) => {
+    draft.value.text = value
+  }
+
+  const updateExpiresIn = (value: QuickTransferTtl) => {
+    draft.value.expiresIn = value
+  }
+
+  const updateMaxClaims = (value: number) => {
+    if (value >= 1 && value <= QUICK_TRANSFER_MAX_MAX_CLAIMS) draft.value.maxClaims = value
   }
 
   const submitSend = async () => {
@@ -267,7 +266,7 @@
       return
     }
     if (!isValidQuickTransferMaxClaims(draft.value.maxClaims)) {
-      fileError.value = '收船次数需设置为 1～10 次'
+      fileError.value = '领取次数需设置为 1～10 次'
       return
     }
     const fileLimitError = validateQuickTransferFiles(draft.value.files)
@@ -275,6 +274,7 @@
       fileError.value = fileLimitError
       return
     }
+    shipTransition.value = 'depart'
     await quickTransfer.send(draft.value)
   }
 
@@ -297,7 +297,7 @@
 
   const copyCode = () => copyText(quickTransfer.code.value, '收船码已复制')
   const copyShareUrl = () => copyText(shareUrl.value, '分享链接已复制')
-  const copyReceivedText = () => copyText(receivedText.value, '留言已复制')
+  const copyReceivedText = () => copyText(receivedContent.value?.text || '', '留言已复制')
   const copyReceivedUrl = (url: string) => copyText(url, '链接已复制')
 
   const openReceivedUrl = (url: string) => {
@@ -309,13 +309,14 @@
     // #endif
   }
 
-  const claim = () => {
-    if (shareToken.value) {
-      void quickTransfer.receive({ shareToken: shareToken.value })
-      return
+  const claim = async () => {
+    let success = false
+    if (shareToken.value) success = await quickTransfer.receive({ shareToken: shareToken.value })
+    else {
+      const code = normalizeQuickTransferCode(receiveCode.value)
+      if (code.length === 6) success = await quickTransfer.receive({ code })
     }
-    const code = normalizeQuickTransferCode(receiveCode.value)
-    if (code.length === 6) void quickTransfer.receive({ code })
+    if (success) shipTransition.value = 'arrive'
   }
 
   const openReceivedContent = () => {
@@ -357,6 +358,7 @@
     mode.value = 'send'
     showSendGate.value = !canSend.value
     isReceivedContentOpened.value = false
+    shipTransition.value = null
   }
 
   const openReference = (reference: QuickTransferContentReference) => openQuickTransferReference(reference)
@@ -368,6 +370,7 @@
     mode.value = !hasExplicitMode && parsed.mode === 'send' && !isMiniProgram.value && !getToken() ? 'receive' : parsed.mode
     shareToken.value = parsed.shareToken
     isReceivedContentOpened.value = false
+    shipTransition.value = null
     if (mode.value === 'send') draft.value.references.push(...consumeQuickShipReferences())
     refreshLoginState()
     if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
@@ -384,282 +387,139 @@
 
 <template>
   <PageLayout
-    :title="QUICK_TRANSFER_TITLE"
+    title=""
     :share-title="sharePayload.title"
     :share-path="sharePath"
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
-    :always-title="true">
+    nav-overlay
+    nav-bg-color="transparent"
+    nav-init-bg-color="transparent"
+    nav-custom-class="light">
     <view class="quick-transfer-page">
-      <view class="hero-card">
+      <view class="hero-panel">
+        <view class="hero-glow hero-glow--left"></view>
+        <view class="hero-glow hero-glow--right"></view>
+        <view class="hero-orbit hero-orbit--one"></view>
+        <view class="hero-orbit hero-orbit--two"></view>
+        <text class="hero-kicker">FAST TRANSFER</text>
         <text class="hero-title">飞船</text>
-        <QuickShipVisual :state="quickShipVisualState" :compact="quickShipVisualCompact" />
         <text class="hero-desc">{{ QUICK_TRANSFER_COPY.heroDescription }}</text>
-      </view>
-
-      <view class="mode-tabs">
-        <view class="mode-tab" :class="{ active: mode === 'send' }" @click="enterSend"><text>送船</text></view>
-        <view class="mode-tab" :class="{ active: mode === 'receive' }" @click="enterReceive"><text>收船</text></view>
-      </view>
-
-      <view v-if="mode === 'send'" class="content-card">
-        <view v-if="showSendGate" class="gate-panel">
-          <text class="gate-title">登录后才能送船</text>
-          <text class="gate-desc">收船不需要登录。</text>
-          <view class="action-row">
-            <button class="primary-button" @click="goToLogin">登录后送船</button>
-            <button class="secondary-button" @click="enterReceive">去收船</button>
-          </view>
+        <view class="mode-tabs">
+          <view class="mode-tab" :class="{ active: mode === 'send' }" @click="enterSend"
+            ><text>{{ QUICK_TRANSFER_COPY.sendTab }}</text></view
+          >
+          <view class="mode-tab" :class="{ active: mode === 'receive' }" @click="enterReceive"
+            ><text>{{ QUICK_TRANSFER_COPY.receiveTab }}</text></view
+          >
         </view>
+      </view>
 
-        <view v-else-if="isSendResultVisible" class="result-panel">
-          <text v-if="quickTransfer.sendState.value === 'ready'" class="result-kicker">飞船出发了！</text>
-          <text class="result-title">{{ senderStatusTitle }}</text>
-          <text class="result-description">{{ senderStatusDescription }}</text>
-          <template v-if="quickTransfer.sendState.value === 'ready'">
-            <text class="result-label">收船码</text>
-            <text class="ready-code" selectable>{{ quickTransfer.code.value }}</text>
-            <text class="result-expiry">{{ quickTransfer.countdown.value }} 后返航</text>
-            <text class="result-claims">{{ senderClaimLabel }}</text>
+      <view class="operation-sheet">
+        <template v-if="mode === 'send'">
+          <view v-if="showSendGate" class="gate-panel">
+            <text class="gate-title">登录后才能发送</text>
+            <text class="gate-desc">接收飞船不需要登录。</text>
             <view class="action-row">
-              <button class="primary-button" @click="copyCode">复制收船码</button>
-              <!-- #ifdef H5 -->
-              <button v-if="sharePayload.kind === 'transfer'" class="secondary-button" @click="copyShareUrl">复制分享链接</button>
-              <!-- #endif -->
+              <button class="primary-button" @click="goToLogin">登录后发送</button>
+              <button class="secondary-button" @click="enterReceive">去接收</button>
             </view>
-            <!-- #ifdef MP-WEIXIN -->
-            <button class="secondary-button full-button" open-type="share">分享给好友</button>
-            <!-- #endif -->
-            <view class="cancel-link" @click="cancelSend">召回飞船</view>
-          </template>
-          <button v-else class="secondary-button full-button" @click="resetToSend">再送一艘</button>
-        </view>
+          </view>
+
+          <QuickShipSendResult
+            v-else-if="isSendResultVisible"
+            :state="quickTransfer.sendState.value"
+            :title="senderStatusTitle"
+            :description="senderStatusDescription"
+            :code="quickTransfer.code.value"
+            :countdown="quickTransfer.countdown.value"
+            :claim-label="senderClaimLabel"
+            :show-share-link="sharePayload.kind === 'transfer'"
+            @copy-code="copyCode"
+            @copy-share-url="copyShareUrl"
+            @cancel="cancelSend"
+            @reset="resetToSend" />
+
+          <QuickShipSendForm
+            v-else
+            :draft="draft"
+            :is-sending="isSending"
+            :can-submit="canSubmit"
+            :send-button-label="sendButtonLabel"
+            :file-error="fileError"
+            :send-error="sendErrorMessage"
+            :upload-progress="quickTransfer.uploadProgress.value"
+            :can-retry-upload="quickTransfer.canRetryUpload.value"
+            :has-failed-upload-files="hasFailedUploadFiles"
+            :can-retry-complete="quickTransfer.canRetryComplete.value"
+            :max-file-count="MAX_QUICK_TRANSFER_FILE_COUNT"
+            :ttl-options="QUICK_TRANSFER_TTL_OPTIONS"
+            @update:text="updateDraftText"
+            @update:expires-in="updateExpiresIn"
+            @update:max-claims="updateMaxClaims"
+            @add-link="openAddLink"
+            @edit-link="openEditLink"
+            @remove-link="removeLink"
+            @add-file="openFileSourceSheet"
+            @remove-file="removeFile"
+            @remove-reference="removeReference"
+            @submit="submitSend"
+            @retry-upload="retryUpload"
+            @retry-complete="retryComplete"
+            @abandon="resetToSend" />
+        </template>
 
         <template v-else>
-          <view class="section-block">
-            <view class="section-heading"><text class="section-title">留言</text><text class="section-hint">可选</text></view>
-            <textarea v-model="draft.text" class="content-input" placeholder="留句话……" :maxlength="20000" auto-height />
-          </view>
-
-          <view class="section-block">
-            <view class="section-heading"
-              ><text class="section-title">链接</text><text class="section-hint">{{ draft.links.length }} 个</text></view
-            >
-            <view v-for="link in draft.links" :key="link.localId" class="item-row" @click="openEditLink(link)">
-              <view class="item-main">
-                <text class="item-title">{{ link.title || link.url }}</text>
-                <text v-if="link.title" class="item-subtitle">{{ link.url }}</text>
-              </view>
-              <text class="item-arrow">›</text>
-              <button class="remove-button" @click.stop="removeLink(link)">删除</button>
-            </view>
-            <button class="add-button" @click="openAddLink">＋ 添加链接</button>
-          </view>
-
-          <view class="section-block">
-            <view class="section-heading"
-              ><text class="section-title">文件</text
-              ><text class="section-hint">{{ draft.files.length }} / {{ MAX_QUICK_TRANSFER_FILE_COUNT }}</text></view
-            >
-            <view v-for="file in draft.files" :key="file.clientFileId" class="item-row">
-              <view class="file-badge">FILE</view>
-              <view class="item-main">
-                <text class="item-title">{{ file.name }}</text>
-                <text class="item-subtitle">{{ formatQuickTransferFileSize(file.size) }} · {{ file.mimeType }}</text>
-                <text v-if="isSending" class="item-status">{{ getQuickTransferFileStateLabel(file) }}</text>
-              </view>
-              <button v-if="!isSending" class="remove-button" @click="removeFile(file)">删除</button>
-            </view>
-            <button class="add-button" :disabled="isSending" @click="openFileSourceSheet">＋ 添加文件</button>
-          </view>
-
-          <view v-if="draft.references.length" class="section-block">
-            <view class="section-heading"
-              ><text class="section-title">引用</text><text class="section-hint">{{ draft.references.length }} 个</text></view
-            >
-            <view v-for="reference in draft.references" :key="reference.localId" class="item-row reference-row">
-              <view class="reference-mark">↗</view>
-              <view class="item-main"
-                ><text class="item-title">{{ reference.title }}</text
-                ><text v-if="reference.subtitle" class="item-subtitle">{{ reference.subtitle }}</text></view
-              >
-              <button
-                v-if="!isSending"
-                class="remove-button"
-                @click="draft.references = draft.references.filter(item => item.localId !== reference.localId)"
-                >删除</button
-              >
-            </view>
-          </view>
-
-          <view class="settings-block">
-            <view class="setting-row"
-              ><text>有效期</text
-              ><text class="setting-value">{{ QUICK_TRANSFER_TTL_OPTIONS.find(item => item.value === draft.expiresIn)?.label }}</text></view
-            >
-            <view class="ttl-options">
-              <view
-                v-for="item in QUICK_TRANSFER_TTL_OPTIONS"
-                :key="item.value"
-                class="ttl-option"
-                :class="{ active: draft.expiresIn === item.value }"
-                @click="draft.expiresIn = item.value"
-                ><text>{{ item.label }}</text></view
-              >
-            </view>
-            <view class="setting-row"
-              ><text>收船次数</text><text class="setting-value">{{ draft.maxClaims }} 次</text></view
-            >
-            <view class="stepper-row"
-              ><button class="stepper-button" :disabled="draft.maxClaims <= QUICK_TRANSFER_MIN_MAX_CLAIMS" @click="decreaseMaxClaims"
-                >−</button
-              ><text>{{ draft.maxClaims }}</text
-              ><button class="stepper-button" :disabled="draft.maxClaims >= QUICK_TRANSFER_MAX_MAX_CLAIMS" @click="increaseMaxClaims"
-                >＋</button
-              ></view
-            >
-          </view>
-
-          <view v-if="fileError" class="inline-error">{{ fileError }}</view>
-          <view v-if="sendErrorMessage" class="inline-error">{{ sendErrorMessage }}</view>
-          <view v-if="quickTransfer.uploadProgress.value !== null && isSending" class="progress-bar"
-            ><view class="progress-value" :style="{ width: `${quickTransfer.uploadProgress.value}%` }"></view
-          ></view>
-          <button class="primary-button submit-button" :disabled="isSending || !canSubmit" @click="submitSend">{{
-            sendButtonLabel
-          }}</button>
-          <button
-            v-if="quickTransfer.canRetryUpload.value && hasFailedUploadFiles"
-            class="secondary-button full-button"
-            :disabled="isSending"
-            @click="retryUpload"
-            >重新上传失败文件</button
-          >
-          <button
-            v-if="quickTransfer.canRetryComplete.value"
-            class="secondary-button full-button"
-            :disabled="isSending"
-            @click="retryComplete"
-            >重新校验</button
-          >
-          <button
-            v-if="quickTransfer.sendState.value === 'error' && quickTransfer.transferId.value"
-            class="secondary-button full-button"
-            :disabled="isSending"
-            @click="resetToSend"
-            >放弃本次飞船</button
-          >
+          <QuickShipReceivePanel
+            :share-token="shareToken"
+            :receive-state="quickTransfer.receiveState.value"
+            :inspect-result="quickTransfer.inspectResult.value"
+            :receive-code="receiveCode"
+            :is-receiving="isReceiving"
+            :is-content-opened="isReceivedContentVisible"
+            :summary-text="receiveSummaryText"
+            :receive-error-message="receiveErrorMessage"
+            :receive-error-title="receiveErrorTitle"
+            :receive-error-description="receiveErrorDescription"
+            :is-claim-token-error="isClaimTokenError"
+            :is-receive-unavailable="isReceiveUnavailable"
+            @update:receive-code="receiveCode = $event"
+            @claim="claim"
+            @open-content="openReceivedContent"
+            @retry="retryReceive"
+            @dismiss="dismissReceiveError" />
+          <QuickShipReceivedContent
+            v-if="isReceivedContentVisible && receivedContent"
+            :content="receivedContent"
+            :is-downloading="quickTransfer.isDownloading.value"
+            @copy-text="copyReceivedText"
+            @open-url="openReceivedUrl"
+            @download-file="quickTransfer.downloadReceivedFile"
+            @open-reference="openReference" />
         </template>
-      </view>
-
-      <view v-else class="content-card receive-card">
-        <view v-if="shareToken && quickTransfer.receiveState.value === 'inspecting'" class="receive-state-panel"
-          ><text class="receive-title">正在确认飞船…</text></view
-        >
-        <view
-          v-else-if="shareToken && quickTransfer.inspectResult.value && quickTransfer.receiveState.value !== 'received'"
-          class="inspect-panel">
-          <text class="receive-title">收到一艘飞船</text>
-          <text class="receive-description">包含：{{ receiveSummaryText }}</text>
-          <text class="receive-description"
-            >还可收船 {{ quickTransfer.inspectResult.value.remainingClaims }} 次 ·
-            {{ formatQuickTransferExpiry(quickTransfer.inspectResult.value.expiresAt) }}</text
-          >
-          <button class="primary-button full-button" :disabled="isReceiving" @click="claim">收船</button>
-        </view>
-        <view v-else-if="quickTransfer.receiveState.value === 'received' && !isReceivedContentVisible" class="arrived-panel">
-          <text class="success-mark">✓</text><text class="receive-title">{{ QUICK_TRANSFER_COPY.receivedTitle }}</text>
-          <text class="receive-description">{{ QUICK_TRANSFER_COPY.receivedDescription }}</text>
-          <button class="primary-button full-button" @click="openReceivedContent">{{ QUICK_TRANSFER_COPY.openReceived }}</button>
-        </view>
-        <template v-else-if="!isReceivedContentVisible && !shareToken">
-          <text class="receive-title">输入 6 位收船码</text>
-          <input v-model="receiveCode" class="code-input" type="number" :maxlength="6" placeholder="000000" />
-          <button
-            class="primary-button submit-button"
-            :disabled="isReceiving || normalizeQuickTransferCode(receiveCode).length !== 6"
-            @click="claim"
-            >{{ isReceiving ? QUICK_TRANSFER_COPY.receiveLoading : QUICK_TRANSFER_COPY.receiveButton }}</button
-          >
-        </template>
-
-        <view v-if="receiveErrorMessage" class="receive-error-panel">
-          <text class="receive-error-title">{{ receiveErrorTitle }}</text>
-          <text class="receive-error-description">{{ receiveErrorDescription }}</text>
-          <view v-if="isClaimTokenError" class="action-row">
-            <button class="secondary-button" @click="dismissReceiveError">返回</button>
-            <button class="primary-button" @click="retryReceive">重新收船</button>
-          </view>
-          <button v-else-if="!isReceiveUnavailable" class="secondary-button full-button" @click="retryReceive">重新尝试</button>
-        </view>
-
-        <view v-if="isReceivedContentVisible && receivedContent" class="received-content-panel">
-          <text class="receive-title">飞船内容</text>
-          <view v-if="receivedText" class="received-section"
-            ><text class="section-title">留言</text><text class="received-text" selectable>{{ receivedText }}</text
-            ><button class="secondary-button full-button" @click="copyReceivedText">复制留言</button></view
-          >
-          <view v-if="receivedLinks.length" class="received-section"
-            ><text class="section-title">链接</text
-            ><view v-for="link in receivedLinks" :key="link.url" class="item-row" @click="openReceivedUrl(link.url)"
-              ><view class="item-main"
-                ><text class="item-title">{{ link.title || link.url }}</text
-                ><text v-if="link.title" class="item-subtitle">{{ link.url }}</text></view
-              ><text class="item-arrow">›</text></view
-            ></view
-          >
-          <view v-if="receivedFiles.length" class="received-section"
-            ><text class="section-title">文件</text
-            ><view v-for="file in receivedFiles" :key="file.fileId || file.name" class="item-row"
-              ><view class="file-badge">FILE</view
-              ><view class="item-main"
-                ><text class="item-title">{{ file.name }}</text
-                ><text class="item-subtitle">{{ formatQuickTransferFileSize(file.size) }} · {{ file.mimeType }}</text></view
-              ><button
-                class="primary-small-button"
-                :disabled="quickTransfer.isDownloading.value"
-                @click="quickTransfer.downloadReceivedFile(file.fileId || '')"
-                >{{ file.mimeType.startsWith('image/') ? '预览' : '打开' }}</button
-              ></view
-            ></view
-          >
-          <view v-if="receivedReferences.length" class="received-section"
-            ><text class="section-title">引用</text
-            ><view
-              v-for="reference in receivedReferences"
-              :key="`${reference.type}-${reference.resourceId || reference.title}`"
-              class="item-row"
-              @click="openReference(reference)"
-              ><view class="reference-mark">↗</view
-              ><view class="item-main"
-                ><text class="item-title">{{ reference.title }}</text
-                ><text v-if="reference.subtitle" class="item-subtitle">{{ reference.subtitle }}</text></view
-              ><text class="item-arrow">›</text></view
-            ></view
-          >
-        </view>
       </view>
     </view>
 
+    <QuickShipTransition v-if="shipTransition" :type="shipTransition" @finished="shipTransition = null" />
+
     <view v-if="showFileSourceSheet" class="sheet-mask" @click="showFileSourceSheet = false">
-      <view class="source-sheet" @click.stop
-        ><text class="sheet-title">添加文件</text><button class="primary-button full-button" @click="pickFiles('image')">选择图片</button
-        ><button class="secondary-button full-button" @click="pickFiles('file')">选择文件</button
-        ><button class="text-button full-button" @click="showFileSourceSheet = false">取消</button></view
-      >
+      <view class="source-sheet" @click.stop>
+        <text class="sheet-title">添加文件</text>
+        <button class="primary-button full-button" @click="pickFiles('image')">选择图片</button>
+        <button class="secondary-button full-button" @click="pickFiles('file')">选择文件</button>
+        <button class="text-button full-button" @click="showFileSourceSheet = false">取消</button>
+      </view>
     </view>
 
     <view v-if="linkEditor" class="sheet-mask" @click="linkEditor = null">
-      <view class="source-sheet link-editor" @click.stop
-        ><text class="sheet-title">{{ linkEditor.localId ? '修改链接' : '添加链接' }}</text
-        ><text class="form-label">链接地址</text><input v-model="linkEditor.url" class="text-input" placeholder="https://..." /><text
-          class="form-label"
-          >显示名称（可选）</text
-        ><input v-model="linkEditor.title" class="text-input" placeholder="项目地址" /><button
-          class="primary-button full-button"
-          @click="saveLink"
-          >{{ linkEditor.localId ? '保存' : '添加' }}</button
-        ><button class="text-button full-button" @click="linkEditor = null">取消</button></view
-      >
+      <view class="source-sheet link-editor" @click.stop>
+        <text class="sheet-title">{{ linkEditor.localId ? '修改链接' : '添加链接' }}</text>
+        <text class="form-label">链接地址</text>
+        <input v-model="linkEditor.url" class="text-input" placeholder="https://..." />
+        <text class="form-label">显示名称（可选）</text>
+        <input v-model="linkEditor.title" class="text-input" placeholder="项目地址" />
+        <button class="primary-button full-button" @click="saveLink">{{ linkEditor.localId ? '保存' : '添加' }}</button>
+        <button class="text-button full-button" @click="linkEditor = null">取消</button>
+      </view>
     </view>
   </PageLayout>
 </template>
@@ -667,416 +527,207 @@
 <style lang="scss">
   .quick-transfer-page {
     min-height: 100vh;
-    padding: 28rpx 24rpx 60rpx;
     box-sizing: border-box;
     background: var(--theme-bg);
   }
-  .hero-card,
-  .content-card {
-    border: 1rpx solid var(--theme-border);
-    border-radius: 28rpx;
-    background: var(--theme-surface);
-    box-shadow: 0 16rpx 48rpx var(--theme-shadow-xs);
+
+  .hero-panel {
+    position: relative;
+    min-height: 400rpx;
+    padding: 150rpx 34rpx 74rpx;
+    overflow: hidden;
+    box-sizing: border-box;
+    color: #fff;
+    background: linear-gradient(155deg, #071426 0%, #102b51 48%, #07566a 100%);
+    text-align: center;
   }
-  .hero-card {
-    padding: 42rpx 34rpx 38rpx;
-    background: linear-gradient(145deg, var(--theme-surface), var(--theme-surface-muted));
+
+  .hero-glow,
+  .hero-orbit {
+    position: absolute;
+    pointer-events: none;
   }
-  .hero-kicker {
-    display: block;
-    color: var(--theme-brand);
-    font-size: 22rpx;
-    font-weight: 700;
-    letter-spacing: 4rpx;
+
+  .hero-glow {
+    width: 300rpx;
+    height: 220rpx;
+    border-radius: 50%;
+    filter: blur(46rpx);
+    opacity: 0.5;
   }
-  .hero-title {
-    display: block;
-    margin-top: 14rpx;
-    color: var(--theme-text);
-    font-size: 58rpx;
-    font-weight: 800;
+
+  .hero-glow--left {
+    top: 88rpx;
+    left: -110rpx;
+    background: rgba(37, 99, 235, 0.68);
   }
+
+  .hero-glow--right {
+    right: -100rpx;
+    bottom: 26rpx;
+    background: rgba(20, 184, 166, 0.62);
+  }
+
+  .hero-orbit {
+    width: 500rpx;
+    height: 130rpx;
+    border: 1rpx solid rgba(165, 243, 252, 0.22);
+    border-radius: 50%;
+    transform: rotate(-15deg);
+  }
+
+  .hero-orbit--one {
+    top: 164rpx;
+    left: -230rpx;
+  }
+
+  .hero-orbit--two {
+    right: -230rpx;
+    bottom: 76rpx;
+    transform: rotate(22deg);
+  }
+
+  .hero-kicker,
+  .hero-title,
   .hero-desc,
-  .gate-desc,
-  .receive-description,
-  .result-description,
-  .receive-error-description {
+  .mode-tabs {
+    position: relative;
+    z-index: 1;
     display: block;
-    margin-top: 14rpx;
-    color: var(--theme-text-secondary);
-    font-size: 26rpx;
-    line-height: 1.6;
   }
+
+  .hero-kicker {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 20rpx;
+    font-weight: 700;
+    letter-spacing: 5rpx;
+  }
+
+  .hero-title {
+    margin-top: 14rpx;
+    font-size: 66rpx;
+    font-weight: 800;
+    letter-spacing: 8rpx;
+  }
+
+  .hero-desc {
+    margin-top: 8rpx;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 27rpx;
+  }
+
   .mode-tabs {
     display: flex;
-    margin: 24rpx 0;
+    gap: 8rpx;
+    width: 100%;
+    max-width: 520rpx;
+    margin: 34rpx auto 0;
     padding: 8rpx;
+    box-sizing: border-box;
+    border: 1rpx solid rgba(255, 255, 255, 0.16);
     border-radius: 20rpx;
-    background: var(--theme-surface-muted);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12rpx);
   }
+
   .mode-tab {
     flex: 1;
-    padding: 20rpx 0;
+    padding: 18rpx 0;
     border-radius: 14rpx;
-    color: var(--theme-text-secondary);
-    text-align: center;
-    font-size: 28rpx;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 27rpx;
   }
+
   .mode-tab.active {
-    color: var(--theme-text);
-    background: var(--theme-surface);
-    box-shadow: 0 6rpx 20rpx var(--theme-shadow-xs);
+    color: #10233d;
+    background: #fff;
+    box-shadow: 0 8rpx 20rpx rgba(1, 19, 46, 0.18);
     font-weight: 700;
   }
-  .content-card {
-    padding: 30rpx;
-  }
-  .section-block,
-  .settings-block,
-  .received-section {
-    padding: 28rpx 0;
-    border-bottom: 1rpx solid var(--theme-border);
-  }
-  .section-block:first-child {
-    padding-top: 0;
-  }
-  .section-heading,
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .section-title,
-  .setting-row {
-    color: var(--theme-text);
-    font-size: 30rpx;
-    font-weight: 700;
-  }
-  .section-hint,
-  .setting-value {
-    color: var(--theme-text-secondary);
-    font-size: 24rpx;
-    font-weight: 400;
-  }
-  .content-input {
-    width: 100%;
-    min-height: 140rpx;
-    margin-top: 18rpx;
-    padding: 20rpx;
+
+  .operation-sheet {
+    position: relative;
+    z-index: 2;
+    min-height: calc(100vh - 364rpx);
+    margin-top: -36rpx;
+    padding: 38rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
-    border-radius: 16rpx;
-    background: var(--theme-surface-muted);
+    border-radius: 38rpx 38rpx 0 0;
+    background: var(--theme-bg);
+  }
+
+  .gate-panel {
+    padding: 28rpx 6rpx 16rpx;
+    text-align: center;
+  }
+
+  .gate-title {
+    display: block;
     color: var(--theme-text);
-    font-size: 28rpx;
+    font-size: 34rpx;
+    font-weight: 700;
+  }
+
+  .gate-desc,
+  .result-description {
+    display: block;
+    margin-top: 12rpx;
+    color: var(--theme-text-secondary);
+    font-size: 25rpx;
     line-height: 1.6;
   }
-  .item-row {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    min-height: 90rpx;
-    padding: 14rpx 0;
-    border-bottom: 1rpx solid var(--theme-border);
-  }
-  .item-main {
-    flex: 1;
-    min-width: 0;
-  }
-  .item-title,
-  .item-subtitle,
-  .item-status {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .item-title {
-    color: var(--theme-text);
-    font-size: 28rpx;
-  }
-  .item-subtitle,
-  .item-status {
-    margin-top: 6rpx;
-    color: var(--theme-text-secondary);
-    font-size: 22rpx;
-  }
-  .item-status {
-    color: var(--theme-brand);
-  }
-  .item-arrow {
-    color: var(--theme-text-secondary);
-    font-size: 42rpx;
-  }
-  .file-badge,
-  .reference-mark {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 68rpx;
-    height: 68rpx;
-    border-radius: 16rpx;
-    color: var(--theme-brand);
-    background: var(--theme-surface-muted);
-    font-size: 18rpx;
-    font-weight: 700;
-  }
-  .reference-mark {
-    font-size: 34rpx;
-  }
-  .remove-button,
-  .text-button {
-    padding: 0;
-    border: 0;
-    color: var(--theme-danger);
-    background: transparent;
-    font-size: 24rpx;
-    line-height: 1.5;
-  }
-  .text-button {
-    color: var(--theme-text-secondary);
-  }
-  .add-button,
-  .secondary-button,
-  .primary-button,
-  .primary-small-button {
-    border: 0;
-    border-radius: 14rpx;
-    font-size: 26rpx;
-  }
-  .add-button {
-    width: 100%;
-    margin-top: 18rpx;
-    padding: 20rpx;
-    color: var(--theme-brand);
-    background: var(--theme-surface-muted);
-  }
-  .primary-button,
-  .secondary-button {
-    min-height: 82rpx;
-    padding: 0 24rpx;
-  }
-  .primary-button {
-    color: #fff;
-    background: var(--theme-brand);
-  }
-  .secondary-button {
-    color: var(--theme-text);
-    background: var(--theme-surface-muted);
-  }
-  .primary-small-button {
-    flex: 0 0 auto;
-    padding: 14rpx 18rpx;
-    color: #fff;
-    background: var(--theme-brand);
-  }
-  .full-button {
-    width: 100%;
-    margin-top: 18rpx;
-  }
-  button[disabled] {
-    opacity: 0.45;
-  }
-  .settings-block {
-    border-bottom: 0;
-  }
-  .ttl-options {
-    display: flex;
-    gap: 12rpx;
-    margin-top: 18rpx;
-  }
-  .ttl-option {
-    flex: 1;
-    padding: 18rpx 8rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 12rpx;
-    color: var(--theme-text-secondary);
-    text-align: center;
-    font-size: 24rpx;
-  }
-  .ttl-option.active {
-    border-color: var(--theme-brand);
-    color: var(--theme-brand);
-    background: var(--theme-surface-muted);
-  }
-  .stepper-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 24rpx;
-    margin-top: 18rpx;
-    color: var(--theme-text);
-    font-size: 30rpx;
-  }
-  .stepper-button {
-    width: 64rpx;
-    height: 64rpx;
-    padding: 0;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 12rpx;
-    color: var(--theme-text);
-    background: var(--theme-surface-muted);
-    line-height: 64rpx;
-  }
-  .inline-error,
-  .receive-error-panel {
-    margin-top: 20rpx;
-    padding: 18rpx;
-    border-radius: 14rpx;
-    color: var(--theme-danger);
-    background: rgba(220, 80, 80, 0.1);
-    font-size: 24rpx;
-    line-height: 1.5;
-  }
-  .submit-button {
-    width: 100%;
-    margin-top: 24rpx;
-  }
-  .progress-bar {
-    height: 10rpx;
-    margin-top: 24rpx;
-    overflow: hidden;
-    border-radius: 10rpx;
-    background: var(--theme-surface-muted);
-  }
-  .progress-value {
-    height: 100%;
-    border-radius: inherit;
-    background: var(--theme-brand);
-    transition: width 0.2s ease;
-  }
-  .gate-panel,
-  .result-panel,
-  .receive-state-panel,
-  .inspect-panel,
-  .arrived-panel,
-  .received-content-panel {
-    padding: 12rpx 0;
-    text-align: center;
-  }
-  .gate-title,
-  .receive-title,
-  .result-title {
-    display: block;
-    color: var(--theme-text);
-    font-size: 34rpx;
-    font-weight: 700;
-  }
-  .result-kicker {
-    display: block;
-    color: var(--theme-brand);
-    font-size: 28rpx;
-    font-weight: 700;
-  }
-  .result-title {
-    margin-top: 12rpx;
-  }
-  .result-label {
-    display: block;
-    margin-top: 28rpx;
-    color: var(--theme-text-secondary);
-    font-size: 24rpx;
-  }
-  .ready-code {
-    display: block;
-    margin-top: 8rpx;
-    color: var(--theme-brand);
-    font-size: 64rpx;
-    font-weight: 800;
-    letter-spacing: 10rpx;
-  }
-  .result-expiry,
-  .result-claims {
-    display: block;
-    margin-top: 8rpx;
-    color: var(--theme-text-secondary);
-    font-size: 24rpx;
-  }
+
   .action-row {
     display: flex;
-    gap: 16rpx;
+    gap: 14rpx;
     margin-top: 24rpx;
   }
+
   .action-row > button {
     flex: 1;
   }
-  .cancel-link {
-    margin-top: 26rpx;
-    color: var(--theme-danger);
-    font-size: 24rpx;
-  }
-  .receive-card {
-    min-height: 520rpx;
-  }
-  .code-input,
-  .text-input {
-    width: 100%;
-    height: 86rpx;
-    margin-top: 26rpx;
-    padding: 0 22rpx;
-    box-sizing: border-box;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 14rpx;
-    color: var(--theme-text);
-    background: var(--theme-surface-muted);
-    font-size: 32rpx;
-  }
-  .code-input {
-    text-align: center;
-    letter-spacing: 10rpx;
-  }
-  .success-mark {
-    display: block;
-    color: var(--theme-brand);
-    font-size: 72rpx;
-    font-weight: 800;
-  }
-  .received-content-panel {
-    text-align: left;
-  }
-  .received-content-panel > .receive-title {
-    text-align: center;
-  }
-  .received-section {
-    text-align: left;
-  }
-  .received-section:last-child {
-    border-bottom: 0;
-  }
-  .received-text {
-    display: block;
-    margin-top: 16rpx;
-    padding: 20rpx;
-    border-radius: 14rpx;
-    color: var(--theme-text);
-    background: var(--theme-surface-muted);
-    font-size: 28rpx;
-    line-height: 1.7;
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-  .receive-error-title {
-    display: block;
-    color: var(--theme-text);
-    font-size: 28rpx;
-    font-weight: 700;
-  }
-  .form-label,
-  .sheet-title {
-    display: block;
-    margin-top: 22rpx;
-    color: var(--theme-text);
+
+  .primary-button,
+  .secondary-button,
+  .text-button {
+    border: 0;
+    border-radius: 16rpx;
     font-size: 26rpx;
-    font-weight: 700;
   }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 82rpx;
+    padding: 0 22rpx;
+  }
+
+  .primary-button {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+  }
+
+  .secondary-button {
+    color: var(--theme-text);
+    background: var(--theme-surface-muted);
+  }
+
+  .full-button {
+    width: 100%;
+    margin-top: 16rpx;
+  }
+
   .sheet-mask {
     position: fixed;
     z-index: 20;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     display: flex;
     align-items: flex-end;
     background: rgba(0, 0, 0, 0.45);
   }
+
   .source-sheet {
     width: 100%;
     padding: 30rpx 24rpx calc(30rpx + env(safe-area-inset-bottom));
@@ -1084,11 +735,41 @@
     border-radius: 28rpx 28rpx 0 0;
     background: var(--theme-surface);
   }
+
+  .sheet-title,
+  .form-label {
+    display: block;
+    color: var(--theme-text);
+    font-weight: 700;
+  }
+
   .sheet-title {
-    margin: 0 0 18rpx;
+    margin-bottom: 18rpx;
     font-size: 32rpx;
   }
-  .link-editor .text-input {
+
+  .form-label {
+    margin-top: 22rpx;
+    font-size: 26rpx;
+  }
+
+  .text-input {
+    width: 100%;
+    height: 86rpx;
     margin-top: 12rpx;
+    padding: 0 22rpx;
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 14rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface-muted);
+    font-size: 28rpx;
+  }
+
+  .text-button {
+    min-height: 70rpx;
+    padding: 0;
+    color: var(--theme-text-secondary);
+    background: transparent;
   }
 </style>
