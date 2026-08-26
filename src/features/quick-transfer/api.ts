@@ -7,6 +7,7 @@ import type {
   QuickTransferStatusResult,
   QuickTransferStatus,
   QuickTransferUploadDescriptor,
+  QuickTransferReceiveInput,
 } from './types'
 import { QUICK_TRANSFER_DEFAULT_MAX_CLAIMS } from './constants'
 import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims } from './helpers'
@@ -32,7 +33,7 @@ import type {
   postQuickTransfersShareInspectBody,
 } from '@/services/apifox/NODEJSDEMO/QUICKTRANSFER/interface'
 
-const receiveRequestConfig = { _skipGuestSession: true } as unknown as ParticalUniAppRequestOptions
+const inspectRequestConfig = { _skipGuestSession: true } as unknown as ParticalUniAppRequestOptions
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
@@ -186,13 +187,16 @@ export const cancelQuickTransfer = async (
 }
 
 export const inspectQuickTransferShare = async (shareToken: string): Promise<QuickTransferInspectResult> => {
-  const response = await postQuickTransfersShareInspect({ shareToken } as postQuickTransfersShareInspectBody, receiveRequestConfig)
+  const response = await postQuickTransfersShareInspect({ shareToken } as postQuickTransfersShareInspectBody, inspectRequestConfig)
   return normalizeQuickTransferInspectResult(response)
 }
 
-export const resolveQuickTransfer = async (input: { code?: string; shareToken?: string }): Promise<QuickTransferResolvedResult> => {
-  const payload = input.shareToken ? { shareToken: input.shareToken } : { code: input.code || '' }
-  const response = await postQuickTransfersResolve(payload as unknown as postQuickTransfersResolveBody, receiveRequestConfig)
+export const resolveQuickTransfer = async (input: QuickTransferReceiveInput): Promise<QuickTransferResolvedResult> => {
+  const payload = {
+    ...(input.shareToken ? { shareToken: input.shareToken } : { code: input.code || '' }),
+    ...(input.claimRequestId ? { claimRequestId: input.claimRequestId } : {}),
+  }
+  const response = await postQuickTransfersResolve(payload as unknown as postQuickTransfersResolveBody)
   return normalizeQuickTransferResolvedResult(response)
 }
 
@@ -203,7 +207,7 @@ export const accessQuickTransferFile = async (
 ): Promise<QuickTransferFileAccessResult> => {
   const pathParams = { transferId, fileId } as postFilesFileIdAccessPathQuery
   const body = { claimToken } as postFilesFileIdAccessBody
-  const response = await postQuickTransfersFilesAccess(pathParams, body, receiveRequestConfig)
+  const response = await postQuickTransfersFilesAccess(pathParams, body)
   const record = unwrapData(response)
   const url = typeof record.url === 'string' ? record.url : typeof record.signedUrl === 'string' ? record.signedUrl : ''
   if (!url) throw new Error('飞船接口缺少 url')

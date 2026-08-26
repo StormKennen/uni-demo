@@ -158,6 +158,22 @@
           }
         },
         {
+          "path": "quick-transfer/receipt/list",
+          "style": {
+            "navigationBarTitleText": "已收飞船",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 50
+          }
+        },
+        {
+          "path": "quick-transfer/receipt/detail",
+          "style": {
+            "navigationBarTitleText": "已收飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-privacy/index",
           "style": {
             "navigationBarTitleText": "图片隐私清理",

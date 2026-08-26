@@ -21,6 +21,7 @@ import {
 import {
   getQuickTransferErrorCode,
   getQuickTransferErrorMessage,
+  isQuickTransferClaimResultUnknown,
   toQuickTransferErrorInfo,
   toQuickTransferReceiveErrorInfo,
 } from './errors'
@@ -32,11 +33,13 @@ import type {
   QuickTransferFileAccessResult,
   QuickTransferInspectResult,
   QuickTransferReceiveState,
+  QuickTransferReceiveInput,
   QuickTransferResolvedResult,
   QuickTransferSendState,
   QuickTransferStatusResult,
   QuickTransferUploadDescriptor,
 } from './types'
+import { createQuickTransferClaimRequestId } from './requestId'
 import type { SelectedFile } from '@/platform/file'
 import { downloadFileDirect, uploadFileDirect } from '@/platform/file'
 
@@ -54,6 +57,8 @@ export const useQuickTransfer = () => {
   const uploadDescriptors = ref<Record<string, QuickTransferUploadDescriptor>>({})
   const receivedResult = ref<QuickTransferResolvedResult | null>(null)
   const claimToken = ref('')
+  const activeClaimRequestId = ref<string | null>(null)
+  const activeClaimInputKey = ref('')
   const inspectResult = ref<QuickTransferInspectResult | null>(null)
   const countdown = ref('')
   const isActionRunning = ref(false)
@@ -528,22 +533,33 @@ export const useQuickTransfer = () => {
     }
   }
 
-  const receive = async (input: { code?: string; shareToken?: string }): Promise<boolean> => {
+  const receive = async (input: QuickTransferReceiveInput): Promise<boolean> => {
     if (isActionRunning.value || receiveState.value === 'resolving') return false
+    const inputKey = input.shareToken ? `share:${input.shareToken}` : `code:${input.code || ''}`
+    if (!activeClaimRequestId.value || activeClaimInputKey.value !== inputKey) {
+      activeClaimRequestId.value = createQuickTransferClaimRequestId()
+      activeClaimInputKey.value = inputKey
+    }
     isActionRunning.value = true
     receiveState.value = 'resolving'
     receiveError.value = null
     receivedResult.value = null
     claimToken.value = ''
     try {
-      const result = await resolveQuickTransfer(input)
+      const result = await resolveQuickTransfer({ ...input, claimRequestId: activeClaimRequestId.value || undefined })
       receivedResult.value = result
       claimToken.value = result.claimToken || ''
+      activeClaimRequestId.value = null
+      activeClaimInputKey.value = ''
       receiveState.value = 'received'
       return true
     } catch (error) {
       const errorInfo = toQuickTransferReceiveErrorInfo(error)
       if (errorInfo.code === 'TRANSFER_NOT_AVAILABLE' || errorInfo.code === 'TRANSFER_NOT_FOUND') inspectResult.value = null
+      if (!isQuickTransferClaimResultUnknown(error)) {
+        activeClaimRequestId.value = null
+        activeClaimInputKey.value = ''
+      }
       receiveError.value = errorInfo
       receiveState.value = 'error'
       return false
@@ -565,7 +581,8 @@ export const useQuickTransfer = () => {
   }
 
   const getReceivedFileAccess = async (fileId: string): Promise<QuickTransferFileAccessResult | null> => {
-    if (!receivedResult.value || !claimToken.value || !fileId) return null
+    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !claimToken.value || !fileId) return null
     try {
       return await accessQuickTransferFile(receivedResult.value.transferId, fileId, claimToken.value)
     } catch (error) {
@@ -617,6 +634,7 @@ export const useQuickTransfer = () => {
     uploadDescriptors,
     receivedResult,
     claimToken,
+    activeClaimRequestId,
     inspectResult,
     countdown,
     isActionRunning,

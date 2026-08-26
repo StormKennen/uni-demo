@@ -50,6 +50,22 @@ export const formatQuickTransferSummary = (summary: QuickTransferSummary): strin
   return items.join('、') || '内容'
 }
 
+export const formatQuickTransferReceiptSummary = (summary: QuickTransferSummary): string => {
+  const items: string[] = []
+  if (summary.hasText) items.push('留言')
+  if (summary.linkCount) items.push(`${summary.linkCount} 个链接`)
+  if (summary.fileCount) items.push(`${summary.fileCount} 个文件`)
+  if (summary.referenceCount) items.push(`${summary.referenceCount} 个引用`)
+  return items.join(' · ') || '内容'
+}
+
+export const formatQuickTransferReceiptDate = (value: string): string => {
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return value
+  const pad = (part: number): string => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 export const getQuickTransferFileStateLabel = (file: QuickShipFileDraft): string => {
   if (file.uploadState === 'uploading') return file.progress === undefined ? '上传中…' : `上传中 ${file.progress}%`
   if (file.uploadState === 'uploaded') return '上传完成'

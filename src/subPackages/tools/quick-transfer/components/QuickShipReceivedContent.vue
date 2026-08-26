@@ -70,7 +70,8 @@
             >{{ formatQuickTransferFileSize(file.size) }} · {{ getQuickTransferFileTypeLabel(file.mimeType) }}</text
           >
         </view>
-        <button class="primary-small-button" :disabled="props.isDownloading" @click="emit('downloadFile', file.fileId || '')">
+        <text v-if="file.available === false" class="file-expired-badge">已过期</text>
+        <button v-else class="primary-small-button" :disabled="props.isDownloading" @click="emit('downloadFile', file.fileId || '')">
           {{ isImageFile(file) ? '预览' : '打开' }}
         </button>
       </view>
@@ -215,6 +216,15 @@
 
   .item-subtitle {
     margin-top: 6rpx;
+  }
+
+  .file-expired-badge {
+    flex: 0 0 auto;
+    padding: 10rpx 14rpx;
+    border-radius: 12rpx;
+    color: var(--theme-text-secondary);
+    background: var(--theme-surface-muted);
+    font-size: 22rpx;
   }
 
   .item-arrow {

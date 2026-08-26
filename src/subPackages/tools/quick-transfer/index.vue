@@ -15,6 +15,7 @@
   import {
     MAX_QUICK_TRANSFER_FILE_COUNT,
     QUICK_TRANSFER_MAX_MAX_CLAIMS,
+    QUICK_TRANSFER_RECEIPTS_ROUTE,
     QUICK_TRANSFER_ROUTE,
     QUICK_TRANSFER_TTL_OPTIONS,
   } from '@/features/quick-transfer/constants'
@@ -82,6 +83,7 @@
   // #endif
 
   const canSend = computed(() => isMiniProgram.value || isLoggedIn.value)
+  const canViewReceipts = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
   const isModeSwitchLocked = computed(() => isQuickShipModeSwitchLocked(isSending.value, isReceiving.value))
@@ -377,6 +379,10 @@
 
   const openReference = (reference: QuickTransferContentReference) => openQuickTransferReference(reference)
 
+  const openReceiptList = () => {
+    if (canViewReceipts.value) uni.navigateTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
+  }
+
   onLoad(options => {
     const query = (options || {}) as QuickTransferPageQuery
     const parsed = parseQuickTransferPageQuery(query)
@@ -483,6 +489,13 @@
         </template>
 
         <template v-else>
+          <view v-if="!shareToken && canViewReceipts" class="receipt-entry" @click="openReceiptList">
+            <view class="receipt-entry__main">
+              <text class="receipt-entry__title">已收飞船</text>
+              <text class="receipt-entry__description">查看曾经收到的内容</text>
+            </view>
+            <text class="receipt-entry__arrow">›</text>
+          </view>
           <QuickShipReceivePanel
             :share-token="shareToken"
             :receive-state="quickTransfer.receiveState.value"
@@ -490,6 +503,7 @@
             :receive-code="receiveCode"
             :is-receiving="isReceiving"
             :is-content-opened="isReceivedContentVisible"
+            :has-receipt="Boolean(quickTransfer.receivedResult.value?.receiptId)"
             :summary-text="receiveSummaryText"
             :receive-error-message="receiveErrorMessage"
             :receive-error-title="receiveErrorTitle"
@@ -672,6 +686,44 @@
     box-sizing: border-box;
     border-radius: 38rpx 38rpx 0 0;
     background: var(--theme-bg);
+  }
+
+  .receipt-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18rpx;
+    padding: 18rpx 20rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 18rpx;
+    background: var(--theme-surface);
+  }
+
+  .receipt-entry__main {
+    min-width: 0;
+  }
+
+  .receipt-entry__title,
+  .receipt-entry__description {
+    display: block;
+  }
+
+  .receipt-entry__title {
+    color: var(--theme-text);
+    font-size: 27rpx;
+    font-weight: 700;
+  }
+
+  .receipt-entry__description {
+    margin-top: 5rpx;
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+  }
+
+  .receipt-entry__arrow {
+    flex: 0 0 auto;
+    color: var(--theme-text-secondary);
+    font-size: 38rpx;
   }
 
   .gate-panel {

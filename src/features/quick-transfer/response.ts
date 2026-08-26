@@ -23,7 +23,7 @@ const asRuntimeValue = (value: unknown): unknown => {
   }
 }
 
-const unwrapData = (value: unknown): Record<string, unknown> => {
+export const unwrapQuickTransferData = (value: unknown): Record<string, unknown> => {
   const parsed = asRuntimeValue(value)
   const record = asRecord(parsed)
   if (!record) throw new Error('飞船接口返回格式异常')
@@ -48,7 +48,14 @@ const normalizeFile = (value: unknown): QuickTransferFileMetadata | undefined =>
   const fileId = typeof record.fileId === 'string' ? record.fileId : typeof record.id === 'string' ? record.id : undefined
   const selectedMimeType = typeof record.mimeType === 'string' ? record.mimeType : typeof record.type === 'string' ? record.type : undefined
   if (!name || !Number.isFinite(size)) return undefined
-  return { fileId, name, size, mimeType: getQuickTransferMimeType(name, selectedMimeType) }
+  const available = typeof record.available === 'boolean' ? record.available : undefined
+  return {
+    fileId,
+    name,
+    size,
+    mimeType: getQuickTransferMimeType(name, selectedMimeType),
+    ...(available === undefined ? {} : { available }),
+  }
 }
 
 const normalizeLink = (value: unknown): QuickTransferContentLink | undefined => {
@@ -73,7 +80,7 @@ const normalizeReference = (value: unknown): QuickTransferContentReference | und
   }
 }
 
-const normalizeContent = (value: unknown): QuickTransferContent => {
+export const normalizeQuickTransferContent = (value: unknown): QuickTransferContent => {
   const record = asRecord(value) || {}
   const text = typeof record.text === 'string' ? record.text : undefined
   const links = toArray(record.links)
@@ -89,19 +96,22 @@ const normalizeContent = (value: unknown): QuickTransferContent => {
 }
 
 export const normalizeQuickTransferResolvedResult = (response: unknown): QuickTransferResolvedResult => {
-  const record = unwrapData(response)
-  const content = normalizeContent(record.content)
+  const record = unwrapQuickTransferData(response)
+  const content = normalizeQuickTransferContent(record.content)
   const claimToken = typeof record.claimToken === 'string' && record.claimToken ? record.claimToken : undefined
   if (content.files.length > 0 && !claimToken) throw new Error('飞船接口缺少 claimToken')
   return {
     transferId: requiredString([record, asRecord(record.content)], 'transferId'),
+    claimId: requiredString([record], 'claimId'),
+    receiptId: typeof record.receiptId === 'string' && record.receiptId ? record.receiptId : undefined,
     claimToken,
+    expiresAt: typeof record.expiresAt === 'string' && record.expiresAt ? record.expiresAt : undefined,
     content,
   }
 }
 
 export const normalizeQuickTransferInspectResult = (response: unknown): QuickTransferInspectResult => {
-  const record = unwrapData(response)
+  const record = unwrapQuickTransferData(response)
   const rawSummary = asRecord(record.summary) || {}
   const summary: QuickTransferSummary = {
     hasText: Boolean(rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text),

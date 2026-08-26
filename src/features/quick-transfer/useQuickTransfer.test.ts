@@ -134,6 +134,8 @@ describe('useQuickTransfer receiver recovery', () => {
   it('does not resolve again automatically after a claim token expires', async () => {
     const result: QuickTransferResolvedResult = {
       transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
       claimToken: 'claim-1',
       content: {
         text: undefined,
@@ -167,5 +169,35 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(await quickTransfer.receive({ shareToken: 'share-1' })).toBe(false)
     expect(quickTransfer.inspectResult.value).toBeNull()
     expect(quickTransfer.receiveError.value?.code).toBe('TRANSFER_NOT_AVAILABLE')
+  })
+
+  it('reuses the claim request id after an unknown resolve result', async () => {
+    const result: QuickTransferResolvedResult = {
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      content: { text: 'hello', links: [], files: [], references: [] },
+    }
+    mocks.resolveQuickTransfer.mockRejectedValueOnce({ code: 'NETWORK_ERROR' }).mockResolvedValueOnce(result)
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(false)
+    const firstRequest = mocks.resolveQuickTransfer.mock.calls[0]?.[0]
+    expect(firstRequest.claimRequestId).toMatch(/^qcr_[0-9a-f-]{36}$/)
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(mocks.resolveQuickTransfer.mock.calls[1]?.[0].claimRequestId).toBe(firstRequest.claimRequestId)
+    expect(quickTransfer.activeClaimRequestId.value).toBeNull()
+  })
+
+  it('creates a new claim request id after a definite failure or for a new code', async () => {
+    mocks.resolveQuickTransfer
+      .mockRejectedValueOnce({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })
+      .mockRejectedValueOnce({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(false)
+    expect(await quickTransfer.receive({ code: '654321' })).toBe(false)
+    const firstRequest = mocks.resolveQuickTransfer.mock.calls[0]?.[0]
+    const secondRequest = mocks.resolveQuickTransfer.mock.calls[1]?.[0]
+    expect(firstRequest.claimRequestId).not.toBe(secondRequest.claimRequestId)
   })
 })

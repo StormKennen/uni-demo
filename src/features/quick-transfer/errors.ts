@@ -18,6 +18,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   DIRECT_UPLOAD_ABORTED: '文件上传已取消',
   CLAIM_TOKEN_INVALID: '文件访问凭证已失效',
   CLAIM_TOKEN_EXPIRED: '文件访问凭证已失效',
+  TRANSFER_CLAIM_REQUEST_ID_INVALID: '本次领取凭证无效，请重新收船',
+  QUICK_TRANSFER_RECEIPT_NOT_FOUND: '已收飞船记录不存在',
+  QUICK_TRANSFER_RECEIPT_FILE_NOT_FOUND: '历史文件不存在',
+  QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE: '文件已经过期',
+  QUICK_TRANSFER_RECEIPT_FILE_ACCESS_TEMPORARILY_UNAVAILABLE: '文件暂时无法访问，请稍后重试',
   QUICK_TRANSFER_NOT_CONFIGURED: '飞船服务尚未完成配置，请联系管理员',
   QUICK_TRANSFER_OSS_NOT_CONFIGURED: '文件飞船服务暂不可用',
   QUICK_TRANSFER_API_UNAVAILABLE: '飞船服务暂不可用',
@@ -33,6 +38,17 @@ const getStatusCode = (error: unknown): number | undefined => {
   const data = asRecord(root?.data)
   const candidates = [root?.statusCode, root?.status, root?.code, data?.statusCode, data?.status]
   return candidates.find(candidate => typeof candidate === 'number') as number | undefined
+}
+
+export const isQuickTransferClaimResultUnknown = (error: unknown): boolean => {
+  const code = getQuickTransferErrorCode(error)
+  if (['NETWORK_ERROR', 'TIMEOUT', 'ETIMEDOUT', 'ECONNABORTED'].includes(code)) return true
+  const statusCode = getStatusCode(error)
+  if (statusCode === 408 || (statusCode !== undefined && statusCode >= 500 && statusCode <= 599)) return true
+  const root = asRecord(error)
+  const data = asRecord(root?.data)
+  const message = root?.message ?? data?.message ?? root?.reason ?? data?.reason
+  return typeof message === 'string' && /network|timeout|超时|网络|connection reset|response lost/i.test(message)
 }
 
 export const getQuickTransferErrorCode = (error: unknown): string => {
@@ -112,6 +128,7 @@ export const toQuickTransferReceiveErrorInfo = (error: unknown): QuickTransferEr
   if (code === 'TRANSFER_NOT_AVAILABLE' || code === 'TRANSFER_NOT_FOUND') return { code, message: '这艘飞船已经不在了' }
   if (getStatusCode(error) === 429) return { code: '429', message: '收船太频繁了，请稍后再试' }
   if (code === 'CLAIM_TOKEN_INVALID' || code === 'CLAIM_TOKEN_EXPIRED') return { code, message: '文件访问凭证已失效' }
+  if (isQuickTransferClaimResultUnknown(error)) return { code: code || 'NETWORK_ERROR', message: '暂时联系不上飞船' }
 
   const message = getQuickTransferErrorMessage(error, '暂时联系不上飞船')
   if (getStatusCode(error) === -1 || message === '网络连接失败，请检查网络后重试') {

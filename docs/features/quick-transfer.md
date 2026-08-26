@@ -1,13 +1,20 @@
-# 飞船 Quick Transfer V2 需求规格书
+# 飞船 Quick Transfer V2.1 需求规格书
 
 ## 0. 范围
 
 飞船 V2 覆盖 V1，不兼容 `type=text/url/file` 三选一模型。每艘飞船固定包含四类内容，顺序固定为：留言、链接、文件、引用。V2 不做排序、自由布局、历史记录、收藏、文件夹或多船管理。
 
-页面归属 `subPackages/tools/quick-transfer`，发布端为 H5 与微信小程序，路由保持：
+V2.1 在当前操作链路之上增加云端已收记录；发送/接收页面归属 `subPackages/tools/quick-transfer`，发布端为 H5 与微信小程序，当前操作路由保持：
 
 ```text
 subPackages/tools/quick-transfer/index
+```
+
+V2.1 新增历史路由：
+
+```text
+subPackages/tools/quick-transfer/receipt/list
+subPackages/tools/quick-transfer/receipt/detail
 ```
 
 ## 1. 前端模型
@@ -49,11 +56,14 @@ interface QuickShipDraft {
 | Upload Policy | `postQuickTransfersFilesUploadPolicy` |
 | File Access   | `postQuickTransfersFilesAccess`       |
 
-Response 为字符串或包装对象时，由 Adapter 统一解析。Inspect 的正式摘要字段为 `hasText/linkCount/fileCount/referenceCount`，Adapter 暂时兼容旧别名。Resolve 统一为：
+Response 为字符串或包装对象时，由 Adapter 统一解析。Inspect 的正式摘要字段为 `hasText/linkCount/fileCount/referenceCount`，Adapter 暂时兼容旧别名。Resolve 请求携带本次领取操作独有的 `claimRequestId`，响应统一为：
 
 ```text
+claimId
 transferId
+receiptId（可选）
 claimToken（有附件时必有）
+expiresAt（可选）
 content.text
 content.links[]
 content.files[]
@@ -82,7 +92,9 @@ Ready 后显示收船码、倒计时、领取进度；H5 显示复制分享链�
 
 手工输入 6 位收船码直接 `resolve({ code })`，不调用 Inspect。微信/H5 分享打开后先 `inspect({ shareToken })`，展示摘要、剩余领取次数和有效期；不提前展示正文、URL、文件名或引用标题。Inspect 成功后点击“收船”才 Resolve。
 
-Resolve 成功后只保存当前页面内存中的 `claimToken`，先显示“船来了”，点击“打开飞船”才展开内容，不重复 Resolve。无附件飞船允许缺少 `claimToken`；有附件时缺少该凭证视为 Contract Error。展开后严格按留言、链接、文件、引用顺序展示；缺少的区块隐藏。
+每一次新的领取操作生成新的 `claimRequestId`，只保存在 `useQuickTransfer` 内存中，不使用 Anonymous ID、Storage 或 Pinia 持久化。网络错误、超时、响应丢失和 5xx 后的用户重试必须复用原 ID；明确业务失败或成功后清除，下一次主动领取生成新 ID。
+
+Resolve 成功后只保存当前页面内存中的 `claimToken`、`claimId`、`receiptId` 和 `expiresAt`，先显示“船来了”，点击“查看内容”才展开内容，不重复 Resolve。无附件飞船允许缺少 `claimToken`；有附件时缺少该凭证视为 Contract Error。展开后严格按留言、链接、文件、引用顺序展示；缺少的区块隐藏。
 
 文件不随 Resolve 自动下载。点击文件时调用 `file/access(transferId,fileId,claimToken)` 获取 Signed URL，再交给平台文件 Adapter：图片预览，PDF/Office 打开文档，其他类型下载或提示。`CLAIM_TOKEN_INVALID/EXPIRED` 不自动 Resolve，页面明确提示重新收船可能再次占用领取次数。
 
@@ -102,7 +114,7 @@ Resolve 成功后只保存当前页面内存中的 `claimToken`，先显示“�
 
 - 微信游客发送沿用 Guest Token；登录发送沿用 User Token。
 - H5 未登录默认收船，主动送船显示登录 Gate；登录返回后自动刷新并关闭 Gate。
-- Receiver 请求跳过 Guest Session，不把匿名 Owner 身份带入。
+- Share Inspect 继续跳过 Guest Session；Resolve 和当前飞船文件 Access 走正常请求链路，让微信游客获得 Guest Receipt，登录用户获得 User Receipt，H5 未登录继续允许匿名领取但没有历史 Receipt。
 - `claimToken`、shareToken、OSS fields、Signed URL 只保留当前页面内存。
 - Sender 的 poll/countdown 在 consumed/expired/cancelled、reset、hide/unload 时清理。
 
@@ -125,6 +137,11 @@ UPLOAD_CONTENT_TYPE_MISMATCH
 UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE
 CLAIM_TOKEN_INVALID
 CLAIM_TOKEN_EXPIRED
+TRANSFER_CLAIM_REQUEST_ID_INVALID
+QUICK_TRANSFER_RECEIPT_NOT_FOUND
+QUICK_TRANSFER_RECEIPT_FILE_NOT_FOUND
+QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE
+QUICK_TRANSFER_RECEIPT_FILE_ACCESS_TEMPORARILY_UNAVAILABLE
 QUICK_TRANSFER_OSS_NOT_CONFIGURED
 QUICK_TRANSFER_NOT_CONFIGURED
 ```
@@ -139,6 +156,8 @@ QUICK_TRANSFER_NOT_CONFIGURED
 - 文件 access、图片预览、文档打开、Claim Token 失效。
 - Reference 合法打开、未知类型安全提示、备忘录入口带入。
 - 微信游客/登录用户、H5 未登录/登录用户。
+- Resolve 幂等领取、网络重试复用 `claimRequestId`、明确失败后重新生成 ID。
+- 已收飞船列表分页、空状态、详情、删除和历史附件访问；历史查看不得再次 Resolve。
 - `pnpm lint`、`pnpm type-check`、Quick Transfer 测试、`pnpm build:mp-weixin`、`pnpm build:h5` 及仓库检查，并区分既有基线错误。
 
 ## 9. 飞船视觉层（UI V3）
@@ -150,3 +169,13 @@ QUICK_TRANSFER_NOT_CONFIGURED
 业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用收船码票据样式，接收成功后再展开留言、链接、文件、引用内容。
 
 发送或接收处于 `creating`、`uploading`、`completing`、`inspecting`、`resolving` 时锁定 Hero 的 Mode Switch，仅降低视觉强调，不弹 Toast；Ready、consumed、expired、cancelled、received 仍允许切换。Receive 的首次领取和手工码 retry 统一经过页面 `performReceive`，只有 Resolve 成功才播放 `arrive`，失败不会自动重试或占用领取次数。
+
+## 10. V2.1 已收飞船
+
+Receipt List / Detail 只通过 `src/features/quick-transfer/receiptApi.ts` 调用 Apifox 生成的 Receipt API，不复用 Resolve，也不把 `claimToken` 带入历史附件访问。列表使用后端 `page/pageSize` 分页，初始每页 20 条，支持下拉刷新和触底加载更多；列表摘要只展示留言、链接、文件和引用数量，预览最多展示一至两行。
+
+微信游客和登录用户显示“已收飞船”入口；H5 未登录隐藏入口。入口放在接收模式操作区，不扩展 Hero 的发送/接收 Tab。没有记录时显示“还没有收到飞船 / 收到的内容会出现在这里”，不使用常驻飞船 PNG。
+
+详情页复用 `QuickShipReceivedContent` 展示正文、链接、文件和引用。Receipt 文件 `available=false` 显示“已过期”并禁用操作；`available=true` 通过 Receipt File Access 获取 Signed URL 后交给平台文件 Adapter。文件访问返回不可用错误时将本地文件标记为不可用；临时错误保留可重试状态。删除只删除已收记录，不删除发送方文件、原飞船或 OSS 对象，成功后返回列表。
+
+Receipt List → Detail 是历史查看，不播放 `arrive`，也不调用 Resolve。

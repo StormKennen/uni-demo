@@ -25,6 +25,7 @@ export interface QuickTransferFileMetadata {
   name: string
   size: number
   mimeType: string
+  available?: boolean
 }
 
 export interface QuickShipLinkDraft {
@@ -151,6 +152,53 @@ export interface QuickTransferSummary {
   referenceCount: number
 }
 
+export interface QuickTransferReceiptSummary {
+  hasText: boolean
+  linkCount: number
+  fileCount: number
+  referenceCount: number
+}
+
+export interface QuickTransferReceiptPreview {
+  text?: string
+  referenceTitle?: string
+  fileName?: string
+}
+
+export interface QuickTransferReceiptListItem {
+  receiptId: string
+  displayTitle: string
+  claimedAt: string
+  summary: QuickTransferReceiptSummary
+  preview: QuickTransferReceiptPreview
+}
+
+export interface QuickTransferReceiptPagination {
+  page: number
+  pageSize: number
+  total?: number
+  totalPages?: number
+  hasNext: boolean
+}
+
+export interface QuickTransferReceiptListResult {
+  items: QuickTransferReceiptListItem[]
+  pagination: QuickTransferReceiptPagination
+}
+
+export interface QuickTransferReceiptDetail {
+  receiptId: string
+  displayTitle: string
+  claimedAt: string
+  content: QuickTransferContent
+}
+
+export interface QuickTransferReceiveInput {
+  code?: string
+  shareToken?: string
+  claimRequestId?: string
+}
+
 export interface QuickTransferInspectResult {
   transferId?: string
   expiresAt: string
@@ -160,7 +208,10 @@ export interface QuickTransferInspectResult {
 
 export interface QuickTransferResolvedResult {
   transferId: string
+  claimId: string
+  receiptId?: string
   claimToken?: string
+  expiresAt?: string
   content: QuickTransferContent
 }
 

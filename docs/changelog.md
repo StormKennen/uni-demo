@@ -11,6 +11,8 @@
 
 - 2026-08-26 [tools/quick-transfer] 完成 UI V3 Stabilization：修正 Arrive 飞船方向翻转，统一首次领取与手工码 retry 的成功动画入口，执行中锁定发送/接收切换，弱化空文件数量提示并将“打开飞船”改为“查看内容”；保留图片失败兜底、Reduced Motion 和用户主动重试原则（Codex）
 
+- 2026-08-26 [tools/quick-transfer/receipt] 接入 V2.1 Receipt：领取请求使用内存级 claimRequestId 并在未知结果重试时复用，保留 claimId/receiptId/available，新增已收飞船列表、详情、删除与历史附件访问；微信游客/登录用户可查看历史，H5 未登录隐藏入口，历史查看不重复 Resolve（Codex）
+
 - 2026-08-26 [tools/quick-transfer] 兼容后端嵌套错误响应并明确提示 QUICK_TRANSFER_NOT_CONFIGURED；该错误仍需后端补齐独立飞船密钥与专用 OSS Bucket 配置（Codex）
 
 - 2026-08-26 [tools/quick-transfer/visual] 新增统一 QuickShipVisual 飞船视觉层：复用单张 OSS PNG，覆盖送船、装船、出发、航行、到达、返航和召回状态，支持 CSS 动画、reduced-motion 与图片加载失败兜底，不改变飞船业务状态机（Codex）

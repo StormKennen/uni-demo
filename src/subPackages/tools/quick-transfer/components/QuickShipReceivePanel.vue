@@ -10,6 +10,7 @@
     receiveCode: string
     isReceiving: boolean
     isContentOpened: boolean
+    hasReceipt: boolean
     summaryText: string
     receiveErrorMessage: string
     receiveErrorTitle: string
@@ -53,6 +54,7 @@
       <text class="success-mark">✓</text>
       <text class="receive-title">{{ QUICK_TRANSFER_COPY.receivedTitle }}</text>
       <text class="receive-description">{{ QUICK_TRANSFER_COPY.receivedDescription }}</text>
+      <text v-if="props.hasReceipt" class="receipt-saved-hint">已保存到「已收飞船」</text>
       <button class="primary-button full-button" @click="emit('open-content')">{{ QUICK_TRANSFER_COPY.openReceived }}</button>
     </view>
 
@@ -131,12 +133,18 @@
   }
 
   .receive-description,
-  .receive-error-description {
+  .receive-error-description,
+  .receipt-saved-hint {
     display: block;
     margin-top: 12rpx;
     color: var(--theme-text-secondary);
     font-size: 25rpx;
     line-height: 1.6;
+  }
+
+  .receipt-saved-hint {
+    color: var(--theme-brand);
+    font-size: 22rpx;
   }
 
   .inspect-meta {

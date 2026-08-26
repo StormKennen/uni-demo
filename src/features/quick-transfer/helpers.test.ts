@@ -7,7 +7,7 @@ import {
   QUICK_TRANSFER_MIN_MAX_CLAIMS,
   QUICK_TRANSFER_TTL_OPTIONS,
 } from './constants'
-import { getQuickTransferErrorMessage, toQuickTransferReceiveErrorInfo } from './errors'
+import { getQuickTransferErrorMessage, isQuickTransferClaimResultUnknown, toQuickTransferReceiveErrorInfo } from './errors'
 import { formatQuickTransferSummary, getQuickTransferFileStateLabel, getQuickTransferSendButtonLabel } from './presentation'
 import {
   buildQuickTransferSharePath,
@@ -100,5 +100,9 @@ describe('quick transfer V2 helpers', () => {
     expect(getQuickTransferFileStateLabel({ clientFileId: 'f', name: 'a', size: 1, mimeType: 'text/plain', uploadState: 'ready' })).toBe(
       '已完成 ✓',
     )
+    expect(getQuickTransferErrorMessage({ data: { code: 'QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE' } })).toBe('文件已经过期')
+    expect(isQuickTransferClaimResultUnknown({ code: 'NETWORK_ERROR' })).toBe(true)
+    expect(isQuickTransferClaimResultUnknown({ statusCode: 503 })).toBe(true)
+    expect(isQuickTransferClaimResultUnknown({ statusCode: 400 })).toBe(false)
   })
 })
