@@ -74,6 +74,7 @@ describe('quick transfer V2 helpers', () => {
     expect(canTransitionQuickTransferSendState('uploading', 'completing')).toBe(true)
     expect(isQuickTransferTerminalStatus('consumed')).toBe(true)
     expect(isQuickTransferDownloadValid(new Date(10_000).toISOString(), 9_000)).toBe(true)
+    expect(isQuickTransferDownloadValid(new Date(10_000).toISOString(), 10_000)).toBe(false)
     expect(formatQuickTransferExpiry(new Date(10 * 60_000).toISOString(), 0)).toBe('10 分钟后返航')
     expect(formatQuickTransferExpiry(new Date(2 * 60 * 60_000 + 30 * 60_000).toISOString(), 0)).toBe('2 小时 30 分钟后返航')
     expect(parseQuickTransferPageQuery({ mode: 'receive', shareToken: ' token ' })).toEqual({ mode: 'receive', shareToken: 'token' })
@@ -96,6 +97,7 @@ describe('quick transfer V2 helpers', () => {
       code: 'TRANSFER_NOT_AVAILABLE',
       message: '这艘飞船已经不在了',
     })
+    expect(getQuickTransferSendButtonLabel('idle', null, '请先添加内容')).toBe('请先添加内容')
     expect(getQuickTransferSendButtonLabel('uploading', 38)).toBe('正在装船 38%')
     expect(getQuickTransferFileStateLabel({ clientFileId: 'f', name: 'a', size: 1, mimeType: 'text/plain', uploadState: 'ready' })).toBe(
       '已完成 ✓',

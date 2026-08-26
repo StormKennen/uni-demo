@@ -30,6 +30,8 @@ const requiredString = (record: Record<string, unknown>, key: string): string =>
   return value
 }
 
+export const isValidQuickTransferReceiptId = (value: string): boolean => /^[A-Za-z0-9_-]+$/.test(value)
+
 const normalizeSummary = (value: unknown): QuickTransferReceiptSummary => {
   const record = asRecord(value) || {}
   return {

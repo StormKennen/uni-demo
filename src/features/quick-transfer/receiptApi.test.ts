@@ -13,11 +13,19 @@ import {
   accessQuickTransferReceiptFile,
   deleteQuickTransferReceipt,
   getQuickTransferReceipt,
+  isValidQuickTransferReceiptId,
   listQuickTransferReceipts,
 } from './receiptApi'
 
 describe('quick transfer receipt API adapter', () => {
   beforeEach(() => vi.clearAllMocks())
+
+  it('accepts safe receipt ids and rejects empty or path-like values', () => {
+    expect(isValidQuickTransferReceiptId('receipt-1')).toBe(true)
+    expect(isValidQuickTransferReceiptId('550e8400-e29b-41d4-a716-446655440000')).toBe(true)
+    expect(isValidQuickTransferReceiptId('')).toBe(false)
+    expect(isValidQuickTransferReceiptId('../receipt-1')).toBe(false)
+  })
 
   it('normalizes a paginated receipt list', async () => {
     mocks.getQuickTransferReceipts.mockResolvedValue({

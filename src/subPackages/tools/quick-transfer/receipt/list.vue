@@ -6,7 +6,7 @@
   import { QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE } from '@/features/quick-transfer/constants'
 
   const receipts = useQuickTransferReceipts()
-  const { items, pagination, isLoading, isLoadingMore, error } = receipts
+  const { items, pagination, isLoading, isLoadingMore, error, loadMoreError } = receipts
 
   const getPreview = (item: (typeof receipts.items.value)[number]): string =>
     item.preview.text?.trim() || item.preview.referenceTitle || item.preview.fileName || '收到了一份内容'
@@ -21,6 +21,10 @@
 
   const retry = () => {
     void loadInitial()
+  }
+
+  const retryLoadMore = () => {
+    void receipts.loadMore()
   }
 
   onShow(() => {
@@ -74,6 +78,10 @@
           <text class="receipt-row__arrow">›</text>
         </view>
         <view v-if="isLoadingMore" class="loading-more">正在加载更多…</view>
+        <view v-else-if="loadMoreError" class="load-more-error">
+          <text>{{ loadMoreError.message }}</text>
+          <button class="secondary-button load-more-retry" @click="retryLoadMore">重试加载更多</button>
+        </view>
         <view v-else-if="!pagination.hasNext" class="list-end">已经看到全部内容</view>
       </view>
     </view>
@@ -223,8 +231,19 @@
   }
 
   .loading-more,
-  .list-end {
+  .list-end,
+  .load-more-error {
     padding: 22rpx;
     text-align: center;
+  }
+
+  .load-more-error {
+    color: var(--theme-danger);
+  }
+
+  .load-more-retry {
+    min-height: 62rpx;
+    margin-top: 12rpx;
+    font-size: 22rpx;
   }
 </style>

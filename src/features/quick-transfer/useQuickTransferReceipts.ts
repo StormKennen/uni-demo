@@ -30,9 +30,15 @@ export const useQuickTransferReceipts = () => {
   const isLoadingMore = ref(false)
   const detail = ref<QuickTransferReceiptDetail | null>(null)
   const error = ref<QuickTransferErrorInfo | null>(null)
+  const loadMoreError = ref<QuickTransferErrorInfo | null>(null)
 
   const applyListResult = (result: QuickTransferReceiptListResult, reset: boolean) => {
-    items.value = reset ? result.items : [...items.value, ...result.items]
+    if (reset) {
+      items.value = result.items
+    } else {
+      const existingIds = new Set(items.value.map(item => item.receiptId))
+      items.value = [...items.value, ...result.items.filter(item => !existingIds.has(item.receiptId))]
+    }
     pagination.value = result.pagination
   }
 
@@ -40,6 +46,7 @@ export const useQuickTransferReceipts = () => {
     if (isLoading.value || isLoadingMore.value) return false
     isLoading.value = true
     error.value = null
+    if (reset) loadMoreError.value = null
     try {
       const result = await listQuickTransferReceipts(reset ? 1 : pagination.value.page + 1, DEFAULT_PAGE_SIZE)
       applyListResult(result, reset)
@@ -55,13 +62,16 @@ export const useQuickTransferReceipts = () => {
   const loadMore = async (): Promise<boolean> => {
     if (!pagination.value.hasNext || isLoading.value || isLoadingMore.value) return false
     isLoadingMore.value = true
+    loadMoreError.value = null
     error.value = null
     try {
       const result = await listQuickTransferReceipts(pagination.value.page + 1, pagination.value.pageSize || DEFAULT_PAGE_SIZE)
       applyListResult(result, false)
       return true
     } catch (cause) {
-      error.value = toQuickTransferErrorInfo(cause, '更多已收飞船加载失败，请稍后重试')
+      const info = toQuickTransferErrorInfo(cause, '更多已收飞船加载失败，请稍后重试')
+      error.value = info
+      loadMoreError.value = info
       return false
     } finally {
       isLoadingMore.value = false
@@ -131,6 +141,7 @@ export const useQuickTransferReceipts = () => {
     isLoadingMore,
     detail,
     error,
+    loadMoreError,
     loadReceipts,
     loadMore,
     loadReceiptDetail,

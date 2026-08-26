@@ -90,13 +90,23 @@
   const isSendResultVisible = computed(() => ['ready', 'consumed', 'expired', 'cancelled'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
   const receiveErrorMessage = computed(() => quickTransfer.receiveError.value?.message || '')
-  const sendButtonLabel = computed(() => getQuickTransferSendButtonLabel(quickTransfer.sendState.value, quickTransfer.uploadProgress.value))
   const canSubmit = computed(
     () =>
       canSend.value &&
       (!quickTransfer.transferId.value || quickTransfer.sendState.value === 'idle') &&
       hasQuickShipContent(draft.value) &&
       !validateQuickTransferFiles(draft.value.files),
+  )
+  const sendButtonDisabledReason = computed(() => {
+    if (canSubmit.value || isSending.value) return ''
+    if (!canSend.value) return '登录后才能发送'
+    if (!hasQuickShipContent(draft.value)) return '请先添加内容'
+    if (validateQuickTransferFiles(draft.value.files)) return '请修正文件后发送'
+    if (quickTransfer.transferId.value) return '请先处理当前飞船'
+    return '暂不可发送'
+  })
+  const sendButtonLabel = computed(() =>
+    getQuickTransferSendButtonLabel(quickTransfer.sendState.value, quickTransfer.uploadProgress.value, sendButtonDisabledReason.value),
   )
   const sharePayload = computed(() =>
     getQuickTransferSharePayload({

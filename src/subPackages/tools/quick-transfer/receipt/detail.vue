@@ -1,23 +1,33 @@
 <script setup lang="ts">
   import { onLoad } from '@dcloudio/uni-app'
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
+  import { QUICK_TRANSFER_RECEIPTS_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
+  import { isValidQuickTransferReceiptId } from '@/features/quick-transfer/receiptApi'
   import { useQuickTransferReceipts } from '@/features/quick-transfer/useQuickTransferReceipts'
   import type { QuickTransferContentReference } from '@/features/quick-transfer/types'
   import { formatQuickTransferReceiptDate } from '@/features/quick-transfer/presentation'
   import { downloadFileDirect } from '@/platform/file'
+  import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
 
   const receipts = useQuickTransferReceipts()
   const { detail, error, isLoading } = receipts
   const receiptId = ref('')
+  const isInvalidReceiptId = ref(false)
   const isDownloading = ref(false)
+  const isReceiptNotFound = computed(() => error.value?.code === 'QUICK_TRANSFER_RECEIPT_NOT_FOUND')
 
   const loadDetail = () => {
-    if (receiptId.value) void receipts.loadReceiptDetail(receiptId.value)
+    isInvalidReceiptId.value = !isValidQuickTransferReceiptId(receiptId.value)
+    if (!isInvalidReceiptId.value) void receipts.loadReceiptDetail(receiptId.value)
+  }
+
+  const backToReceiptList = () => {
+    safeBack({ fallbackUrl: QUICK_TRANSFER_RECEIPTS_ROUTE })
   }
 
   const copyText = () => {
@@ -40,19 +50,27 @@
     const file = receipts.detail.value?.content.files.find(item => item.fileId === fileId)
     if (!file || file.available === false || isDownloading.value || !receiptId.value) return
     isDownloading.value = true
-    const access = await receipts.accessReceiptFile(receiptId.value, fileId)
-    if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
-      const code = receipts.error.value?.code
-      if (code === 'QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE' || code === 'QUICK_TRANSFER_RECEIPT_FILE_NOT_FOUND') {
-        receipts.markDetailFileUnavailable(fileId)
+    try {
+      const access = await receipts.accessReceiptFile(receiptId.value, fileId)
+      if (!access) {
+        const code = receipts.error.value?.code
+        if (code === 'QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE' || code === 'QUICK_TRANSFER_RECEIPT_FILE_NOT_FOUND') {
+          receipts.markDetailFileUnavailable(fileId)
+        }
+        if (receipts.error.value?.message) uni.showToast({ title: receipts.error.value.message, icon: 'none' })
+        return
       }
-      if (receipts.error.value?.message) uni.showToast({ title: receipts.error.value.message, icon: 'none' })
+      if (!isQuickTransferDownloadValid(access.expiresAt)) {
+        uni.showToast({ title: '文件访问链接已失效，请重新打开', icon: 'none' })
+        return
+      }
+      const success = await downloadFileDirect({ url: access.url, fileName: file.name, mimeType: file.mimeType })
+      if (!success) uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
+    } catch {
+      uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
+    } finally {
       isDownloading.value = false
-      return
     }
-    const success = await downloadFileDirect({ url: access.url, fileName: file.name, mimeType: file.mimeType })
-    if (!success) uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
-    isDownloading.value = false
   }
 
   const confirmDelete = () => {
@@ -74,23 +92,30 @@
   }
 
   onLoad((options: Record<string, string | undefined>) => {
-    receiptId.value = options.receiptId || ''
+    receiptId.value = options.receiptId?.trim() || ''
     loadDetail()
   })
 </script>
 
 <template>
-  <PageLayout title="已收飞船" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+  <PageLayout title="已收飞船" :back-fallback="QUICK_TRANSFER_RECEIPTS_ROUTE" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receipt-detail-page">
-      <view v-if="isLoading && !detail" class="state-panel">
+      <view v-if="isInvalidReceiptId" class="state-panel">
+        <text class="state-title">记录参数无效</text>
+        <text class="state-description">找不到要查看的已收飞船记录。</text>
+        <button class="secondary-button" @click="backToReceiptList">返回已收飞船</button>
+      </view>
+
+      <view v-else-if="isLoading && !detail" class="state-panel">
         <text class="state-title">正在读取已收飞船</text>
         <text class="state-description">请稍候…</text>
       </view>
 
       <view v-else-if="error && !detail" class="state-panel">
-        <text class="state-title">加载失败</text>
+        <text class="state-title">{{ isReceiptNotFound ? '记录不存在' : '加载失败' }}</text>
         <text class="state-description">{{ error.message }}</text>
-        <button class="secondary-button" @click="loadDetail">重新加载</button>
+        <button v-if="isReceiptNotFound" class="secondary-button" @click="backToReceiptList">返回已收飞船</button>
+        <button v-else class="secondary-button" @click="loadDetail">重新加载</button>
       </view>
 
       <template v-else-if="detail">

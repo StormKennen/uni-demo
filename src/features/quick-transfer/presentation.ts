@@ -12,10 +12,15 @@ export const QUICK_TRANSFER_COPY = {
   openReceived: '查看内容',
 } as const
 
-export const getQuickTransferSendButtonLabel = (state: QuickTransferSendState, uploadProgress: number | null): string => {
+export const getQuickTransferSendButtonLabel = (
+  state: QuickTransferSendState,
+  uploadProgress: number | null,
+  disabledReason = '',
+): string => {
   if (state === 'creating') return '正在准备飞船…'
   if (state === 'uploading') return uploadProgress === null ? '正在装船…' : `正在装船 ${uploadProgress}%`
   if (state === 'completing') return '正在确认内容…'
+  if (disabledReason) return disabledReason
   return QUICK_TRANSFER_COPY.sendButton
 }
 

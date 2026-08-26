@@ -407,6 +407,13 @@
     background: linear-gradient(135deg, #2563eb, #14b8a6);
   }
 
+  .submit-button[disabled] {
+    border: 1rpx solid var(--theme-border);
+    color: var(--theme-text-secondary);
+    background: var(--theme-surface-muted);
+    opacity: 1;
+  }
+
   .secondary-button {
     color: var(--theme-text);
     background: var(--theme-surface-muted);

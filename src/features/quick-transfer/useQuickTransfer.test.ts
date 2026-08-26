@@ -188,6 +188,62 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(quickTransfer.activeClaimRequestId.value).toBeNull()
   })
 
+  it('keeps the same request id when resetReceive is used after an unknown result', async () => {
+    const result: QuickTransferResolvedResult = {
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      content: { text: 'hello', links: [], files: [], references: [] },
+    }
+    mocks.resolveQuickTransfer.mockRejectedValueOnce({ code: 'NETWORK_ERROR' }).mockResolvedValueOnce(result).mockResolvedValueOnce(result)
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(false)
+    const firstRequestId = quickTransfer.activeClaimRequestId.value
+    quickTransfer.resetReceive()
+    expect(quickTransfer.activeClaimRequestId.value).toBe(firstRequestId)
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(mocks.resolveQuickTransfer.mock.calls[1]?.[0].claimRequestId).toBe(firstRequestId)
+    expect(quickTransfer.activeClaimRequestId.value).toBeNull()
+
+    quickTransfer.resetReceive()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(mocks.resolveQuickTransfer.mock.calls[2]?.[0].claimRequestId).not.toBe(firstRequestId)
+  })
+
+  it('reuses the request id after HTTP 408 and 5xx responses', async () => {
+    for (const statusCode of [408, 500, 502, 503, 504]) {
+      const result: QuickTransferResolvedResult = {
+        transferId: 'transfer-1',
+        claimId: 'claim-id-1',
+        content: { text: 'hello', links: [], files: [], references: [] },
+      }
+      mocks.resolveQuickTransfer.mockReset()
+      mocks.resolveQuickTransfer.mockRejectedValueOnce({ code: statusCode, statusCode }).mockResolvedValueOnce(result)
+      const quickTransfer = useQuickTransfer()
+
+      expect(await quickTransfer.receive({ code: '123456' })).toBe(false)
+      const firstRequestId = quickTransfer.activeClaimRequestId.value
+      quickTransfer.resetReceive()
+      expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+      expect(mocks.resolveQuickTransfer.mock.calls[1]?.[0].claimRequestId).toBe(firstRequestId)
+    }
+  })
+
+  it('creates a new request id when a share token changes after an unknown result', async () => {
+    const result: QuickTransferResolvedResult = {
+      transferId: 'transfer-2',
+      claimId: 'claim-id-2',
+      content: { text: 'hello', links: [], files: [], references: [] },
+    }
+    mocks.resolveQuickTransfer.mockRejectedValueOnce({ code: 'TIMEOUT' }).mockResolvedValueOnce(result)
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ shareToken: 'share-a' })).toBe(false)
+    const firstRequestId = quickTransfer.activeClaimRequestId.value
+    expect(await quickTransfer.receive({ shareToken: 'share-b' })).toBe(true)
+    expect(mocks.resolveQuickTransfer.mock.calls[1]?.[0].claimRequestId).not.toBe(firstRequestId)
+  })
+
   it('creates a new claim request id after a definite failure or for a new code', async () => {
     mocks.resolveQuickTransfer
       .mockRejectedValueOnce({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })

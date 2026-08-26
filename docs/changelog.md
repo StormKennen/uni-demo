@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- 2026-08-26 [tools/quick-transfer/release] 完成 V2.1 发布前硬化：补齐 claimRequestId 未知结果重试与输入切换测试、Receipt 分页去重/失败重试、历史详情异常入口和文件访问状态收口；保留生成 API 边界并记录现有基线问题（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 优化发送按钮禁用态：直接展示“请先添加内容”等不可发送原因，并提高禁用按钮的文字与背景对比度（Codex）
+
 - 2026-08-26 [tools/quick-transfer] 按 UI V3 重构飞船页面：沉浸式 CSS Hero 与上浮操作舱、发送/接收玻璃切换、紧凑内容卡、原生 Picker 设置、航行凭证结果和接收内容展示；将常驻 QuickShipVisual 改为 depart/arrive 一次性 Transition Overlay，保留现有发送/接收业务状态机（Codex）
 
 - 2026-08-26 [tools/quick-transfer] 完成 UI V3 Stabilization：修正 Arrive 飞船方向翻转，统一首次领取与手工码 retry 的成功动画入口，执行中锁定发送/接收切换，弱化空文件数量提示并将“打开飞船”改为“查看内容”；保留图片失败兜底、Reduced Motion 和用户主动重试原则（Codex）
