@@ -20,8 +20,8 @@ export interface QuickTransferShareInput {
   now?: number
 }
 
-export const QUICK_TRANSFER_TOOL_SHARE_TITLE = '快船 - 文本、图片、文件跨设备传递'
-export const QUICK_TRANSFER_TRANSFER_SHARE_TITLE = '给你送来了一艘快船'
+export const QUICK_TRANSFER_TOOL_SHARE_TITLE = '飞船 - 文本、图片、文件跨设备传递'
+export const QUICK_TRANSFER_TRANSFER_SHARE_TITLE = '给你送来了一艘飞船'
 
 export const getQuickTransferSharePayload = (input: QuickTransferShareInput): QuickTransferSharePayload => {
   const isTransferShare =

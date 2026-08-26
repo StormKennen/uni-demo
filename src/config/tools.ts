@@ -300,7 +300,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'text',
   },
   'quick-transfer': {
-    name: '快船',
+    name: '飞船',
     desc: '文本、图片、链接、文件，快速送到另一台设备',
     icon: 'paperclip',
     gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',

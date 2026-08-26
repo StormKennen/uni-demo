@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+  import QuickShipVisual from './components/QuickShipVisual.vue'
   import PageLayout from '@/components/PageLayout.vue'
   import { filePicker, isFilePickerCancel } from '@/platform/file'
   import type { SelectedFile } from '@/platform/file'
@@ -20,6 +21,7 @@
     buildQuickTransferSharePath,
     createQuickShipDraft,
     createQuickShipFileDraft,
+    formatQuickTransferExpiry,
     formatQuickTransferFileSize,
     hasQuickShipContent,
     isValidQuickTransferMaxClaims,
@@ -48,6 +50,7 @@
     QuickTransferContentReference,
     QuickTransferPageQuery,
   } from '@/features/quick-transfer/types'
+  import { getQuickShipVisualState, type QuickShipVisualState } from '@/features/quick-transfer/visual'
 
   interface LinkEditor {
     localId: string
@@ -79,7 +82,13 @@
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
   const receiveErrorMessage = computed(() => quickTransfer.receiveError.value?.message || '')
   const sendButtonLabel = computed(() => getQuickTransferSendButtonLabel(quickTransfer.sendState.value, quickTransfer.uploadProgress.value))
-  const canSubmit = computed(() => canSend.value && hasQuickShipContent(draft.value) && !validateQuickTransferFiles(draft.value.files))
+  const canSubmit = computed(
+    () =>
+      canSend.value &&
+      (!quickTransfer.transferId.value || quickTransfer.sendState.value === 'idle') &&
+      hasQuickShipContent(draft.value) &&
+      !validateQuickTransferFiles(draft.value.files),
+  )
   const sharePayload = computed(() =>
     getQuickTransferSharePayload({
       mode: mode.value,
@@ -105,16 +114,25 @@
     getQuickTransferSenderClaimLabel(quickTransfer.sendState.value, senderClaimCount.value, senderMaxClaims.value),
   )
   const receiveErrorCode = computed(() => quickTransfer.receiveError.value?.code || '')
+  const isClaimTokenError = computed(
+    () => receiveErrorCode.value === 'CLAIM_TOKEN_INVALID' || receiveErrorCode.value === 'CLAIM_TOKEN_EXPIRED',
+  )
+  const isReceiveUnavailable = computed(
+    () => receiveErrorCode.value === 'TRANSFER_NOT_AVAILABLE' || receiveErrorCode.value === 'TRANSFER_NOT_FOUND',
+  )
+  const hasFailedUploadFiles = computed(() => draft.value.files.some(file => file.uploadState === 'error'))
   const receiveErrorTitle = computed(() => {
-    if (receiveErrorCode.value === 'TRANSFER_NOT_AVAILABLE' || receiveErrorCode.value === 'TRANSFER_NOT_FOUND') return '这艘快船已经不在了'
+    if (isReceiveUnavailable.value) return '这艘飞船已经不在了'
+    if (isClaimTokenError.value) return '文件访问凭证已失效'
     if (receiveErrorCode.value === '429') return '收船太频繁了'
-    if (receiveErrorCode.value === 'NETWORK_ERROR') return '暂时联系不上快船'
+    if (receiveErrorCode.value === 'NETWORK_ERROR') return '暂时联系不上飞船'
     return receiveErrorMessage.value
   })
   const receiveErrorDescription = computed(() => {
-    if (receiveErrorCode.value === 'TRANSFER_NOT_AVAILABLE' || receiveErrorCode.value === 'TRANSFER_NOT_FOUND') {
+    if (isReceiveUnavailable.value) {
       return '内容可能已经过期、被召回或已经领取完。'
     }
+    if (isClaimTokenError.value) return '重新收船可能会再次占用一次领取次数。'
     if (receiveErrorCode.value === '429') return '稍后再试。'
     if (receiveErrorCode.value === 'NETWORK_ERROR') return '检查网络后再试一次。'
     return '请稍后再试。'
@@ -130,6 +148,10 @@
   const receivedLinks = computed(() => receivedContent.value?.links || [])
   const receivedFiles = computed(() => receivedContent.value?.files || [])
   const receivedReferences = computed(() => receivedContent.value?.references || [])
+  const quickShipVisualState = computed<QuickShipVisualState>(() => {
+    return getQuickShipVisualState(mode.value, quickTransfer.sendState.value, quickTransfer.receiveState.value)
+  })
+  const quickShipVisualCompact = computed(() => mode.value === 'receive' || isSendResultVisible.value)
 
   const refreshLoginState = () => {
     isLoggedIn.value = Boolean(getToken())
@@ -257,7 +279,7 @@
   }
 
   const retryUpload = () => {
-    if (quickTransfer.failedFileId.value) void quickTransfer.retryUpload(draft.value, quickTransfer.failedFileId.value)
+    if (hasFailedUploadFiles.value) void quickTransfer.retryUpload(draft.value)
   }
 
   const retryComplete = () => {
@@ -302,8 +324,13 @@
 
   const retryReceive = () => {
     quickTransfer.resetReceive()
+    isReceivedContentOpened.value = false
     if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
+    else if (normalizeQuickTransferCode(receiveCode.value).length === 6)
+      void quickTransfer.receive({ code: normalizeQuickTransferCode(receiveCode.value) })
   }
+
+  const dismissReceiveError = () => quickTransfer.clearReceiveError()
 
   const enterSend = () => {
     mode.value = 'send'
@@ -364,8 +391,8 @@
     :always-title="true">
     <view class="quick-transfer-page">
       <view class="hero-card">
-        <text class="hero-kicker">QUICK TRANSFER</text>
-        <text class="hero-title">快船</text>
+        <text class="hero-title">飞船</text>
+        <QuickShipVisual :state="quickShipVisualState" :compact="quickShipVisualCompact" />
         <text class="hero-desc">{{ QUICK_TRANSFER_COPY.heroDescription }}</text>
       </view>
 
@@ -385,7 +412,7 @@
         </view>
 
         <view v-else-if="isSendResultVisible" class="result-panel">
-          <text v-if="quickTransfer.sendState.value === 'ready'" class="result-kicker">快船出发了！</text>
+          <text v-if="quickTransfer.sendState.value === 'ready'" class="result-kicker">飞船出发了！</text>
           <text class="result-title">{{ senderStatusTitle }}</text>
           <text class="result-description">{{ senderStatusDescription }}</text>
           <template v-if="quickTransfer.sendState.value === 'ready'">
@@ -402,7 +429,7 @@
             <!-- #ifdef MP-WEIXIN -->
             <button class="secondary-button full-button" open-type="share">分享给好友</button>
             <!-- #endif -->
-            <view class="cancel-link" @click="cancelSend">召回快船</view>
+            <view class="cancel-link" @click="cancelSend">召回飞船</view>
           </template>
           <button v-else class="secondary-button full-button" @click="resetToSend">再送一艘</button>
         </view>
@@ -500,7 +527,11 @@
           <button class="primary-button submit-button" :disabled="isSending || !canSubmit" @click="submitSend">{{
             sendButtonLabel
           }}</button>
-          <button v-if="quickTransfer.canRetryUpload.value" class="secondary-button full-button" :disabled="isSending" @click="retryUpload"
+          <button
+            v-if="quickTransfer.canRetryUpload.value && hasFailedUploadFiles"
+            class="secondary-button full-button"
+            :disabled="isSending"
+            @click="retryUpload"
             >重新上传失败文件</button
           >
           <button
@@ -515,22 +546,23 @@
             class="secondary-button full-button"
             :disabled="isSending"
             @click="resetToSend"
-            >放弃本次快船</button
+            >放弃本次飞船</button
           >
         </template>
       </view>
 
       <view v-else class="content-card receive-card">
         <view v-if="shareToken && quickTransfer.receiveState.value === 'inspecting'" class="receive-state-panel"
-          ><text class="receive-title">正在确认快船…</text></view
+          ><text class="receive-title">正在确认飞船…</text></view
         >
         <view
           v-else-if="shareToken && quickTransfer.inspectResult.value && quickTransfer.receiveState.value !== 'received'"
           class="inspect-panel">
-          <text class="receive-title">收到一艘快船</text>
+          <text class="receive-title">收到一艘飞船</text>
           <text class="receive-description">包含：{{ receiveSummaryText }}</text>
           <text class="receive-description"
-            >{{ quickTransfer.inspectResult.value.remainingClaims }} 次收船机会 · {{ quickTransfer.inspectResult.value.expiresAt }}</text
+            >还可收船 {{ quickTransfer.inspectResult.value.remainingClaims }} 次 ·
+            {{ formatQuickTransferExpiry(quickTransfer.inspectResult.value.expiresAt) }}</text
           >
           <button class="primary-button full-button" :disabled="isReceiving" @click="claim">收船</button>
         </view>
@@ -539,7 +571,7 @@
           <text class="receive-description">{{ QUICK_TRANSFER_COPY.receivedDescription }}</text>
           <button class="primary-button full-button" @click="openReceivedContent">{{ QUICK_TRANSFER_COPY.openReceived }}</button>
         </view>
-        <template v-else-if="!isReceivedContentVisible">
+        <template v-else-if="!isReceivedContentVisible && !shareToken">
           <text class="receive-title">输入 6 位收船码</text>
           <input v-model="receiveCode" class="code-input" type="number" :maxlength="6" placeholder="000000" />
           <button
@@ -553,11 +585,15 @@
         <view v-if="receiveErrorMessage" class="receive-error-panel">
           <text class="receive-error-title">{{ receiveErrorTitle }}</text>
           <text class="receive-error-description">{{ receiveErrorDescription }}</text>
-          <button class="secondary-button full-button" @click="retryReceive">重新尝试</button>
+          <view v-if="isClaimTokenError" class="action-row">
+            <button class="secondary-button" @click="dismissReceiveError">返回</button>
+            <button class="primary-button" @click="retryReceive">重新收船</button>
+          </view>
+          <button v-else-if="!isReceiveUnavailable" class="secondary-button full-button" @click="retryReceive">重新尝试</button>
         </view>
 
         <view v-if="isReceivedContentVisible && receivedContent" class="received-content-panel">
-          <text class="receive-title">快船内容</text>
+          <text class="receive-title">飞船内容</text>
           <view v-if="receivedText" class="received-section"
             ><text class="section-title">留言</text><text class="received-text" selectable>{{ receivedText }}</text
             ><button class="secondary-button full-button" @click="copyReceivedText">复制留言</button></view

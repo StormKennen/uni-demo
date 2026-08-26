@@ -8,13 +8,14 @@ import {
   QUICK_TRANSFER_TTL_OPTIONS,
 } from './constants'
 import { getQuickTransferErrorMessage, toQuickTransferReceiveErrorInfo } from './errors'
-import { getQuickTransferFileStateLabel, getQuickTransferSendButtonLabel } from './presentation'
+import { formatQuickTransferSummary, getQuickTransferFileStateLabel, getQuickTransferSendButtonLabel } from './presentation'
 import {
   buildQuickTransferSharePath,
   canSendQuickTransfer,
   canTransitionQuickTransferSendState,
   createQuickShipDraft,
   createQuickShipFileDraft,
+  formatQuickTransferExpiry,
   getQuickTransferMimeType,
   hasQuickShipContent,
   isQuickTransferDownloadValid,
@@ -73,15 +74,27 @@ describe('quick transfer V2 helpers', () => {
     expect(canTransitionQuickTransferSendState('uploading', 'completing')).toBe(true)
     expect(isQuickTransferTerminalStatus('consumed')).toBe(true)
     expect(isQuickTransferDownloadValid(new Date(10_000).toISOString(), 9_000)).toBe(true)
+    expect(formatQuickTransferExpiry(new Date(10 * 60_000).toISOString(), 0)).toBe('10 分钟后返航')
+    expect(formatQuickTransferExpiry(new Date(2 * 60 * 60_000 + 30 * 60_000).toISOString(), 0)).toBe('2 小时 30 分钟后返航')
     expect(parseQuickTransferPageQuery({ mode: 'receive', shareToken: ' token ' })).toEqual({ mode: 'receive', shareToken: 'token' })
     expect(buildQuickTransferSharePath('a/b')).toContain('shareToken=a%2Fb')
   })
 
   it('keeps V2 error fields and file progress copy independent', () => {
     expect(getQuickTransferErrorMessage({ data: { reason: 'UPLOAD_PROBE_TEMPORARILY_UNAVAILABLE' } })).toBe('文件校验暂时失败，请重新校验')
+    expect(
+      getQuickTransferErrorMessage({
+        code: 503,
+        statusCode: 503,
+        data: { code: 503, data: { reason: 'QUICK_TRANSFER_NOT_CONFIGURED' } },
+      }),
+    ).toBe('飞船服务尚未完成配置，请联系管理员')
+    expect(formatQuickTransferSummary({ hasText: true, linkCount: 2, fileCount: 3, referenceCount: 1 })).toBe(
+      '留言、2 个链接、3 个文件、1 个引用',
+    )
     expect(toQuickTransferReceiveErrorInfo({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })).toEqual({
       code: 'TRANSFER_NOT_AVAILABLE',
-      message: '这艘快船已经不在了',
+      message: '这艘飞船已经不在了',
     })
     expect(getQuickTransferSendButtonLabel('uploading', 38)).toBe('正在装船 38%')
     expect(getQuickTransferFileStateLabel({ clientFileId: 'f', name: 'a', size: 1, mimeType: 'text/plain', uploadState: 'ready' })).toBe(

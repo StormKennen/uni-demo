@@ -8,6 +8,13 @@ describe('quick transfer reference registry', () => {
     expect(handler?.buildRoute({ type: 'memoDetail', resourceId: 'memo/1', title: '旅行计划' })).toBe(
       '/subPackages/tools/memo/detail?id=memo%2F1',
     )
+    expect(
+      getQuickTransferReferenceHandler('rtaRanking')?.buildRoute({
+        type: 'rtaRanking',
+        title: 'RTA 榜单',
+        params: { season: 38, tier: 'g3', league: 'special', minPickCount: 500, sortOrder: 'asc', unsupported: 'ignored' },
+      }),
+    ).toBe('/subPackages/tools/compendium/swc/rta/index?season=38&minPickCount=500&tier=g3&league=special&sortOrder=asc')
     expect(getQuickTransferReferenceHandler('unknown')).toBeUndefined()
   })
 

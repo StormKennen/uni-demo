@@ -24,7 +24,7 @@ const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
- * @description QuickTransfer/创建快船
+ * @description QuickTransfer/创建飞船
  * @url POST /quick-transfers
  * @host https://app.apifox.com/link/project/7048425/apis/api-505270929
  */
@@ -63,7 +63,7 @@ export const postQuickTransfersTransferIdComplete = async (
 }
 
 /**
- * @description QuickTransfer/检查分享快船是否可领取
+ * @description QuickTransfer/检查分享飞船是否可领取
  * @url POST /quick-transfers/share/inspect
  * @host https://app.apifox.com/link/project/7048425/apis/api-506511449
  */
@@ -93,7 +93,7 @@ export const postQuickTransfersFilesComplete = async (
 }
 
 /**
- * @description QuickTransfer/Owner 查看快船状态
+ * @description QuickTransfer/Owner 查看飞船状态
  * @url GET /quick-transfers/{transferId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-505270932
  */
@@ -123,7 +123,7 @@ export const postQuickTransfersFilesUploadPolicy = async (
 }
 
 /**
- * @description QuickTransfer/Owner 召回整艘快船
+ * @description QuickTransfer/Owner 召回整艘飞船
  * @url DELETE /quick-transfers/{transferId}
  * @host https://app.apifox.com/link/project/7048425/apis/api-505270933
  */

@@ -6,12 +6,11 @@ import type {
   QuickTransferResolvedResult,
   QuickTransferStatusResult,
   QuickTransferStatus,
-  QuickTransferSummary,
   QuickTransferUploadDescriptor,
 } from './types'
 import { QUICK_TRANSFER_DEFAULT_MAX_CLAIMS } from './constants'
 import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims } from './helpers'
-import { normalizeQuickTransferResolvedResult } from './response'
+import { normalizeQuickTransferInspectResult, normalizeQuickTransferResolvedResult } from './response'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import {
   deleteQuickTransfersTransferId,
@@ -52,7 +51,7 @@ const asRuntimeValue = (value: unknown): unknown => {
 const unwrapData = (value: unknown): Record<string, unknown> => {
   const parsed = asRuntimeValue(value)
   const record = asRecord(parsed)
-  if (!record) throw new Error('快船接口返回格式异常')
+  if (!record) throw new Error('飞船接口返回格式异常')
   const data = asRecord(record.data)
   if (data && (record.code === undefined || record.status === undefined) && Object.keys(data).length > 0) return data
   return record
@@ -60,7 +59,7 @@ const unwrapData = (value: unknown): Record<string, unknown> => {
 
 const requiredString = (record: Record<string, unknown>, key: string): string => {
   const value = record[key]
-  if (typeof value !== 'string' || !value) throw new Error(`快船接口缺少 ${key}`)
+  if (typeof value !== 'string' || !value) throw new Error(`飞船接口缺少 ${key}`)
   return value
 }
 
@@ -76,7 +75,7 @@ const normalizeStatusValue = (value: unknown): QuickTransferStatus => {
   ) {
     return value
   }
-  throw new Error('快船接口返回了未知状态')
+  throw new Error('飞船接口返回了未知状态')
 }
 
 const normalizeUpload = (value: unknown, fallbackClientFileId = ''): QuickTransferUploadDescriptor | undefined => {
@@ -166,7 +165,7 @@ export const refreshQuickTransferUploadPolicy = async (
   const pathParams = { transferId, fileId } as postFilesFileIdUploadPolicyPathQuery
   const response = await postQuickTransfersFilesUploadPolicy(pathParams)
   const upload = normalizeUpload({ ...(unwrapData(response) as Record<string, unknown>), fileId }, clientFileId)
-  if (!upload) throw new Error('快船接口返回的上传凭证不可用')
+  if (!upload) throw new Error('飞船接口返回的上传凭证不可用')
   return upload
 }
 
@@ -188,20 +187,7 @@ export const cancelQuickTransfer = async (
 
 export const inspectQuickTransferShare = async (shareToken: string): Promise<QuickTransferInspectResult> => {
   const response = await postQuickTransfersShareInspect({ shareToken } as postQuickTransfersShareInspectBody, receiveRequestConfig)
-  const record = unwrapData(response)
-  const rawSummary = asRecord(record.summary) || {}
-  const summary: QuickTransferSummary = {
-    hasText: Boolean(rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text),
-    links: Number(rawSummary.links ?? record.links ?? 0) || 0,
-    files: Number(rawSummary.files ?? record.files ?? 0) || 0,
-    references: Number(rawSummary.references ?? record.references ?? 0) || 0,
-  }
-  return {
-    transferId: typeof record.transferId === 'string' ? record.transferId : undefined,
-    expiresAt: requiredString(record, 'expiresAt'),
-    remainingClaims: normalizeQuickTransferClaimCount(record.remainingClaims ?? record.claimsRemaining),
-    summary,
-  }
+  return normalizeQuickTransferInspectResult(response)
 }
 
 export const resolveQuickTransfer = async (input: { code?: string; shareToken?: string }): Promise<QuickTransferResolvedResult> => {
@@ -220,7 +206,7 @@ export const accessQuickTransferFile = async (
   const response = await postQuickTransfersFilesAccess(pathParams, body, receiveRequestConfig)
   const record = unwrapData(response)
   const url = typeof record.url === 'string' ? record.url : typeof record.signedUrl === 'string' ? record.signedUrl : ''
-  if (!url) throw new Error('快船接口缺少 url')
+  if (!url) throw new Error('飞船接口缺少 url')
   return {
     url,
     expiresAt: requiredString(record, 'expiresAt'),

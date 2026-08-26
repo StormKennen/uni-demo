@@ -3,9 +3,11 @@ import type {
   QuickTransferContentLink,
   QuickTransferContentReference,
   QuickTransferFileMetadata,
+  QuickTransferInspectResult,
   QuickTransferResolvedResult,
+  QuickTransferSummary,
 } from './types'
-import { getQuickTransferMimeType } from './helpers'
+import { getQuickTransferMimeType, normalizeQuickTransferClaimCount } from './helpers'
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
@@ -24,7 +26,7 @@ const asRuntimeValue = (value: unknown): unknown => {
 const unwrapData = (value: unknown): Record<string, unknown> => {
   const parsed = asRuntimeValue(value)
   const record = asRecord(parsed)
-  if (!record) throw new Error('快船接口返回格式异常')
+  if (!record) throw new Error('飞船接口返回格式异常')
   const data = asRecord(record.data)
   if (data && Object.keys(data).length > 0) return data
   return record
@@ -32,7 +34,7 @@ const unwrapData = (value: unknown): Record<string, unknown> => {
 
 const requiredString = (records: Array<Record<string, unknown> | null>, key: string): string => {
   const value = records.map(record => record?.[key]).find(candidate => typeof candidate === 'string' && candidate)
-  if (typeof value !== 'string') throw new Error(`快船接口缺少 ${key}`)
+  if (typeof value !== 'string') throw new Error(`飞船接口缺少 ${key}`)
   return value
 }
 
@@ -89,9 +91,28 @@ const normalizeContent = (value: unknown): QuickTransferContent => {
 export const normalizeQuickTransferResolvedResult = (response: unknown): QuickTransferResolvedResult => {
   const record = unwrapData(response)
   const content = normalizeContent(record.content)
+  const claimToken = typeof record.claimToken === 'string' && record.claimToken ? record.claimToken : undefined
+  if (content.files.length > 0 && !claimToken) throw new Error('飞船接口缺少 claimToken')
   return {
     transferId: requiredString([record, asRecord(record.content)], 'transferId'),
-    claimToken: requiredString([record], 'claimToken'),
+    claimToken,
     content,
+  }
+}
+
+export const normalizeQuickTransferInspectResult = (response: unknown): QuickTransferInspectResult => {
+  const record = unwrapData(response)
+  const rawSummary = asRecord(record.summary) || {}
+  const summary: QuickTransferSummary = {
+    hasText: Boolean(rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text),
+    linkCount: Number(rawSummary.linkCount ?? rawSummary.links ?? record.linkCount ?? record.links ?? 0) || 0,
+    fileCount: Number(rawSummary.fileCount ?? rawSummary.files ?? record.fileCount ?? record.files ?? 0) || 0,
+    referenceCount: Number(rawSummary.referenceCount ?? rawSummary.references ?? record.referenceCount ?? record.references ?? 0) || 0,
+  }
+  return {
+    transferId: typeof record.transferId === 'string' ? record.transferId : undefined,
+    expiresAt: requiredString([record], 'expiresAt'),
+    remainingClaims: normalizeQuickTransferClaimCount(record.remainingClaims ?? record.claimsRemaining),
+    summary,
   }
 }

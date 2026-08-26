@@ -1,5 +1,5 @@
 /**
- * @description QuickTransfer/创建快船--接口请求Body参数
+ * @description QuickTransfer/创建飞船--接口请求Body参数
  * @url POST /quick-transfers
  */
 export interface postQuickTransfersBody {
@@ -41,7 +41,7 @@ export interface postQuickTransfersBodyContent {
 }
 
 /**
- * @description QuickTransfer/创建快船--接口返回值
+ * @description QuickTransfer/创建飞船--接口返回值
  * @url POST /quick-transfers
  */
 export type postQuickTransfersRes = string
@@ -65,7 +65,7 @@ export type postQuickTransfersResolveRes = string
 export type postQuickTransfersTransferIdCompleteRes = string
 
 /**
- * @description QuickTransfer/检查分享快船是否可领取--接口请求Body参数
+ * @description QuickTransfer/检查分享飞船是否可领取--接口请求Body参数
  * @url POST /quick-transfers/share/inspect
  */
 export interface postQuickTransfersShareInspectBody {
@@ -73,7 +73,7 @@ export interface postQuickTransfersShareInspectBody {
 }
 
 /**
- * @description QuickTransfer/检查分享快船是否可领取--接口返回值
+ * @description QuickTransfer/检查分享飞船是否可领取--接口返回值
  * @url POST /quick-transfers/share/inspect
  */
 export type postQuickTransfersShareInspectRes = string
@@ -95,7 +95,7 @@ export interface postFilesFileIdCompletePathQuery {
 export type postFilesFileIdCompleteRes = string
 
 /**
- * @description QuickTransfer/Owner 查看快船状态--接口返回值
+ * @description QuickTransfer/Owner 查看飞船状态--接口返回值
  * @url GET /quick-transfers/{transferId}
  */
 export type getQuickTransfersTransferIdRes = string
@@ -117,7 +117,7 @@ export interface postFilesFileIdUploadPolicyPathQuery {
 export type postFilesFileIdUploadPolicyRes = string
 
 /**
- * @description QuickTransfer/Owner 召回整艘快船--接口返回值
+ * @description QuickTransfer/Owner 召回整艘飞船--接口返回值
  * @url DELETE /quick-transfers/{transferId}
  */
 export type deleteQuickTransfersTransferIdRes = string

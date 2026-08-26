@@ -58,9 +58,8 @@ export const useQuickTransfer = () => {
   const countdown = ref('')
   const isActionRunning = ref(false)
   const isDownloading = ref(false)
-  const failedFileId = ref('')
   const canRetryComplete = computed(() => Boolean(sendError.value?.canRetryComplete && transferId.value))
-  const canRetryUpload = computed(() => Boolean(sendError.value?.canRetryUpload && transferId.value && failedFileId.value))
+  const canRetryUpload = computed(() => Boolean(sendError.value?.canRetryUpload && transferId.value))
 
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let countdownTimer: ReturnType<typeof setInterval> | null = null
@@ -150,17 +149,22 @@ export const useQuickTransfer = () => {
   }
 
   const completeFile = async (file: QuickShipFileDraft): Promise<QuickTransferStatusResult> => {
-    if (!transferId.value || !file.serverFileId) throw createUploadError('文件校验信息不可用，请重新准备快船', 'TRANSFER_FILE_NOT_FOUND')
+    if (!transferId.value || !file.serverFileId) throw createUploadError('文件校验信息不可用，请重新准备飞船', 'TRANSFER_FILE_NOT_FOUND')
+    const previousState = file.uploadState
     file.uploadState = 'completing'
     try {
       const result = await completeQuickTransferFile(transferId.value, file.serverFileId, expiresAt.value)
       file.uploadState = 'ready'
       file.progress = 100
+      file.error = undefined
+      file.errorCode = undefined
       return result
     } catch (error) {
       if (getQuickTransferErrorCode(error) === 'TRANSFER_FILE_ALREADY_READY') {
         file.uploadState = 'ready'
         file.progress = 100
+        file.error = undefined
+        file.errorCode = undefined
         return (
           senderStatus.value || {
             transferId: transferId.value,
@@ -171,6 +175,9 @@ export const useQuickTransfer = () => {
           }
         )
       }
+      file.uploadState = previousState === 'ready' ? 'ready' : 'uploaded'
+      file.error = getQuickTransferErrorMessage(error, `${file.name} 校验失败，请重新校验`)
+      file.errorCode = getQuickTransferErrorCode(error) || 'COMPLETE_FAILED'
       throw error
     }
   }
@@ -181,6 +188,7 @@ export const useQuickTransfer = () => {
     file.uploadState = 'uploading'
     file.progress = 0
     file.error = undefined
+    file.errorCode = undefined
     const uploadTask = uploadFileDirect({
       file: selectedFile,
       url: descriptor.url,
@@ -192,16 +200,21 @@ export const useQuickTransfer = () => {
       },
     })
     uploadAborts.set(file.clientFileId, uploadTask.abort)
+    let completeAttempted = false
     try {
       const uploadResult = await uploadTask.promise
       if (uploadResult.statusCode !== descriptor.successStatus) throw createUploadError(`${file.name} 上传未成功，请重试`)
       file.uploadState = 'uploaded'
       file.progress = 100
       updateOverallProgress(files)
+      completeAttempted = true
       await completeFile(file)
       updateOverallProgress(files)
     } catch (error) {
-      file.uploadState = 'error'
+      if (!completeAttempted) {
+        file.uploadState = 'error'
+        file.errorCode = getQuickTransferErrorCode(error) || 'UPLOAD_FAILED'
+      }
       file.error = getQuickTransferErrorMessage(error, `${file.name} 上传失败，请重试`)
       throw error
     } finally {
@@ -211,29 +224,76 @@ export const useQuickTransfer = () => {
 
   const uploadFiles = async (draft: QuickShipDraft, files: QuickShipFileDraft[]) => {
     let cursor = 0
-    let firstError: unknown = null
+    const errors: unknown[] = []
     const worker = async () => {
-      while (!firstError) {
+      while (cursor < files.length) {
         const index = cursor
         cursor += 1
         const file = files[index]
         if (!file) return
         const descriptor = uploadDescriptors.value[file.clientFileId]
         if (!descriptor) {
-          firstError = createUploadError(`${file.name} 的上传凭证不可用，请重新准备快船`, 'TRANSFER_UPLOAD_NOT_AVAILABLE')
+          const error = createUploadError(`${file.name} 的上传凭证不可用，请重新准备飞船`, 'TRANSFER_UPLOAD_NOT_AVAILABLE')
           file.uploadState = 'error'
-          file.error = getQuickTransferErrorMessage(firstError)
-          return
+          file.error = getQuickTransferErrorMessage(error)
+          file.errorCode = 'TRANSFER_UPLOAD_NOT_AVAILABLE'
+          errors.push(error)
+          continue
         }
         try {
           await uploadOneFile(file, descriptor, draft.files)
         } catch (error) {
-          firstError = error
+          errors.push(error)
         }
       }
     }
     await Promise.all(Array.from({ length: Math.min(QUICK_TRANSFER_UPLOAD_CONCURRENCY, files.length) }, () => worker()))
-    if (firstError) throw firstError
+    if (errors.length) throw errors[0]
+  }
+
+  const getCompleteCandidates = (draft: QuickShipDraft): QuickShipFileDraft[] =>
+    draft.files.filter(file => file.uploadState === 'uploaded' || file.uploadState === 'completing' || file.uploadState === 'ready')
+
+  const getUploadErrors = (draft: QuickShipDraft): QuickShipFileDraft[] => draft.files.filter(file => file.uploadState === 'error')
+
+  const getUnfinishedFiles = (draft: QuickShipDraft): QuickShipFileDraft[] =>
+    draft.files.filter(file => file.uploadState === 'pending' || file.uploadState === 'uploading')
+
+  const isRetryableUploadError = (file: QuickShipFileDraft): boolean =>
+    ['TRANSFER_UPLOAD_NOT_AVAILABLE', 'UPLOAD_FAILED', 'DIRECT_UPLOAD_FAILED', 'DIRECT_UPLOAD_ABORTED'].includes(file.errorCode || '')
+
+  const setRecoveryError = (draft: QuickShipDraft, fallback: string, error?: unknown): void => {
+    const uploadErrors = getUploadErrors(draft)
+    const retryableUploadErrors = uploadErrors.filter(file => Boolean(file.serverFileId) && isRetryableUploadError(file))
+    const completeCandidates = getCompleteCandidates(draft).filter(file => file.uploadState !== 'ready')
+    const unfinishedFiles = getUnfinishedFiles(draft)
+    const info = toQuickTransferErrorInfo(error, fallback)
+    sendError.value = {
+      ...info,
+      canRetryUpload: Boolean(retryableUploadErrors.length || (info.canRetryUpload && !uploadErrors.length)),
+      canRetryComplete: Boolean(info.canRetryComplete || completeCandidates.length),
+    }
+    if (unfinishedFiles.length) {
+      sendError.value = {
+        ...sendError.value,
+        code: sendError.value.code || 'UPLOAD_INCOMPLETE',
+        message: sendError.value.message || '仍有文件尚未完成上传，请重试',
+        canRetryUpload: Boolean(retryableUploadErrors.length),
+      }
+    }
+    sendState.value = 'error'
+  }
+
+  const reconcileUploadState = async (draft: QuickShipDraft): Promise<boolean> => {
+    if (getUploadErrors(draft).length || getUnfinishedFiles(draft).length) {
+      setRecoveryError(draft, '仍有文件未完成，请先处理失败文件')
+      return false
+    }
+    if (getCompleteCandidates(draft).some(file => file.uploadState !== 'ready')) {
+      setRecoveryError(draft, '文件已上传，但仍有内容需要重新校验')
+      return false
+    }
+    return finalizeReady(draft)
   }
 
   const finalizeReady = async (draft: QuickShipDraft): Promise<boolean> => {
@@ -267,7 +327,6 @@ export const useQuickTransfer = () => {
     uploadProgress.value = null
     senderStatus.value = null
     countdown.value = ''
-    failedFileId.value = ''
     if (draft) {
       draft.text = ''
       draft.links.splice(0)
@@ -290,7 +349,6 @@ export const useQuickTransfer = () => {
     }
     isActionRunning.value = true
     sendError.value = null
-    failedFileId.value = ''
     sendState.value = 'creating'
     const payload: QuickTransferCreatePayload = {
       content: {
@@ -325,8 +383,10 @@ export const useQuickTransfer = () => {
       draft.files.forEach(file => {
         const descriptor = uploadDescriptors.value[file.clientFileId]
         file.serverFileId = descriptor?.fileId
-        file.uploadState = descriptor ? 'pending' : 'ready'
-        file.progress = descriptor ? 0 : 100
+        file.uploadState = descriptor ? 'pending' : 'error'
+        file.progress = descriptor ? 0 : undefined
+        file.error = descriptor ? undefined : `${file.name} 的上传凭证不可用，请重新准备飞船`
+        file.errorCode = descriptor ? undefined : 'TRANSFER_UPLOAD_NOT_AVAILABLE'
       })
       if (!draft.files.length) {
         sendState.value = 'ready'
@@ -336,42 +396,57 @@ export const useQuickTransfer = () => {
       }
       const pendingFiles = draft.files.filter(file => Boolean(uploadDescriptors.value[file.clientFileId]))
       if (pendingFiles.length !== draft.files.length)
-        throw createUploadError('部分文件没有获得上传凭证，请重新准备快船', 'TRANSFER_UPLOAD_NOT_AVAILABLE')
+        throw createUploadError('部分文件没有获得上传凭证，请重新准备飞船', 'TRANSFER_UPLOAD_NOT_AVAILABLE')
       sendState.value = 'uploading'
       await uploadFiles(draft, pendingFiles)
       sendState.value = 'completing'
       return await finalizeReady(draft)
     } catch (error) {
-      const fileErrorInfo = toQuickTransferErrorInfo(error, getQuickTransferErrorMessage(error))
-      failedFileId.value = draft.files.find(file => file.uploadState === 'error')?.clientFileId || ''
-      sendError.value = fileErrorInfo
-      sendState.value = 'error'
+      setRecoveryError(draft, getQuickTransferErrorMessage(error), error)
       return false
     } finally {
       isActionRunning.value = false
     }
   }
 
-  const retryUpload = async (draft: QuickShipDraft, clientFileId: string): Promise<boolean> => {
-    const file = draft.files.find(item => item.clientFileId === clientFileId)
-    if (!file || !transferId.value || isActionRunning.value) return false
+  const retryUpload = async (draft: QuickShipDraft): Promise<boolean> => {
+    const files = getUploadErrors(draft)
+    if (!files.length || !transferId.value || isActionRunning.value) return false
     isActionRunning.value = true
     sendError.value = null
-    failedFileId.value = clientFileId
+    sendState.value = 'uploading'
+    let cursor = 0
+    const errors: unknown[] = []
+    const worker = async () => {
+      while (cursor < files.length) {
+        const index = cursor
+        cursor += 1
+        const file = files[index]
+        if (!file) return
+        try {
+          if (!file.serverFileId) throw createUploadError(`${file.name} 的上传信息不可用，请重新准备飞船`, 'TRANSFER_FILE_NOT_FOUND')
+          const descriptor = await refreshQuickTransferUploadPolicy(transferId.value, file.serverFileId, file.clientFileId)
+          uploadDescriptors.value = { ...uploadDescriptors.value, [file.clientFileId]: descriptor }
+          file.uploadState = 'pending'
+          await uploadOneFile(file, descriptor, draft.files)
+        } catch (error) {
+          file.uploadState = 'error'
+          file.error = getQuickTransferErrorMessage(error, `${file.name} 上传失败，请重试`)
+          file.errorCode = getQuickTransferErrorCode(error) || 'UPLOAD_FAILED'
+          errors.push(error)
+        }
+      }
+    }
     try {
-      if (!file.serverFileId) throw createUploadError('文件上传信息不可用，请重新准备快船', 'TRANSFER_FILE_NOT_FOUND')
-      const descriptor = await refreshQuickTransferUploadPolicy(transferId.value, file.serverFileId, clientFileId)
-      uploadDescriptors.value = { ...uploadDescriptors.value, [clientFileId]: descriptor }
-      file.uploadState = 'pending'
-      sendState.value = 'uploading'
-      await uploadOneFile(file, descriptor, draft.files)
+      await Promise.all(Array.from({ length: Math.min(QUICK_TRANSFER_UPLOAD_CONCURRENCY, files.length) }, () => worker()))
+      if (errors.length || getUploadErrors(draft).length) {
+        setRecoveryError(draft, '文件上传失败，请重试', errors[0])
+        return false
+      }
       sendState.value = 'completing'
-      return await finalizeReady(draft)
+      return await reconcileUploadState(draft)
     } catch (error) {
-      sendError.value = toQuickTransferErrorInfo(error, '文件上传失败，请重试')
-      file.uploadState = 'error'
-      file.error = sendError.value.message
-      sendState.value = 'error'
+      setRecoveryError(draft, '文件上传失败，请重试', error)
       return false
     } finally {
       isActionRunning.value = false
@@ -383,13 +458,35 @@ export const useQuickTransfer = () => {
     isActionRunning.value = true
     sendError.value = null
     sendState.value = 'completing'
+    const pendingFiles = getCompleteCandidates(draft).filter(file => Boolean(file.serverFileId))
+    if (!pendingFiles.length) {
+      isActionRunning.value = false
+      return reconcileUploadState(draft)
+    }
+    let cursor = 0
+    const errors: unknown[] = []
+    const worker = async () => {
+      while (cursor < pendingFiles.length) {
+        const index = cursor
+        cursor += 1
+        const file = pendingFiles[index]
+        if (!file) return
+        try {
+          await completeFile(file)
+        } catch (error) {
+          errors.push(error)
+        }
+      }
+    }
     try {
-      const pendingFiles = draft.files.filter(file => file.serverFileId)
-      for (const file of pendingFiles) await completeFile(file)
-      return await finalizeReady(draft)
+      await Promise.all(Array.from({ length: Math.min(QUICK_TRANSFER_UPLOAD_CONCURRENCY, pendingFiles.length) }, () => worker()))
+      if (errors.length) {
+        setRecoveryError(draft, '文件校验暂时失败，请重新校验', errors[0])
+        return false
+      }
+      return await reconcileUploadState(draft)
     } catch (error) {
-      sendError.value = toQuickTransferErrorInfo(error, '文件校验暂时失败，请重新校验')
-      sendState.value = 'error'
+      setRecoveryError(draft, '文件校验暂时失败，请重新校验', error)
       return false
     } finally {
       isActionRunning.value = false
@@ -441,11 +538,13 @@ export const useQuickTransfer = () => {
     try {
       const result = await resolveQuickTransfer(input)
       receivedResult.value = result
-      claimToken.value = result.claimToken
+      claimToken.value = result.claimToken || ''
       receiveState.value = 'received'
       return true
     } catch (error) {
-      receiveError.value = toQuickTransferReceiveErrorInfo(error)
+      const errorInfo = toQuickTransferReceiveErrorInfo(error)
+      if (errorInfo.code === 'TRANSFER_NOT_AVAILABLE' || errorInfo.code === 'TRANSFER_NOT_FOUND') inspectResult.value = null
+      receiveError.value = errorInfo
       receiveState.value = 'error'
       return false
     } finally {
@@ -459,6 +558,10 @@ export const useQuickTransfer = () => {
     receivedResult.value = null
     claimToken.value = ''
     inspectResult.value = null
+  }
+
+  const clearReceiveError = () => {
+    receiveError.value = null
   }
 
   const getReceivedFileAccess = async (fileId: string): Promise<QuickTransferFileAccessResult | null> => {
@@ -518,7 +621,6 @@ export const useQuickTransfer = () => {
     countdown,
     isActionRunning,
     isDownloading,
-    failedFileId,
     canRetryComplete,
     canRetryUpload,
     send,
@@ -528,6 +630,7 @@ export const useQuickTransfer = () => {
     inspectShare,
     receive,
     resetReceive,
+    clearReceiveError,
     getReceivedFileAccess,
     downloadReceivedFile,
     resetSendResult,

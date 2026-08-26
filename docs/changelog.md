@@ -7,13 +7,19 @@
 
 ## Unreleased
 
-- 2026-08-25 [tools/quick-transfer,reference] 将快船前端从 V1 单类型发送器重构为 V2 固定内容包：支持留言、多个链接、多个文件和业务引用；接入 share inspect、逐文件上传/Complete/Policy/Access、多文件队列、Claim Token 内存会话与 Reference Registry，并更新 Sender/Receiver 页面流程（Codex）
+- 2026-08-26 [tools/quick-transfer] 兼容后端嵌套错误响应并明确提示 QUICK_TRANSFER_NOT_CONFIGURED；该错误仍需后端补齐独立飞船密钥与专用 OSS Bucket 配置（Codex）
+
+- 2026-08-26 [tools/quick-transfer/visual] 新增统一 QuickShipVisual 飞船视觉层：复用单张 OSS PNG，覆盖送船、装船、出发、航行、到达、返航和召回状态，支持 CSS 动画、reduced-motion 与图片加载失败兜底，不改变飞船业务状态机（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 收口 V2 多文件失败恢复与逐文件 Complete：失败队列继续上传、批量重传失败文件、隔离未上传文件、兼容 Inspect 摘要新字段、允许无附件 Resolve 缺少 Claim Token，并完善抢先领取/凭证失效/有效期及 RTA 引用展示（Codex）
+
+- 2026-08-25 [tools/quick-transfer,reference] 将飞船前端从 V1 单类型发送器重构为 V2 固定内容包：支持留言、多个链接、多个文件和业务引用；接入 share inspect、逐文件上传/Complete/Policy/Access、多文件队列、Claim Token 内存会话与 Reference Registry，并更新 Sender/Receiver 页面流程（Codex）
 
 - 2026-08-25 [tools/game-coupons] 管理页微信好友与朋友圈分享使用顶部魔灵召唤主视觉作为分享卡片封面（Codex）
 
-- 2026-08-25 [tools/quick-transfer,file] 收口快船 V1 稳定性：规范微信文件 MIME 与空文件校验，补齐上传失败/Complete 重试和放弃恢复、兼容多层错误码与 content 返回结构，修复 H5 未登录 Gate、Timer 清理及微信分享按钮（Codex）
+- 2026-08-25 [tools/quick-transfer,file] 收口飞船 V1 稳定性：规范微信文件 MIME 与空文件校验，补齐上传失败/Complete 重试和放弃恢复、兼容多层错误码与 content 返回结构，修复 H5 未登录 Gate、Timer 清理及微信分享按钮（Codex）
 
-- 2026-08-25 [tools/quick-transfer] 将用户侧“跨设备快传”产品化为“快船”：统一送船/收船文案与分享标题，收口发送结果态，增加“船来了→打开快船”领取流程，移除文件自动下载并细分收船错误提示（Codex）
+- 2026-08-25 [tools/quick-transfer] 将用户侧“跨设备快传”产品化为“飞船”：统一送船/收船文案与分享标题，收口发送结果态，增加“船来了→打开飞船”领取流程，移除文件自动下载并细分收船错误提示（Codex）
 
 - 2026-08-25 [navigation/safe-back] 将无上一页且无业务 `backFallback` 时的全局兜底从工具大全调整为首页，并将最终 `relaunch` 恢复函数改为 `relaunchHome`；保留已有业务父级返回关系（Codex）
 

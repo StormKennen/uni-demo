@@ -1,7 +1,7 @@
 import type { QuickTransferSendState, QuickTransferStatus, QuickTransferTtl } from './types'
 
 export const QUICK_TRANSFER_ROUTE = '/subPackages/tools/quick-transfer/index'
-export const QUICK_TRANSFER_TITLE = '快船'
+export const QUICK_TRANSFER_TITLE = '飞船'
 export const MAX_QUICK_TRANSFER_FILE_SIZE = 50 * 1024 * 1024
 export const MAX_QUICK_TRANSFER_FILE_COUNT = 10
 export const MAX_QUICK_TRANSFER_TOTAL_FILE_SIZE = MAX_QUICK_TRANSFER_FILE_SIZE * MAX_QUICK_TRANSFER_FILE_COUNT

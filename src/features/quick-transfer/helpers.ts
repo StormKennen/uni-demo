@@ -120,6 +120,16 @@ export const formatQuickTransferCountdown = (expiresAt: string, now = Date.now()
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+export const formatQuickTransferExpiry = (expiresAt: string, now = Date.now()): string => {
+  const remaining = Math.max(0, Date.parse(expiresAt) - now)
+  if (!remaining) return '已返航'
+  const totalMinutes = Math.ceil(remaining / 60000)
+  if (totalMinutes < 60) return `${totalMinutes} 分钟后返航`
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return minutes ? `${hours} 小时 ${minutes} 分钟后返航` : `${hours} 小时后返航`
+}
+
 export const isQuickTransferDownloadValid = (expiresAt: string, now = Date.now()): boolean => {
   const timestamp = Date.parse(expiresAt)
   return Number.isFinite(timestamp) && timestamp > now

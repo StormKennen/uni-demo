@@ -7,6 +7,28 @@ export interface QuickTransferReferenceHandler {
 
 const getReferenceId = (reference: QuickTransferContentReference): string => reference.resourceId || ''
 
+const RTA_SORT_BY = ['pickRate', 'pickCount', 'banRate', 'winRate', 'leaderRate', 'playedCount'] as const
+const RTA_SORT_ORDER = ['asc', 'desc'] as const
+
+const getRtaQuery = (reference: QuickTransferContentReference): string => {
+  const params = reference.params || {}
+  const query: Record<string, string> = {}
+  const season = params.season
+  const minPickCount = params.minPickCount
+  if (typeof season === 'number' && Number.isInteger(season) && season > 0) query.season = String(season)
+  if (typeof minPickCount === 'number' && Number.isInteger(minPickCount) && minPickCount >= 0) query.minPickCount = String(minPickCount)
+  if (typeof params.tier === 'string' && params.tier) query.tier = params.tier
+  if (typeof params.league === 'string' && params.league) query.league = params.league
+  if (typeof params.sortBy === 'string' && RTA_SORT_BY.includes(params.sortBy as (typeof RTA_SORT_BY)[number])) query.sortBy = params.sortBy
+  if (typeof params.sortOrder === 'string' && RTA_SORT_ORDER.includes(params.sortOrder as (typeof RTA_SORT_ORDER)[number])) {
+    query.sortOrder = params.sortOrder
+  }
+  const queryString = Object.entries(query)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join('&')
+  return queryString ? `?${queryString}` : ''
+}
+
 const REGISTRY: Record<string, QuickTransferReferenceHandler> = {
   memoDetail: {
     label: '备忘录',
@@ -24,7 +46,7 @@ const REGISTRY: Record<string, QuickTransferReferenceHandler> = {
   },
   rtaRanking: {
     label: '魔灵召唤 · RTA',
-    buildRoute: () => '/subPackages/tools/compendium/swc/rta/index',
+    buildRoute: reference => `/subPackages/tools/compendium/swc/rta/index${getRtaQuery(reference)}`,
   },
 }
 

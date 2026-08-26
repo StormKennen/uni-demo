@@ -54,6 +54,7 @@ export interface QuickShipFileDraft {
   progress?: number
   serverFileId?: string
   error?: string
+  errorCode?: string
 }
 
 export interface QuickShipDraft {
@@ -145,9 +146,9 @@ export interface QuickTransferContent {
 
 export interface QuickTransferSummary {
   hasText: boolean
-  links: number
-  files: number
-  references: number
+  linkCount: number
+  fileCount: number
+  referenceCount: number
 }
 
 export interface QuickTransferInspectResult {
@@ -159,7 +160,7 @@ export interface QuickTransferInspectResult {
 
 export interface QuickTransferResolvedResult {
   transferId: string
-  claimToken: string
+  claimToken?: string
   content: QuickTransferContent
 }
 

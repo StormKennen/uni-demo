@@ -22,7 +22,7 @@
           <text class="icon">分享</text>
         </view>
         <view class="action-btn ghost" @click="sendMemoWithQuickShip" v-if="memoData">
-          <text class="icon">用快船</text>
+          <text class="icon">用飞船</text>
         </view>
         <!-- 编辑按钮（仅创建者；分享/管理员/只读视角隐藏） -->
         <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData && canEditDetail">
