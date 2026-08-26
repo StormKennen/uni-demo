@@ -42,13 +42,15 @@
 <template>
   <view class="ship-transition-overlay" :class="`ship-transition-overlay--${props.type}`">
     <view class="ship-transition__trail"></view>
-    <image
-      class="ship-transition__image"
-      :src="QUICK_SHIP_IMAGE_URL"
-      mode="aspectFit"
-      :lazy-load="false"
-      @error="handleImageError"
-      @animationend="handleAnimationEnd" />
+    <view class="ship-transition__direction">
+      <image
+        class="ship-transition__image"
+        :src="QUICK_SHIP_IMAGE_URL"
+        mode="aspectFit"
+        :lazy-load="false"
+        @error="handleImageError"
+        @animationend="handleAnimationEnd" />
+    </view>
   </view>
 </template>
 
@@ -67,9 +69,16 @@
     pointer-events: none;
   }
 
-  .ship-transition__image {
+  .ship-transition__direction {
     position: relative;
     z-index: 1;
+  }
+
+  .ship-transition-overlay--arrive .ship-transition__direction {
+    transform: scaleX(-1);
+  }
+
+  .ship-transition__image {
     width: 340rpx;
     height: 220rpx;
     will-change: transform, opacity;

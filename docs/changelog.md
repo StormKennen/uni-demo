@@ -9,6 +9,8 @@
 
 - 2026-08-26 [tools/quick-transfer] 按 UI V3 重构飞船页面：沉浸式 CSS Hero 与上浮操作舱、发送/接收玻璃切换、紧凑内容卡、原生 Picker 设置、航行凭证结果和接收内容展示；将常驻 QuickShipVisual 改为 depart/arrive 一次性 Transition Overlay，保留现有发送/接收业务状态机（Codex）
 
+- 2026-08-26 [tools/quick-transfer] 完成 UI V3 Stabilization：修正 Arrive 飞船方向翻转，统一首次领取与手工码 retry 的成功动画入口，执行中锁定发送/接收切换，弱化空文件数量提示并将“打开飞船”改为“查看内容”；保留图片失败兜底、Reduced Motion 和用户主动重试原则（Codex）
+
 - 2026-08-26 [tools/quick-transfer] 兼容后端嵌套错误响应并明确提示 QUICK_TRANSFER_NOT_CONFIGURED；该错误仍需后端补齐独立飞船密钥与专用 OSS Bucket 配置（Codex）
 
 - 2026-08-26 [tools/quick-transfer/visual] 新增统一 QuickShipVisual 飞船视觉层：复用单张 OSS PNG，覆盖送船、装船、出发、航行、到达、返航和召回状态，支持 CSS 动画、reduced-motion 与图片加载失败兜底，不改变飞船业务状态机（Codex）

@@ -70,7 +70,7 @@
         <text class="content-title">传输内容</text>
         <text class="content-caption">至少添加一项内容</text>
       </view>
-      <text class="content-count">{{ draft.files.length }} / {{ props.maxFileCount }} 个文件</text>
+      <text v-if="draft.files.length" class="content-count">{{ draft.files.length }} / {{ props.maxFileCount }} 个文件</text>
     </view>
 
     <view class="message-box">

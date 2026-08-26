@@ -9,7 +9,7 @@ export const QUICK_TRANSFER_COPY = {
   receiveLoading: '正在接收…',
   receivedTitle: '飞船已到达',
   receivedDescription: '内容已经安全送达，打开查看本次传输。',
-  openReceived: '打开飞船',
+  openReceived: '查看内容',
 } as const
 
 export const getQuickTransferSendButtonLabel = (state: QuickTransferSendState, uploadProgress: number | null): string => {

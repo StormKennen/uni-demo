@@ -50,7 +50,12 @@
     QuickTransferPageQuery,
     QuickTransferTtl,
   } from '@/features/quick-transfer/types'
-  import type { QuickShipTransitionType } from '@/features/quick-transfer/visual'
+  import {
+    getQuickShipTransitionForReceive,
+    getQuickShipTransitionForSend,
+    isQuickShipModeSwitchLocked,
+    type QuickShipTransitionType,
+  } from '@/features/quick-transfer/visual'
 
   interface LinkEditor {
     localId: string
@@ -79,6 +84,7 @@
   const canSend = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
+  const isModeSwitchLocked = computed(() => isQuickShipModeSwitchLocked(isSending.value, isReceiving.value))
   const isSendResultVisible = computed(() => ['ready', 'consumed', 'expired', 'cancelled'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
   const receiveErrorMessage = computed(() => quickTransfer.receiveError.value?.message || '')
@@ -274,7 +280,7 @@
       fileError.value = fileLimitError
       return
     }
-    shipTransition.value = 'depart'
+    shipTransition.value = getQuickShipTransitionForSend()
     await quickTransfer.send(draft.value)
   }
 
@@ -309,14 +315,20 @@
     // #endif
   }
 
+  const performReceive = async (input: { code?: string; shareToken?: string }): Promise<boolean> => {
+    const success = await quickTransfer.receive(input)
+    const transition = getQuickShipTransitionForReceive(success)
+    if (transition) shipTransition.value = transition
+    return success
+  }
+
   const claim = async () => {
-    let success = false
-    if (shareToken.value) success = await quickTransfer.receive({ shareToken: shareToken.value })
-    else {
-      const code = normalizeQuickTransferCode(receiveCode.value)
-      if (code.length === 6) success = await quickTransfer.receive({ code })
+    if (shareToken.value) {
+      await performReceive({ shareToken: shareToken.value })
+      return
     }
-    if (success) shipTransition.value = 'arrive'
+    const code = normalizeQuickTransferCode(receiveCode.value)
+    if (code.length === 6) await performReceive({ code })
   }
 
   const openReceivedContent = () => {
@@ -328,17 +340,19 @@
     isReceivedContentOpened.value = false
     if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
     else if (normalizeQuickTransferCode(receiveCode.value).length === 6)
-      void quickTransfer.receive({ code: normalizeQuickTransferCode(receiveCode.value) })
+      void performReceive({ code: normalizeQuickTransferCode(receiveCode.value) })
   }
 
   const dismissReceiveError = () => quickTransfer.clearReceiveError()
 
   const enterSend = () => {
+    if (isModeSwitchLocked.value) return
     mode.value = 'send'
     showSendGate.value = !canSend.value
   }
 
   const enterReceive = () => {
+    if (isModeSwitchLocked.value) return
     mode.value = 'receive'
     showSendGate.value = false
   }
@@ -405,10 +419,10 @@
         <text class="hero-title">飞船</text>
         <text class="hero-desc">{{ QUICK_TRANSFER_COPY.heroDescription }}</text>
         <view class="mode-tabs">
-          <view class="mode-tab" :class="{ active: mode === 'send' }" @click="enterSend"
+          <view class="mode-tab" :class="{ active: mode === 'send', locked: isModeSwitchLocked }" @click="enterSend"
             ><text>{{ QUICK_TRANSFER_COPY.sendTab }}</text></view
           >
-          <view class="mode-tab" :class="{ active: mode === 'receive' }" @click="enterReceive"
+          <view class="mode-tab" :class="{ active: mode === 'receive', locked: isModeSwitchLocked }" @click="enterReceive"
             ><text>{{ QUICK_TRANSFER_COPY.receiveTab }}</text></view
           >
         </view>
@@ -643,6 +657,10 @@
     background: #fff;
     box-shadow: 0 8rpx 20rpx rgba(1, 19, 46, 0.18);
     font-weight: 700;
+  }
+
+  .mode-tab.locked {
+    opacity: 0.55;
   }
 
   .operation-sheet {
