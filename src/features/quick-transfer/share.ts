@@ -1,6 +1,7 @@
 import { QUICK_TRANSFER_ROUTE } from './constants'
 import { buildQuickTransferSharePath } from './helpers'
 import type { QuickTransferMode, QuickTransferSendState } from './types'
+import { QUICK_SHIP_IMAGE_URL } from './visual'
 
 export type QuickTransferShareKind = 'tool' | 'transfer'
 
@@ -8,6 +9,7 @@ export interface QuickTransferSharePayload {
   kind: QuickTransferShareKind
   title: string
   path: string
+  imageUrl: string
 }
 
 export interface QuickTransferShareInput {
@@ -36,6 +38,7 @@ export const getQuickTransferSharePayload = (input: QuickTransferShareInput): Qu
       kind: 'transfer',
       title: QUICK_TRANSFER_TRANSFER_SHARE_TITLE,
       path: buildQuickTransferSharePath(input.shareToken),
+      imageUrl: QUICK_SHIP_IMAGE_URL,
     }
   }
 
@@ -43,5 +46,6 @@ export const getQuickTransferSharePayload = (input: QuickTransferShareInput): Qu
     kind: 'tool',
     title: QUICK_TRANSFER_TOOL_SHARE_TITLE,
     path: QUICK_TRANSFER_ROUTE,
+    imageUrl: QUICK_SHIP_IMAGE_URL,
   }
 }

@@ -17,6 +17,7 @@ interface QueryValueMap {
 }
 
 const SWC_SHARE_IMAGE = '/static/logo.png'
+const SWC_COUPONS_SHARE_IMAGE = SWC_GAME_COUPON_CONFIG.managementHeroImage
 const SWC_HOME_PATH = '/subPackages/tools/compendium/swc/index'
 const SWC_LIST_PATH = '/subPackages/tools/compendium/swc/list'
 const SWC_COUPONS_PATH = '/subPackages/tools/game-coupons/index'
@@ -99,7 +100,7 @@ export function buildSwcDetailShare(options: {
 }
 
 export function buildSwcCouponsShare(query: QueryValueMap = {}) {
-  return createShare('魔灵召唤兑换券：快速兑换礼包码', SWC_COUPONS_PATH, query, SWC_GAME_COUPON_CONFIG.managementHeroImage)
+  return createShare('魔灵召唤兑换券：快速兑换礼包码', SWC_COUPONS_PATH, query, SWC_COUPONS_SHARE_IMAGE)
 }
 
 export function buildSwcCouponDetailShare(options: {

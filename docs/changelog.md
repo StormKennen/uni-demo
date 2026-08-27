@@ -358,3 +358,4 @@
 - 2026-07-03 [swc/admin-list] 放开平台限制，管理员在小程序可见；图鉴管理页改为行级编辑模式，默认只读、点编辑才展开中英双语名称/五行/星级/别名/描述/技能表单（Devin）
 - 2026-07-03 [config/tools] 魔灵召唤图鉴管理入口改为管理员可见并移除 H5 平台限制（Devin）
 - 2026-07-03 [theme] 新增全局日间/夜间主题（CSS 变量 tokens + Pinia 持久化，H5 通过 :root[data-theme] 切换、小程序通过 page-meta 注入），mine 页「设置」同级新增夜间模式开关（Devin）
+- 2026-08-27 [sharing/game-coupons,sharing/quick-transfer] 修复微信分享消息卡片封面：魔灵兑换券管理页明确使用页面顶部栏背景图 `top.jpg`，飞船工具的工具分享与具体收船分享统一使用飞船图片 `quick-ship.png`（Codex）

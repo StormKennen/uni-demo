@@ -420,6 +420,7 @@
     title=""
     :share-title="sharePayload.title"
     :share-path="sharePath"
+    :share-image-url="sharePayload.imageUrl"
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
     nav-overlay
     nav-bg-color="transparent"
