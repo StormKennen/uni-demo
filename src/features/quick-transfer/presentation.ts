@@ -1,4 +1,11 @@
-import type { QuickShipFileDraft, QuickTransferReceiveState, QuickTransferSendState, QuickTransferSummary } from './types'
+import type {
+  QuickShipFileDraft,
+  QuickTransferReceiveState,
+  QuickTransferSendState,
+  QuickTransferSentRecordSummary,
+  QuickTransferStatus,
+  QuickTransferSummary,
+} from './types'
 
 export const QUICK_TRANSFER_COPY = {
   heroDescription: '跨设备快速传递内容',
@@ -63,6 +70,20 @@ export const formatQuickTransferReceiptSummary = (summary: QuickTransferSummary)
   if (summary.referenceCount) items.push(`${summary.referenceCount} 个引用`)
   return items.join(' · ') || '内容'
 }
+
+export const getQuickTransferSentStatusLabel = (status: QuickTransferStatus): string => {
+  if (status === 'uploading') return '上传未完成'
+  if (status === 'ready') return '可领取'
+  if (status === 'consumed') return '已领完'
+  if (status === 'expired') return '已过期'
+  if (status === 'cancelled') return '已召回'
+  return '已结束'
+}
+
+export const getQuickTransferSentClaimLabel = (claimCount: number, maxClaims: number): string => `已领取 ${claimCount} / ${maxClaims}`
+
+export const formatQuickTransferSentRecordSummary = (summary: QuickTransferSentRecordSummary): string =>
+  formatQuickTransferReceiptSummary(summary)
 
 export const formatQuickTransferReceiptDate = (value: string): string => {
   const date = new Date(value)

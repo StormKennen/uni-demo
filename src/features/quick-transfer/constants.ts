@@ -3,6 +3,8 @@ import type { QuickTransferSendState, QuickTransferStatus, QuickTransferTtl } fr
 export const QUICK_TRANSFER_ROUTE = '/subPackages/tools/quick-transfer/index'
 export const QUICK_TRANSFER_RECEIPTS_ROUTE = '/subPackages/tools/quick-transfer/receipt/list'
 export const QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE = '/subPackages/tools/quick-transfer/receipt/detail'
+export const QUICK_TRANSFER_SENT_RECORDS_ROUTE = '/subPackages/tools/quick-transfer/sent/list'
+export const QUICK_TRANSFER_SENT_RECORD_DETAIL_ROUTE = '/subPackages/tools/quick-transfer/sent/detail'
 export const QUICK_TRANSFER_TITLE = '飞船'
 export const MAX_QUICK_TRANSFER_FILE_SIZE = 50 * 1024 * 1024
 export const MAX_QUICK_TRANSFER_FILE_COUNT = 10

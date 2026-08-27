@@ -193,6 +193,54 @@ export interface QuickTransferReceiptDetail {
   content: QuickTransferContent
 }
 
+export interface QuickTransferSentRecordSummary {
+  hasText: boolean
+  linkCount: number
+  fileCount: number
+  referenceCount: number
+}
+
+export interface QuickTransferSentRecordPreview {
+  text?: string
+  referenceTitle?: string
+  fileName?: string
+}
+
+export interface QuickTransferSentRecordListItem {
+  sentRecordId: string
+  transferId: string
+  displayTitle: string
+  sentAt: string
+  status: QuickTransferStatus
+  claimCount: number
+  maxClaims: number
+  expiresAt?: string
+  canRecall: boolean
+  summary: QuickTransferSentRecordSummary
+  preview: QuickTransferSentRecordPreview
+}
+
+export interface QuickTransferSentRecordListResult {
+  items: QuickTransferSentRecordListItem[]
+  pagination: QuickTransferReceiptPagination
+}
+
+export interface QuickTransferSentRecordDetail {
+  sentRecordId: string
+  transferId: string
+  displayTitle: string
+  sentAt: string
+  status: QuickTransferStatus
+  claimCount: number
+  maxClaims: number
+  expiresAt?: string
+  readyAt?: string
+  consumedAt?: string
+  cancelledAt?: string
+  canRecall: boolean
+  content: QuickTransferContent
+}
+
 export interface QuickTransferReceiveInput {
   code?: string
   shareToken?: string

@@ -179,3 +179,31 @@ Receipt List / Detail 只通过 `src/features/quick-transfer/receiptApi.ts` 调�
 详情页复用 `QuickShipReceivedContent` 展示正文、链接、文件和引用。Receipt 文件 `available=false` 显示“已过期”并禁用操作；`available=true` 通过 Receipt File Access 获取 Signed URL 后交给平台文件 Adapter。文件访问返回不可用错误时将本地文件标记为不可用；临时错误保留可重试状态。删除只删除已收记录，不删除发送方文件、原飞船或 OSS 对象，成功后返回列表。
 
 Receipt List → Detail 是历史查看，不播放 `arrive`，也不调用 Resolve。
+
+## 11. V2.2 我发送的历史
+
+发送模式在现有发送表单/发送结果区域增加「我发送的」辅助入口；接收模式继续只展示「已收飞船」，不新增第三个 Hero Tab，也不合并两套历史页面。
+
+新增路由：
+
+```text
+subPackages/tools/quick-transfer/sent/list
+subPackages/tools/quick-transfer/sent/detail
+```
+
+发送历史通过 `src/features/quick-transfer/sentRecordApi.ts` 调用 `QUICKTRANSFERSENTRECORD` 生成层：
+
+- `getQuickTransferSentRecords`：分页获取我发送的飞船
+- `getQuickTransferSentRecordsSentRecordId`：获取发送记录详情
+- `deleteQuickTransferSentRecordsSentRecordId`：删除发送历史记录
+- `postQuickTransferSentRecordsFilesAccess`：访问发送历史附件
+
+发送历史与已收飞船分属独立业务模型。列表展示 `displayTitle`、`sentAt`、`status`、`claimCount/maxClaims`、摘要和预览；详情展示状态、领取进度和归一化后的 `QuickTransferContent`。后端状态只允许落入既有 `QuickTransferStatus`，`uploading/ready/consumed/expired/cancelled/deleting/deleted` 分别映射为「上传未完成/可领取/已领完/已过期/已召回/已结束/已结束」。
+
+召回只在详情返回 `canRecall === true` 时显示，直接复用当前 `cancelQuickTransfer(transferId)`（`DELETE /quick-transfers/:transferId`），不修改当前发送 Session，也不调用删除发送历史接口。后端返回 `TRANSFER_NOT_FOUND` 或 `TRANSFER_NOT_AVAILABLE` 时提示「飞船状态已经更新」并刷新详情。
+
+删除发送历史只调用 `deleteQuickTransferSentRecord(sentRecordId)`，不自动召回飞船；接收方 Receipt、已领取内容和发送方飞船状态不因删除历史而改变。发送历史不展示或重新生成旧收船码、`shareToken`、分享链接。
+
+历史附件只通过 `postQuickTransferSentRecordsFilesAccess` 获取 Signed URL，再复用平台文件 Adapter 打开；不调用 Resolve、不调用当前飞船附件 Access、不携带 `claimToken`。`available === false` 直接显示「已过期」并禁用；永久不可用错误将本地文件标记不可用，临时错误保留重试能力。
+
+微信游客和登录用户均可访问「我发送的」；H5 未登录仍隐藏该入口且不改变现有发送权限。列表 `onShow` 刷新，分页追加去重；下一页失败时保留已有列表并允许重试。详情缺少或包含非法 `sentRecordId` 时不请求接口，直接展示「记录参数无效」。本轮不做跨页面恢复上传、迁移接口、搜索、收藏、重发或历史分享。

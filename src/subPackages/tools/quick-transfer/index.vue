@@ -17,6 +17,7 @@
     QUICK_TRANSFER_MAX_MAX_CLAIMS,
     QUICK_TRANSFER_RECEIPTS_ROUTE,
     QUICK_TRANSFER_ROUTE,
+    QUICK_TRANSFER_SENT_RECORDS_ROUTE,
     QUICK_TRANSFER_TTL_OPTIONS,
   } from '@/features/quick-transfer/constants'
   import { getQuickTransferErrorMessage } from '@/features/quick-transfer/errors'
@@ -83,7 +84,7 @@
   // #endif
 
   const canSend = computed(() => isMiniProgram.value || isLoggedIn.value)
-  const canViewReceipts = computed(() => isMiniProgram.value || isLoggedIn.value)
+  const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
   const isModeSwitchLocked = computed(() => isQuickShipModeSwitchLocked(isSending.value, isReceiving.value))
@@ -390,7 +391,11 @@
   const openReference = (reference: QuickTransferContentReference) => openQuickTransferReference(reference)
 
   const openReceiptList = () => {
-    if (canViewReceipts.value) uni.navigateTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
+    if (canViewHistory.value) uni.navigateTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
+  }
+
+  const openSentRecordList = () => {
+    if (canViewHistory.value) uni.navigateTo({ url: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
   }
 
   onLoad(options => {
@@ -447,6 +452,13 @@
 
       <view class="operation-sheet">
         <template v-if="mode === 'send'">
+          <view v-if="canViewHistory" class="receipt-entry" @click="openSentRecordList">
+            <view class="receipt-entry__main">
+              <text class="receipt-entry__title">我发送的</text>
+              <text class="receipt-entry__description">查看曾经发送的飞船</text>
+            </view>
+            <text class="receipt-entry__arrow">›</text>
+          </view>
           <view v-if="showSendGate" class="gate-panel">
             <text class="gate-title">登录后才能发送</text>
             <text class="gate-desc">接收飞船不需要登录。</text>
@@ -500,7 +512,7 @@
         </template>
 
         <template v-else>
-          <view v-if="!shareToken && canViewReceipts" class="receipt-entry" @click="openReceiptList">
+          <view v-if="!shareToken && canViewHistory" class="receipt-entry" @click="openReceiptList">
             <view class="receipt-entry__main">
               <text class="receipt-entry__title">已收飞船</text>
               <text class="receipt-entry__description">查看曾经收到的内容</text>

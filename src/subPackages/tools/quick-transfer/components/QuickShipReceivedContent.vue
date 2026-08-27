@@ -11,9 +11,10 @@
   interface Props {
     content: QuickTransferContent
     isDownloading: boolean
+    context?: 'received' | 'sent'
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), { context: 'received' })
   const emit = defineEmits<{
     copyText: []
     openUrl: [url: string]
@@ -30,8 +31,8 @@
 <template>
   <view class="received-content">
     <view class="received-heading">
-      <text class="received-kicker">TRANSFER RECEIVED</text>
-      <text class="received-title">收到的内容</text>
+      <text class="received-kicker">{{ props.context === 'sent' ? 'TRANSFER SENT' : 'TRANSFER RECEIVED' }}</text>
+      <text class="received-title">{{ props.context === 'sent' ? '发送内容' : '收到的内容' }}</text>
     </view>
 
     <view v-if="props.content.text" class="received-section">
