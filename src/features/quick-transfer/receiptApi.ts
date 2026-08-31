@@ -1,4 +1,5 @@
 import { normalizeQuickTransferContent, unwrapQuickTransferData } from './response'
+import { normalizeQuickTransferHistoryMetadata } from './history'
 import type {
   QuickTransferFileAccessResult,
   QuickTransferReceiptDetail,
@@ -6,7 +7,6 @@ import type {
   QuickTransferReceiptListResult,
   QuickTransferReceiptPagination,
   QuickTransferReceiptPreview,
-  QuickTransferReceiptSummary,
 } from './types'
 import {
   deleteQuickTransferReceiptsReceiptId,
@@ -32,21 +32,12 @@ const requiredString = (record: Record<string, unknown>, key: string): string =>
 
 export const isValidQuickTransferReceiptId = (value: string): boolean => /^[A-Za-z0-9_-]+$/.test(value)
 
-const normalizeSummary = (value: unknown): QuickTransferReceiptSummary => {
-  const record = asRecord(value) || {}
-  return {
-    hasText: Boolean(record.hasText),
-    linkCount: Number(record.linkCount) || 0,
-    fileCount: Number(record.fileCount) || 0,
-    referenceCount: Number(record.referenceCount) || 0,
-  }
-}
-
 const normalizePreview = (value: unknown): QuickTransferReceiptPreview => {
   const record = asRecord(value) || {}
   return {
     text: typeof record.text === 'string' ? record.text : undefined,
     referenceTitle: typeof record.referenceTitle === 'string' ? record.referenceTitle : undefined,
+    linkTitle: typeof record.linkTitle === 'string' ? record.linkTitle : undefined,
     fileName: typeof record.fileName === 'string' ? record.fileName : undefined,
   }
 }
@@ -54,11 +45,13 @@ const normalizePreview = (value: unknown): QuickTransferReceiptPreview => {
 const normalizeListItem = (value: unknown): QuickTransferReceiptListItem | undefined => {
   const record = asRecord(value)
   if (!record) return undefined
+  const metadata = normalizeQuickTransferHistoryMetadata(record)
   return {
     receiptId: requiredString(record, 'receiptId'),
     displayTitle: requiredString(record, 'displayTitle'),
     claimedAt: requiredString(record, 'claimedAt'),
-    summary: normalizeSummary(record.summary),
+    primaryType: metadata.primaryType,
+    summary: metadata.summary,
     preview: normalizePreview(record.preview),
   }
 }

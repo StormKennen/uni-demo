@@ -20,6 +20,7 @@ export interface getQuickTransferReceiptsRes {
 /** getQuickTransferReceiptsResItemsPreview */
 export interface getQuickTransferReceiptsResItemsPreview {
   fileName?: string
+  linkTitle?: string
   referenceTitle?: string
   text?: string
 }
@@ -28,7 +29,11 @@ export interface getQuickTransferReceiptsResItemsPreview {
 export interface getQuickTransferReceiptsResItemsSummary {
   fileCount: number
   hasText: boolean
+  /** MIME 类型以 image/ 开头的文件数量 */
+  imageCount: number
   linkCount: number
+  /** 非图片文件数量 */
+  otherFileCount: number
   referenceCount: number
 }
 
@@ -37,6 +42,7 @@ export interface getQuickTransferReceiptsResItems {
   claimedAt: string
   displayTitle: string
   preview: getQuickTransferReceiptsResItemsPreview
+  primaryType: 'text' | 'image' | 'file' | 'link' | 'reference' | 'mixed'
   receiptId: string
   summary: getQuickTransferReceiptsResItemsSummary
 }

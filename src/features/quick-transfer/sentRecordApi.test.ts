@@ -39,7 +39,7 @@ describe('quick transfer sent record API adapter', () => {
           maxClaims: 3,
           expiresAt: '2026-08-27T11:00:00.000Z',
           canRecall: true,
-          summary: { hasText: true, linkCount: 2, fileCount: 1, referenceCount: 0 },
+          summary: { hasText: true, linkCount: 2, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
           preview: { text: '先看这份攻略' },
         },
       ],
@@ -58,13 +58,44 @@ describe('quick transfer sent record API adapter', () => {
           maxClaims: 3,
           expiresAt: '2026-08-27T11:00:00.000Z',
           canRecall: true,
-          summary: { hasText: true, linkCount: 2, fileCount: 1, referenceCount: 0 },
-          preview: { text: '先看这份攻略', referenceTitle: undefined, fileName: undefined },
+          primaryType: 'mixed',
+          summary: { hasText: true, linkCount: 2, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
+          preview: { text: '先看这份攻略', referenceTitle: undefined, linkTitle: undefined, fileName: undefined },
         },
       ],
       pagination: { page: 1, pageSize: 20, total: 21, totalPages: 2, hasNext: true },
     })
     expect(mocks.getQuickTransferSentRecords).toHaveBeenCalledWith({ page: 1, pageSize: 20 })
+  })
+
+  it('consumes mixed image and file presentation metadata', async () => {
+    mocks.getQuickTransferSentRecords.mockResolvedValue({
+      items: [
+        {
+          sentRecordId: 'sent-mixed',
+          transferId: 'transfer-mixed',
+          displayTitle: '2 张图片 · 1 个文件',
+          sentAt: '2026-08-27T10:00:00.000Z',
+          status: 'ready',
+          claimCount: 0,
+          maxClaims: 1,
+          canRecall: true,
+          primaryType: 'mixed',
+          summary: { hasText: false, linkCount: 0, fileCount: 3, imageCount: 2, otherFileCount: 1, referenceCount: 0 },
+          preview: { fileName: 'random.jpeg' },
+        },
+      ],
+      pagination: { page: 1, pageSize: 20, hasNext: false },
+    })
+
+    await expect(listQuickTransferSentRecords()).resolves.toMatchObject({
+      items: [
+        {
+          primaryType: 'mixed',
+          summary: { fileCount: 3, imageCount: 2, otherFileCount: 1 },
+        },
+      ],
+    })
   })
 
   it('normalizes sent detail content and preserves file availability', async () => {

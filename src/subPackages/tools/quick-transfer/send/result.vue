@@ -9,6 +9,7 @@
     getQuickTransferTransferSharePayload,
     QUICK_TRANSFER_TOOL_SHARE_TITLE,
   } from '@/features/quick-transfer/share'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { QUICK_TRANSFER_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
   import {
     getQuickTransferSenderClaimLabel,
@@ -45,6 +46,7 @@
   const shareTimelineQuery = computed(() =>
     sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(quickTransfer.shareToken.value)}` : '',
   )
+  registerQuickTransferPageShare(sharePayload)
 
   const copyText = (value: string, successMessage: string) => {
     if (!value) return

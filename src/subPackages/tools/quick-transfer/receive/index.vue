@@ -11,7 +11,12 @@
   import { formatQuickTransferSummary, isQuickTransferReceivedContentVisible } from '@/features/quick-transfer/presentation'
   import { parseQuickTransferPageQuery } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
-  import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
+  import {
+    getQuickTransferReceiveSharePayload,
+    getQuickTransferTransferSharePayload,
+    QUICK_TRANSFER_TOOL_SHARE_TITLE,
+  } from '@/features/quick-transfer/share'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
   import type { QuickTransferContentReference, QuickTransferPageQuery } from '@/features/quick-transfer/types'
   import { getQuickShipTransitionForReceive, type QuickShipTransitionType } from '@/features/quick-transfer/visual'
@@ -28,7 +33,15 @@
   isMiniProgram.value = true
   // #endif
 
-  const sharePayload = getQuickTransferToolSharePayload()
+  const sharePayload = computed(() =>
+    shareToken.value
+      ? getQuickTransferTransferSharePayload(shareToken.value, quickTransfer.inspectResult.value?.expiresAt || '')
+      : getQuickTransferReceiveSharePayload(),
+  )
+  const shareTimelineQuery = computed(() =>
+    sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(shareToken.value)}` : '',
+  )
+  registerQuickTransferPageShare(sharePayload)
   const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
   const receivedContent = computed(() => quickTransfer.receivedResult.value?.content || null)
@@ -135,7 +148,8 @@
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
-    :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
+    :share-timeline-query="shareTimelineQuery"
+    :share-timeline-title="sharePayload.title || QUICK_TRANSFER_TOOL_SHARE_TITLE"
     :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=operation`"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receive-page">

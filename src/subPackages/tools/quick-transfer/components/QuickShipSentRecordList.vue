@@ -1,12 +1,7 @@
 <script setup lang="ts">
   import { onMounted, watch } from 'vue'
+  import QuickShipHistoryCard from './QuickShipHistoryCard.vue'
   import { QUICK_TRANSFER_SENT_RECORD_DETAIL_ROUTE } from '@/features/quick-transfer/constants'
-  import {
-    formatQuickTransferReceiptDate,
-    formatQuickTransferSentRecordSummary,
-    getQuickTransferSentClaimLabel,
-    getQuickTransferSentStatusLabel,
-  } from '@/features/quick-transfer/presentation'
   import { useQuickTransferSentRecords } from '@/features/quick-transfer/useQuickTransferSentRecords'
 
   interface Props {
@@ -18,9 +13,6 @@
   const props = withDefaults(defineProps<Props>(), { canViewHistory: true, refreshKey: 0, embedded: false })
   const sentRecords = useQuickTransferSentRecords()
   const { items, pagination, isLoading, isLoadingMore, error, loadMoreError } = sentRecords
-
-  const getPreview = (item: (typeof sentRecords.items.value)[number]): string =>
-    item.preview.text?.trim() || item.preview.referenceTitle || item.preview.fileName || '发送了一份内容'
 
   const openDetail = (sentRecordId: string) => {
     uni.navigateTo({ url: `${QUICK_TRANSFER_SENT_RECORD_DETAIL_ROUTE}?sentRecordId=${encodeURIComponent(sentRecordId)}` })
@@ -51,7 +43,7 @@
 
 <template>
   <view class="sent-list-page" :class="{ 'sent-list-page--embedded': props.embedded }">
-    <view class="page-heading">
+    <view v-if="!props.embedded" class="page-heading">
       <text class="page-kicker">SENT SHIPS</text>
       <text class="page-title">我发送的</text>
       <text class="page-description">曾经发送的飞船，都在这里。</text>
@@ -76,19 +68,19 @@
       <text class="state-description">发送的内容会出现在这里</text>
     </view>
     <view v-else class="sent-list">
-      <view v-for="item in items" :key="item.sentRecordId" class="sent-row" @click="openDetail(item.sentRecordId)">
-        <view class="sent-row__main">
-          <view class="sent-row__title-line">
-            <text class="sent-row__title">{{ item.displayTitle }}</text>
-            <text class="status-badge" :class="`status-badge--${item.status}`">{{ getQuickTransferSentStatusLabel(item.status) }}</text>
-          </view>
-          <text class="sent-row__meta">{{ formatQuickTransferReceiptDate(item.sentAt) }}</text>
-          <text class="sent-row__claim">{{ getQuickTransferSentClaimLabel(item.claimCount, item.maxClaims) }}</text>
-          <text class="sent-row__summary">{{ formatQuickTransferSentRecordSummary(item.summary) }}</text>
-          <text class="sent-row__preview">{{ getPreview(item) }}</text>
-        </view>
-        <text class="sent-row__arrow">›</text>
-      </view>
+      <QuickShipHistoryCard
+        v-for="item in items"
+        :key="item.sentRecordId"
+        mode="sent"
+        :primary-type="item.primaryType"
+        :title="item.displayTitle"
+        :summary="item.summary"
+        :preview="item.preview"
+        :time="item.sentAt"
+        :status="item.status"
+        :claim-count="item.claimCount"
+        :max-claims="item.maxClaims"
+        @select="openDetail(item.sentRecordId)" />
       <view v-if="isLoadingMore" class="loading-more">正在加载更多…</view>
       <view v-else-if="loadMoreError" class="load-more-error">
         <text>{{ loadMoreError.message }}</text>
@@ -133,10 +125,6 @@
 
   .page-description,
   .state-description,
-  .sent-row__meta,
-  .sent-row__claim,
-  .sent-row__summary,
-  .sent-row__preview,
   .loading-more,
   .list-end {
     color: var(--theme-text-secondary);
@@ -149,92 +137,19 @@
   }
 
   .sent-list {
-    overflow: hidden;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 22rpx;
-    background: var(--theme-surface);
-  }
-
-  .sent-row {
     display: flex;
-    align-items: center;
-    gap: 18rpx;
-    min-height: 170rpx;
-    padding: 24rpx 22rpx;
-    border-bottom: 1rpx solid var(--theme-border);
-  }
-
-  .sent-row:last-of-type {
-    border-bottom: 0;
-  }
-
-  .sent-row__main {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .sent-row__title-line {
-    display: flex;
-    align-items: center;
-    gap: 12rpx;
-  }
-
-  .sent-row__title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--theme-text);
-    font-size: 29rpx;
-    font-weight: 700;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .sent-row__meta,
-  .sent-row__claim,
-  .sent-row__summary,
-  .sent-row__preview {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .sent-row__meta,
-  .sent-row__claim,
-  .sent-row__summary {
-    margin-top: 7rpx;
-  }
-
-  .sent-row__preview {
-    margin-top: 10rpx;
-    color: var(--theme-text);
-  }
-
-  .status-badge {
-    flex: 0 0 auto;
-    padding: 7rpx 12rpx;
-    border-radius: 999rpx;
-    color: var(--theme-text-secondary);
-    background: var(--theme-surface-muted);
-    font-size: 20rpx;
-    white-space: nowrap;
-  }
-
-  .status-badge--ready {
-    color: #15803d;
-    background: #dcfce7;
-  }
-
-  .sent-row__arrow {
-    flex: 0 0 auto;
-    color: var(--theme-text-secondary);
-    font-size: 42rpx;
+    flex-direction: column;
+    gap: 16rpx;
+    padding-top: 28rpx;
   }
 
   .state-panel {
     padding: 96rpx 28rpx;
     text-align: center;
+  }
+
+  .sent-list-page--embedded .state-panel {
+    padding: 64rpx 20rpx;
   }
 
   .empty-orbit {

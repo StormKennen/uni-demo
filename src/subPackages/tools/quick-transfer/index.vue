@@ -4,6 +4,7 @@
   import QuickShipReceiptList from './components/QuickShipReceiptList.vue'
   import QuickShipSentRecordList from './components/QuickShipSentRecordList.vue'
   import PageLayout from '@/components/PageLayout.vue'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
   import type { QuickTransferManagementTab } from '@/features/quick-transfer/types'
@@ -21,6 +22,7 @@
   // #endif
 
   const sharePayload = getQuickTransferToolSharePayload()
+  registerQuickTransferPageShare(sharePayload)
   const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
 
   const readTab = (value?: string): QuickTransferManagementTab => {
@@ -89,7 +91,6 @@
         <view class="hero-glow hero-glow--right"></view>
         <view class="hero-orbit hero-orbit--one"></view>
         <view class="hero-orbit hero-orbit--two"></view>
-        <text class="hero-kicker">FAST TRANSFER</text>
         <text class="hero-title">飞船</text>
         <text class="hero-desc">跨设备快速传递内容</text>
       </view>
@@ -102,22 +103,14 @@
         </view>
 
         <view v-if="activeTab === 'operation'" class="operation-content">
-          <view class="operation-card operation-card--send" @click="openSendCreate">
-            <view class="operation-card__icon">🚀</view>
-            <view class="operation-card__main">
-              <text class="operation-card__title">发送飞船</text>
-              <text class="operation-card__description">发送文字、图片、文件给别人</text>
-            </view>
-            <text class="operation-card__arrow">›</text>
-          </view>
-          <view class="operation-card operation-card--receive" @click="openReceive">
-            <view class="operation-card__icon">↓</view>
-            <view class="operation-card__main">
-              <text class="operation-card__title">接收飞船</text>
-              <text class="operation-card__description">使用 6 位飞船码接收内容</text>
-            </view>
-            <text class="operation-card__arrow">›</text>
-          </view>
+          <button class="operation-button operation-button--send" hover-class="operation-button--hover" @click="openSendCreate">
+            <!-- <uni-icons type="paperplane" size="24" color="#ffffff" /> -->
+            <text>发船</text>
+          </button>
+          <button class="operation-button operation-button--receive" hover-class="operation-button--hover" @click="openReceive">
+            <!-- <uni-icons type="down" size="24" color="var(--theme-brand)" /> -->
+            <text>收船</text>
+          </button>
         </view>
 
         <QuickShipSentRecordList
@@ -141,8 +134,8 @@
 
   .hero-panel {
     position: relative;
-    min-height: 300rpx;
-    padding: 132rpx 34rpx 66rpx;
+    min-height: 280rpx;
+    padding: 132rpx 34rpx 54rpx;
     overflow: hidden;
     box-sizing: border-box;
     color: #fff;
@@ -195,7 +188,6 @@
     transform: rotate(22deg);
   }
 
-  .hero-kicker,
   .hero-title,
   .hero-desc {
     position: relative;
@@ -203,15 +195,7 @@
     display: block;
   }
 
-  .hero-kicker {
-    color: rgba(255, 255, 255, 0.62);
-    font-size: 20rpx;
-    font-weight: 700;
-    letter-spacing: 5rpx;
-  }
-
   .hero-title {
-    margin-top: 10rpx;
     font-size: 60rpx;
     font-weight: 800;
     letter-spacing: 8rpx;
@@ -265,67 +249,41 @@
   }
 
   .operation-content {
-    padding-top: 28rpx;
+    display: flex;
+    gap: 18rpx;
+    padding-top: 24rpx;
   }
 
-  .operation-card {
+  .operation-button {
     display: flex;
-    align-items: center;
-    gap: 20rpx;
-    min-height: 156rpx;
-    margin-bottom: 18rpx;
-    padding: 24rpx 22rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 24rpx;
-    background: var(--theme-surface);
-    box-shadow: 0 12rpx 30rpx var(--theme-shadow-xs);
-  }
-
-  .operation-card__icon {
-    display: flex;
-    flex: 0 0 auto;
+    flex: 1;
     align-items: center;
     justify-content: center;
-    width: 82rpx;
-    height: 82rpx;
-    border-radius: 24rpx;
-    color: #fff;
-    background: linear-gradient(135deg, #2563eb, #14b8a6);
-    font-size: 38rpx;
-  }
-
-  .operation-card--receive .operation-card__icon {
-    color: var(--theme-brand);
-    background: var(--theme-surface-muted);
-    font-size: 46rpx;
+    gap: 12rpx;
+    height: 104rpx;
+    margin: 0;
+    padding: 0 12rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 22rpx;
+    font-size: 28rpx;
     font-weight: 700;
   }
 
-  .operation-card__main {
-    flex: 1;
-    min-width: 0;
+  .operation-button::after {
+    border: 0;
   }
 
-  .operation-card__title,
-  .operation-card__description {
-    display: block;
+  .operation-button--send {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
   }
 
-  .operation-card__title {
-    color: var(--theme-text);
-    font-size: 31rpx;
-    font-weight: 800;
+  .operation-button--receive {
+    color: var(--theme-brand);
+    background: var(--theme-surface-muted);
   }
 
-  .operation-card__description {
-    margin-top: 8rpx;
-    color: var(--theme-text-secondary);
-    font-size: 23rpx;
-  }
-
-  .operation-card__arrow {
-    flex: 0 0 auto;
-    color: var(--theme-text-secondary);
-    font-size: 46rpx;
+  .operation-button--hover {
+    opacity: 0.82;
   }
 </style>

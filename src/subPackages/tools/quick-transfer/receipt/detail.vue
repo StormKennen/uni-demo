@@ -13,6 +13,8 @@
   import { downloadFileDirect } from '@/platform/file'
   import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
+  import { getQuickTransferToolSharePayload } from '@/features/quick-transfer/share'
 
   const receipts = useQuickTransferReceipts()
   const { detail, error, isLoading } = receipts
@@ -20,6 +22,8 @@
   const isInvalidReceiptId = ref(false)
   const isDownloading = ref(false)
   const isReceiptNotFound = computed(() => error.value?.code === 'QUICK_TRANSFER_RECEIPT_NOT_FOUND')
+  const sharePayload = getQuickTransferToolSharePayload()
+  registerQuickTransferPageShare(sharePayload)
 
   const loadDetail = () => {
     isInvalidReceiptId.value = !isValidQuickTransferReceiptId(receiptId.value)
@@ -100,6 +104,9 @@
 <template>
   <PageLayout
     title="已收飞船"
+    :share-title="sharePayload.title"
+    :share-path="sharePayload.path"
+    :share-image-url="sharePayload.imageUrl"
     :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=received`"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receipt-detail-page">

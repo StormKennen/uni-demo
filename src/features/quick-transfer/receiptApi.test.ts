@@ -34,7 +34,7 @@ describe('quick transfer receipt API adapter', () => {
           receiptId: 'receipt-1',
           displayTitle: '旅行攻略',
           claimedAt: '2026-08-26T10:00:00.000Z',
-          summary: { hasText: true, linkCount: 2, fileCount: 1, referenceCount: 0 },
+          summary: { hasText: true, linkCount: 2, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
           preview: { text: '先看这份攻略' },
         },
       ],
@@ -47,13 +47,40 @@ describe('quick transfer receipt API adapter', () => {
           receiptId: 'receipt-1',
           displayTitle: '旅行攻略',
           claimedAt: '2026-08-26T10:00:00.000Z',
-          summary: { hasText: true, linkCount: 2, fileCount: 1, referenceCount: 0 },
-          preview: { text: '先看这份攻略', referenceTitle: undefined, fileName: undefined },
+          primaryType: 'mixed',
+          summary: { hasText: true, linkCount: 2, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
+          preview: { text: '先看这份攻略', referenceTitle: undefined, linkTitle: undefined, fileName: undefined },
         },
       ],
       pagination: { page: 1, pageSize: 20, total: 21, totalPages: 2, hasNext: true },
     })
     expect(mocks.getQuickTransferReceipts).toHaveBeenCalledWith({ page: 1, pageSize: 20 })
+  })
+
+  it('consumes image presentation metadata without inspecting the filename', async () => {
+    mocks.getQuickTransferReceipts.mockResolvedValue({
+      items: [
+        {
+          receiptId: 'receipt-image',
+          displayTitle: '3 张图片',
+          claimedAt: '2026-08-26T10:00:00.000Z',
+          primaryType: 'image',
+          summary: { hasText: false, linkCount: 0, fileCount: 3, imageCount: 3, otherFileCount: 0, referenceCount: 0 },
+          preview: { fileName: '294A9B3D0CB782C8.jpeg' },
+        },
+      ],
+      pagination: { page: 1, pageSize: 20, hasNext: false },
+    })
+
+    await expect(listQuickTransferReceipts()).resolves.toMatchObject({
+      items: [
+        {
+          primaryType: 'image',
+          summary: { fileCount: 3, imageCount: 3, otherFileCount: 0 },
+          preview: { fileName: '294A9B3D0CB782C8.jpeg' },
+        },
+      ],
+    })
   })
 
   it('normalizes receipt detail and preserves unavailable file metadata', async () => {

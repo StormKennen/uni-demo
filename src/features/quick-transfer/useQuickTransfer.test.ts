@@ -186,7 +186,7 @@ describe('useQuickTransfer receiver recovery', () => {
       transferId: 'transfer-1',
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
       remainingClaims: 1,
-      summary: { hasText: true, linkCount: 0, fileCount: 0, referenceCount: 0 },
+      summary: { hasText: true, linkCount: 0, fileCount: 0, imageCount: 0, otherFileCount: 0, referenceCount: 0 },
     })
     mocks.resolveQuickTransfer.mockRejectedValue({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })
     const quickTransfer = useQuickTransfer()

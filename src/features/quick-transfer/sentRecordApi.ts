@@ -1,11 +1,11 @@
 import { normalizeQuickTransferContent, unwrapQuickTransferData } from './response'
+import { normalizeQuickTransferHistoryMetadata } from './history'
 import type {
   QuickTransferFileAccessResult,
   QuickTransferSentRecordDetail,
   QuickTransferSentRecordListItem,
   QuickTransferSentRecordListResult,
   QuickTransferSentRecordPreview,
-  QuickTransferSentRecordSummary,
   QuickTransferStatus,
 } from './types'
 import {
@@ -52,17 +52,7 @@ const normalizeStatus = (value: unknown): QuickTransferStatus => {
 
 const normalizeCount = (value: unknown): number => {
   const count = Number(value)
-  return Number.isFinite(count) && count >= 0 ? count : 0
-}
-
-const normalizeSummary = (value: unknown): QuickTransferSentRecordSummary => {
-  const record = asRecord(value) || {}
-  return {
-    hasText: Boolean(record.hasText),
-    linkCount: normalizeCount(record.linkCount),
-    fileCount: normalizeCount(record.fileCount),
-    referenceCount: normalizeCount(record.referenceCount),
-  }
+  return Number.isFinite(count) && count >= 0 ? Math.floor(count) : 0
 }
 
 const normalizePreview = (value: unknown): QuickTransferSentRecordPreview => {
@@ -70,6 +60,7 @@ const normalizePreview = (value: unknown): QuickTransferSentRecordPreview => {
   return {
     text: typeof record.text === 'string' ? record.text : undefined,
     referenceTitle: typeof record.referenceTitle === 'string' ? record.referenceTitle : undefined,
+    linkTitle: typeof record.linkTitle === 'string' ? record.linkTitle : undefined,
     fileName: typeof record.fileName === 'string' ? record.fileName : undefined,
   }
 }
@@ -101,6 +92,7 @@ const normalizePagination = (value: unknown, fallbackPage: number, fallbackPageS
 const normalizeListItem = (value: unknown): QuickTransferSentRecordListItem | undefined => {
   const record = asRecord(value)
   if (!record) return undefined
+  const metadata = normalizeQuickTransferHistoryMetadata(record)
   return {
     sentRecordId: requiredString(record, 'sentRecordId'),
     transferId: requiredString(record, 'transferId'),
@@ -111,7 +103,8 @@ const normalizeListItem = (value: unknown): QuickTransferSentRecordListItem | un
     maxClaims: normalizeCount(record.maxClaims),
     expiresAt: optionalString(record, 'expiresAt'),
     canRecall: Boolean(record.canRecall),
-    summary: normalizeSummary(record.summary),
+    primaryType: metadata.primaryType,
+    summary: metadata.summary,
     preview: normalizePreview(record.preview),
   }
 }

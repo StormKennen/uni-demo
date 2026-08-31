@@ -3,6 +3,7 @@ import type { SelectedFile } from '@/platform/file'
 export type QuickTransferMode = 'send' | 'receive'
 export type QuickTransferManagementTab = 'operation' | 'sent' | 'received'
 export type QuickTransferTtl = 600 | 3600 | 86400
+export type QuickTransferHistoryPrimaryType = 'text' | 'image' | 'file' | 'link' | 'reference' | 'mixed'
 
 export type QuickTransferSendState =
   | 'idle'
@@ -150,26 +151,27 @@ export interface QuickTransferSummary {
   hasText: boolean
   linkCount: number
   fileCount: number
+  imageCount: number
+  otherFileCount: number
   referenceCount: number
 }
 
-export interface QuickTransferReceiptSummary {
-  hasText: boolean
-  linkCount: number
-  fileCount: number
-  referenceCount: number
-}
+export type QuickTransferReceiptSummary = QuickTransferSummary
 
-export interface QuickTransferReceiptPreview {
+export interface QuickTransferHistoryPreview {
   text?: string
   referenceTitle?: string
+  linkTitle?: string
   fileName?: string
 }
+
+export type QuickTransferReceiptPreview = QuickTransferHistoryPreview
 
 export interface QuickTransferReceiptListItem {
   receiptId: string
   displayTitle: string
   claimedAt: string
+  primaryType: QuickTransferHistoryPrimaryType
   summary: QuickTransferReceiptSummary
   preview: QuickTransferReceiptPreview
 }
@@ -194,18 +196,9 @@ export interface QuickTransferReceiptDetail {
   content: QuickTransferContent
 }
 
-export interface QuickTransferSentRecordSummary {
-  hasText: boolean
-  linkCount: number
-  fileCount: number
-  referenceCount: number
-}
+export type QuickTransferSentRecordSummary = QuickTransferSummary
 
-export interface QuickTransferSentRecordPreview {
-  text?: string
-  referenceTitle?: string
-  fileName?: string
-}
+export type QuickTransferSentRecordPreview = QuickTransferHistoryPreview
 
 export interface QuickTransferSentRecordListItem {
   sentRecordId: string
@@ -217,6 +210,7 @@ export interface QuickTransferSentRecordListItem {
   maxClaims: number
   expiresAt?: string
   canRecall: boolean
+  primaryType: QuickTransferHistoryPrimaryType
   summary: QuickTransferSentRecordSummary
   preview: QuickTransferSentRecordPreview
 }

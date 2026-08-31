@@ -233,4 +233,12 @@ subPackages/tools/quick-transfer/sent/detail
 
 历史附件只通过 `postQuickTransferSentRecordsFilesAccess` 获取 Signed URL，再复用平台文件 Adapter 打开；不调用 Resolve、不调用当前飞船附件 Access、不携带 `claimToken`。`available === false` 直接显示「已过期」并禁用；永久不可用错误将本地文件标记不可用，临时错误保留重试能力。
 
+## 12. V3.1 管理与历史卡片
+
+管理页继续保留 `操作 / 我发送的 / 我收到的` 三个 Tab，操作 Tab 精简为同宽的「发飞船」和「收飞船」两个入口，不重复展示说明文字或箭头；Hero 保留既有背景视觉，只移除 `FAST TRANSFER` 辅助文案以降低首屏密度。发送创建、发送票据、接收和分享页面架构不变。
+
+Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和导航，但每一条记录统一使用 `QuickShipHistoryCard` 展示。卡片直接消费后端的 `displayTitle`、`primaryType`、`summary.imageCount` 和 `summary.otherFileCount`，使用现有 `uni-icons` 显示文字、图片、文件、链接、引用或混合内容图标；Sent 额外在标题行显示状态，并将领取进度合并到时间行，Receipt 不显示发送方状态。
+
+历史 Adapter 只允许 `text/image/file/link/reference/mixed` 六种 `primaryType`。旧接口或未知类型在 Feature Adapter 层安全回退，不根据 filename 猜测图片类型；图片类型永远不显示 `preview.fileName`，普通文件可以显示有意义的 `preview.fileName`。历史列表使用本地友好时间格式，详情页继续保留完整时间格式。管理页内嵌历史列表隐藏重复大标题，独立历史路由保留页面标题。
+
 微信游客和登录用户均可访问「我发送的」；H5 未登录仍隐藏该入口且不改变现有发送权限。列表 `onShow` 刷新，分页追加去重；下一页失败时保留已有列表并允许重试。详情缺少或包含非法 `sentRecordId` 时不请求接口，直接展示「记录参数无效」。本轮不做跨页面恢复上传、迁移接口、搜索、收藏、重发或历史分享。

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_ROUTE } from './constants'
 import {
+  getQuickTransferReceiveSharePayload,
   getQuickTransferToolSharePayload,
   getQuickTransferTransferSharePayload,
+  QUICK_TRANSFER_RECEIVE_SHARE_TITLE,
   QUICK_TRANSFER_TOOL_SHARE_TITLE,
   QUICK_TRANSFER_TRANSFER_SHARE_TITLE,
 } from './share'
@@ -25,6 +27,15 @@ describe('quick transfer share semantics', () => {
       title: QUICK_TRANSFER_TRANSFER_SHARE_TITLE,
       path: `${QUICK_TRANSFER_RECEIVE_ROUTE}?shareToken=share%2Fa`,
       imageUrl: QUICK_SHIP_TRANSFER_SHARE_COVER_URL,
+    })
+  })
+
+  it('shares the receiver scene when no transfer ticket is present', () => {
+    expect(getQuickTransferReceiveSharePayload()).toEqual({
+      kind: 'receiver',
+      title: QUICK_TRANSFER_RECEIVE_SHARE_TITLE,
+      path: QUICK_TRANSFER_RECEIVE_ROUTE,
+      imageUrl: QUICK_SHIP_TOOL_SHARE_COVER_URL,
     })
   })
 

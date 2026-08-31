@@ -13,12 +13,16 @@
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
   import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
+  import { getQuickTransferToolSharePayload } from '@/features/quick-transfer/share'
 
   const sentRecords = useQuickTransferSentRecords()
   const { detail, error, isLoading, isDeleting, isRecalling, isDownloading } = sentRecords
   const sentRecordId = ref('')
   const isInvalidSentRecordId = ref(false)
   const isSentRecordNotFound = computed(() => error.value?.code === 'QUICK_TRANSFER_SENT_RECORD_NOT_FOUND')
+  const sharePayload = getQuickTransferToolSharePayload()
+  registerQuickTransferPageShare(sharePayload)
   let progressTimer: ReturnType<typeof setInterval> | undefined
 
   const loadDetail = () => {
@@ -137,7 +141,13 @@
 </script>
 
 <template>
-  <PageLayout title="我发送的" :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=sent`" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+  <PageLayout
+    title="我发送的"
+    :share-title="sharePayload.title"
+    :share-path="sharePayload.path"
+    :share-image-url="sharePayload.imageUrl"
+    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=sent`"
+    nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="sent-detail-page">
       <view v-if="isInvalidSentRecordId" class="state-panel">
         <text class="state-title">记录参数无效</text>

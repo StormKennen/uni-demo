@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- 2026-08-31 [tools/quick-transfer/history] 完成 V3.1 管理与历史卡片 UX：精简操作入口，接入 primaryType/imageCount/otherFileCount，统一 Sent/Receipt 卡片并屏蔽图片随机文件名（Codex）
+
+- 2026-08-31 [tools/quick-transfer/share] 将分享生命周期注册提升到页面层，覆盖管理首页、发送/接收及历史场景；接收页无票据时分享接收入口，有票据时保留当前飞船分享（Codex）
+
 - 2026-08-26 [tools/quick-transfer/release] 完成 V2.1 发布前硬化：补齐 claimRequestId 未知结果重试与输入切换测试、Receipt 分页去重/失败重试、历史详情异常入口和文件访问状态收口；保留生成 API 边界并记录现有基线问题（Codex）
 
 - 2026-08-26 [tools/quick-transfer] 优化发送按钮禁用态：直接展示“请先添加内容”等不可发送原因，并提高禁用按钮的文字与背景对比度（Codex）

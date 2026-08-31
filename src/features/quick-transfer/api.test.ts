@@ -87,13 +87,14 @@ describe('quick transfer V2 response adapter', () => {
         data: {
           expiresAt: '2026-08-26T02:00:00.000Z',
           remainingClaims: 2,
-          summary: { hasText: true, linkCount: 2, fileCount: 3, referenceCount: 1 },
+          summary: { hasText: true, linkCount: 2, fileCount: 3, imageCount: 2, otherFileCount: 1, referenceCount: 1 },
         },
       }),
     ).toEqual({
+      transferId: undefined,
       expiresAt: '2026-08-26T02:00:00.000Z',
       remainingClaims: 2,
-      summary: { hasText: true, linkCount: 2, fileCount: 3, referenceCount: 1 },
+      summary: { hasText: true, linkCount: 2, fileCount: 3, imageCount: 2, otherFileCount: 1, referenceCount: 1 },
     })
   })
 
@@ -103,7 +104,7 @@ describe('quick transfer V2 response adapter', () => {
         expiresAt: '2026-08-26T02:00:00.000Z',
         summary: { hasText: false, links: 1, files: 2, references: 0 },
       }).summary,
-    ).toEqual({ hasText: false, linkCount: 1, fileCount: 2, referenceCount: 0 })
+    ).toEqual({ hasText: false, linkCount: 1, fileCount: 2, imageCount: 0, otherFileCount: 2, referenceCount: 0 })
   })
 
   it('preserves receipt metadata and optional expiry', () => {

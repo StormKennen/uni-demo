@@ -90,7 +90,7 @@ describe('quick transfer V2 helpers', () => {
         data: { code: 503, data: { reason: 'QUICK_TRANSFER_NOT_CONFIGURED' } },
       }),
     ).toBe('飞船服务尚未完成配置，请联系管理员')
-    expect(formatQuickTransferSummary({ hasText: true, linkCount: 2, fileCount: 3, referenceCount: 1 })).toBe(
+    expect(formatQuickTransferSummary({ hasText: true, linkCount: 2, fileCount: 3, imageCount: 0, otherFileCount: 3, referenceCount: 1 })).toBe(
       '留言、2 个链接、3 个文件、1 个引用',
     )
     expect(toQuickTransferReceiveErrorInfo({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })).toEqual({

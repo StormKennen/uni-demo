@@ -8,6 +8,7 @@ import type {
   QuickTransferSummary,
 } from './types'
 import { getQuickTransferMimeType, normalizeQuickTransferClaimCount } from './helpers'
+import { normalizeQuickTransferHistorySummary } from './history'
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
@@ -113,12 +114,14 @@ export const normalizeQuickTransferResolvedResult = (response: unknown): QuickTr
 export const normalizeQuickTransferInspectResult = (response: unknown): QuickTransferInspectResult => {
   const record = unwrapQuickTransferData(response)
   const rawSummary = asRecord(record.summary) || {}
-  const summary: QuickTransferSummary = {
-    hasText: Boolean(rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text),
-    linkCount: Number(rawSummary.linkCount ?? rawSummary.links ?? record.linkCount ?? record.links ?? 0) || 0,
-    fileCount: Number(rawSummary.fileCount ?? rawSummary.files ?? record.fileCount ?? record.files ?? 0) || 0,
-    referenceCount: Number(rawSummary.referenceCount ?? rawSummary.references ?? record.referenceCount ?? record.references ?? 0) || 0,
-  }
+  const summary: QuickTransferSummary = normalizeQuickTransferHistorySummary({
+    hasText: rawSummary.hasText ?? rawSummary.text ?? record.hasText ?? record.text,
+    linkCount: rawSummary.linkCount ?? rawSummary.links ?? record.linkCount ?? record.links,
+    fileCount: rawSummary.fileCount ?? rawSummary.files ?? record.fileCount ?? record.files,
+    imageCount: rawSummary.imageCount ?? record.imageCount,
+    otherFileCount: rawSummary.otherFileCount ?? record.otherFileCount,
+    referenceCount: rawSummary.referenceCount ?? rawSummary.references ?? record.referenceCount ?? record.references,
+  })
   return {
     transferId: typeof record.transferId === 'string' ? record.transferId : undefined,
     expiresAt: requiredString([record], 'expiresAt'),

@@ -20,6 +20,7 @@ export interface getQuickTransferSentRecordsRes {
 /** getQuickTransferSentRecordsResItemsPreview */
 export interface getQuickTransferSentRecordsResItemsPreview {
   fileName?: string
+  linkTitle?: string
   referenceTitle?: string
   text?: string
 }
@@ -28,7 +29,11 @@ export interface getQuickTransferSentRecordsResItemsPreview {
 export interface getQuickTransferSentRecordsResItemsSummary {
   fileCount: number
   hasText: boolean
+  /** MIME 类型以 image/ 开头的文件数量 */
+  imageCount: number
   linkCount: number
+  /** 非图片文件数量 */
+  otherFileCount: number
   referenceCount: number
 }
 
@@ -40,6 +45,7 @@ export interface getQuickTransferSentRecordsResItems {
   expiresAt: any
   maxClaims: number
   preview: getQuickTransferSentRecordsResItemsPreview
+  primaryType: 'text' | 'image' | 'file' | 'link' | 'reference' | 'mixed'
   sentAt: string
   sentRecordId: string
   status:

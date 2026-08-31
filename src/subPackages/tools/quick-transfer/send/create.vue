@@ -25,6 +25,7 @@
     validateQuickTransferFiles,
   } from '@/features/quick-transfer/helpers'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
+  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { consumeQuickShipReferences } from '@/features/quick-transfer/reference/registry'
   import { setQuickTransferSendResultContext } from '@/features/quick-transfer/sendResultContext'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
@@ -52,6 +53,7 @@
   // #endif
 
   const sharePayload = getQuickTransferToolSharePayload()
+  registerQuickTransferPageShare(sharePayload)
   const canSend = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')

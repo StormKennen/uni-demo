@@ -1,5 +1,7 @@
 import type {
   QuickShipFileDraft,
+  QuickTransferHistoryPrimaryType,
+  QuickTransferHistoryPreview,
   QuickTransferReceiveState,
   QuickTransferSendState,
   QuickTransferSentRecordSummary,
@@ -84,6 +86,107 @@ export const getQuickTransferSentClaimLabel = (claimCount: number, maxClaims: nu
 
 export const formatQuickTransferSentRecordSummary = (summary: QuickTransferSentRecordSummary): string =>
   formatQuickTransferReceiptSummary(summary)
+
+const QUICK_TRANSFER_HISTORY_TYPE_LABELS: Record<QuickTransferHistoryPrimaryType, string> = {
+  text: '文字',
+  image: '图片',
+  file: '文件',
+  link: '链接',
+  reference: '引用',
+  mixed: '混合内容',
+}
+
+export const getQuickTransferHistoryTypeLabel = (primaryType: QuickTransferHistoryPrimaryType): string =>
+  QUICK_TRANSFER_HISTORY_TYPE_LABELS[primaryType] || '内容'
+
+export type QuickTransferHistoryIconType = 'compose' | 'image' | 'paperclip' | 'link' | 'flag' | 'list'
+
+export const getQuickTransferHistoryIconType = (primaryType: QuickTransferHistoryPrimaryType): QuickTransferHistoryIconType => {
+  if (primaryType === 'text') return 'compose'
+  if (primaryType === 'image') return 'image'
+  if (primaryType === 'file') return 'paperclip'
+  if (primaryType === 'link') return 'link'
+  if (primaryType === 'reference') return 'flag'
+  return 'list'
+}
+
+const formatHistoryCount = (count: number, unit: string): string => `${count} ${unit}`
+
+export const formatQuickTransferHistorySummary = (summary: QuickTransferSummary): string => {
+  const items: string[] = []
+  const imageCount = Math.max(0, summary.imageCount)
+  const otherFileCount = Math.max(0, summary.otherFileCount || summary.fileCount - imageCount)
+  if (summary.hasText) items.push('留言')
+  if (imageCount) items.push(formatHistoryCount(imageCount, '张图片'))
+  if (otherFileCount) items.push(formatHistoryCount(otherFileCount, '个文件'))
+  if (summary.linkCount) items.push(formatHistoryCount(summary.linkCount, '个链接'))
+  if (summary.referenceCount) items.push(formatHistoryCount(summary.referenceCount, '个引用'))
+  return items.join(' · ') || '内容'
+}
+
+const formatQuickTransferTime = (date: Date): string => {
+  const pad = (part: number): string => String(part).padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+const formatQuickTransferCalendarDate = (date: Date, withYear: boolean): string => {
+  const pad = (part: number): string => String(part).padStart(2, '0')
+  const datePart = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+  return withYear ? `${date.getFullYear()}-${datePart}` : datePart
+}
+
+export const formatQuickTransferHistoryDate = (value: string, now = new Date()): string => {
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return value
+  const current = new Date(now)
+  if (!Number.isFinite(current.getTime())) return formatQuickTransferReceiptDate(value)
+
+  const sameDay = (left: Date, right: Date): boolean =>
+    left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate()
+  if (sameDay(date, current)) return formatQuickTransferTime(date)
+
+  const yesterday = new Date(current.getFullYear(), current.getMonth(), current.getDate() - 1)
+  if (sameDay(date, yesterday)) return `昨天 ${formatQuickTransferTime(date)}`
+  if (date.getFullYear() === current.getFullYear())
+    return `${formatQuickTransferCalendarDate(date, false)} ${formatQuickTransferTime(date)}`
+  return formatQuickTransferCalendarDate(date, true)
+}
+
+export const getQuickTransferHistoryPreview = (
+  primaryType: QuickTransferHistoryPrimaryType,
+  preview: QuickTransferHistoryPreview = {},
+): string => {
+  if (primaryType === 'image') return ''
+  if (primaryType === 'file') return preview.fileName?.trim() || ''
+  if (primaryType === 'mixed') return preview.text?.trim() || preview.referenceTitle?.trim() || preview.linkTitle?.trim() || ''
+  if (primaryType === 'link') return preview.linkTitle?.trim() || preview.text?.trim() || ''
+  if (primaryType === 'reference') return preview.referenceTitle?.trim() || preview.text?.trim() || ''
+  return preview.text?.trim() || ''
+}
+
+export const shouldShowQuickTransferHistoryPreview = (
+  primaryType: QuickTransferHistoryPrimaryType,
+  title: string,
+  preview?: QuickTransferHistoryPreview,
+): boolean => {
+  const previewText = getQuickTransferHistoryPreview(primaryType, preview)
+  return Boolean(previewText && previewText !== title.trim())
+}
+
+export const shouldShowQuickTransferHistorySummary = (
+  primaryType: QuickTransferHistoryPrimaryType,
+  title: string,
+  summary: QuickTransferSummary,
+): boolean => {
+  const summaryLabel = formatQuickTransferHistorySummary(summary)
+  const normalizedTitle = title.trim()
+  if (!normalizedTitle || summaryLabel === '内容' || summaryLabel === normalizedTitle) return false
+  if (primaryType === 'text' || primaryType === 'image') return false
+  if (primaryType === 'file' && normalizedTitle.endsWith('文件')) return false
+  if (primaryType === 'link' && normalizedTitle.endsWith('链接')) return false
+  if (primaryType === 'reference' && normalizedTitle.endsWith('引用')) return false
+  return true
+}
 
 export const formatQuickTransferReceiptDate = (value: string): string => {
   const date = new Date(value)

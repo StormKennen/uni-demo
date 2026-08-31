@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { onMounted, watch } from 'vue'
+  import QuickShipHistoryCard from './QuickShipHistoryCard.vue'
   import { QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE } from '@/features/quick-transfer/constants'
-  import { formatQuickTransferReceiptDate, formatQuickTransferReceiptSummary } from '@/features/quick-transfer/presentation'
   import { useQuickTransferReceipts } from '@/features/quick-transfer/useQuickTransferReceipts'
 
   interface Props {
@@ -13,9 +13,6 @@
   const props = withDefaults(defineProps<Props>(), { canViewHistory: true, refreshKey: 0, embedded: false })
   const receipts = useQuickTransferReceipts()
   const { items, pagination, isLoading, isLoadingMore, error, loadMoreError } = receipts
-
-  const getPreview = (item: (typeof receipts.items.value)[number]): string =>
-    item.preview.text?.trim() || item.preview.referenceTitle || item.preview.fileName || '收到了一份内容'
 
   const openDetail = (receiptId: string) => {
     uni.navigateTo({ url: `${QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE}?receiptId=${encodeURIComponent(receiptId)}` })
@@ -46,7 +43,7 @@
 
 <template>
   <view class="receipt-list-page" :class="{ 'receipt-list-page--embedded': props.embedded }">
-    <view class="page-heading">
+    <view v-if="!props.embedded" class="page-heading">
       <text class="page-kicker">RECEIVED SHIPS</text>
       <text class="page-title">我收到的</text>
       <text class="page-description">曾经收到的内容，都在这里。</text>
@@ -71,15 +68,16 @@
       <text class="state-description">收到的内容会出现在这里</text>
     </view>
     <view v-else class="receipt-list">
-      <view v-for="item in items" :key="item.receiptId" class="receipt-row" @click="openDetail(item.receiptId)">
-        <view class="receipt-row__main">
-          <text class="receipt-row__title">{{ item.displayTitle }}</text>
-          <text class="receipt-row__meta">{{ formatQuickTransferReceiptDate(item.claimedAt) }}</text>
-          <text class="receipt-row__summary">{{ formatQuickTransferReceiptSummary(item.summary) }}</text>
-          <text class="receipt-row__preview">{{ getPreview(item) }}</text>
-        </view>
-        <text class="receipt-row__arrow">›</text>
-      </view>
+      <QuickShipHistoryCard
+        v-for="item in items"
+        :key="item.receiptId"
+        mode="received"
+        :primary-type="item.primaryType"
+        :title="item.displayTitle"
+        :summary="item.summary"
+        :preview="item.preview"
+        :time="item.claimedAt"
+        @select="openDetail(item.receiptId)" />
       <view v-if="isLoadingMore" class="loading-more">正在加载更多…</view>
       <view v-else-if="loadMoreError" class="load-more-error">
         <text>{{ loadMoreError.message }}</text>
@@ -124,9 +122,6 @@
 
   .page-description,
   .state-description,
-  .receipt-row__meta,
-  .receipt-row__summary,
-  .receipt-row__preview,
   .loading-more,
   .list-end {
     color: var(--theme-text-secondary);
@@ -139,65 +134,19 @@
   }
 
   .receipt-list {
-    overflow: hidden;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 22rpx;
-    background: var(--theme-surface);
-  }
-
-  .receipt-row {
     display: flex;
-    align-items: center;
-    gap: 18rpx;
-    min-height: 148rpx;
-    padding: 24rpx 22rpx;
-    border-bottom: 1rpx solid var(--theme-border);
-  }
-
-  .receipt-row:last-of-type {
-    border-bottom: 0;
-  }
-
-  .receipt-row__main {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .receipt-row__title,
-  .receipt-row__meta,
-  .receipt-row__summary,
-  .receipt-row__preview {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .receipt-row__title {
-    color: var(--theme-text);
-    font-size: 29rpx;
-    font-weight: 700;
-  }
-
-  .receipt-row__meta,
-  .receipt-row__summary {
-    margin-top: 7rpx;
-  }
-
-  .receipt-row__preview {
-    margin-top: 10rpx;
-    color: var(--theme-text);
-  }
-
-  .receipt-row__arrow {
-    flex: 0 0 auto;
-    color: var(--theme-text-secondary);
-    font-size: 42rpx;
+    flex-direction: column;
+    gap: 16rpx;
+    padding-top: 28rpx;
   }
 
   .state-panel {
     padding: 96rpx 28rpx;
     text-align: center;
+  }
+
+  .receipt-list-page--embedded .state-panel {
+    padding: 64rpx 20rpx;
   }
 
   .empty-orbit {

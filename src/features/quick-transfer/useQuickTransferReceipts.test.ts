@@ -18,7 +18,8 @@ const listResult = (page: number, receiptId: string): QuickTransferReceiptListRe
       receiptId,
       displayTitle: receiptId,
       claimedAt: '2026-08-26T10:00:00.000Z',
-      summary: { hasText: false, linkCount: 0, fileCount: 1, referenceCount: 0 },
+      primaryType: 'file',
+      summary: { hasText: false, linkCount: 0, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
       preview: { fileName: `${receiptId}.pdf` },
     },
   ],
@@ -47,7 +48,8 @@ describe('useQuickTransferReceipts', () => {
       receiptId: 'receipt-2',
       displayTitle: 'receipt-2',
       claimedAt: '2026-08-26T10:00:00.000Z',
-      summary: { hasText: false, linkCount: 0, fileCount: 1, referenceCount: 0 },
+      primaryType: 'file',
+      summary: { hasText: false, linkCount: 0, fileCount: 1, imageCount: 0, otherFileCount: 1, referenceCount: 0 },
       preview: { fileName: 'receipt-2.pdf' },
     })
     mocks.listQuickTransferReceipts

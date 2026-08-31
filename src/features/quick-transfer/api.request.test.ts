@@ -22,7 +22,7 @@ describe('quick transfer request identity policy', () => {
     mocks.postQuickTransfersShareInspect.mockResolvedValue({
       expiresAt: '2026-08-26T11:00:00.000Z',
       remainingClaims: 1,
-      summary: { hasText: true, linkCount: 0, fileCount: 0, referenceCount: 0 },
+      summary: { hasText: true, linkCount: 0, fileCount: 0, imageCount: 0, otherFileCount: 0, referenceCount: 0 },
     })
     mocks.postQuickTransfersResolve.mockResolvedValue({
       transferId: 'transfer-1',
