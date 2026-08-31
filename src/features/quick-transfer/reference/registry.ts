@@ -1,4 +1,5 @@
 import type { QuickShipReferenceDraft, QuickTransferContentReference } from '../types'
+import { QUICK_TRANSFER_SEND_CREATE_ROUTE } from '../constants'
 
 export interface QuickTransferReferenceHandler {
   label: string
@@ -91,5 +92,5 @@ export const consumeQuickShipReferences = (): QuickShipReferenceDraft[] => {
 
 export const openQuickShipWithReference = (reference: QuickShipReferenceDraft): void => {
   prepareQuickShipReference(reference)
-  uni.navigateTo({ url: '/subPackages/tools/quick-transfer/index?mode=send' })
+  uni.navigateTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
 }

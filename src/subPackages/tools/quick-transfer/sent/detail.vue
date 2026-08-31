@@ -3,7 +3,7 @@
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
   import { formatQuickTransferReceiptDate, getQuickTransferSentStatusLabel } from '@/features/quick-transfer/presentation'
   import { isValidQuickTransferSentRecordId } from '@/features/quick-transfer/sentRecordApi'
@@ -40,7 +40,7 @@
   }
 
   const backToSentRecordList = () => {
-    safeBack({ fallbackUrl: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
+    safeBack({ fallbackUrl: `${QUICK_TRANSFER_ROUTE}?tab=sent` })
   }
 
   const copyText = () => {
@@ -137,12 +137,12 @@
 </script>
 
 <template>
-  <PageLayout title="我发送的" :back-fallback="QUICK_TRANSFER_SENT_RECORDS_ROUTE" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+  <PageLayout title="我发送的" :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=sent`" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="sent-detail-page">
       <view v-if="isInvalidSentRecordId" class="state-panel">
         <text class="state-title">记录参数无效</text>
         <text class="state-description">找不到要查看的发送记录。</text>
-        <button class="secondary-button" @click="backToSentRecordList">返回我发送的</button>
+        <button class="quick-ship-button secondary-button" @click="backToSentRecordList">返回我发送的</button>
       </view>
 
       <view v-else-if="isLoading && !detail" class="state-panel">
@@ -153,8 +153,8 @@
       <view v-else-if="error && !detail" class="state-panel">
         <text class="state-title">{{ isSentRecordNotFound ? '记录不存在' : '加载失败' }}</text>
         <text class="state-description">{{ error.message }}</text>
-        <button v-if="isSentRecordNotFound" class="secondary-button" @click="backToSentRecordList">返回我发送的</button>
-        <button v-else class="secondary-button" @click="loadDetail">重新加载</button>
+        <button v-if="isSentRecordNotFound" class="quick-ship-button secondary-button" @click="backToSentRecordList">返回我发送的</button>
+        <button v-else class="quick-ship-button secondary-button" @click="loadDetail">重新加载</button>
       </view>
 
       <template v-else-if="detail">
@@ -185,10 +185,10 @@
           @open-reference="openReference" />
 
         <view class="detail-actions">
-          <button v-if="detail.canRecall" class="recall-button" :disabled="isRecalling" @click="confirmRecall">
+          <button v-if="detail.canRecall" class="quick-ship-button recall-button" :disabled="isRecalling" @click="confirmRecall">
             {{ isRecalling ? '召回中…' : '召回飞船' }}
           </button>
-          <button class="delete-button" :disabled="isDeleting" @click="confirmDelete">
+          <button class="quick-ship-button delete-button" :disabled="isDeleting" @click="confirmDelete">
             {{ isDeleting ? '删除中…' : '删除记录' }}
           </button>
           <text class="delete-hint">删除历史不会自动召回飞船</text>
@@ -320,5 +320,9 @@
   .delete-hint {
     margin-top: 0;
     font-size: 21rpx;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
   }
 </style>

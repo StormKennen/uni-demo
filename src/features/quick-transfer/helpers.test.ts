@@ -78,7 +78,7 @@ describe('quick transfer V2 helpers', () => {
     expect(formatQuickTransferExpiry(new Date(10 * 60_000).toISOString(), 0)).toBe('10 分钟后返航')
     expect(formatQuickTransferExpiry(new Date(2 * 60 * 60_000 + 30 * 60_000).toISOString(), 0)).toBe('2 小时 30 分钟后返航')
     expect(parseQuickTransferPageQuery({ mode: 'receive', shareToken: ' token ' })).toEqual({ mode: 'receive', shareToken: 'token' })
-    expect(buildQuickTransferSharePath('a/b')).toContain('shareToken=a%2Fb')
+    expect(buildQuickTransferSharePath('a/b')).toBe('/subPackages/tools/quick-transfer/receive/index?shareToken=a%2Fb')
   })
 
   it('keeps V2 error fields and file progress copy independent', () => {

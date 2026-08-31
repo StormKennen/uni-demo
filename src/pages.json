@@ -158,6 +158,27 @@
           }
         },
         {
+          "path": "quick-transfer/send/create",
+          "style": {
+            "navigationBarTitleText": "发送飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/send/result",
+          "style": {
+            "navigationBarTitleText": "飞船票据",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/receive/index",
+          "style": {
+            "navigationBarTitleText": "接收飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "quick-transfer/receipt/list",
           "style": {
             "navigationBarTitleText": "已收飞船",

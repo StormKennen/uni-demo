@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createQuickShipDraft } from './helpers'
-import type { QuickShipDraft, QuickTransferCreateResult, QuickTransferResolvedResult, QuickTransferStatusResult } from './types'
+import type {
+  QuickShipDraft,
+  QuickTransferCreateResult,
+  QuickTransferResolvedResult,
+  QuickTransferSendResultContext,
+  QuickTransferStatusResult,
+} from './types'
 
 const mocks = vi.hoisted(() => ({
   createQuickTransfer: vi.fn(),
@@ -131,6 +137,27 @@ describe('useQuickTransfer upload recovery', () => {
 })
 
 describe('useQuickTransfer receiver recovery', () => {
+  it('hydrates a live sender ticket without persisting its credentials', () => {
+    const context: QuickTransferSendResultContext = {
+      transferId: 'transfer-1',
+      code: '123456',
+      shareToken: 'share-1',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      claimCount: 1,
+      maxClaims: 3,
+      status: 'ready',
+    }
+    const quickTransfer = useQuickTransfer()
+
+    quickTransfer.initializeSendResult(context)
+    expect(quickTransfer.sendState.value).toBe('ready')
+    expect(quickTransfer.transferId.value).toBe(context.transferId)
+    expect(quickTransfer.code.value).toBe(context.code)
+    expect(quickTransfer.shareToken.value).toBe(context.shareToken)
+    expect(quickTransfer.senderStatus.value?.claimCount).toBe(1)
+    quickTransfer.pauseTimers()
+  })
+
   it('does not resolve again automatically after a claim token expires', async () => {
     const result: QuickTransferResolvedResult = {
       transferId: 'transfer-1',

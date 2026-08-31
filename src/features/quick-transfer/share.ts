@@ -1,7 +1,7 @@
 import { QUICK_TRANSFER_ROUTE } from './constants'
 import { buildQuickTransferSharePath } from './helpers'
 import type { QuickTransferMode, QuickTransferSendState } from './types'
-import { QUICK_SHIP_IMAGE_URL } from './visual'
+import { QUICK_SHIP_TOOL_SHARE_COVER_URL, QUICK_SHIP_TRANSFER_SHARE_COVER_URL } from './visual'
 
 export type QuickTransferShareKind = 'tool' | 'transfer'
 
@@ -12,7 +12,7 @@ export interface QuickTransferSharePayload {
   imageUrl: string
 }
 
-export interface QuickTransferShareInput {
+export interface LegacyQuickTransferShareInput {
   mode: QuickTransferMode
   sendState: QuickTransferSendState
   shareToken: string
@@ -22,10 +22,42 @@ export interface QuickTransferShareInput {
   now?: number
 }
 
-export const QUICK_TRANSFER_TOOL_SHARE_TITLE = '飞船 - 文本、图片、文件跨设备传递'
-export const QUICK_TRANSFER_TRANSFER_SHARE_TITLE = '给你送来了一艘飞船'
+export type QuickTransferShareInput =
+  | LegacyQuickTransferShareInput
+  | { kind: 'tool' }
+  | { kind: 'transfer'; shareToken: string; expiresAt: string; now?: number }
+
+export const QUICK_TRANSFER_TOOL_SHARE_TITLE = '飞船｜跨设备快速传递内容'
+export const QUICK_TRANSFER_TRANSFER_SHARE_TITLE = '给你送来一艘飞船，点击接收'
+
+export const getQuickTransferToolSharePayload = (): QuickTransferSharePayload => ({
+  kind: 'tool',
+  title: QUICK_TRANSFER_TOOL_SHARE_TITLE,
+  path: QUICK_TRANSFER_ROUTE,
+  imageUrl: QUICK_SHIP_TOOL_SHARE_COVER_URL,
+})
+
+export const getQuickTransferTransferSharePayload = (
+  shareToken: string,
+  expiresAt: string,
+  now = Date.now(),
+): QuickTransferSharePayload => {
+  const isValid = Boolean(shareToken) && Number.isFinite(Date.parse(expiresAt)) && Date.parse(expiresAt) > now
+  if (!isValid) return getQuickTransferToolSharePayload()
+  return {
+    kind: 'transfer',
+    title: QUICK_TRANSFER_TRANSFER_SHARE_TITLE,
+    path: buildQuickTransferSharePath(shareToken),
+    imageUrl: QUICK_SHIP_TRANSFER_SHARE_COVER_URL,
+  }
+}
 
 export const getQuickTransferSharePayload = (input: QuickTransferShareInput): QuickTransferSharePayload => {
+  if ('kind' in input) {
+    if (input.kind === 'tool') return getQuickTransferToolSharePayload()
+    return getQuickTransferTransferSharePayload(input.shareToken, input.expiresAt, input.now)
+  }
+
   const isTransferShare =
     input.mode === 'send' &&
     input.sendState === 'ready' &&
@@ -38,7 +70,7 @@ export const getQuickTransferSharePayload = (input: QuickTransferShareInput): Qu
       kind: 'transfer',
       title: QUICK_TRANSFER_TRANSFER_SHARE_TITLE,
       path: buildQuickTransferSharePath(input.shareToken),
-      imageUrl: QUICK_SHIP_IMAGE_URL,
+      imageUrl: QUICK_SHIP_TRANSFER_SHARE_COVER_URL,
     }
   }
 
@@ -46,6 +78,6 @@ export const getQuickTransferSharePayload = (input: QuickTransferShareInput): Qu
     kind: 'tool',
     title: QUICK_TRANSFER_TOOL_SHARE_TITLE,
     path: QUICK_TRANSFER_ROUTE,
-    imageUrl: QUICK_SHIP_IMAGE_URL,
+    imageUrl: QUICK_SHIP_TOOL_SHARE_COVER_URL,
   }
 }

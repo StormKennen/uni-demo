@@ -153,4 +153,4 @@ export const parseQuickTransferPageQuery = (query: QuickTransferPageQuery): { mo
 }
 
 export const buildQuickTransferSharePath = (shareToken: string): string =>
-  `/subPackages/tools/quick-transfer/index?mode=receive&shareToken=${encodeURIComponent(shareToken)}`
+  `/subPackages/tools/quick-transfer/receive/index?shareToken=${encodeURIComponent(shareToken)}`

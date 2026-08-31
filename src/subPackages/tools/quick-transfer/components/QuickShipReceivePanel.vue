@@ -47,7 +47,7 @@
         <text>还可领取 {{ props.inspectResult.remainingClaims }} 次</text>
         <text>{{ formatQuickTransferExpiry(props.inspectResult.expiresAt) }}</text>
       </view>
-      <button class="primary-button full-button" :disabled="props.isReceiving" @click="emit('claim')">接收</button>
+      <button class="quick-ship-button primary-button full-button" :disabled="props.isReceiving" @click="emit('claim')">接收飞船</button>
     </view>
 
     <view v-else-if="props.receiveState === 'received' && !props.isContentOpened" class="arrived-panel">
@@ -55,7 +55,9 @@
       <text class="receive-title">{{ QUICK_TRANSFER_COPY.receivedTitle }}</text>
       <text class="receive-description">{{ QUICK_TRANSFER_COPY.receivedDescription }}</text>
       <text v-if="props.hasReceipt" class="receipt-saved-hint">已保存到「已收飞船」</text>
-      <button class="primary-button full-button" @click="emit('open-content')">{{ QUICK_TRANSFER_COPY.openReceived }}</button>
+      <button class="quick-ship-button primary-button full-button" @click="emit('open-content')">{{
+        QUICK_TRANSFER_COPY.openReceived
+      }}</button>
     </view>
 
     <view v-else-if="!props.isContentOpened && !props.shareToken" class="manual-panel">
@@ -70,7 +72,7 @@
         placeholder="000000"
         @input="emit('update:receive-code', getInputValue($event))" />
       <button
-        class="primary-button submit-button"
+        class="quick-ship-button primary-button submit-button"
         :disabled="props.isReceiving || props.receiveCode.replace(/\D/g, '').length !== 6"
         @click="emit('claim')">
         {{ props.isReceiving ? QUICK_TRANSFER_COPY.receiveLoading : QUICK_TRANSFER_COPY.receiveButton }}
@@ -81,10 +83,12 @@
       <text class="receive-error-title">{{ props.receiveErrorTitle }}</text>
       <text class="receive-error-description">{{ props.receiveErrorDescription }}</text>
       <view v-if="props.isClaimTokenError" class="action-row">
-        <button class="secondary-button" @click="emit('dismiss')">返回</button>
-        <button class="primary-button" @click="emit('retry')">重新收船</button>
+        <button class="quick-ship-button secondary-button" @click="emit('dismiss')">返回</button>
+        <button class="quick-ship-button primary-button" @click="emit('retry')">重新收船</button>
       </view>
-      <button v-else-if="!props.isReceiveUnavailable" class="secondary-button full-button" @click="emit('retry')">重新尝试</button>
+      <button v-else-if="!props.isReceiveUnavailable" class="quick-ship-button secondary-button full-button" @click="emit('retry')"
+        >重新尝试</button
+      >
     </view>
   </view>
 </template>
@@ -230,6 +234,10 @@
 
   button[disabled] {
     opacity: 0.45;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
   }
 
   @keyframes receive-pulse {

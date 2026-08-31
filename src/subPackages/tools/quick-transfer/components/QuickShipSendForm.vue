@@ -78,8 +78,8 @@
     </view>
 
     <view class="add-actions">
-      <button class="add-button" :disabled="props.isSending" @click="emit('add-link')">＋ 添加链接</button>
-      <button class="add-button" :disabled="props.isSending" @click="emit('add-file')">＋ 添加文件</button>
+      <button class="quick-ship-button add-button" :disabled="props.isSending" @click="emit('add-link')">＋ 添加链接</button>
+      <button class="quick-ship-button add-button" :disabled="props.isSending" @click="emit('add-file')">＋ 添加文件</button>
     </view>
 
     <view v-if="draft.links.length" class="content-list">
@@ -90,7 +90,7 @@
           <text v-if="link.title" class="item-subtitle">{{ link.url }}</text>
         </view>
         <text class="row-action">编辑</text>
-        <button class="remove-button" @click.stop="emit('remove-link', link)">删除</button>
+        <button class="quick-ship-button remove-button" @click.stop="emit('remove-link', link)">删除</button>
       </view>
     </view>
 
@@ -104,7 +104,7 @@
           >
           <text v-if="props.isSending" class="item-status">{{ getQuickTransferFileStateLabel(file) }}</text>
         </view>
-        <button v-if="!props.isSending" class="remove-button" @click="emit('remove-file', file)">删除</button>
+        <button v-if="!props.isSending" class="quick-ship-button remove-button" @click="emit('remove-file', file)">删除</button>
       </view>
     </view>
 
@@ -115,7 +115,9 @@
           <text class="item-title">{{ reference.title }}</text>
           <text v-if="reference.subtitle" class="item-subtitle">{{ reference.subtitle }}</text>
         </view>
-        <button v-if="!props.isSending" class="remove-button" @click="emit('remove-reference', reference.localId)">删除</button>
+        <button v-if="!props.isSending" class="quick-ship-button remove-button" @click="emit('remove-reference', reference.localId)"
+          >删除</button
+        >
       </view>
     </view>
 
@@ -149,22 +151,26 @@
       <view class="progress-bar"><view class="progress-value" :style="{ width: `${props.uploadProgress}%` }"></view></view>
     </view>
 
-    <button class="primary-button submit-button" :disabled="props.isSending || !props.canSubmit" @click="emit('submit')">
+    <button class="quick-ship-button primary-button submit-button" :disabled="props.isSending || !props.canSubmit" @click="emit('submit')">
       {{ props.sendButtonLabel }}
     </button>
     <button
       v-if="props.canRetryUpload && props.hasFailedUploadFiles"
-      class="secondary-button full-button"
+      class="quick-ship-button secondary-button full-button"
       :disabled="props.isSending"
       @click="emit('retry-upload')">
       重新上传失败文件
     </button>
-    <button v-if="props.canRetryComplete" class="secondary-button full-button" :disabled="props.isSending" @click="emit('retry-complete')">
+    <button
+      v-if="props.canRetryComplete"
+      class="quick-ship-button secondary-button full-button"
+      :disabled="props.isSending"
+      @click="emit('retry-complete')">
       重新校验
     </button>
     <button
       v-if="props.sendError && props.draft.files.length && !props.isSending"
-      class="text-button full-button abandon-button"
+      class="quick-ship-button text-button full-button abandon-button"
       @click="emit('abandon')">
       放弃本次飞船
     </button>
@@ -435,5 +441,9 @@
 
   button[disabled] {
     opacity: 0.45;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
   }
 </style>

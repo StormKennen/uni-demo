@@ -17,6 +17,7 @@
     copyShareUrl: []
     cancel: []
     reset: []
+    'view-history': []
   }>()
 </script>
 
@@ -33,7 +34,7 @@
       <text class="result-description">{{ props.description }}</text>
       <template v-if="props.state === 'ready'">
         <text class="result-label">收船码</text>
-        <text class="ready-code" selectable>{{ props.code }}</text>
+        <text class="ready-code" selectable @click="emit('copyCode')">{{ props.code }}</text>
         <view class="result-meta">
           <view
             ><text class="meta-label">有效期</text><text class="meta-value">{{ props.countdown }} 后返航</text></view
@@ -42,20 +43,21 @@
             ><text class="meta-label">领取进度</text><text class="meta-value">{{ props.claimLabel }}</text></view
           >
         </view>
-        <view class="action-row">
-          <button class="primary-button" @click="emit('copyCode')">复制收船码</button>
-          <!-- #ifdef H5 -->
-          <button v-if="props.showShareLink" class="secondary-button" @click="emit('copyShareUrl')">分享</button>
-          <!-- #endif -->
-        </view>
         <!-- #ifdef MP-WEIXIN -->
-        <button class="secondary-button full-button" open-type="share">分享给好友</button>
+        <button class="quick-ship-button primary-button full-button" open-type="share">分享给好友</button>
         <!-- #endif -->
+        <!-- #ifdef H5 -->
+        <button v-if="props.showShareLink" class="quick-ship-button primary-button full-button" @click="emit('copyShareUrl')"
+          >复制分享链接</button
+        >
+        <!-- #endif -->
+        <button class="quick-ship-button text-button full-button" @click="emit('copyCode')">复制飞船码</button>
+        <button class="quick-ship-button text-button full-button" @click="emit('view-history')">查看发送记录</button>
         <view class="cancel-link" @click="emit('cancel')">召回飞船</view>
       </template>
       <template v-else>
         <view class="terminal-mark">✓</view>
-        <button class="secondary-button full-button" @click="emit('reset')">重新发送</button>
+        <button class="quick-ship-button secondary-button full-button" @click="emit('reset')">再发一艘</button>
       </template>
     </view>
   </view>
@@ -230,5 +232,16 @@
     font-size: 56rpx;
     font-weight: 800;
     text-align: center;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
+  }
+
+  .text-button {
+    min-height: 54rpx;
+    padding: 0;
+    color: var(--theme-brand);
+    background: transparent;
   }
 </style>

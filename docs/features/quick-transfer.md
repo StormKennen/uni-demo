@@ -1,3 +1,30 @@
+# 飞船 Quick Transfer V2.3 需求规格书
+
+## 0.1 V2.3 页面分离与分享流
+
+V2.3 将飞船从单页多状态重构为职责清晰的管理页、发送创建页、创建人票据页和统一接收页。最终路由固定为：
+
+```text
+subPackages/tools/quick-transfer/index
+subPackages/tools/quick-transfer/send/create
+subPackages/tools/quick-transfer/send/result
+subPackages/tools/quick-transfer/receive/index
+subPackages/tools/quick-transfer/sent/list
+subPackages/tools/quick-transfer/sent/detail
+subPackages/tools/quick-transfer/receipt/list
+subPackages/tools/quick-transfer/receipt/detail
+```
+
+管理页只负责三个 Tab：操作、我发送的、我收到的。操作 Tab 只提供发送飞船和接收飞船两个入口；发送与接收业务状态不得嵌入管理页。历史列表抽取为可嵌入管理页的组件，原 sent/receipt list 页面保留为兼容壳。
+
+发送创建页复用 `QuickShipSendForm`，创建成功后将 `transferId/code/shareToken/expiresAt/claimCount/maxClaims/status` 写入 JS 内存 transient context，并使用 `redirectTo` 进入发送票据页。票据页负责当前飞船的分享、状态轮询、召回和终态展示；无 transient context 时只显示安全返回和历史入口，不展示空票据。票据页分享固定进入 Receiver 路由，不在历史详情中重新生成分享凭证。
+
+Receiver 页面统一承载手工六位码和 `shareToken` 分享入口：分享进入先 Inspect，用户点击接收后才 Resolve；Resolve 成功后播放 arrive 动画，点击查看内容在当前页面展开正文。`claimRequestId` 继续只在当前页面内存中复用，网络未知结果重试复用原 ID，明确失败或成功后清除。
+
+管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；票据页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
+
+所有本轮新增页面与 Quick Transfer 组件必须同时兼容 H5 和微信小程序；微信功能范围内的 button 清除原生 `button::after` 边框，每页只保留一个强主 CTA。
+
 # 飞船 Quick Transfer V2.1 需求规格书
 
 ## 0. 范围

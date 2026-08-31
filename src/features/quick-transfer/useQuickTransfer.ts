@@ -36,7 +36,9 @@ import type {
   QuickTransferReceiveInput,
   QuickTransferResolvedResult,
   QuickTransferSendState,
+  QuickTransferSendResultContext,
   QuickTransferStatusResult,
+  QuickTransferStatus,
   QuickTransferUploadDescriptor,
 } from './types'
 import { createQuickTransferClaimRequestId } from './requestId'
@@ -317,6 +319,39 @@ export const useQuickTransfer = () => {
     startCountdown()
     startPolling()
     return true
+  }
+
+  const initializeSendResult = (context: QuickTransferSendResultContext): void => {
+    clearTimers()
+    abortUploads()
+    sendError.value = null
+    uploadProgress.value = null
+    uploadDescriptors.value = {}
+    transferId.value = context.transferId
+    code.value = context.code
+    shareToken.value = context.shareToken
+    expiresAt.value = context.expiresAt
+    senderStatus.value = {
+      transferId: context.transferId,
+      status: context.status,
+      claimCount: context.claimCount,
+      maxClaims: context.maxClaims,
+      expiresAt: context.expiresAt,
+    }
+    const stateByStatus: Record<QuickTransferStatus, QuickTransferSendState> = {
+      uploading: 'uploading',
+      ready: 'ready',
+      consumed: 'consumed',
+      expired: 'expired',
+      cancelled: 'cancelled',
+      deleting: 'cancelled',
+      deleted: 'cancelled',
+    }
+    sendState.value = stateByStatus[context.status]
+    if (sendState.value === 'ready') {
+      startCountdown()
+      startPolling()
+    }
   }
 
   const resetSendResult = (draft?: QuickShipDraft) => {
@@ -641,6 +676,7 @@ export const useQuickTransfer = () => {
     isDownloading,
     canRetryComplete,
     canRetryUpload,
+    initializeSendResult,
     send,
     retryUpload,
     retryComplete,

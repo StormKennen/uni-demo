@@ -3,7 +3,7 @@
   import { computed, ref } from 'vue'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { QUICK_TRANSFER_RECEIPTS_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
   import { isValidQuickTransferReceiptId } from '@/features/quick-transfer/receiptApi'
@@ -27,7 +27,7 @@
   }
 
   const backToReceiptList = () => {
-    safeBack({ fallbackUrl: QUICK_TRANSFER_RECEIPTS_ROUTE })
+    safeBack({ fallbackUrl: `${QUICK_TRANSFER_ROUTE}?tab=received` })
   }
 
   const copyText = () => {
@@ -98,12 +98,15 @@
 </script>
 
 <template>
-  <PageLayout title="已收飞船" :back-fallback="QUICK_TRANSFER_RECEIPTS_ROUTE" nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+  <PageLayout
+    title="已收飞船"
+    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=received`"
+    nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receipt-detail-page">
       <view v-if="isInvalidReceiptId" class="state-panel">
         <text class="state-title">记录参数无效</text>
         <text class="state-description">找不到要查看的已收飞船记录。</text>
-        <button class="secondary-button" @click="backToReceiptList">返回已收飞船</button>
+        <button class="quick-ship-button secondary-button" @click="backToReceiptList">返回已收飞船</button>
       </view>
 
       <view v-else-if="isLoading && !detail" class="state-panel">
@@ -114,8 +117,8 @@
       <view v-else-if="error && !detail" class="state-panel">
         <text class="state-title">{{ isReceiptNotFound ? '记录不存在' : '加载失败' }}</text>
         <text class="state-description">{{ error.message }}</text>
-        <button v-if="isReceiptNotFound" class="secondary-button" @click="backToReceiptList">返回已收飞船</button>
-        <button v-else class="secondary-button" @click="loadDetail">重新加载</button>
+        <button v-if="isReceiptNotFound" class="quick-ship-button secondary-button" @click="backToReceiptList">返回已收飞船</button>
+        <button v-else class="quick-ship-button secondary-button" @click="loadDetail">重新加载</button>
       </view>
 
       <template v-else-if="detail">
@@ -134,7 +137,7 @@
           @open-reference="openReference" />
 
         <view class="detail-actions">
-          <button class="delete-button" @click="confirmDelete">删除记录</button>
+          <button class="quick-ship-button delete-button" @click="confirmDelete">删除记录</button>
           <text class="delete-hint">只删除这条已收记录</text>
         </view>
       </template>
@@ -227,5 +230,9 @@
   .delete-hint {
     margin-top: 0;
     font-size: 21rpx;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
   }
 </style>

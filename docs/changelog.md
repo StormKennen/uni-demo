@@ -360,3 +360,4 @@
 - 2026-07-03 [theme] 新增全局日间/夜间主题（CSS 变量 tokens + Pinia 持久化，H5 通过 :root[data-theme] 切换、小程序通过 page-meta 注入），mine 页「设置」同级新增夜间模式开关（Devin）
 - 2026-08-27 [sharing/game-coupons,sharing/quick-transfer] 修复微信分享消息卡片封面：魔灵兑换券管理页明确使用页面顶部栏背景图 `top.jpg`，飞船工具的工具分享与具体收船分享统一使用飞船图片 `quick-ship.png`（Codex）
 - 2026-08-27 [quick-transfer/v2.2] 新增“我发送的”历史闭环：接入 SentRecord Generated API，增加发送历史列表/详情、分页去重、领取进度轮询、后端 `canRecall` 驱动的召回、历史附件访问与删除记录；召回复用现有 `cancelQuickTransfer`，删除历史与召回严格隔离，微信游客可见、H5 未登录隐藏（Codex）
+- 2026-08-27 [tools/quick-transfer] 完成 V2.3 页面职责拆分：管理页改为操作/我发送的/我收到的三 Tab，新增发送创建页、飞船票据页和独立 Receiver 页面；抽取历史列表组件，拆分工具分享与当前飞船分享路径，增加内存结果上下文并统一 Quick Transfer 按钮视觉（Codex）

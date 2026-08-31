@@ -38,7 +38,7 @@
     <view v-if="props.content.text" class="received-section">
       <view class="section-heading"><text class="section-title">留言</text><text class="section-count">1 条</text></view>
       <text class="received-text" selectable>{{ props.content.text }}</text>
-      <button class="secondary-button full-button" @click="emit('copyText')">复制留言</button>
+      <button class="quick-ship-button secondary-button full-button" @click="emit('copyText')">复制留言</button>
     </view>
 
     <view v-if="props.content.links.length" class="received-section">
@@ -72,7 +72,11 @@
           >
         </view>
         <text v-if="file.available === false" class="file-expired-badge">已过期</text>
-        <button v-else class="primary-small-button" :disabled="props.isDownloading" @click="emit('downloadFile', file.fileId || '')">
+        <button
+          v-else
+          class="quick-ship-button primary-small-button"
+          :disabled="props.isDownloading"
+          @click="emit('downloadFile', file.fileId || '')">
           {{ isImageFile(file) ? '预览' : '打开' }}
         </button>
       </view>
@@ -258,6 +262,10 @@
   .full-button {
     width: 100%;
     margin-top: 16rpx;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
   }
 
   button[disabled] {

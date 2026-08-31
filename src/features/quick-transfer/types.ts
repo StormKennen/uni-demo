@@ -1,6 +1,7 @@
 import type { SelectedFile } from '@/platform/file'
 
 export type QuickTransferMode = 'send' | 'receive'
+export type QuickTransferManagementTab = 'operation' | 'sent' | 'received'
 export type QuickTransferTtl = 600 | 3600 | 86400
 
 export type QuickTransferSendState =
@@ -270,7 +271,18 @@ export interface QuickTransferFileAccessResult {
 
 export interface QuickTransferPageQuery {
   mode?: string
+  tab?: string
   shareToken?: string
+}
+
+export interface QuickTransferSendResultContext {
+  transferId: string
+  code: string
+  shareToken: string
+  expiresAt: string
+  claimCount: number
+  maxClaims: number
+  status: QuickTransferStatus
 }
 
 export interface QuickTransferErrorInfo {

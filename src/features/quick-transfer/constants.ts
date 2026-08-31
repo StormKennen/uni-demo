@@ -1,6 +1,9 @@
 import type { QuickTransferSendState, QuickTransferStatus, QuickTransferTtl } from './types'
 
 export const QUICK_TRANSFER_ROUTE = '/subPackages/tools/quick-transfer/index'
+export const QUICK_TRANSFER_SEND_CREATE_ROUTE = '/subPackages/tools/quick-transfer/send/create'
+export const QUICK_TRANSFER_SEND_RESULT_ROUTE = '/subPackages/tools/quick-transfer/send/result'
+export const QUICK_TRANSFER_RECEIVE_ROUTE = '/subPackages/tools/quick-transfer/receive/index'
 export const QUICK_TRANSFER_RECEIPTS_ROUTE = '/subPackages/tools/quick-transfer/receipt/list'
 export const QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE = '/subPackages/tools/quick-transfer/receipt/detail'
 export const QUICK_TRANSFER_SENT_RECORDS_ROUTE = '/subPackages/tools/quick-transfer/sent/list'
