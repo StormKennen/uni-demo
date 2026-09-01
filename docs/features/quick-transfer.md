@@ -21,7 +21,7 @@ subPackages/tools/quick-transfer/receipt/detail
 
 Receiver 页面统一承载手工六位码和 `shareToken` 分享入口：分享进入先 Inspect，用户点击接收后才 Resolve；Resolve 成功后播放 arrive 动画，点击查看内容在当前页面展开正文。`claimRequestId` 继续只在当前页面内存中复用，网络未知结果重试复用原 ID，明确失败或成功后清除。
 
-管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；票据页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
+管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；微信管理首页同时提供显式「分享」按钮，仍使用同一工具分享 payload，不携带 `shareToken`。票据页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
 
 所有本轮新增页面与 Quick Transfer 组件必须同时兼容 H5 和微信小程序；微信功能范围内的 button 清除原生 `button::after` 边框，每页只保留一个强主 CTA。
 
@@ -242,3 +242,9 @@ Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和�
 历史 Adapter 只允许 `text/image/file/link/reference/mixed` 六种 `primaryType`。旧接口或未知类型在 Feature Adapter 层安全回退，不根据 filename 猜测图片类型；图片类型永远不显示 `preview.fileName`，普通文件可以显示有意义的 `preview.fileName`。历史列表使用本地友好时间格式，详情页继续保留完整时间格式。管理页内嵌历史列表隐藏重复大标题，独立历史路由保留页面标题。
 
 微信游客和登录用户均可访问「我发送的」；H5 未登录仍隐藏该入口且不改变现有发送权限。列表 `onShow` 刷新，分页追加去重；下一页失败时保留已有列表并允许重试。详情缺少或包含非法 `sentRecordId` 时不请求接口，直接展示「记录参数无效」。本轮不做跨页面恢复上传、迁移接口、搜索、收藏、重发或历史分享。
+
+## 13. V3.2 首页收敛与发送反馈
+
+管理首页不再展示 `操作 / 我发送的 / 我收到的` 三个 Tab，也不再嵌入历史列表或维护历史刷新状态；页面固定为 Hero、同宽的「发船 / 收船」主操作，以及「发送记录 / 接收记录」两个轻量文字入口，分别进入 `sent/list` 和 `receipt/list`。主操作区与历史记录区通过标题、分隔线和留白建立明显层级，历史入口不与发船/收船使用同等按钮视觉。`?tab=sent`、`?tab=received` 作为旧入口继续由首页重定向到对应独立列表，`?tab=operation` 直接留在首页；`shareToken` 和 `mode=receive` 继续重定向到 Receiver。
+
+发送创建页的「添加链接 / 添加文件」保持 Secondary Action 层级，使用主题边界增强识别度，不改既有选择器和弹层行为。主按钮只表达发送状态：空闲时固定为「发送飞船」，创建、上传、确认阶段显示对应进行中状态；空内容通过「传输内容」标题下的橙色独立提示展示，真正发送前仍由前端校验拦截，不修改 `hasQuickShipContent` 或后端空内容规则。只有发送进行中或存在当前处理中飞船时禁用主按钮，文件/API 错误继续独立展示。

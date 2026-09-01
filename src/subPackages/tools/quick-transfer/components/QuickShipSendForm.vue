@@ -7,7 +7,8 @@
   interface Props {
     draft: QuickShipDraft
     isSending: boolean
-    canSubmit: boolean
+    isSubmitHardDisabled: boolean
+    contentWarning?: string
     sendButtonLabel: string
     fileError: string
     sendError: string
@@ -68,7 +69,7 @@
     <view class="content-heading">
       <view>
         <text class="content-title">传输内容</text>
-        <text class="content-caption">至少添加一项内容</text>
+        <text v-if="props.contentWarning" class="content-warning">⚠ {{ props.contentWarning }}</text>
       </view>
       <text v-if="draft.files.length" class="content-count">{{ draft.files.length }} / {{ props.maxFileCount }} 个文件</text>
     </view>
@@ -151,7 +152,7 @@
       <view class="progress-bar"><view class="progress-value" :style="{ width: `${props.uploadProgress}%` }"></view></view>
     </view>
 
-    <button class="quick-ship-button primary-button submit-button" :disabled="props.isSending || !props.canSubmit" @click="emit('submit')">
+    <button class="quick-ship-button primary-button submit-button" :disabled="props.isSubmitHardDisabled" @click="emit('submit')">
       {{ props.sendButtonLabel }}
     </button>
     <button
@@ -203,7 +204,6 @@
     font-weight: 700;
   }
 
-  .content-caption,
   .content-count {
     display: block;
     margin-top: 6rpx;
@@ -213,6 +213,14 @@
 
   .content-count {
     margin-top: 0;
+  }
+
+  .content-warning {
+    display: block;
+    margin-top: 6rpx;
+    color: #b45309;
+    font-size: 22rpx;
+    line-height: 1.45;
   }
 
   .message-box {
@@ -241,17 +249,22 @@
   .add-button,
   .primary-button,
   .secondary-button {
-    border: 0;
     border-radius: 16rpx;
     font-size: 26rpx;
+  }
+
+  .primary-button,
+  .secondary-button {
+    border: 0;
   }
 
   .add-button {
     flex: 1;
     min-height: 76rpx;
     padding: 0 12rpx;
+    border: 1rpx solid var(--theme-brand);
     color: var(--theme-brand);
-    background: var(--theme-surface-muted);
+    background: var(--theme-surface);
   }
 
   .content-list {

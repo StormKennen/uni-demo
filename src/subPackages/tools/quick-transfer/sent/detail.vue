@@ -3,7 +3,7 @@
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { QUICK_TRANSFER_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
   import { formatQuickTransferReceiptDate, getQuickTransferSentStatusLabel } from '@/features/quick-transfer/presentation'
   import { isValidQuickTransferSentRecordId } from '@/features/quick-transfer/sentRecordApi'
@@ -44,7 +44,7 @@
   }
 
   const backToSentRecordList = () => {
-    safeBack({ fallbackUrl: `${QUICK_TRANSFER_ROUTE}?tab=sent` })
+    safeBack({ fallbackUrl: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
   }
 
   const copyText = () => {
@@ -146,7 +146,7 @@
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=sent`"
+    :back-fallback="QUICK_TRANSFER_SENT_RECORDS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="sent-detail-page">
       <view v-if="isInvalidSentRecordId" class="state-panel">

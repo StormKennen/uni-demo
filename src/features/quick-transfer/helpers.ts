@@ -6,6 +6,8 @@ import {
   QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
   QUICK_TRANSFER_MAX_MAX_CLAIMS,
   QUICK_TRANSFER_MIN_MAX_CLAIMS,
+  QUICK_TRANSFER_RECEIPTS_ROUTE,
+  QUICK_TRANSFER_SENT_RECORDS_ROUTE,
   QUICK_TRANSFER_SEND_TRANSITIONS,
   QUICK_TRANSFER_TERMINAL_STATUSES,
 } from './constants'
@@ -150,6 +152,12 @@ export const parseQuickTransferPageQuery = (query: QuickTransferPageQuery): { mo
     mode: query.mode === 'receive' || shareToken ? 'receive' : 'send',
     shareToken,
   }
+}
+
+export const getQuickTransferIndexRedirectRoute = (tab?: string): string | undefined => {
+  if (tab === 'sent') return QUICK_TRANSFER_SENT_RECORDS_ROUTE
+  if (tab === 'received') return QUICK_TRANSFER_RECEIPTS_ROUTE
+  return undefined
 }
 
 export const buildQuickTransferSharePath = (shareToken: string): string =>

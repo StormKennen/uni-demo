@@ -13,7 +13,7 @@ export const QUICK_TRANSFER_COPY = {
   heroDescription: '跨设备快速传递内容',
   sendTab: '发送',
   receiveTab: '接收',
-  sendButton: '发送',
+  sendButton: '发送飞船',
   receiveButton: '接收',
   receiveLoading: '正在接收…',
   receivedTitle: '飞船已到达',
@@ -21,15 +21,10 @@ export const QUICK_TRANSFER_COPY = {
   openReceived: '查看内容',
 } as const
 
-export const getQuickTransferSendButtonLabel = (
-  state: QuickTransferSendState,
-  uploadProgress: number | null,
-  disabledReason = '',
-): string => {
+export const getQuickTransferSendButtonLabel = (state: QuickTransferSendState, uploadProgress: number | null): string => {
   if (state === 'creating') return '正在准备飞船…'
   if (state === 'uploading') return uploadProgress === null ? '正在装船…' : `正在装船 ${uploadProgress}%`
   if (state === 'completing') return '正在确认内容…'
-  if (disabledReason) return disabledReason
   return QUICK_TRANSFER_COPY.sendButton
 }
 

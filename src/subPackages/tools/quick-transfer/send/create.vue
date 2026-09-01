@@ -24,6 +24,7 @@
     isValidQuickTransferUrl,
     validateQuickTransferFiles,
   } from '@/features/quick-transfer/helpers'
+  import { getQuickTransferSendButtonLabel } from '@/features/quick-transfer/presentation'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { consumeQuickShipReferences } from '@/features/quick-transfer/reference/registry'
@@ -58,32 +59,9 @@
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
   const hasFailedUploadFiles = computed(() => draft.value.files.some(file => file.uploadState === 'error'))
-  const canSubmit = computed(
-    () =>
-      canSend.value &&
-      !quickTransfer.transferId.value &&
-      hasQuickShipContent(draft.value) &&
-      !validateQuickTransferFiles(draft.value.files),
-  )
-  const sendButtonDisabledReason = computed(() => {
-    if (canSubmit.value || isSending.value) return ''
-    if (!canSend.value) return '登录后才能发送'
-    if (!hasQuickShipContent(draft.value)) return '请先添加内容'
-    if (validateQuickTransferFiles(draft.value.files)) return '请修正文件后发送'
-    if (quickTransfer.transferId.value) return '请先处理当前飞船'
-    return '暂不可发送'
-  })
-
-  const sendButtonLabel = computed(() => {
-    const state = quickTransfer.sendState.value
-    if (state === 'creating') return '正在准备飞船…'
-    if (state === 'uploading') {
-      const progress = quickTransfer.uploadProgress.value
-      return progress === null ? '正在装船…' : `正在装船 ${progress}%`
-    }
-    if (state === 'completing') return '正在确认内容…'
-    return sendButtonDisabledReason.value || '发送飞船'
-  })
+  const contentWarning = computed(() => (hasQuickShipContent(draft.value) ? '' : '请至少添加一项内容'))
+  const isSubmitHardDisabled = computed(() => isSending.value || Boolean(quickTransfer.transferId.value))
+  const sendButtonLabel = computed(() => getQuickTransferSendButtonLabel(quickTransfer.sendState.value, quickTransfer.uploadProgress.value))
 
   const refreshLoginState = () => {
     isLoggedIn.value = Boolean(getToken())
@@ -190,7 +168,6 @@
     }
     fileError.value = ''
     if (!hasQuickShipContent(draft.value)) {
-      fileError.value = '请至少添加一项内容'
       return
     }
     if (!isValidQuickTransferMaxClaims(draft.value.maxClaims)) {
@@ -275,7 +252,7 @@
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=operation`"
+    :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="send-create-page">
       <view v-if="showSendGate" class="gate-panel">
@@ -294,7 +271,8 @@
         <QuickShipSendForm
           :draft="draft"
           :is-sending="isSending"
-          :can-submit="canSubmit"
+          :is-submit-hard-disabled="isSubmitHardDisabled"
+          :content-warning="contentWarning"
           :send-button-label="sendButtonLabel"
           :file-error="fileError"
           :send-error="sendErrorMessage"

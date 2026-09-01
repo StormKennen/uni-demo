@@ -7,7 +7,11 @@
   import PageLayout from '@/components/PageLayout.vue'
   import { getToken } from '@/utils/storage'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
-  import { QUICK_TRANSFER_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
+  import {
+    QUICK_TRANSFER_RECEIPTS_ROUTE,
+    QUICK_TRANSFER_ROUTE,
+    QUICK_TRANSFER_SEND_CREATE_ROUTE,
+  } from '@/features/quick-transfer/constants'
   import { formatQuickTransferSummary, isQuickTransferReceivedContentVisible } from '@/features/quick-transfer/presentation'
   import { parseQuickTransferPageQuery } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
@@ -125,7 +129,7 @@
   const dismissReceiveError = () => quickTransfer.clearReceiveError()
 
   const openReceivedHistory = () => {
-    if (canViewHistory.value) uni.redirectTo({ url: `${QUICK_TRANSFER_ROUTE}?tab=received` })
+    if (canViewHistory.value) uni.redirectTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
   }
 
   const openSendCreate = () => uni.navigateTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
@@ -150,7 +154,7 @@
     :share-image-url="sharePayload.imageUrl"
     :share-timeline-query="shareTimelineQuery"
     :share-timeline-title="sharePayload.title || QUICK_TRANSFER_TOOL_SHARE_TITLE"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=operation`"
+    :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receive-page">
       <view class="page-heading">

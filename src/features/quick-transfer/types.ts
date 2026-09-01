@@ -1,7 +1,6 @@
 import type { SelectedFile } from '@/platform/file'
 
 export type QuickTransferMode = 'send' | 'receive'
-export type QuickTransferManagementTab = 'operation' | 'sent' | 'received'
 export type QuickTransferTtl = 600 | 3600 | 86400
 export type QuickTransferHistoryPrimaryType = 'text' | 'image' | 'file' | 'link' | 'reference' | 'mixed'
 

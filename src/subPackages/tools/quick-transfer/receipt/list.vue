@@ -32,7 +32,7 @@
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=received`"
+    :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <QuickShipReceiptList ref="listRef" :refresh-key="refreshKey" />
   </PageLayout>

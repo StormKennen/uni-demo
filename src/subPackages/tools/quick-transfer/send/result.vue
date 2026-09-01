@@ -10,7 +10,7 @@
     QUICK_TRANSFER_TOOL_SHARE_TITLE,
   } from '@/features/quick-transfer/share'
   import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
-  import { QUICK_TRANSFER_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_SEND_CREATE_ROUTE, QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
   import {
     getQuickTransferSenderClaimLabel,
     getQuickTransferSenderDescription,
@@ -59,7 +59,7 @@
     if (quickTransfer.transferId.value) void quickTransfer.cancel()
   }
 
-  const openHistory = () => uni.redirectTo({ url: `${QUICK_TRANSFER_ROUTE}?tab=sent` })
+  const openHistory = () => uni.redirectTo({ url: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
   const openCreate = () => uni.redirectTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
 
   onLoad(() => {
@@ -83,7 +83,7 @@
     :share-image-url="sharePayload.imageUrl"
     :share-timeline-query="shareTimelineQuery"
     :share-timeline-title="sharePayload.title || QUICK_TRANSFER_TOOL_SHARE_TITLE"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=sent`"
+    :back-fallback="QUICK_TRANSFER_SENT_RECORDS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="send-result-page">
       <template v-if="hasContext">

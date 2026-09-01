@@ -5,6 +5,8 @@ import {
   QUICK_TRANSFER_DEFAULT_MAX_CLAIMS,
   QUICK_TRANSFER_MAX_MAX_CLAIMS,
   QUICK_TRANSFER_MIN_MAX_CLAIMS,
+  QUICK_TRANSFER_RECEIPTS_ROUTE,
+  QUICK_TRANSFER_SENT_RECORDS_ROUTE,
   QUICK_TRANSFER_TTL_OPTIONS,
 } from './constants'
 import { getQuickTransferErrorMessage, isQuickTransferClaimResultUnknown, toQuickTransferReceiveErrorInfo } from './errors'
@@ -16,6 +18,7 @@ import {
   createQuickShipDraft,
   createQuickShipFileDraft,
   formatQuickTransferExpiry,
+  getQuickTransferIndexRedirectRoute,
   getQuickTransferMimeType,
   hasQuickShipContent,
   isQuickTransferDownloadValid,
@@ -78,6 +81,9 @@ describe('quick transfer V2 helpers', () => {
     expect(formatQuickTransferExpiry(new Date(10 * 60_000).toISOString(), 0)).toBe('10 分钟后返航')
     expect(formatQuickTransferExpiry(new Date(2 * 60 * 60_000 + 30 * 60_000).toISOString(), 0)).toBe('2 小时 30 分钟后返航')
     expect(parseQuickTransferPageQuery({ mode: 'receive', shareToken: ' token ' })).toEqual({ mode: 'receive', shareToken: 'token' })
+    expect(getQuickTransferIndexRedirectRoute('sent')).toBe(QUICK_TRANSFER_SENT_RECORDS_ROUTE)
+    expect(getQuickTransferIndexRedirectRoute('received')).toBe(QUICK_TRANSFER_RECEIPTS_ROUTE)
+    expect(getQuickTransferIndexRedirectRoute('operation')).toBeUndefined()
     expect(buildQuickTransferSharePath('a/b')).toBe('/subPackages/tools/quick-transfer/receive/index?shareToken=a%2Fb')
   })
 
@@ -90,14 +96,14 @@ describe('quick transfer V2 helpers', () => {
         data: { code: 503, data: { reason: 'QUICK_TRANSFER_NOT_CONFIGURED' } },
       }),
     ).toBe('飞船服务尚未完成配置，请联系管理员')
-    expect(formatQuickTransferSummary({ hasText: true, linkCount: 2, fileCount: 3, imageCount: 0, otherFileCount: 3, referenceCount: 1 })).toBe(
-      '留言、2 个链接、3 个文件、1 个引用',
-    )
+    expect(
+      formatQuickTransferSummary({ hasText: true, linkCount: 2, fileCount: 3, imageCount: 0, otherFileCount: 3, referenceCount: 1 }),
+    ).toBe('留言、2 个链接、3 个文件、1 个引用')
     expect(toQuickTransferReceiveErrorInfo({ error: { data: { code: 'TRANSFER_NOT_AVAILABLE' } } })).toEqual({
       code: 'TRANSFER_NOT_AVAILABLE',
       message: '这艘飞船已经不在了',
     })
-    expect(getQuickTransferSendButtonLabel('idle', null, '请先添加内容')).toBe('请先添加内容')
+    expect(getQuickTransferSendButtonLabel('idle', null)).toBe('发送飞船')
     expect(getQuickTransferSendButtonLabel('uploading', 38)).toBe('正在装船 38%')
     expect(getQuickTransferFileStateLabel({ clientFileId: 'f', name: 'a', size: 1, mimeType: 'text/plain', uploadState: 'ready' })).toBe(
       '已完成 ✓',

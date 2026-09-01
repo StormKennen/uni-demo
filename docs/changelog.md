@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- 2026-08-31 [tools/quick-transfer/v3.2] 重构飞船首页入口层级：突出发船/收船主操作，历史记录收纳为独立次级导航区并优化间距（Codex）
+
+- 2026-08-31 [tools/quick-transfer/v3.2] 收敛飞船首页为发船/收船与独立历史入口，兼容旧 tab 路由，并优化发送页添加按钮、空内容提示与稳定主按钮文案（Codex）
+
+- 2026-08-31 [tools/quick-transfer/share] 管理首页新增微信小程序显式「分享」入口，固定分享飞船功能首页，不携带收船码或 shareToken（Codex）
+
 - 2026-08-31 [tools/quick-transfer/history] 完成 V3.1 管理与历史卡片 UX：精简操作入口，接入 primaryType/imageCount/otherFileCount，统一 Sent/Receipt 卡片并屏蔽图片随机文件名（Codex）
 
 - 2026-08-31 [tools/quick-transfer/share] 将分享生命周期注册提升到页面层，覆盖管理首页、发送/接收及历史场景；接收页无票据时分享接收入口，有票据时保留当前飞船分享（Codex）

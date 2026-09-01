@@ -3,7 +3,7 @@
   import { computed, ref } from 'vue'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { QUICK_TRANSFER_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_RECEIPTS_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
   import { isValidQuickTransferReceiptId } from '@/features/quick-transfer/receiptApi'
@@ -31,7 +31,7 @@
   }
 
   const backToReceiptList = () => {
-    safeBack({ fallbackUrl: `${QUICK_TRANSFER_ROUTE}?tab=received` })
+    safeBack({ fallbackUrl: QUICK_TRANSFER_RECEIPTS_ROUTE })
   }
 
   const copyText = () => {
@@ -107,7 +107,7 @@
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
-    :back-fallback="`${QUICK_TRANSFER_ROUTE}?tab=received`"
+    :back-fallback="QUICK_TRANSFER_RECEIPTS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="receipt-detail-page">
       <view v-if="isInvalidReceiptId" class="state-panel">
