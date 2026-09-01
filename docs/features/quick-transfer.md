@@ -50,6 +50,7 @@ Sender Draft：
 
 ```ts
 interface QuickShipDraft {
+  title: string
   text: string
   links: Array<{ localId: string; title: string; url: string }>
   files: QuickShipFileDraft[]
@@ -101,7 +102,7 @@ content.references[]
 
 页面固定展示“留言 / 链接 / 文件 / 引用”四个区域。留言允许为空；链接仅接受 `http/https`，支持添加、修改、删除；文件一行一个，不渲染图片宫格；引用只能由业务页面带入，不在飞船页内浏览资源。
 
-至少存在一项内容才允许发送，并在前端提前校验：单文件不超过 50 MiB，最多 10 个文件，合计不超过 500 MiB；后端仍是最终校验来源。微信的 `image/fileType` 标签必须经过文件名推断为标准 MIME，0 字节文件禁止添加。
+标题为必填项，留言、链接、文件和引用内容均可为空；空内容飞船仍允许创建。前端继续校验：单文件不超过 50 MiB，最多 10 个文件，合计不超过 500 MiB；文件限制后端仍是最终校验来源。微信的 `image/fileType` 标签必须经过文件名推断为标准 MIME，0 字节文件禁止添加。
 
 Create 后：
 
@@ -113,11 +114,11 @@ Create 后：
 - Complete 只允许已完成 OSS 上传的文件参与；Complete 暂时失败只重新校验，不能把 pending/uploading 文件误当成已上传对象。
 - `UPLOAD_DANGEROUS_CONTENT`、`UPLOAD_CONTENT_TYPE_MISMATCH` 等确定性错误不自动重试。
 
-Ready 后显示收船码、倒计时、领取进度；H5 显示复制分享链接，微信只显示复制收船码和“分享给好友”。ready 状态不显示“再送一艘”，只有 consumed/expired/cancelled 才显示。
+Ready 后显示飞船码、倒计时、领取进度；H5 显示复制分享链接，微信显示“分享给微信好友”和“复制网页链接”。ready 状态不显示“再送一艘”，只有 consumed/expired/cancelled 才显示。
 
 ## 4. Receiver
 
-手工输入 6 位收船码直接 `resolve({ code })`，不调用 Inspect。微信/H5 分享打开后先 `inspect({ shareToken })`，展示摘要、剩余领取次数和有效期；不提前展示正文、URL、文件名或引用标题。Inspect 成功后点击“收船”才 Resolve。
+手工输入 6 位飞船码直接 `resolve({ code })`，不调用 Inspect。微信/H5 分享打开后先 `inspect({ shareToken })`，展示摘要、剩余领取次数和有效期；不提前展示正文、URL、文件名或引用标题。Inspect 成功后点击“收船”才 Resolve。
 
 每一次新的领取操作生成新的 `claimRequestId`，只保存在 `useQuickTransfer` 内存中，不使用 Anonymous ID、Storage 或 Pinia 持久化。网络错误、超时、响应丢失和 5xx 后的用户重试必须复用原 ID；明确业务失败或成功后清除，下一次主动领取生成新 ID。
 
@@ -193,7 +194,7 @@ QUICK_TRANSFER_NOT_CONFIGURED
 
 `src/features/quick-transfer/visual.ts` 只公开现有 OSS PNG 和两种 UI Transition 类型：`depart`、`arrive`。`QuickShipTransition` 是 fixed Overlay，仅负责一次性 CSS 动画、图片加载失败兜底和 `finished` 事件，不参与 API、上传、领取或定时器。发送按钮点击后立即播放 `depart`；Resolve 成功后播放 `arrive`，且 Arrive 通过独立方向容器水平翻转 PNG，让船头始终朝运动方向；动画结束或图片加载失败均收口 Overlay。H5 的 reduced-motion 环境关闭动画，但仍由生命周期定时器触发完成事件。
 
-业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用收船码票据样式，接收成功后再展开留言、链接、文件、引用内容。
+业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用飞船码票据样式，接收成功后再展开留言、链接、文件、引用内容。
 
 发送或接收处于 `creating`、`uploading`、`completing`、`inspecting`、`resolving` 时锁定 Hero 的 Mode Switch，仅降低视觉强调，不弹 Toast；Ready、consumed、expired、cancelled、received 仍允许切换。Receive 的首次领取和手工码 retry 统一经过页面 `performReceive`，只有 Resolve 成功才播放 `arrive`，失败不会自动重试或占用领取次数。
 
@@ -229,7 +230,7 @@ subPackages/tools/quick-transfer/sent/detail
 
 召回只在详情返回 `canRecall === true` 时显示，直接复用当前 `cancelQuickTransfer(transferId)`（`DELETE /quick-transfers/:transferId`），不修改当前发送 Session，也不调用删除发送历史接口。后端返回 `TRANSFER_NOT_FOUND` 或 `TRANSFER_NOT_AVAILABLE` 时提示「飞船状态已经更新」并刷新详情。
 
-删除发送历史只调用 `deleteQuickTransferSentRecord(sentRecordId)`，不自动召回飞船；接收方 Receipt、已领取内容和发送方飞船状态不因删除历史而改变。发送历史不展示或重新生成旧收船码、`shareToken`、分享链接。
+删除发送历史只调用 `deleteQuickTransferSentRecord(sentRecordId)`，不自动召回飞船；接收方 Receipt、已领取内容和发送方飞船状态不因删除历史而改变。发送历史不展示或重新生成旧飞船码、`shareToken`、分享链接。
 
 历史附件只通过 `postQuickTransferSentRecordsFilesAccess` 获取 Signed URL，再复用平台文件 Adapter 打开；不调用 Resolve、不调用当前飞船附件 Access、不携带 `claimToken`。`available === false` 直接显示「已过期」并禁用；永久不可用错误将本地文件标记不可用，临时错误保留重试能力。
 
@@ -247,4 +248,32 @@ Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和�
 
 管理首页不再展示 `操作 / 我发送的 / 我收到的` 三个 Tab，也不再嵌入历史列表或维护历史刷新状态；页面固定为 Hero、同宽的「发船 / 收船」主操作，以及「发送记录 / 接收记录」两个轻量文字入口，分别进入 `sent/list` 和 `receipt/list`。主操作区与历史记录区通过标题、分隔线和留白建立明显层级，历史入口不与发船/收船使用同等按钮视觉。`?tab=sent`、`?tab=received` 作为旧入口继续由首页重定向到对应独立列表，`?tab=operation` 直接留在首页；`shareToken` 和 `mode=receive` 继续重定向到 Receiver。
 
-发送创建页的「添加链接 / 添加文件」保持 Secondary Action 层级，使用主题边界增强识别度，不改既有选择器和弹层行为。主按钮只表达发送状态：空闲时固定为「发送飞船」，创建、上传、确认阶段显示对应进行中状态；空内容通过「传输内容」标题下的橙色独立提示展示，真正发送前仍由前端校验拦截，不修改 `hasQuickShipContent` 或后端空内容规则。只有发送进行中或存在当前处理中飞船时禁用主按钮，文件/API 错误继续独立展示。
+发送创建页的「添加链接 / 添加文件」保持 Secondary Action 层级，使用主题边界增强识别度，不改既有选择器和弹层行为。主按钮只表达发送状态：空闲时固定为「发送飞船」，创建、上传、确认阶段显示对应进行中状态；标题通过必填校验，内容可以为空，不再展示或执行“请至少添加一项内容”提示。只有发送进行中或存在当前处理中飞船时禁用主按钮，文件/API 错误继续独立展示。
+
+## 14. Quick Transfer 前端体验收口
+
+飞船码是当前 6 位数字 Code 的统一产品名称。Ready 票据在飞船码右侧提供复制图标，复制内容固定为 `飞船码：583921`，不再额外展示重复的文字复制按钮。
+
+Receiver 输入框使用文本模式并允许整段粘贴；公共解析器优先识别 `飞船码：XXXXXX`、独立的 6 位英数字 token，再处理普通输入中的空格和大小写。解析后输入框只展示归一化结果；当前提交前校验仍严格遵守后端的 6 位纯数字契约，英数字结果仅作为未来兼容预留。
+
+H5 继续复制当前 Hash Router 下的完整 Receiver URL。微信小程序的“复制网页链接”复用 `VITE_PUBLIC_THIS_H5_URL`，生成包含 `#/subPackages/tools/quick-transfer/receive/index?shareToken=...` 的完整 H5 URL；配置缺失、本机地址或相对路径时隐藏该入口，不复制无效链接。本轮不新增游客身份归属、H5 Guest Session、后端改造或 H5 → 微信 JS-SDK 分享。
+
+## 15. 入口归类与发送引用选择
+
+飞船工具入口归入「记录」分类，保留原有 Quick Transfer 路由、分享路径和历史深链不变，仅调整工具目录分类与目录内排序。
+
+发送创建页的新增操作并列提供「新增文件」「新增链接」「新增引用」。引用通过 `QuickShipReferencePicker` 选择，先选择业务场景再选择内容。V1 仅开放「备忘录」场景，备忘录数据分别读取「我创建的」与「分享给我的」可访问集合，并在选项前展示 `[我的]` 或 `[分享]` 来源标识；确认后转换为现有 `memoDetail` Reference，不引入新的后端 Reference 类型。
+
+## 16. V3.x 标题、历史记录管理与兑换券分享
+
+Quick Transfer 的 `QuickShipDraft` 正式包含必填 `title`，标题与可选的 `text` 内容语义分离。标题在发送表单中置于内容区域顶部，单行、最多 40 个字符，发送前执行 trim 与空值/长度校验；留言、链接、文件和引用均可为空，Create 请求携带空内容包时仍允许创建。`hasQuickShipContent(draft)` 仅作为内容判断工具保留，不再阻止只有标题的空飞船。Create 请求携带 trim 后的 `title`，发送结果上下文、Inspect / Resolve 接收结果及 Sent / Receipt 详情均保留并展示标题。
+
+历史记录列表以 `title` 为记录识别信息，旧数据仅在标题为空时兼容 `displayTitle`，最终回退为「飞船」；列表卡片不再主展示内容类型图标、summary 或 preview，仅保留标题、时间、必要状态/领取进度与右下角删除热区。删除入口先通过 `uni.showModal` 二次确认，按记录 ID 管理删除中状态，成功后移除当前卡片并提示「已删除」，失败时保留记录并提示「删除失败，请重试」。发送记录删除不召回飞船，接收记录删除不撤销领取；详情页不重复增加删除按钮。列表删除均通过 Quick Transfer Feature Adapter 调用已生成的 SentRecord / Receipt 删除 API。
+
+魔灵召唤兑换券详情页的好友分享与朋友圈分享共用动态标题：保留现有固定前缀，有有效券码时追加 `｜券码`，券码未加载或为空时回退固定前缀；分享路径、详情参数和分享图片保持不变。
+
+## 17. 飞船品牌图片统一
+
+飞船品牌视觉统一使用公开 OSS 图片 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/quick-ship.png`，该地址同时用于首页与工具目录入口、飞船动画以及微信小程序工具分享和收船分享封面，不保留历史飞船图片或其他飞船分享封面地址。
+
+`ToolItem` 支持可选 `image` 字段。工具入口存在 `image` 时使用 `<image mode="aspectFit">`，否则继续使用 `icon`；飞船入口只配置共享图片，不使用 `send`、`paperplane`、`transfer`、`paperclip` 等通用图标。横向图片在既有图标容器内允许更宽展示，但不得撑高工具卡片。

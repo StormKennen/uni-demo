@@ -2,6 +2,7 @@
   import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipSendForm from '../components/QuickShipSendForm.vue'
+  import QuickShipReferencePicker from '../components/QuickShipReferencePicker.vue'
   import QuickShipTransition from '../components/QuickShipTransition.vue'
   import PageLayout from '@/components/PageLayout.vue'
   import { filePicker, isFilePickerCancel } from '@/platform/file'
@@ -19,9 +20,10 @@
   import {
     createQuickShipDraft,
     createQuickShipFileDraft,
-    hasQuickShipContent,
+    isValidQuickTransferTitle,
     isValidQuickTransferMaxClaims,
     isValidQuickTransferUrl,
+    normalizeQuickTransferTitle,
     validateQuickTransferFiles,
   } from '@/features/quick-transfer/helpers'
   import { getQuickTransferSendButtonLabel } from '@/features/quick-transfer/presentation'
@@ -30,7 +32,13 @@
   import { consumeQuickShipReferences } from '@/features/quick-transfer/reference/registry'
   import { setQuickTransferSendResultContext } from '@/features/quick-transfer/sendResultContext'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
-  import type { QuickShipDraft, QuickShipFileDraft, QuickShipLinkDraft, QuickTransferTtl } from '@/features/quick-transfer/types'
+  import type {
+    QuickShipDraft,
+    QuickShipFileDraft,
+    QuickShipLinkDraft,
+    QuickShipReferenceDraft,
+    QuickTransferTtl,
+  } from '@/features/quick-transfer/types'
   import { getQuickShipTransitionForSend, type QuickShipTransitionType } from '@/features/quick-transfer/visual'
 
   interface LinkEditor {
@@ -44,8 +52,10 @@
   const isMiniProgram = ref(false)
   const isLoggedIn = ref(false)
   const showSendGate = ref(false)
+  const titleError = ref('')
   const fileError = ref('')
   const showFileSourceSheet = ref(false)
+  const showReferencePicker = ref(false)
   const linkEditor = ref<LinkEditor | null>(null)
   const shipTransition = ref<QuickShipTransitionType | null>(null)
 
@@ -59,7 +69,6 @@
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
   const hasFailedUploadFiles = computed(() => draft.value.files.some(file => file.uploadState === 'error'))
-  const contentWarning = computed(() => (hasQuickShipContent(draft.value) ? '' : '请至少添加一项内容'))
   const isSubmitHardDisabled = computed(() => isSending.value || Boolean(quickTransfer.transferId.value))
   const sendButtonLabel = computed(() => getQuickTransferSendButtonLabel(quickTransfer.sendState.value, quickTransfer.uploadProgress.value))
 
@@ -161,15 +170,28 @@
     if (!isSending.value) draft.value.references = draft.value.references.filter(item => item.localId !== localId)
   }
 
+  const openAddReference = () => {
+    if (!isSending.value) showReferencePicker.value = true
+  }
+
+  const addReference = (reference: QuickShipReferenceDraft) => {
+    if (isSending.value) return
+    draft.value.references.push(reference)
+    showReferencePicker.value = false
+  }
+
   const submitSend = async () => {
     if (!canSend.value) {
       showSendGate.value = true
       return
     }
     fileError.value = ''
-    if (!hasQuickShipContent(draft.value)) {
+    const normalizedTitle = normalizeQuickTransferTitle(draft.value.title)
+    if (!isValidQuickTransferTitle(draft.value.title)) {
+      titleError.value = normalizedTitle ? '标题最多 40 个字符' : '请输入飞船标题'
       return
     }
+    titleError.value = ''
     if (!isValidQuickTransferMaxClaims(draft.value.maxClaims)) {
       fileError.value = '领取次数需设置为 1～10 次'
       return
@@ -188,6 +210,7 @@
       return
     }
     setQuickTransferSendResultContext({
+      title: normalizedTitle,
       transferId: status.transferId,
       code: quickTransfer.code.value,
       shareToken: quickTransfer.shareToken.value,
@@ -225,6 +248,11 @@
 
   const updateDraftText = (value: string) => {
     draft.value.text = value
+  }
+
+  const updateDraftTitle = (value: string) => {
+    draft.value.title = value
+    titleError.value = ''
   }
 
   const updateExpiresIn = (value: QuickTransferTtl) => {
@@ -272,7 +300,7 @@
           :draft="draft"
           :is-sending="isSending"
           :is-submit-hard-disabled="isSubmitHardDisabled"
-          :content-warning="contentWarning"
+          :title-error="titleError"
           :send-button-label="sendButtonLabel"
           :file-error="fileError"
           :send-error="sendErrorMessage"
@@ -282,6 +310,7 @@
           :can-retry-complete="quickTransfer.canRetryComplete.value"
           :max-file-count="MAX_QUICK_TRANSFER_FILE_COUNT"
           :ttl-options="QUICK_TRANSFER_TTL_OPTIONS"
+          @update:title="updateDraftTitle"
           @update:text="updateDraftText"
           @update:expires-in="updateExpiresIn"
           @update:max-claims="updateMaxClaims"
@@ -289,6 +318,7 @@
           @edit-link="openEditLink"
           @remove-link="removeLink"
           @add-file="openFileSourceSheet"
+          @add-reference="openAddReference"
           @remove-file="removeFile"
           @remove-reference="removeReference"
           @submit="submitSend"
@@ -299,6 +329,8 @@
     </view>
 
     <QuickShipTransition v-if="shipTransition" :type="shipTransition" @finished="shipTransition = null" />
+
+    <QuickShipReferencePicker :visible="showReferencePicker" @cancel="showReferencePicker = false" @selected="addReference" />
 
     <view v-if="showFileSourceSheet" class="sheet-mask" @click="showFileSourceSheet = false">
       <view class="source-sheet" @click.stop>

@@ -22,7 +22,12 @@
           <view class="workbench-grid">
             <view v-for="item in workbenchTools" :key="item.key" class="tool-card" @click="handleToolClick(item.key, item.tool)">
               <view class="tool-icon" :style="{ background: toolAccent(item.tool.gradient).soft }">
-                <uni-icons :type="item.tool.icon as any" size="22" :color="toolAccent(item.tool.gradient).color" />
+                <image v-if="item.tool.image" class="tool-image" :src="item.tool.image" mode="aspectFit" />
+                <uni-icons
+                  v-else-if="item.tool.icon"
+                  :type="item.tool.icon as any"
+                  size="22"
+                  :color="toolAccent(item.tool.gradient).color" />
               </view>
               <text class="tool-name">{{ item.tool.name }}</text>
               <text class="tool-desc">{{ item.tool.desc }}</text>
@@ -304,6 +309,11 @@
     justify-content: center;
     border-radius: 22rpx;
     background: var(--theme-surface-2);
+  }
+
+  .tool-image {
+    width: 96rpx;
+    height: 68rpx;
   }
 
   .tool-name,

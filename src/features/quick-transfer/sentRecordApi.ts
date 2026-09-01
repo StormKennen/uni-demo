@@ -1,5 +1,5 @@
 import { normalizeQuickTransferContent, unwrapQuickTransferData } from './response'
-import { normalizeQuickTransferHistoryMetadata } from './history'
+import { getQuickTransferHistoryTitle, normalizeQuickTransferHistoryMetadata } from './history'
 import type {
   QuickTransferFileAccessResult,
   QuickTransferSentRecordDetail,
@@ -96,7 +96,7 @@ const normalizeListItem = (value: unknown): QuickTransferSentRecordListItem | un
   return {
     sentRecordId: requiredString(record, 'sentRecordId'),
     transferId: requiredString(record, 'transferId'),
-    displayTitle: requiredString(record, 'displayTitle'),
+    displayTitle: getQuickTransferHistoryTitle(record),
     sentAt: requiredString(record, 'sentAt'),
     status: normalizeStatus(record.status),
     claimCount: normalizeCount(record.claimCount),
@@ -128,7 +128,7 @@ export const normalizeQuickTransferSentRecordDetail = (response: unknown): Quick
   return {
     sentRecordId: requiredString(record, 'sentRecordId'),
     transferId: requiredString(record, 'transferId'),
-    displayTitle: requiredString(record, 'displayTitle'),
+    displayTitle: getQuickTransferHistoryTitle(record),
     sentAt: requiredString(record, 'sentAt'),
     status: normalizeStatus(record.status),
     claimCount: normalizeCount(record.claimCount),

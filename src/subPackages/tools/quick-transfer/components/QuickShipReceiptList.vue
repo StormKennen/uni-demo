@@ -18,6 +18,22 @@
     uni.navigateTo({ url: `${QUICK_TRANSFER_RECEIPT_DETAIL_ROUTE}?receiptId=${encodeURIComponent(receiptId)}` })
   }
 
+  const confirmDelete = (receiptId: string): void => {
+    if (receipts.isDeletingRecord(receiptId)) return
+    uni.showModal({
+      title: '删除接收记录',
+      content: '删除后将不再在接收记录中显示，已完成的领取不会撤销。确定删除吗？',
+      cancelText: '取消',
+      confirmText: '删除',
+      success: result => {
+        if (!result.confirm) return
+        void receipts.deleteReceipt(receiptId).then(success => {
+          uni.showToast({ title: success ? '已删除' : receipts.error.value?.message || '删除失败，请重试', icon: 'none' })
+        })
+      },
+    })
+  }
+
   const refresh = async (): Promise<boolean> => {
     if (!props.canViewHistory) return false
     return receipts.loadReceipts(true)
@@ -72,12 +88,11 @@
         v-for="item in items"
         :key="item.receiptId"
         mode="received"
-        :primary-type="item.primaryType"
         :title="item.displayTitle"
-        :summary="item.summary"
-        :preview="item.preview"
         :time="item.claimedAt"
-        @select="openDetail(item.receiptId)" />
+        :deleting="receipts.isDeletingRecord(item.receiptId)"
+        @select="openDetail(item.receiptId)"
+        @delete="confirmDelete(item.receiptId)" />
       <view v-if="isLoadingMore" class="loading-more">正在加载更多…</view>
       <view v-else-if="loadMoreError" class="load-more-error">
         <text>{{ loadMoreError.message }}</text>

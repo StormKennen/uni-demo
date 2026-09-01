@@ -94,6 +94,17 @@ describe('useQuickTransferSentRecords', () => {
     expect(sessionMocks.cancelQuickTransfer).toHaveBeenCalledTimes(1)
   })
 
+  it('tracks deletion by record id and keeps a failed record visible', async () => {
+    apiMocks.listQuickTransferSentRecords.mockResolvedValue(listResult(1, 'sent-3'))
+    apiMocks.deleteQuickTransferSentRecord.mockRejectedValueOnce({ code: 'NETWORK_ERROR' })
+    const sentRecords = useQuickTransferSentRecords()
+
+    await sentRecords.loadSentRecords()
+    expect(await sentRecords.deleteSentRecord('sent-3')).toBe(false)
+    expect(sentRecords.isDeletingRecord('sent-3')).toBe(false)
+    expect(sentRecords.items.value.map(item => item.sentRecordId)).toEqual(['sent-3'])
+  })
+
   it('accesses sent files without resolving and marks only unavailable files', async () => {
     apiMocks.getQuickTransferSentRecord.mockResolvedValue({
       sentRecordId: 'sent-2',

@@ -77,24 +77,6 @@
     }
   }
 
-  const confirmDelete = () => {
-    if (!receiptId.value || receipts.isLoading.value) return
-    uni.showModal({
-      title: '删除已收记录',
-      content: '删除这条已收飞船记录？只删除本条记录，不影响发送方文件或原飞船。',
-      success: result => {
-        if (!result.confirm) return
-        void receipts.deleteReceipt(receiptId.value).then(success => {
-          if (success) {
-            uni.navigateBack()
-            return
-          }
-          if (receipts.error.value?.message) uni.showToast({ title: receipts.error.value.message, icon: 'none' })
-        })
-      },
-    })
-  }
-
   onLoad((options: Record<string, string | undefined>) => {
     receiptId.value = options.receiptId?.trim() || ''
     loadDetail()
@@ -142,11 +124,6 @@
           @open-url="openUrl"
           @download-file="downloadFile"
           @open-reference="openReference" />
-
-        <view class="detail-actions">
-          <button class="quick-ship-button delete-button" @click="confirmDelete">删除记录</button>
-          <text class="delete-hint">只删除这条已收记录</text>
-        </view>
       </template>
     </view>
   </PageLayout>
@@ -183,8 +160,7 @@
   }
 
   .detail-meta,
-  .state-description,
-  .delete-hint {
+  .state-description {
     display: block;
     margin-top: 10rpx;
     color: var(--theme-text-secondary);
@@ -216,27 +192,6 @@
     color: var(--theme-text);
     background: var(--theme-surface-muted);
     font-size: 24rpx;
-  }
-
-  .detail-actions {
-    margin-top: 38rpx;
-    padding-top: 24rpx;
-    border-top: 1rpx solid var(--theme-border);
-    text-align: center;
-  }
-
-  .delete-button {
-    min-height: 70rpx;
-    padding: 0 24rpx;
-    border: 0;
-    color: #dc2626;
-    background: transparent;
-    font-size: 25rpx;
-  }
-
-  .delete-hint {
-    margin-top: 0;
-    font-size: 21rpx;
   }
 
   .quick-ship-button::after {

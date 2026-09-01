@@ -8,7 +8,7 @@ import {
   shouldShowQuickTransferHistoryPreview,
   shouldShowQuickTransferHistorySummary,
 } from './presentation'
-import { normalizeQuickTransferHistoryMetadata } from './history'
+import { getQuickTransferHistoryTitle, normalizeQuickTransferHistoryMetadata } from './history'
 
 const emptySummary = {
   hasText: false,
@@ -87,5 +87,11 @@ describe('quick transfer history presentation', () => {
       primaryType: 'image',
       summary: { ...emptySummary, fileCount: 3, imageCount: 3 },
     })
+  })
+
+  it('consumes the backend title and falls back only when it is empty', () => {
+    expect(getQuickTransferHistoryTitle({ title: '项目交接资料', displayTitle: '旧标题' })).toBe('项目交接资料')
+    expect(getQuickTransferHistoryTitle({ title: '   ', displayTitle: '旧标题' })).toBe('旧标题')
+    expect(getQuickTransferHistoryTitle({ title: null })).toBe('飞船')
   })
 })

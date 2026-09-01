@@ -18,6 +18,22 @@
     uni.navigateTo({ url: `${QUICK_TRANSFER_SENT_RECORD_DETAIL_ROUTE}?sentRecordId=${encodeURIComponent(sentRecordId)}` })
   }
 
+  const confirmDelete = (sentRecordId: string): void => {
+    if (sentRecords.isDeletingRecord(sentRecordId)) return
+    uni.showModal({
+      title: '删除发送记录',
+      content: '删除后将不再在发送记录中显示，不会召回飞船。确定删除吗？',
+      cancelText: '取消',
+      confirmText: '删除',
+      success: result => {
+        if (!result.confirm) return
+        void sentRecords.deleteSentRecord(sentRecordId).then(success => {
+          uni.showToast({ title: success ? '已删除' : sentRecords.error.value?.message || '删除失败，请重试', icon: 'none' })
+        })
+      },
+    })
+  }
+
   const refresh = async (): Promise<boolean> => {
     if (!props.canViewHistory) return false
     return sentRecords.loadSentRecords(true)
@@ -72,15 +88,14 @@
         v-for="item in items"
         :key="item.sentRecordId"
         mode="sent"
-        :primary-type="item.primaryType"
         :title="item.displayTitle"
-        :summary="item.summary"
-        :preview="item.preview"
         :time="item.sentAt"
         :status="item.status"
         :claim-count="item.claimCount"
         :max-claims="item.maxClaims"
-        @select="openDetail(item.sentRecordId)" />
+        :deleting="sentRecords.isDeletingRecord(item.sentRecordId)"
+        @select="openDetail(item.sentRecordId)"
+        @delete="confirmDelete(item.sentRecordId)" />
       <view v-if="isLoadingMore" class="loading-more">正在加载更多…</view>
       <view v-else-if="loadMoreError" class="load-more-error">
         <text>{{ loadMoreError.message }}</text>

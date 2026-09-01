@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { cancelQuickTransfer } from './api'
 import {
   accessQuickTransferSentRecordFile,
@@ -30,18 +30,32 @@ export const useQuickTransferSentRecords = () => {
   const pagination = ref<QuickTransferReceiptPagination>(initialPagination())
   const isLoading = ref(false)
   const isLoadingMore = ref(false)
-  const isDeleting = ref(false)
+  const deletingIds = ref<Set<string>>(new Set())
+  const isDeleting = computed(() => deletingIds.value.size > 0)
   const isRecalling = ref(false)
   const isDownloading = ref(false)
   const error = ref<QuickTransferErrorInfo | null>(null)
   const loadMoreError = ref<QuickTransferErrorInfo | null>(null)
+  const hiddenRecordIds = new Set<string>()
+
+  const isDeletingRecord = (sentRecordId: string): boolean => deletingIds.value.has(sentRecordId)
+
+  const setDeleting = (sentRecordId: string, deleting: boolean): void => {
+    const next = new Set(deletingIds.value)
+    if (deleting) next.add(sentRecordId)
+    else next.delete(sentRecordId)
+    deletingIds.value = next
+  }
 
   const applyListResult = (result: QuickTransferSentRecordListResult, reset: boolean) => {
     if (reset) {
-      items.value = result.items
+      items.value = result.items.filter(item => !hiddenRecordIds.has(item.sentRecordId))
     } else {
       const existingIds = new Set(items.value.map(item => item.sentRecordId))
-      items.value = [...items.value, ...result.items.filter(item => !existingIds.has(item.sentRecordId))]
+      items.value = [
+        ...items.value,
+        ...result.items.filter(item => !existingIds.has(item.sentRecordId) && !hiddenRecordIds.has(item.sentRecordId)),
+      ]
     }
     pagination.value = result.pagination
   }
@@ -104,19 +118,20 @@ export const useQuickTransferSentRecords = () => {
   }
 
   const deleteSentRecord = async (sentRecordId: string): Promise<boolean> => {
-    if (!sentRecordId || isDeleting.value || isRecalling.value || isLoading.value) return false
-    isDeleting.value = true
+    if (!sentRecordId || isDeletingRecord(sentRecordId) || isRecalling.value || isLoading.value) return false
+    setDeleting(sentRecordId, true)
     error.value = null
     try {
       await deleteQuickTransferSentRecord(sentRecordId)
+      hiddenRecordIds.add(sentRecordId)
       items.value = items.value.filter(item => item.sentRecordId !== sentRecordId)
       if (detail.value?.sentRecordId === sentRecordId) detail.value = null
       return true
     } catch (cause) {
-      error.value = toQuickTransferErrorInfo(cause, '发送记录删除失败，请稍后重试')
+      error.value = toQuickTransferErrorInfo(cause, '删除失败，请重试')
       return false
     } finally {
-      isDeleting.value = false
+      setDeleting(sentRecordId, false)
     }
   }
 
@@ -166,6 +181,8 @@ export const useQuickTransferSentRecords = () => {
     isLoading,
     isLoadingMore,
     isDeleting,
+    deletingIds,
+    isDeletingRecord,
     isRecalling,
     isDownloading,
     error,

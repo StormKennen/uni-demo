@@ -1,5 +1,5 @@
+import { SWC_GAME_COUPON_CONFIG } from '../../game-coupons/config'
 import type { ShareConfig } from '@/utils/share'
-import { SWC_GAME_COUPON_CONFIG } from '@/subPackages/tools/game-coupons/config'
 
 export interface TimelineShareConfig {
   title: string
@@ -116,7 +116,8 @@ export function buildSwcCouponDetailShare(options: {
     .replace(/\s+/g, ' ')
     .trim()
   const normalizedSharerName = sharerName.length > 12 ? `${sharerName.slice(0, 12)}…` : sharerName
-  const title = `${normalizedSharerName || '好友'}分享了魔灵召唤兑换券给你`
+  const couponCode = String(options.code || '').trim()
+  const title = `${normalizedSharerName || '好友'}分享了魔灵召唤兑换券给你${couponCode ? `｜${couponCode}` : ''}`
   return createShare(
     title,
     SWC_COUPON_DETAIL_PATH,

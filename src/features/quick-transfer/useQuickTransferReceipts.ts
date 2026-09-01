@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   accessQuickTransferReceiptFile,
   deleteQuickTransferReceipt,
@@ -28,16 +28,31 @@ export const useQuickTransferReceipts = () => {
   const pagination = ref<QuickTransferReceiptPagination>(initialPagination())
   const isLoading = ref(false)
   const isLoadingMore = ref(false)
+  const deletingIds = ref<Set<string>>(new Set())
+  const isDeleting = computed(() => deletingIds.value.size > 0)
   const detail = ref<QuickTransferReceiptDetail | null>(null)
   const error = ref<QuickTransferErrorInfo | null>(null)
   const loadMoreError = ref<QuickTransferErrorInfo | null>(null)
+  const hiddenRecordIds = new Set<string>()
+
+  const isDeletingRecord = (receiptId: string): boolean => deletingIds.value.has(receiptId)
+
+  const setDeleting = (receiptId: string, deleting: boolean): void => {
+    const next = new Set(deletingIds.value)
+    if (deleting) next.add(receiptId)
+    else next.delete(receiptId)
+    deletingIds.value = next
+  }
 
   const applyListResult = (result: QuickTransferReceiptListResult, reset: boolean) => {
     if (reset) {
-      items.value = result.items
+      items.value = result.items.filter(item => !hiddenRecordIds.has(item.receiptId))
     } else {
       const existingIds = new Set(items.value.map(item => item.receiptId))
-      items.value = [...items.value, ...result.items.filter(item => !existingIds.has(item.receiptId))]
+      items.value = [
+        ...items.value,
+        ...result.items.filter(item => !existingIds.has(item.receiptId) && !hiddenRecordIds.has(item.receiptId)),
+      ]
     }
     pagination.value = result.pagination
   }
@@ -95,19 +110,20 @@ export const useQuickTransferReceipts = () => {
   }
 
   const deleteReceipt = async (receiptId: string): Promise<boolean> => {
-    if (!receiptId || isLoading.value) return false
-    isLoading.value = true
+    if (!receiptId || isDeletingRecord(receiptId) || isLoading.value) return false
+    setDeleting(receiptId, true)
     error.value = null
     try {
       await deleteQuickTransferReceipt(receiptId)
+      hiddenRecordIds.add(receiptId)
       items.value = items.value.filter(item => item.receiptId !== receiptId)
       if (detail.value?.receiptId === receiptId) detail.value = null
       return true
     } catch (cause) {
-      error.value = toQuickTransferErrorInfo(cause, '已收飞船删除失败，请稍后重试')
+      error.value = toQuickTransferErrorInfo(cause, '删除失败，请重试')
       return false
     } finally {
-      isLoading.value = false
+      setDeleting(receiptId, false)
     }
   }
 
@@ -139,6 +155,9 @@ export const useQuickTransferReceipts = () => {
     pagination,
     isLoading,
     isLoadingMore,
+    isDeleting,
+    deletingIds,
+    isDeletingRecord,
     detail,
     error,
     loadMoreError,

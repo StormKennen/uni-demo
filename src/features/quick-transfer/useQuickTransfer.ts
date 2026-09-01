@@ -13,9 +13,10 @@ import { QUICK_TRANSFER_POLL_INTERVAL, QUICK_TRANSFER_UPLOAD_CONCURRENCY } from 
 import {
   canTransitionQuickTransferSendState,
   formatQuickTransferCountdown,
-  hasQuickShipContent,
   isQuickTransferDownloadValid,
   isQuickTransferTerminalStatus,
+  isValidQuickTransferTitle,
+  normalizeQuickTransferTitle,
   validateQuickTransferFiles,
 } from './helpers'
 import {
@@ -368,6 +369,7 @@ export const useQuickTransfer = () => {
     senderStatus.value = null
     countdown.value = ''
     if (draft) {
+      draft.title = ''
       draft.text = ''
       draft.links.splice(0)
       draft.files.splice(0)
@@ -378,8 +380,11 @@ export const useQuickTransfer = () => {
   const send = async (draft: QuickShipDraft): Promise<boolean> => {
     if (isActionRunning.value || sendState.value === 'ready' || ['uploading', 'completing'].includes(sendState.value)) return false
     if (sendState.value === 'error' && transferId.value) return false
-    if (!hasQuickShipContent(draft)) {
-      sendError.value = { code: 'EMPTY_CONTENT', message: '请至少添加一项内容' }
+    if (!isValidQuickTransferTitle(draft.title)) {
+      sendError.value = {
+        code: 'INVALID_TITLE',
+        message: normalizeQuickTransferTitle(draft.title).length > 0 ? '标题最多 40 个字符' : '请输入飞船标题',
+      }
       return false
     }
     const fileError = validateQuickTransferFiles(draft.files)
@@ -391,6 +396,7 @@ export const useQuickTransfer = () => {
     sendError.value = null
     sendState.value = 'creating'
     const payload: QuickTransferCreatePayload = {
+      title: normalizeQuickTransferTitle(draft.title),
       content: {
         text: draft.text.trim() || undefined,
         links: draft.links.map(link => ({ title: link.title.trim() || undefined, url: link.url.trim() })),

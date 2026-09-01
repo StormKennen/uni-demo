@@ -3,6 +3,7 @@
 
   interface Props {
     state: QuickTransferSendState
+    shipTitle: string
     title: string
     description: string
     code: string
@@ -31,10 +32,16 @@
         }}</text>
       </view>
       <text class="result-title">{{ props.title }}</text>
+      <text v-if="props.shipTitle" class="result-ship-title">{{ props.shipTitle }}</text>
       <text class="result-description">{{ props.description }}</text>
       <template v-if="props.state === 'ready'">
-        <text class="result-label">收船码</text>
-        <text class="ready-code" selectable @click="emit('copyCode')">{{ props.code }}</text>
+        <text class="result-label">飞船码</text>
+        <view class="ready-code-row">
+          <text class="ready-code" selectable>{{ props.code }}</text>
+          <view class="code-copy-button" aria-label="复制飞船码" @click="emit('copyCode')">
+            <text class="copy-icon">⧉</text>
+          </view>
+        </view>
         <view class="result-meta">
           <view
             ><text class="meta-label">有效期</text><text class="meta-value">{{ props.countdown }} 后返航</text></view
@@ -44,14 +51,16 @@
           >
         </view>
         <!-- #ifdef MP-WEIXIN -->
-        <button class="quick-ship-button primary-button full-button" open-type="share">分享给好友</button>
+        <button class="quick-ship-button primary-button full-button" open-type="share">分享给微信好友</button>
+        <button v-if="props.showShareLink" class="quick-ship-button secondary-button full-button" @click="emit('copyShareUrl')"
+          >复制网页链接</button
+        >
         <!-- #endif -->
         <!-- #ifdef H5 -->
         <button v-if="props.showShareLink" class="quick-ship-button primary-button full-button" @click="emit('copyShareUrl')"
           >复制分享链接</button
         >
         <!-- #endif -->
-        <button class="quick-ship-button text-button full-button" @click="emit('copyCode')">复制飞船码</button>
         <button class="quick-ship-button text-button full-button" @click="emit('view-history')">查看发送记录</button>
         <view class="cancel-link" @click="emit('cancel')">召回飞船</view>
       </template>
@@ -135,6 +144,15 @@
     text-align: center;
   }
 
+  .result-ship-title {
+    display: block;
+    margin-top: 12rpx;
+    color: var(--theme-text);
+    font-size: 28rpx;
+    font-weight: 600;
+    text-align: center;
+  }
+
   .result-description {
     display: block;
     margin-top: 10rpx;
@@ -153,13 +171,40 @@
   }
 
   .ready-code {
-    display: block;
-    margin-top: 6rpx;
     color: var(--theme-brand);
     font-size: 64rpx;
     font-weight: 800;
     letter-spacing: 10rpx;
     text-align: center;
+  }
+
+  .ready-code-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    min-height: 92rpx;
+    margin-top: 6rpx;
+  }
+
+  .code-copy-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64rpx;
+    height: 64rpx;
+    margin-left: 2rpx;
+    border-radius: 32rpx;
+  }
+
+  .code-copy-button:active {
+    background: var(--theme-surface-muted);
+  }
+
+  .copy-icon {
+    color: var(--theme-brand);
+    font-size: 38rpx;
+    line-height: 1;
   }
 
   .result-meta {

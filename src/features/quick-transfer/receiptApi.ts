@@ -1,5 +1,5 @@
 import { normalizeQuickTransferContent, unwrapQuickTransferData } from './response'
-import { normalizeQuickTransferHistoryMetadata } from './history'
+import { getQuickTransferHistoryTitle, normalizeQuickTransferHistoryMetadata } from './history'
 import type {
   QuickTransferFileAccessResult,
   QuickTransferReceiptDetail,
@@ -48,7 +48,7 @@ const normalizeListItem = (value: unknown): QuickTransferReceiptListItem | undef
   const metadata = normalizeQuickTransferHistoryMetadata(record)
   return {
     receiptId: requiredString(record, 'receiptId'),
-    displayTitle: requiredString(record, 'displayTitle'),
+    displayTitle: getQuickTransferHistoryTitle(record),
     claimedAt: requiredString(record, 'claimedAt'),
     primaryType: metadata.primaryType,
     summary: metadata.summary,
@@ -99,7 +99,7 @@ export const normalizeQuickTransferReceiptDetail = (response: unknown): QuickTra
   const record = unwrapQuickTransferData(response)
   return {
     receiptId: requiredString(record, 'receiptId'),
-    displayTitle: requiredString(record, 'displayTitle'),
+    displayTitle: getQuickTransferHistoryTitle(record),
     claimedAt: requiredString(record, 'claimedAt'),
     content: normalizeQuickTransferContent(record.content),
   }

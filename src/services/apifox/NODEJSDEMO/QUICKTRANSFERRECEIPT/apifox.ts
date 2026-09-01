@@ -40,19 +40,6 @@ export const getQuickTransferReceiptsReceiptId = async (
 }
 
 /**
- * @description QuickTransferReceipt/删除已收飞船记录
- * @url DELETE /quick-transfer-receipts/{receiptId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-507052095
- */
-export const deleteQuickTransferReceiptsReceiptId = async (
-  receiptId: string,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<deleteQuickTransferReceiptsReceiptIdRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(`/quick-transfer-receipts/${receiptId}`, {}, _config)
-}
-
-/**
  * @description QuickTransferReceipt/重新访问已收飞船附件
  * @url POST /quick-transfer-receipts/{receiptId}/files/{fileId}/access
  * @host https://app.apifox.com/link/project/7048425/apis/api-507052096
@@ -67,4 +54,17 @@ export const postQuickTransferReceiptsFilesAccess = async (
     {},
     _config,
   )
+}
+
+/**
+ * @description QuickTransferReceipt/删除已收飞船记录
+ * @url DELETE /quick-transfer-receipts/{receiptId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-507052095
+ */
+export const deleteQuickTransferReceiptsReceiptId = async (
+  receiptId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<deleteQuickTransferReceiptsReceiptIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete(`/quick-transfer-receipts/${receiptId}`, {}, _config)
 }

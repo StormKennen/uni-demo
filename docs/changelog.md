@@ -7,6 +7,18 @@
 
 ## Unreleased
 
+- 2026-09-01 [tools/quick-transfer,home/workspaces,sharing] 飞船品牌图片统一迁移至 `/img/share/quick-ship.png`：工具配置新增图片型入口能力，首页工作台、工作间列表和完整工具目录均优先使用 `image` + `aspectFit`，飞船动画与微信分享封面同步复用同一资源并移除旧地址（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 放开空内容飞船发送：仅校验标题必填，移除“请至少添加一项内容”的发送拦截与表单提示，保留文件及其他参数校验（Codex）
+
+- 2026-09-01 [tools/quick-transfer/share] 修复“飞船票据”页微信分享生命周期未被编译器识别的问题，直接注册页面分享并沿用统一飞船封面（Codex）
+
+- 2026-09-01 [tools/quick-transfer,home/workspaces] 将飞船入口归入「记录」分类，并在发送页新增场景化备忘录引用选择面板，复用现有 memoDetail Reference 与 owned/shared 数据范围（Codex）
+
+- 2026-09-01 [tools/quick-transfer,tools/game-coupons] 完成 Quick Transfer V3.x 收口：新增必填飞船标题，精简历史卡片并支持按记录删除与二次确认；魔灵兑换券好友/朋友圈分享标题追加券码并保留无券码回退（Codex）
+
+- 2026-09-01 [tools/quick-transfer/share] 收口飞船码复制与跨端分享体验：支持整段粘贴自动识别，票据复制固定带飞船码标签，小程序复制完整 H5 Receiver URL，并在无有效公网配置时隐藏链接入口（Codex）
+
 - 2026-08-31 [tools/quick-transfer/v3.2] 重构飞船首页入口层级：突出发船/收船主操作，历史记录收纳为独立次级导航区并优化间距（Codex）
 
 - 2026-08-31 [tools/quick-transfer/v3.2] 收敛飞船首页为发船/收船与独立历史入口，兼容旧 tab 路由，并优化发送页添加按钮、空内容提示与稳定主按钮文案（Codex）

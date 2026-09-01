@@ -14,6 +14,16 @@ const asRecord = (value: unknown): Record<string, unknown> | null => {
   return value as Record<string, unknown>
 }
 
+export const normalizeQuickTransferHistoryTitle = (value: unknown): string => {
+  if (typeof value !== 'string') return '飞船'
+  return value.trim() || '飞船'
+}
+
+export const getQuickTransferHistoryTitle = (record: Record<string, unknown>): string => {
+  const title = typeof record.title === 'string' ? record.title.trim() : ''
+  return title || normalizeQuickTransferHistoryTitle(record.displayTitle)
+}
+
 const readCount = (record: Record<string, unknown>, key: string, fallbackKey?: string): number | undefined => {
   const rawValue = record[key] ?? (fallbackKey ? record[fallbackKey] : undefined)
   if (rawValue === undefined || rawValue === null || rawValue === '') return undefined

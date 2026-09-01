@@ -17,7 +17,7 @@
   import { getQuickTransferToolSharePayload } from '@/features/quick-transfer/share'
 
   const sentRecords = useQuickTransferSentRecords()
-  const { detail, error, isLoading, isDeleting, isRecalling, isDownloading } = sentRecords
+  const { detail, error, isLoading, isRecalling, isDownloading } = sentRecords
   const sentRecordId = ref('')
   const isInvalidSentRecordId = ref(false)
   const isSentRecordNotFound = computed(() => error.value?.code === 'QUICK_TRANSFER_SENT_RECORD_NOT_FOUND')
@@ -33,7 +33,7 @@
   const startProgressPolling = () => {
     if (progressTimer || isInvalidSentRecordId.value) return
     progressTimer = setInterval(() => {
-      if (!isLoading.value && !isRecalling.value && !isDeleting.value) void sentRecords.refreshSentRecordDetail()
+      if (!isLoading.value && !isRecalling.value) void sentRecords.refreshSentRecordDetail()
     }, 3000)
   }
 
@@ -99,28 +99,6 @@
           if (sentRecords.error.value?.code === 'TRANSFER_NOT_FOUND' || sentRecords.error.value?.code === 'TRANSFER_NOT_AVAILABLE') {
             void sentRecords.refreshSentRecordDetail()
             uni.showToast({ title: '飞船状态已经更新', icon: 'none' })
-            return
-          }
-          if (sentRecords.error.value?.message) uni.showToast({ title: sentRecords.error.value.message, icon: 'none' })
-        })
-      },
-    })
-  }
-
-  const confirmDelete = () => {
-    const current = detail.value
-    if (!current || sentRecords.isDeleting.value || sentRecords.isRecalling.value) return
-    const content = current.canRecall
-      ? '删除这条发送记录？\n\n这不会召回正在传输的飞船，\n其他人仍然可以继续领取。'
-      : '删除这条发送记录？\n\n只会删除历史记录，\n不会影响对方已经收到的内容。'
-    uni.showModal({
-      title: '删除发送记录',
-      content,
-      success: result => {
-        if (!result.confirm) return
-        void sentRecords.deleteSentRecord(current.sentRecordId).then(success => {
-          if (success) {
-            uni.navigateBack()
             return
           }
           if (sentRecords.error.value?.message) uni.showToast({ title: sentRecords.error.value.message, icon: 'none' })
@@ -198,10 +176,6 @@
           <button v-if="detail.canRecall" class="quick-ship-button recall-button" :disabled="isRecalling" @click="confirmRecall">
             {{ isRecalling ? '召回中…' : '召回飞船' }}
           </button>
-          <button class="quick-ship-button delete-button" :disabled="isDeleting" @click="confirmDelete">
-            {{ isDeleting ? '删除中…' : '删除记录' }}
-          </button>
-          <text class="delete-hint">删除历史不会自动召回飞船</text>
         </view>
       </template>
     </view>
@@ -239,8 +213,7 @@
   }
 
   .detail-meta,
-  .state-description,
-  .delete-hint {
+  .state-description {
     display: block;
     margin-top: 10rpx;
     color: var(--theme-text-secondary);
@@ -307,8 +280,7 @@
     text-align: center;
   }
 
-  .recall-button,
-  .delete-button {
+  .recall-button {
     min-height: 70rpx;
     margin: 0 auto;
     padding: 0 24rpx;
@@ -319,17 +291,6 @@
 
   .recall-button {
     color: var(--theme-brand);
-  }
-
-  .delete-button {
-    display: block;
-    margin-top: 4rpx;
-    color: #dc2626;
-  }
-
-  .delete-hint {
-    margin-top: 0;
-    font-size: 21rpx;
   }
 
   .quick-ship-button::after {

@@ -7,6 +7,7 @@ import {
 import type { QuickTransferSendResultContext } from './types'
 
 const context: QuickTransferSendResultContext = {
+  title: '项目资料',
   transferId: 'transfer-1',
   code: '583921',
   shareToken: 'share-1',

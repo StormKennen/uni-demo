@@ -60,6 +60,7 @@ export interface QuickShipFileDraft {
 }
 
 export interface QuickShipDraft {
+  title: string
   text: string
   links: QuickShipLinkDraft[]
   files: QuickShipFileDraft[]
@@ -95,6 +96,7 @@ export interface QuickTransferReferencePayload {
 }
 
 export interface QuickTransferCreatePayload {
+  title: string
   content: {
     text?: string
     links: Array<{ title?: string; url: string }>
@@ -242,6 +244,7 @@ export interface QuickTransferReceiveInput {
 }
 
 export interface QuickTransferInspectResult {
+  title: string
   transferId?: string
   expiresAt: string
   remainingClaims: number
@@ -249,6 +252,7 @@ export interface QuickTransferInspectResult {
 }
 
 export interface QuickTransferResolvedResult {
+  title: string
   transferId: string
   claimId: string
   receiptId?: string
@@ -269,6 +273,7 @@ export interface QuickTransferPageQuery {
 }
 
 export interface QuickTransferSendResultContext {
+  title: string
   transferId: string
   code: string
   shareToken: string

@@ -8,7 +8,7 @@
     draft: QuickShipDraft
     isSending: boolean
     isSubmitHardDisabled: boolean
-    contentWarning?: string
+    titleError: string
     sendButtonLabel: string
     fileError: string
     sendError: string
@@ -22,6 +22,7 @@
 
   const props = defineProps<Props>()
   const emit = defineEmits<{
+    'update:title': [value: string]
     'update:text': [value: string]
     'update:expires-in': [value: QuickTransferTtl]
     'update:max-claims': [value: number]
@@ -29,6 +30,7 @@
     'edit-link': [link: QuickShipLinkDraft]
     'remove-link': [link: QuickShipLinkDraft]
     'add-file': []
+    'add-reference': []
     'remove-file': [file: QuickShipFileDraft]
     'remove-reference': [localId: string]
     submit: []
@@ -53,6 +55,10 @@
     emit('update:text', getInputValue(event))
   }
 
+  const handleTitleInput = (event: { detail?: { value?: string } }) => {
+    emit('update:title', getInputValue(event))
+  }
+
   const handleTtlChange = (event: { detail: { value: number | string } }) => {
     const option = props.ttlOptions[Number(event.detail.value)]
     if (option) emit('update:expires-in', option.value)
@@ -66,11 +72,24 @@
 
 <template>
   <view class="send-form">
-    <view class="content-heading">
-      <view>
-        <text class="content-title">传输内容</text>
-        <text v-if="props.contentWarning" class="content-warning">⚠ {{ props.contentWarning }}</text>
+    <view class="title-field">
+      <view class="title-label-row">
+        <text class="title-label">标题 <text class="required-mark">*</text></text>
+        <text class="title-count">{{ draft.title.length }} / 40</text>
       </view>
+      <input
+        class="title-input"
+        type="text"
+        :value="draft.title"
+        :maxlength="40"
+        placeholder="输入飞船标题"
+        :disabled="props.isSending"
+        @input="handleTitleInput" />
+      <text v-if="props.titleError" class="title-error">{{ props.titleError }}</text>
+    </view>
+
+    <view class="content-heading">
+      <text class="content-title">传输内容</text>
       <text v-if="draft.files.length" class="content-count">{{ draft.files.length }} / {{ props.maxFileCount }} 个文件</text>
     </view>
 
@@ -81,6 +100,7 @@
     <view class="add-actions">
       <button class="quick-ship-button add-button" :disabled="props.isSending" @click="emit('add-link')">＋ 添加链接</button>
       <button class="quick-ship-button add-button" :disabled="props.isSending" @click="emit('add-file')">＋ 添加文件</button>
+      <button class="quick-ship-button add-button" :disabled="props.isSending" @click="emit('add-reference')">＋ 新增引用</button>
     </view>
 
     <view v-if="draft.links.length" class="content-list">
@@ -196,6 +216,51 @@
     margin-bottom: 24rpx;
   }
 
+  .title-field {
+    margin-bottom: 34rpx;
+  }
+
+  .title-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12rpx;
+  }
+
+  .title-label {
+    color: var(--theme-text);
+    font-size: 30rpx;
+    font-weight: 700;
+  }
+
+  .required-mark {
+    color: var(--theme-danger);
+  }
+
+  .title-count {
+    color: var(--theme-text-tertiary);
+    font-size: 21rpx;
+  }
+
+  .title-input {
+    width: 100%;
+    height: 84rpx;
+    padding: 0 22rpx;
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 18rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface);
+    font-size: 28rpx;
+  }
+
+  .title-error {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-danger);
+    font-size: 22rpx;
+  }
+
   .content-title,
   .settings-title {
     display: block;
@@ -213,14 +278,6 @@
 
   .content-count {
     margin-top: 0;
-  }
-
-  .content-warning {
-    display: block;
-    margin-top: 6rpx;
-    color: #b45309;
-    font-size: 22rpx;
-    line-height: 1.45;
   }
 
   .message-box {

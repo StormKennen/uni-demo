@@ -1,10 +1,12 @@
+import { QUICK_SHIP_IMAGE_URL } from './tool-assets'
 import type { ToolWorkspaceKey } from '@/config/workspaces'
 
 /** 工具节点（不含 key，key 作为字典的键） */
 export interface ToolItem {
   name: string
   desc: string
-  icon: string
+  icon?: string
+  image?: string
   gradient: string
   path: string
   workspace: ToolWorkspaceKey
@@ -279,6 +281,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
     requiresAuth: true,
   },
+  'quick-transfer': {
+    name: '飞船',
+    desc: '文本、链接、文件，快速送达另一端',
+    image: QUICK_SHIP_IMAGE_URL,
+    gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/quick-transfer/index',
+    workspace: 'record',
+    isNew: true,
+  },
   'family-tree': {
     name: '族谱',
     desc: '实时数据，支持编辑',
@@ -298,15 +309,6 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     path: '/subPackages/tools/markdown/index',
     workspace: 'text',
-  },
-  'quick-transfer': {
-    name: '飞船',
-    desc: '文本、图片、链接、文件，快速送到另一台设备',
-    icon: 'paperclip',
-    gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
-    path: '/subPackages/tools/quick-transfer/index',
-    workspace: 'text',
-    isNew: true,
   },
   'magnet-link': {
     name: '磁力链接',

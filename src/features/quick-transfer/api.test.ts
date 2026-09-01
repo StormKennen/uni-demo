@@ -5,6 +5,7 @@ describe('quick transfer V2 response adapter', () => {
   it('normalizes the fixed content order and file MIME', () => {
     expect(
       normalizeQuickTransferResolvedResult({
+        title: '项目资料',
         transferId: 'transfer-1',
         claimId: 'claim-id-1',
         receiptId: 'receipt-1',
@@ -18,6 +19,7 @@ describe('quick transfer V2 response adapter', () => {
         },
       }),
     ).toEqual({
+      title: '项目资料',
       transferId: 'transfer-1',
       claimId: 'claim-id-1',
       receiptId: 'receipt-1',
@@ -45,6 +47,7 @@ describe('quick transfer V2 response adapter', () => {
         },
       }),
     ).toEqual({
+      title: '飞船',
       transferId: 'transfer-2',
       claimId: 'claim-id-2',
       receiptId: undefined,
@@ -62,6 +65,7 @@ describe('quick transfer V2 response adapter', () => {
         content: { text: 'hello', links: [], files: [], references: [] },
       }),
     ).toEqual({
+      title: '飞船',
       transferId: 'transfer-text',
       claimId: 'claim-id-text',
       receiptId: undefined,
@@ -85,12 +89,14 @@ describe('quick transfer V2 response adapter', () => {
     expect(
       normalizeQuickTransferInspectResult({
         data: {
+          title: '项目资料',
           expiresAt: '2026-08-26T02:00:00.000Z',
           remainingClaims: 2,
           summary: { hasText: true, linkCount: 2, fileCount: 3, imageCount: 2, otherFileCount: 1, referenceCount: 1 },
         },
       }),
     ).toEqual({
+      title: '项目资料',
       transferId: undefined,
       expiresAt: '2026-08-26T02:00:00.000Z',
       remainingClaims: 2,
@@ -117,6 +123,7 @@ describe('quick transfer V2 response adapter', () => {
         content: { links: [], files: [], references: [] },
       }),
     ).toMatchObject({
+      title: '飞船',
       transferId: 'transfer-3',
       claimId: 'claim-id-3',
       receiptId: 'receipt-3',

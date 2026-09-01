@@ -7,7 +7,7 @@ import type {
   QuickTransferResolvedResult,
   QuickTransferSummary,
 } from './types'
-import { getQuickTransferMimeType, normalizeQuickTransferClaimCount } from './helpers'
+import { getQuickTransferMimeType, normalizeQuickTransferClaimCount, normalizeQuickTransferTitle } from './helpers'
 import { normalizeQuickTransferHistorySummary } from './history'
 
 const asRecord = (value: unknown): Record<string, unknown> | null => {
@@ -102,6 +102,7 @@ export const normalizeQuickTransferResolvedResult = (response: unknown): QuickTr
   const claimToken = typeof record.claimToken === 'string' && record.claimToken ? record.claimToken : undefined
   if (content.files.length > 0 && !claimToken) throw new Error('飞船接口缺少 claimToken')
   return {
+    title: normalizeQuickTransferTitle(typeof record.title === 'string' ? record.title : '') || '飞船',
     transferId: requiredString([record, asRecord(record.content)], 'transferId'),
     claimId: requiredString([record], 'claimId'),
     receiptId: typeof record.receiptId === 'string' && record.receiptId ? record.receiptId : undefined,
@@ -123,6 +124,7 @@ export const normalizeQuickTransferInspectResult = (response: unknown): QuickTra
     referenceCount: rawSummary.referenceCount ?? rawSummary.references ?? record.referenceCount ?? record.references,
   })
   return {
+    title: normalizeQuickTransferTitle(typeof record.title === 'string' ? record.title : '') || '飞船',
     transferId: typeof record.transferId === 'string' ? record.transferId : undefined,
     expiresAt: requiredString([record], 'expiresAt'),
     remainingClaims: normalizeQuickTransferClaimCount(record.remainingClaims ?? record.claimsRemaining),

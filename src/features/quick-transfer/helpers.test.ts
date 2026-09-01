@@ -17,17 +17,22 @@ import {
   canTransitionQuickTransferSendState,
   createQuickShipDraft,
   createQuickShipFileDraft,
+  extractQuickTransferCode,
   formatQuickTransferExpiry,
   getQuickTransferIndexRedirectRoute,
   getQuickTransferMimeType,
   hasQuickShipContent,
   isQuickTransferDownloadValid,
+  isValidQuickTransferCode,
   isValidQuickTransferMaxClaims,
   isQuickTransferTerminalStatus,
+  isValidQuickTransferTitle,
   isValidQuickTransferUrl,
   normalizeQuickTransferClaimCount,
   normalizeQuickTransferMaxClaims,
   normalizeQuickTransferCode,
+  normalizeQuickTransferCodeInput,
+  normalizeQuickTransferTitle,
   parseQuickTransferPageQuery,
   validateQuickTransferFile,
   validateQuickTransferFiles,
@@ -42,9 +47,29 @@ describe('quick transfer V2 helpers', () => {
     expect(hasQuickShipContent(draft)).toBe(true)
   })
 
-  it('normalizes codes and accepts only http/https links', () => {
-    expect(normalizeQuickTransferCode(' 12 34a56 ')).toBe('123456')
+  it('normalizes and validates the required ship title independently from its content', () => {
+    expect(normalizeQuickTransferTitle(' 项目资料 ')).toBe('项目资料')
+    expect(normalizeQuickTransferTitle('     ')).toBe('')
+    expect(isValidQuickTransferTitle('项目资料')).toBe(true)
+    expect(isValidQuickTransferTitle('     ')).toBe(false)
+    expect(isValidQuickTransferTitle('a'.repeat(41))).toBe(false)
+    const titleOnlyDraft = createQuickShipDraft()
+    titleOnlyDraft.title = '只有标题'
+    expect(hasQuickShipContent(titleOnlyDraft)).toBe(false)
+  })
+
+  it('extracts labeled or standalone codes without letting English labels win', () => {
+    expect(normalizeQuickTransferCodeInput(' ab 12 cd ')).toBe('AB12CD')
+    expect(normalizeQuickTransferCode(' 12 34a56 ')).toBe('1234A5')
     expect(normalizeQuickTransferCode('1234567')).toBe('123456')
+    expect(extractQuickTransferCode('583921')).toBe('583921')
+    expect(extractQuickTransferCode('飞船码：583921')).toBe('583921')
+    expect(extractQuickTransferCode('飞船码: 583921')).toBe('583921')
+    expect(extractQuickTransferCode('请使用飞船码 583921 领取')).toBe('583921')
+    expect(extractQuickTransferCode('583 921')).toBe('583921')
+    expect(extractQuickTransferCode('Quick Transfer Code: ab12cd')).toBe('AB12CD')
+    expect(isValidQuickTransferCode('飞船码：583921')).toBe(true)
+    expect(isValidQuickTransferCode('飞船码：AB12CD')).toBe(false)
     expect(isValidQuickTransferUrl(' https://example.com/a ')).toBe(true)
     expect(isValidQuickTransferUrl('ftp://example.com')).toBe(false)
   })

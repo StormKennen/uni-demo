@@ -73,6 +73,7 @@ const createResult = (fileCount: number): QuickTransferCreateResult => ({
 
 const createDraft = (fileCount: number): QuickShipDraft => {
   const draft = createQuickShipDraft()
+  draft.title = '项目资料'
   draft.text = 'hello'
   draft.files = Array.from({ length: fileCount }, (_, index) => ({
     clientFileId: `file-${index + 1}`,
@@ -98,6 +99,39 @@ beforeEach(() => {
 })
 
 describe('useQuickTransfer upload recovery', () => {
+  it('requires a valid title and sends its trimmed value in the create payload', async () => {
+    const draft = createDraft(0)
+    const quickTransfer = useQuickTransfer()
+    draft.title = '   '
+
+    expect(await quickTransfer.send(draft)).toBe(false)
+    expect(quickTransfer.sendError.value).toEqual({ code: 'INVALID_TITLE', message: '请输入飞船标题' })
+    expect(mocks.createQuickTransfer).not.toHaveBeenCalled()
+
+    draft.title = ' 项目交接资料 '
+    mocks.createQuickTransfer.mockResolvedValue(createResult(0))
+    expect(await quickTransfer.send(draft)).toBe(true)
+    expect(mocks.createQuickTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({ title: '项目交接资料', content: expect.objectContaining({ text: 'hello' }) }),
+    )
+  })
+
+  it('allows a title-only ship without content', async () => {
+    const draft = createDraft(0)
+    draft.text = ''
+    mocks.createQuickTransfer.mockResolvedValue(createResult(0))
+
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.send(draft)).toBe(true)
+    expect(mocks.createQuickTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '项目资料',
+        content: { text: undefined, links: [], files: [], references: [] },
+      }),
+    )
+  })
+
   it('continues the queue after multiple files fail and retries only failed files', async () => {
     const draft = createDraft(4)
     mocks.createQuickTransfer.mockResolvedValue(createResult(4))
@@ -139,6 +173,7 @@ describe('useQuickTransfer upload recovery', () => {
 describe('useQuickTransfer receiver recovery', () => {
   it('hydrates a live sender ticket without persisting its credentials', () => {
     const context: QuickTransferSendResultContext = {
+      title: '项目资料',
       transferId: 'transfer-1',
       code: '123456',
       shareToken: 'share-1',
@@ -160,6 +195,7 @@ describe('useQuickTransfer receiver recovery', () => {
 
   it('does not resolve again automatically after a claim token expires', async () => {
     const result: QuickTransferResolvedResult = {
+      title: '附件资料',
       transferId: 'transfer-1',
       claimId: 'claim-id-1',
       receiptId: 'receipt-1',
@@ -200,6 +236,7 @@ describe('useQuickTransfer receiver recovery', () => {
 
   it('reuses the claim request id after an unknown resolve result', async () => {
     const result: QuickTransferResolvedResult = {
+      title: '文本资料',
       transferId: 'transfer-1',
       claimId: 'claim-id-1',
       content: { text: 'hello', links: [], files: [], references: [] },
@@ -217,6 +254,7 @@ describe('useQuickTransfer receiver recovery', () => {
 
   it('keeps the same request id when resetReceive is used after an unknown result', async () => {
     const result: QuickTransferResolvedResult = {
+      title: '文本资料',
       transferId: 'transfer-1',
       claimId: 'claim-id-1',
       content: { text: 'hello', links: [], files: [], references: [] },
@@ -240,6 +278,7 @@ describe('useQuickTransfer receiver recovery', () => {
   it('reuses the request id after HTTP 408 and 5xx responses', async () => {
     for (const statusCode of [408, 500, 502, 503, 504]) {
       const result: QuickTransferResolvedResult = {
+        title: '文本资料',
         transferId: 'transfer-1',
         claimId: 'claim-id-1',
         content: { text: 'hello', links: [], files: [], references: [] },
@@ -258,6 +297,7 @@ describe('useQuickTransfer receiver recovery', () => {
 
   it('creates a new request id when a share token changes after an unknown result', async () => {
     const result: QuickTransferResolvedResult = {
+      title: '文本资料',
       transferId: 'transfer-2',
       claimId: 'claim-id-2',
       content: { text: 'hello', links: [], files: [], references: [] },

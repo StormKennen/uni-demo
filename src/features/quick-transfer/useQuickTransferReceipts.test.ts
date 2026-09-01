@@ -108,6 +108,17 @@ describe('useQuickTransferReceipts', () => {
     expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledWith('receipt-1', 'file-1')
   })
 
+  it('keeps a failed deletion visible and does not mutate claim data', async () => {
+    mocks.listQuickTransferReceipts.mockResolvedValue(listResult(1, 'receipt-7'))
+    mocks.deleteQuickTransferReceipt.mockRejectedValueOnce({ code: 'NETWORK_ERROR' })
+    const receipts = useQuickTransferReceipts()
+
+    await receipts.loadReceipts()
+    expect(await receipts.deleteReceipt('receipt-7')).toBe(false)
+    expect(receipts.isDeletingRecord('receipt-7')).toBe(false)
+    expect(receipts.items.value.map(item => item.receiptId)).toEqual(['receipt-7'])
+  })
+
   it('does not access a file already marked unavailable', async () => {
     const receipts = useQuickTransferReceipts()
     mocks.getQuickTransferReceipt.mockResolvedValue({

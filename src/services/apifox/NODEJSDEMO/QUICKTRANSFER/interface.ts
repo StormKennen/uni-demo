@@ -6,6 +6,8 @@ export interface postQuickTransfersBody {
   content: postQuickTransfersBodyContent
   expiresIn?: number
   maxClaims?: number
+  /** 飞船标题 */
+  title: string
 }
 
 /** postQuickTransfersBodyContentFiles */

@@ -47,7 +47,8 @@
                 @click="handleToolClick(item.key, item.tool)">
                 <view class="tool-card-top">
                   <view class="tool-icon-wrapper" :style="{ background: item.tool.gradient }">
-                    <uni-icons :type="item.tool.icon as any" size="20" color="#fff" />
+                    <image v-if="item.tool.image" class="tool-entry-image" :src="item.tool.image" mode="aspectFit" />
+                    <uni-icons v-else-if="item.tool.icon" :type="item.tool.icon as any" size="20" color="#fff" />
                   </view>
                   <view v-if="item.tool.isNew" class="tool-badge">NEW</view>
                 </view>
@@ -63,7 +64,8 @@
                 :class="['tool-list-item', { disabled: item.tool.disabled }]"
                 @click="handleToolClick(item.key, item.tool)">
                 <view class="tool-icon-wrapper mini" :style="{ background: item.tool.gradient }">
-                  <uni-icons :type="item.tool.icon as any" size="18" color="#fff" />
+                  <image v-if="item.tool.image" class="tool-entry-image tool-entry-image--mini" :src="item.tool.image" mode="aspectFit" />
+                  <uni-icons v-else-if="item.tool.icon" :type="item.tool.icon as any" size="18" color="#fff" />
                 </view>
                 <view class="tool-content">
                   <text class="tool-name">{{ item.tool.name }}</text>
@@ -313,6 +315,16 @@
     width: 48rpx;
     height: 48rpx;
     border-radius: 14rpx;
+  }
+
+  .tool-entry-image {
+    width: 88rpx;
+    height: 64rpx;
+  }
+
+  .tool-entry-image--mini {
+    width: 64rpx;
+    height: 44rpx;
   }
 
   .tool-badge {

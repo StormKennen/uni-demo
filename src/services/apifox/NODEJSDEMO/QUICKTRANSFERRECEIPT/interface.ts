@@ -93,15 +93,6 @@ export interface getQuickTransferReceiptsReceiptIdResContent {
 }
 
 /**
- * @description QuickTransferReceipt/删除已收飞船记录--接口返回值
- * @url DELETE /quick-transfer-receipts/{receiptId}
- */
-export interface deleteQuickTransferReceiptsReceiptIdRes {
-  deletedAt: string
-  receiptId: string
-}
-
-/**
  * @description QuickTransferReceipt/重新访问已收飞船附件--接口路径参数
  * @url POST /quick-transfer-receipts/{receiptId}/files/{fileId}/access
  */
@@ -118,4 +109,13 @@ export interface postFilesFileIdAccessPathQuery {
 export interface postFilesFileIdAccessRes {
   expiresAt: string
   url: string
+}
+
+/**
+ * @description QuickTransferReceipt/删除已收飞船记录--接口返回值
+ * @url DELETE /quick-transfer-receipts/{receiptId}
+ */
+export interface deleteQuickTransferReceiptsReceiptIdRes {
+  deletedAt: string
+  receiptId: string
 }

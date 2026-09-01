@@ -40,23 +40,6 @@ export const getQuickTransferSentRecordsSentRecordId = async (
 }
 
 /**
- * @description QuickTransferSentRecord/删除我发送的飞船记录
- * @url DELETE /quick-transfer-sent-records/{sentRecordId}
- * @host https://app.apifox.com/link/project/7048425/apis/api-507311402
- */
-export const deleteQuickTransferSentRecordsSentRecordId = async (
-  sentRecordId: string,
-  config?: Expand<ParticalUniAppRequestOptions>,
-): Promise<Expand<deleteQuickTransferSentRecordsSentRecordIdRes>> => {
-  const _config = baseURL ? { baseURL, ...config } : config
-  return http.delete(
-    `/quick-transfer-sent-records/${sentRecordId}`,
-    {},
-    _config,
-  )
-}
-
-/**
  * @description QuickTransferSentRecord/重新访问我发送的附件
  * @url POST /quick-transfer-sent-records/{sentRecordId}/files/{fileId}/access
  * @host https://app.apifox.com/link/project/7048425/apis/api-507311403
@@ -68,6 +51,23 @@ export const postQuickTransferSentRecordsFilesAccess = async (
   const _config = baseURL ? { baseURL, ...config } : config
   return http.post(
     `/quick-transfer-sent-records/${pathParams.sentRecordId}/files/${pathParams.fileId}/access`,
+    {},
+    _config,
+  )
+}
+
+/**
+ * @description QuickTransferSentRecord/删除我发送的飞船记录
+ * @url DELETE /quick-transfer-sent-records/{sentRecordId}
+ * @host https://app.apifox.com/link/project/7048425/apis/api-507311402
+ */
+export const deleteQuickTransferSentRecordsSentRecordId = async (
+  sentRecordId: string,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<deleteQuickTransferSentRecordsSentRecordIdRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.delete(
+    `/quick-transfer-sent-records/${sentRecordId}`,
     {},
     _config,
   )

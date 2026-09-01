@@ -8,9 +8,11 @@
     receiveState: QuickTransferReceiveState
     inspectResult: QuickTransferInspectResult | null
     receiveCode: string
+    isCodeValid: boolean
     isReceiving: boolean
     isContentOpened: boolean
     hasReceipt: boolean
+    receivedTitle: string
     summaryText: string
     receiveErrorMessage: string
     receiveErrorTitle: string
@@ -42,6 +44,7 @@
     <view v-else-if="props.shareToken && props.inspectResult && props.receiveState !== 'received'" class="inspect-panel">
       <text class="panel-eyebrow">INCOMING TRANSFER</text>
       <text class="receive-title">有人给你发来一艘飞船</text>
+      <text class="ship-title">{{ props.inspectResult.title }}</text>
       <text class="receive-description">{{ props.summaryText }}</text>
       <view class="inspect-meta">
         <text>还可领取 {{ props.inspectResult.remainingClaims }} 次</text>
@@ -53,6 +56,7 @@
     <view v-else-if="props.receiveState === 'received' && !props.isContentOpened" class="arrived-panel">
       <text class="success-mark">✓</text>
       <text class="receive-title">{{ QUICK_TRANSFER_COPY.receivedTitle }}</text>
+      <text class="ship-title">{{ props.receivedTitle }}</text>
       <text class="receive-description">{{ QUICK_TRANSFER_COPY.receivedDescription }}</text>
       <text v-if="props.hasReceipt" class="receipt-saved-hint">已保存到「已收飞船」</text>
       <button class="quick-ship-button primary-button full-button" @click="emit('open-content')">{{
@@ -63,17 +67,17 @@
     <view v-else-if="!props.isContentOpened && !props.shareToken" class="manual-panel">
       <text class="panel-eyebrow">RECEIVE TRANSFER</text>
       <text class="receive-title">接收飞船</text>
-      <text class="receive-description">输入 6 位收船码，打开另一台设备送来的内容</text>
+      <text class="receive-description">输入 6 位飞船码，打开另一台设备送来的内容</text>
       <input
         class="code-input"
-        type="number"
+        type="text"
         :value="props.receiveCode"
-        :maxlength="6"
+        :maxlength="64"
         placeholder="000000"
         @input="emit('update:receive-code', getInputValue($event))" />
       <button
         class="quick-ship-button primary-button submit-button"
-        :disabled="props.isReceiving || props.receiveCode.replace(/\D/g, '').length !== 6"
+        :disabled="props.isReceiving || !props.isCodeValid"
         @click="emit('claim')">
         {{ props.isReceiving ? QUICK_TRANSFER_COPY.receiveLoading : QUICK_TRANSFER_COPY.receiveButton }}
       </button>
@@ -137,6 +141,7 @@
   }
 
   .receive-description,
+  .ship-title,
   .receive-error-description,
   .receipt-saved-hint {
     display: block;
@@ -144,6 +149,13 @@
     color: var(--theme-text-secondary);
     font-size: 25rpx;
     line-height: 1.6;
+  }
+
+  .ship-title {
+    margin-top: 12rpx;
+    color: var(--theme-text);
+    font-size: 29rpx;
+    font-weight: 600;
   }
 
   .receipt-saved-hint {

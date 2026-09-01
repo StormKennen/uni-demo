@@ -40,7 +40,7 @@ export const getQuickTransferSenderDescription = (state: QuickTransferSendState)
   if (state === 'ready') return '等待对方收船'
   if (state === 'consumed') return '本次飞船已完成全部领取。'
   if (state === 'expired') return '本次内容已经过期。'
-  if (state === 'cancelled') return '本次收船码已经失效。'
+  if (state === 'cancelled') return '本次飞船码已经失效。'
   return ''
 }
 

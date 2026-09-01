@@ -1,10 +1,8 @@
-import { QUICK_TRANSFER_RECEIVE_ROUTE } from '@/features/quick-transfer/constants'
+import { buildQuickTransferPublicReceiveUrl } from '@/features/quick-transfer/public-url'
 
 export const buildQuickTransferBrowserShareUrl = (shareToken: string): string => {
-  const query = `shareToken=${encodeURIComponent(shareToken)}`
-  const hash = window.location.hash
-  if (hash.startsWith('#/')) {
-    return `${window.location.origin}${window.location.pathname}#${QUICK_TRANSFER_RECEIVE_ROUTE}?${query}`
-  }
-  return `${window.location.origin}${QUICK_TRANSFER_RECEIVE_ROUTE}?${query}`
+  return buildQuickTransferPublicReceiveUrl({
+    baseUrl: `${window.location.origin}${window.location.pathname}#`,
+    shareToken,
+  })
 }

@@ -122,15 +122,6 @@ export interface getQuickTransferSentRecordsSentRecordIdResContent {
 }
 
 /**
- * @description QuickTransferSentRecord/删除我发送的飞船记录--接口返回值
- * @url DELETE /quick-transfer-sent-records/{sentRecordId}
- */
-export interface deleteQuickTransferSentRecordsSentRecordIdRes {
-  deletedAt: string
-  sentRecordId: string
-}
-
-/**
  * @description QuickTransferSentRecord/重新访问我发送的附件--接口路径参数
  * @url POST /quick-transfer-sent-records/{sentRecordId}/files/{fileId}/access
  */
@@ -147,4 +138,13 @@ export interface postFilesFileIdAccessPathQuery {
 export interface postFilesFileIdAccessRes {
   expiresAt: string
   url: string
+}
+
+/**
+ * @description QuickTransferSentRecord/删除我发送的飞船记录--接口返回值
+ * @url DELETE /quick-transfer-sent-records/{sentRecordId}
+ */
+export interface deleteQuickTransferSentRecordsSentRecordIdRes {
+  deletedAt: string
+  sentRecordId: string
 }

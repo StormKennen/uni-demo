@@ -13,7 +13,7 @@
     QUICK_TRANSFER_SEND_CREATE_ROUTE,
   } from '@/features/quick-transfer/constants'
   import { formatQuickTransferSummary, isQuickTransferReceivedContentVisible } from '@/features/quick-transfer/presentation'
-  import { parseQuickTransferPageQuery } from '@/features/quick-transfer/helpers'
+  import { extractQuickTransferCode, isValidQuickTransferCode, parseQuickTransferPageQuery } from '@/features/quick-transfer/helpers'
   import { openQuickTransferReference } from '@/features/quick-transfer/reference/registry'
   import {
     getQuickTransferReceiveSharePayload,
@@ -49,6 +49,7 @@
   const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
   const receivedContent = computed(() => quickTransfer.receivedResult.value?.content || null)
+  const receivedTitle = computed(() => quickTransfer.receivedResult.value?.title || quickTransfer.inspectResult.value?.title || '飞船')
   const isReceivedContentVisible = computed(() =>
     isQuickTransferReceivedContentVisible(quickTransfer.receiveState.value, isReceivedContentOpened.value),
   )
@@ -77,6 +78,7 @@
     if (receiveErrorCode.value === 'NETWORK_ERROR') return '检查网络后再试一次。'
     return '请稍后再试。'
   })
+  const isReceiveCodeValid = computed(() => isValidQuickTransferCode(receiveCode.value))
 
   const refreshLoginState = () => {
     isLoggedIn.value = Boolean(getToken())
@@ -94,15 +96,15 @@
       await performReceive({ shareToken: shareToken.value })
       return
     }
-    const code = receiveCode.value.replace(/\s+/g, '').replace(/\D/g, '').slice(0, 6)
-    if (code.length === 6) await performReceive({ code })
+    const code = extractQuickTransferCode(receiveCode.value)
+    if (isValidQuickTransferCode(code)) await performReceive({ code })
   }
 
   const retryReceive = () => {
     quickTransfer.resetReceive()
     isReceivedContentOpened.value = false
     if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
-    else if (receiveCode.value.replace(/\D/g, '').length === 6) void claim()
+    else if (isReceiveCodeValid.value) void claim()
   }
 
   const openReceivedContent = () => {
@@ -133,6 +135,9 @@
   }
 
   const openSendCreate = () => uni.navigateTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
+  const updateReceiveCode = (value: string) => {
+    receiveCode.value = extractQuickTransferCode(value)
+  }
 
   onLoad(options => {
     const parsed = parseQuickTransferPageQuery((options || {}) as QuickTransferPageQuery)
@@ -171,13 +176,15 @@
         :is-receiving="isReceiving"
         :is-content-opened="isReceivedContentVisible"
         :has-receipt="Boolean(quickTransfer.receivedResult.value?.receiptId)"
+        :received-title="receivedTitle"
         :summary-text="receiveSummaryText"
         :receive-error-message="receiveErrorMessage"
         :receive-error-title="receiveErrorTitle"
         :receive-error-description="receiveErrorDescription"
         :is-claim-token-error="isClaimTokenError"
         :is-receive-unavailable="isReceiveUnavailable"
-        @update:receive-code="receiveCode = $event"
+        :is-code-valid="isReceiveCodeValid"
+        @update:receive-code="updateReceiveCode"
         @claim="claim"
         @open-content="openReceivedContent"
         @retry="retryReceive"

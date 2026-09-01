@@ -25,9 +25,42 @@ import type { SelectedFile } from '@/platform/file'
 
 let clientFileSequence = 0
 
-export const normalizeQuickTransferCode = (value: string): string => value.replace(/\s+/g, '').replace(/\D/g, '').slice(0, 6)
+export const QUICK_TRANSFER_TITLE_MAX_LENGTH = 40
+const QUICK_TRANSFER_CODE_LENGTH = 6
+const QUICK_TRANSFER_CODE_CHARACTERS = /^[A-Z0-9]+$/
+const QUICK_TRANSFER_LABELED_CODE_PATTERN = /飞船码\s*[:：]?\s*([A-Za-z0-9](?:[\s-]*[A-Za-z0-9]){5})(?![A-Za-z0-9])/i
+const QUICK_TRANSFER_STANDALONE_CODE_PATTERN = /(?:^|[^A-Za-z0-9])([A-Za-z0-9]{6})(?![A-Za-z0-9])/g
 
-export const isValidQuickTransferCode = (value: string): boolean => /^\d{6}$/.test(normalizeQuickTransferCode(value))
+export const normalizeQuickTransferCodeInput = (value: string): string =>
+  value
+    .replace(/[^A-Za-z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, QUICK_TRANSFER_CODE_LENGTH)
+
+export const extractQuickTransferCode = (value: string): string => {
+  const labeledMatch = QUICK_TRANSFER_LABELED_CODE_PATTERN.exec(value)
+  if (labeledMatch?.[1]) return normalizeQuickTransferCodeInput(labeledMatch[1])
+
+  const standaloneMatch = QUICK_TRANSFER_STANDALONE_CODE_PATTERN.exec(value)
+  QUICK_TRANSFER_STANDALONE_CODE_PATTERN.lastIndex = 0
+  if (standaloneMatch?.[1]) return standaloneMatch[1].toUpperCase()
+
+  return normalizeQuickTransferCodeInput(value)
+}
+
+export const normalizeQuickTransferCode = normalizeQuickTransferCodeInput
+
+export const normalizeQuickTransferTitle = (value: string): string => value.trim()
+
+export const isValidQuickTransferTitle = (value: string): boolean => {
+  const normalized = normalizeQuickTransferTitle(value)
+  return normalized.length > 0 && Array.from(normalized).length <= QUICK_TRANSFER_TITLE_MAX_LENGTH
+}
+
+export const isValidQuickTransferCode = (value: string): boolean => {
+  const normalized = extractQuickTransferCode(value)
+  return normalized.length === QUICK_TRANSFER_CODE_LENGTH && QUICK_TRANSFER_CODE_CHARACTERS.test(normalized) && /^\d{6}$/.test(normalized)
+}
 
 export const isValidQuickTransferUrl = (value: string): boolean => /^https?:\/\/[^\s]+$/i.test(value.trim())
 
@@ -89,6 +122,7 @@ export const createQuickShipFileDraft = (file: SelectedFile): QuickShipFileDraft
 })
 
 export const createQuickShipDraft = (expiresIn: QuickTransferTtl = 600, maxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): QuickShipDraft => ({
+  title: '',
   text: '',
   links: [],
   files: [],

@@ -1,15 +1,16 @@
 <script setup lang="ts">
-  import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+  import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipSendResult from '../components/QuickShipSendResult.vue'
   import PageLayout from '@/components/PageLayout.vue'
+  import { buildQuickTransferPublicReceiveUrl } from '@/features/quick-transfer/public-url'
   import { buildQuickTransferBrowserShareUrl } from '@/utilsH5/quick-transfer-share'
+  import { resolveQuickTransferConfiguredPublicH5BaseUrl } from '@/utils/quick-transfer-public-url'
   import {
     getQuickTransferToolSharePayload,
     getQuickTransferTransferSharePayload,
     QUICK_TRANSFER_TOOL_SHARE_TITLE,
   } from '@/features/quick-transfer/share'
-  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { QUICK_TRANSFER_SEND_CREATE_ROUTE, QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
   import {
     getQuickTransferSenderClaimLabel,
@@ -37,24 +38,56 @@
   })
   const shareUrl = computed(() => {
     if (sharePayload.value.kind !== 'transfer') return ''
-    let url = sharePayload.value.path
+    let url = ''
     // #ifdef H5
     url = buildQuickTransferBrowserShareUrl(quickTransfer.shareToken.value)
+    // #endif
+    // #ifdef MP-WEIXIN
+    url = buildQuickTransferPublicReceiveUrl({
+      baseUrl: resolveQuickTransferConfiguredPublicH5BaseUrl(),
+      shareToken: quickTransfer.shareToken.value,
+    })
     // #endif
     return url
   })
   const shareTimelineQuery = computed(() =>
     sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(quickTransfer.shareToken.value)}` : '',
   )
-  registerQuickTransferPageShare(sharePayload)
+  // #ifdef MP-WEIXIN
+  // 微信分享生命周期必须直接注册在页面组件中，避免隐藏在 helper 后被编译器识别为组件级注册。
+  onShareAppMessage(() => {
+    const payload = sharePayload.value
+    return {
+      title: payload.title,
+      path: payload.path,
+      imageUrl: payload.imageUrl,
+    }
+  })
+
+  onShareTimeline(() => {
+    const payload = sharePayload.value
+    return {
+      title: payload.title,
+      query: shareTimelineQuery.value,
+      imageUrl: payload.imageUrl,
+    }
+  })
+  // #endif
 
   const copyText = (value: string, successMessage: string) => {
     if (!value) return
     uni.setClipboardData({ data: value, success: () => uni.showToast({ title: successMessage, icon: 'none' }) })
   }
 
-  const copyCode = () => copyText(quickTransfer.code.value, '飞船码已复制')
-  const copyShareUrl = () => copyText(shareUrl.value, '分享链接已复制')
+  const copyCode = () => copyText(`飞船码：${quickTransfer.code.value}`, '飞船码已复制')
+  const copyShareUrl = () => {
+    // #ifdef MP-WEIXIN
+    copyText(shareUrl.value, '网页链接已复制')
+    // #endif
+    // #ifdef H5
+    copyText(shareUrl.value, '分享链接已复制')
+    // #endif
+  }
   const cancelSend = () => {
     if (quickTransfer.transferId.value) void quickTransfer.cancel()
   }
@@ -94,12 +127,13 @@
         </view>
         <QuickShipSendResult
           :state="quickTransfer.sendState.value"
+          :ship-title="resultContext?.title || ''"
           :title="senderStatusTitle"
           :description="senderStatusDescription"
           :code="quickTransfer.code.value"
           :countdown="quickTransfer.countdown.value"
           :claim-label="senderClaimLabel"
-          :show-share-link="sharePayload.kind === 'transfer'"
+          :show-share-link="Boolean(shareUrl)"
           @copy-code="copyCode"
           @copy-share-url="copyShareUrl"
           @cancel="cancelSend"
