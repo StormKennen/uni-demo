@@ -90,7 +90,7 @@ describe('useQuickTransferReceipts', () => {
         text: undefined,
         links: [],
         references: [],
-        files: [{ fileId: 'file-1', name: 'report.pdf', size: 1, mimeType: 'application/pdf' }],
+        files: [{ fileId: 'file-1', name: 'report.pdf', displayName: 'report.pdf', size: 1, mimeType: 'application/pdf' }],
       },
     }
     mocks.getQuickTransferReceipt.mockResolvedValue(detail)

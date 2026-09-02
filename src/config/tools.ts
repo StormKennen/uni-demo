@@ -1,4 +1,4 @@
-import { QUICK_SHIP_IMAGE_URL } from './tool-assets'
+import { QUICK_SHIP_IMAGE_URL, RELAY_ICON_URL } from './tool-assets'
 import type { ToolWorkspaceKey } from '@/config/workspaces'
 
 /** 工具节点（不含 key，key 作为字典的键） */
@@ -287,6 +287,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     image: QUICK_SHIP_IMAGE_URL,
     gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
     path: '/subPackages/tools/quick-transfer/index',
+    workspace: 'record',
+    isNew: true,
+  },
+  relay: {
+    name: '接龙',
+    desc: '报名、统计、晒图与多人收集',
+    image: RELAY_ICON_URL,
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/relay/index',
     workspace: 'record',
     isNew: true,
   },

@@ -45,16 +45,18 @@ const normalizeFile = (value: unknown): QuickTransferFileMetadata | undefined =>
   const record = asRecord(value)
   if (!record) return undefined
   const name = typeof record.name === 'string' ? record.name : ''
+  const displayName = typeof record.displayName === 'string' ? record.displayName : name
   const size = typeof record.size === 'number' ? record.size : Number(record.size)
   const fileId = typeof record.fileId === 'string' ? record.fileId : typeof record.id === 'string' ? record.id : undefined
   const selectedMimeType = typeof record.mimeType === 'string' ? record.mimeType : typeof record.type === 'string' ? record.type : undefined
-  if (!name || !Number.isFinite(size)) return undefined
+  if ((!name && !displayName) || !Number.isFinite(size)) return undefined
   const available = typeof record.available === 'boolean' ? record.available : undefined
   return {
     fileId,
-    name,
+    name: name || displayName || '文件',
+    displayName: displayName || name || '文件',
     size,
-    mimeType: getQuickTransferMimeType(name, selectedMimeType),
+    mimeType: getQuickTransferMimeType(name || displayName, selectedMimeType),
     ...(available === undefined ? {} : { available }),
   }
 }

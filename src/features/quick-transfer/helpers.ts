@@ -54,7 +54,7 @@ export const normalizeQuickTransferTitle = (value: string): string => value.trim
 
 export const isValidQuickTransferTitle = (value: string): boolean => {
   const normalized = normalizeQuickTransferTitle(value)
-  return normalized.length > 0 && Array.from(normalized).length <= QUICK_TRANSFER_TITLE_MAX_LENGTH
+  return Array.from(normalized).length <= QUICK_TRANSFER_TITLE_MAX_LENGTH
 }
 
 export const isValidQuickTransferCode = (value: string): boolean => {
@@ -99,27 +99,117 @@ export const createQuickTransferFileMetadata = (
   name: string,
   size: number | undefined,
   selectedType?: string,
-): QuickTransferFileMetadata => ({
-  name: name.trim() || '未命名文件',
-  size: size ?? 0,
-  mimeType: getQuickTransferMimeType(name, selectedType),
-})
+): QuickTransferFileMetadata => {
+  const normalizedName = name.trim() || '未命名文件'
+  return {
+    name: normalizedName,
+    displayName: normalizedName,
+    size: size ?? 0,
+    mimeType: getQuickTransferMimeType(name, selectedType),
+  }
+}
 
 export const createQuickTransferClientFileId = (): string => {
   clientFileSequence += 1
   return `quick-file-${Date.now()}-${clientFileSequence}`
 }
 
-export const createQuickShipFileDraft = (file: SelectedFile): QuickShipFileDraft => ({
-  clientFileId: createQuickTransferClientFileId(),
-  name: file.name || '未命名文件',
-  size: file.size ?? 0,
-  mimeType: getQuickTransferMimeType(file.name, file.type),
-  localPath: file.path || undefined,
-  rawFile: file.raw,
-  selectedFile: file,
-  uploadState: 'pending',
-})
+const QUICK_TRANSFER_DISPLAY_NAME_MAX_LENGTH = 120
+let lastDefaultDisplayTimestamp = ''
+let nextDefaultDisplaySequence = 0
+
+const padDatePart = (value: number): string => String(value).padStart(2, '0')
+
+const formatQuickTransferDisplayTimestamp = (date: Date): string =>
+  `${date.getFullYear()}${padDatePart(date.getMonth() + 1)}${padDatePart(date.getDate())}_${padDatePart(date.getHours())}${padDatePart(
+    date.getMinutes(),
+  )}${padDatePart(date.getSeconds())}`
+
+export const getFileExtension = (fileName: string, mimeType?: string): string => {
+  const cleanName = fileName.trim().split(/[?#]/, 1)[0]
+  const name = cleanName.split('/').filter(Boolean).pop() || ''
+  const match = name.match(/(\.[^./\\\s]+)$/)
+  if (match?.[1]) return match[1].toLowerCase()
+  const extension = mimeType ? mime.getExtension(mimeType.trim().toLowerCase()) : undefined
+  return extension ? `.${extension.toLowerCase()}` : ''
+}
+
+export const getFileNameBase = (fileName: string): string => {
+  const extension = getFileExtension(fileName)
+  const normalized = fileName.trim()
+  if (!extension) return normalized
+  return normalized.slice(0, -extension.length).trim()
+}
+
+const sanitizeQuickTransferFileNameBase = (value: string): string =>
+  Array.from(value.trim())
+    .filter(character => {
+      const code = character.charCodeAt(0)
+      return code >= 32 && code !== 127
+    })
+    .join('')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .slice(0, QUICK_TRANSFER_DISPLAY_NAME_MAX_LENGTH)
+
+export const createQuickTransferDefaultDisplayName = (
+  fileName: string,
+  mimeType?: string,
+  selectedAt = new Date(),
+  sequence?: number,
+): string => {
+  const timestamp = formatQuickTransferDisplayTimestamp(selectedAt)
+  if (timestamp !== lastDefaultDisplayTimestamp) {
+    lastDefaultDisplayTimestamp = timestamp
+    nextDefaultDisplaySequence = 0
+  }
+  const resolvedSequence = sequence && sequence > 0 ? Math.floor(sequence) : nextDefaultDisplaySequence + 1
+  nextDefaultDisplaySequence = Math.max(nextDefaultDisplaySequence, resolvedSequence)
+  const extension = getFileExtension(fileName, mimeType)
+  return `${timestamp}_${String(resolvedSequence).padStart(2, '0')}${extension}`
+}
+
+export const normalizeQuickTransferDisplayName = (value: string, extension = getFileExtension(value)): string => {
+  const normalizedExtension = extension.toLowerCase()
+  const rawBase =
+    normalizedExtension && value.trim().toLowerCase().endsWith(normalizedExtension)
+      ? value.trim().slice(0, -normalizedExtension.length)
+      : getFileNameBase(value)
+  const base = sanitizeQuickTransferFileNameBase(rawBase)
+  return base ? `${base}${normalizedExtension}` : ''
+}
+
+export const restoreQuickTransferDisplayName = (file: Pick<QuickShipFileDraft, 'defaultDisplayName' | 'displayName'>): string => {
+  const extension = getFileExtension(file.defaultDisplayName)
+  return normalizeQuickTransferDisplayName(file.defaultDisplayName, extension) || file.defaultDisplayName
+}
+
+export const getFinalQuickTransferDisplayName = (file: Pick<QuickShipFileDraft, 'name' | 'defaultDisplayName' | 'displayName'>): string => {
+  const defaultDisplayName = file.defaultDisplayName || file.name || '未命名文件'
+  const extension = getFileExtension(defaultDisplayName)
+  return (
+    normalizeQuickTransferDisplayName(file.displayName || '', extension) ||
+    normalizeQuickTransferDisplayName(defaultDisplayName, extension) ||
+    '文件'
+  )
+}
+
+export const createQuickShipFileDraft = (file: SelectedFile, selectedAt = new Date(), sequence?: number): QuickShipFileDraft => {
+  const name = file.name || '未命名文件'
+  const mimeType = getQuickTransferMimeType(name, file.type)
+  const defaultDisplayName = createQuickTransferDefaultDisplayName(name, mimeType, selectedAt, sequence)
+  return {
+    clientFileId: createQuickTransferClientFileId(),
+    name,
+    defaultDisplayName,
+    displayName: defaultDisplayName,
+    size: file.size ?? 0,
+    mimeType,
+    localPath: file.path || undefined,
+    rawFile: file.raw,
+    selectedFile: file,
+    uploadState: 'pending',
+  }
+}
 
 export const createQuickShipDraft = (expiresIn: QuickTransferTtl = 600, maxClaims = QUICK_TRANSFER_DEFAULT_MAX_CLAIMS): QuickShipDraft => ({
   title: '',
@@ -133,6 +223,9 @@ export const createQuickShipDraft = (expiresIn: QuickTransferTtl = 600, maxClaim
 
 export const hasQuickShipContent = (draft: Pick<QuickShipDraft, 'text' | 'links' | 'files' | 'references'>): boolean =>
   Boolean(draft.text.trim() || draft.links.length || draft.files.length || draft.references.length)
+
+export const hasQuickShipPayload = (draft: Pick<QuickShipDraft, 'title' | 'text' | 'links' | 'files' | 'references'>): boolean =>
+  Boolean(normalizeQuickTransferTitle(draft.title) || hasQuickShipContent(draft))
 
 export const normalizeQuickShipReference = (reference: QuickShipReferenceDraft): QuickShipReferenceDraft => ({
   ...reference,

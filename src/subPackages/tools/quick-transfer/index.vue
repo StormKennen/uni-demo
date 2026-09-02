@@ -1,19 +1,35 @@
 <script setup lang="ts">
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+  import { ref } from 'vue'
+  import QuickShipReceiptList from './components/QuickShipReceiptList.vue'
+  import QuickShipSentRecordList from './components/QuickShipSentRecordList.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
-  import {
-    QUICK_TRANSFER_RECEIPTS_ROUTE,
-    QUICK_TRANSFER_RECEIVE_ROUTE,
-    QUICK_TRANSFER_SEND_CREATE_ROUTE,
-    QUICK_TRANSFER_SENT_RECORDS_ROUTE,
-  } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
   import { getQuickTransferIndexRedirectRoute } from '@/features/quick-transfer/helpers'
   import type { QuickTransferPageQuery } from '@/features/quick-transfer/types'
 
   const sharePayload = getQuickTransferToolSharePayload()
-  registerQuickTransferPageShare(sharePayload)
+
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
+  onShareAppMessage(() => ({
+    title: sharePayload.title,
+    path: sharePayload.path,
+    imageUrl: sharePayload.imageUrl,
+  }))
+
+  onShareTimeline(() => ({
+    title: QUICK_TRANSFER_TOOL_SHARE_TITLE,
+    query: '',
+    imageUrl: sharePayload.imageUrl,
+  }))
+  // #endif
+
+  const activeHistoryTab = ref<'sent' | 'received'>('sent')
+  const refreshKey = ref(0)
+  const sentListRef = ref<InstanceType<typeof QuickShipSentRecordList> | null>(null)
+  const receivedListRef = ref<InstanceType<typeof QuickShipReceiptList> | null>(null)
 
   const openSendCreate = () => {
     uni.navigateTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
@@ -23,13 +39,31 @@
     uni.navigateTo({ url: QUICK_TRANSFER_RECEIVE_ROUTE })
   }
 
-  const openSentRecords = () => {
-    uni.navigateTo({ url: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
+  const switchHistoryTab = (tab: 'sent' | 'received') => {
+    activeHistoryTab.value = tab
   }
 
-  const openReceivedRecords = () => {
-    uni.navigateTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
+  const refreshActiveHistory = async (): Promise<void> => {
+    if (activeHistoryTab.value === 'sent') await sentListRef.value?.refresh()
+    else await receivedListRef.value?.refresh()
   }
+
+  const loadMoreActiveHistory = (): void => {
+    if (activeHistoryTab.value === 'sent') void sentListRef.value?.loadMore()
+    else void receivedListRef.value?.loadMore()
+  }
+
+  onShow(() => {
+    refreshKey.value += 1
+  })
+
+  onPullDownRefresh(async () => {
+    try {
+      await refreshActiveHistory()
+    } finally {
+      uni.stopPullDownRefresh()
+    }
+  })
 
   onLoad(options => {
     const query = (options || {}) as QuickTransferPageQuery
@@ -53,10 +87,7 @@
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
-    nav-overlay
-    nav-bg-color="transparent"
-    nav-init-bg-color="transparent"
-    nav-custom-class="light">
+    nav-divider>
     <!-- #ifdef MP-WEIXIN -->
     <template #nav-right>
       <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
@@ -64,12 +95,9 @@
     <!-- #endif -->
     <view class="quick-transfer-page">
       <view class="hero-panel">
-        <view class="hero-glow hero-glow--left"></view>
-        <view class="hero-glow hero-glow--right"></view>
-        <view class="hero-orbit hero-orbit--one"></view>
-        <view class="hero-orbit hero-orbit--two"></view>
+        <text class="hero-eyebrow">QUICK TRANSFER</text>
         <text class="hero-title">飞船</text>
-        <text class="hero-desc">跨设备快速传递内容</text>
+        <text class="hero-desc">分享给好友，内容快速到达</text>
       </view>
 
       <view class="quick-transfer-sheet">
@@ -98,18 +126,23 @@
         <view class="history-section">
           <view class="history-heading">
             <text class="history-heading__title">历史记录</text>
-            <text class="history-heading__hint">查看过往传递</text>
+            <!-- <text class="history-heading__hint">查看过往传递</text> -->
           </view>
-          <view class="history-links">
-            <view class="history-link" hover-class="history-link--hover" @click="openSentRecords">
-              <uni-icons type="upload" size="18" color="var(--theme-brand)" />
-              <text>发送记录</text>
-            </view>
-            <view class="history-link" hover-class="history-link--hover" @click="openReceivedRecords">
-              <uni-icons type="download" size="18" color="var(--theme-brand)" />
-              <text>接收记录</text>
-            </view>
+          <view class="history-tabs">
+            <button class="history-tab" :class="{ 'history-tab--active': activeHistoryTab === 'sent' }" @click="switchHistoryTab('sent')"
+              >发送记录</button
+            >
+            <button
+              class="history-tab"
+              :class="{ 'history-tab--active': activeHistoryTab === 'received' }"
+              @click="switchHistoryTab('received')"
+              >接收记录</button
+            >
           </view>
+          <scroll-view class="history-content" scroll-y lower-threshold="160" @scrolltolower="loadMoreActiveHistory">
+            <QuickShipSentRecordList v-if="activeHistoryTab === 'sent'" ref="sentListRef" :refresh-key="refreshKey" embedded />
+            <QuickShipReceiptList v-else ref="receivedListRef" :refresh-key="refreshKey" embedded />
+          </scroll-view>
         </view>
       </view>
     </view>
@@ -118,8 +151,11 @@
 
 <style lang="scss">
   .quick-transfer-page {
-    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
     box-sizing: border-box;
+    overflow: hidden;
     background: var(--theme-bg);
   }
 
@@ -131,10 +167,10 @@
     height: 58rpx;
     margin: 0;
     padding: 0 16rpx;
-    border: 1rpx solid rgba(255, 255, 255, 0.68);
+    border: 1rpx solid var(--theme-border);
     border-radius: 999rpx;
-    color: #fff;
-    background: rgba(7, 20, 38, 0.28);
+    color: var(--theme-text);
+    background: var(--theme-surface);
     font-size: 22rpx;
     line-height: 1;
   }
@@ -148,85 +184,46 @@
   }
 
   .hero-panel {
-    position: relative;
-    min-height: 280rpx;
-    padding: 132rpx 34rpx 54rpx;
-    overflow: hidden;
+    flex-shrink: 0;
+    padding: 28rpx 28rpx 0;
     box-sizing: border-box;
-    color: #fff;
-    background: linear-gradient(155deg, #071426 0%, #102b51 48%, #07566a 100%);
-    text-align: center;
+    color: var(--theme-text);
   }
 
-  .hero-glow,
-  .hero-orbit {
-    position: absolute;
-    pointer-events: none;
-  }
-
-  .hero-glow {
-    width: 300rpx;
-    height: 220rpx;
-    border-radius: 50%;
-    filter: blur(46rpx);
-    opacity: 0.5;
-  }
-
-  .hero-glow--left {
-    top: 78rpx;
-    left: -110rpx;
-    background: rgba(37, 99, 235, 0.68);
-  }
-
-  .hero-glow--right {
-    right: -100rpx;
-    bottom: 16rpx;
-    background: rgba(20, 184, 166, 0.62);
-  }
-
-  .hero-orbit {
-    width: 500rpx;
-    height: 130rpx;
-    border: 1rpx solid rgba(165, 243, 252, 0.22);
-    border-radius: 50%;
-    transform: rotate(-15deg);
-  }
-
-  .hero-orbit--one {
-    top: 138rpx;
-    left: -230rpx;
-  }
-
-  .hero-orbit--two {
-    right: -230rpx;
-    bottom: 60rpx;
-    transform: rotate(22deg);
-  }
-
+  .hero-eyebrow,
   .hero-title,
   .hero-desc {
-    position: relative;
-    z-index: 1;
     display: block;
   }
 
-  .hero-title {
-    font-size: 60rpx;
+  .hero-eyebrow {
+    color: var(--theme-brand);
+    font-size: 20rpx;
     font-weight: 800;
-    letter-spacing: 8rpx;
+    letter-spacing: 4rpx;
+  }
+
+  .hero-title {
+    margin-top: 8rpx;
+    font-size: 42rpx;
+    font-weight: 800;
   }
 
   .hero-desc {
-    margin-top: 6rpx;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 27rpx;
+    margin-top: 8rpx;
+    color: var(--theme-text-secondary);
+    font-size: 23rpx;
   }
 
   .quick-transfer-sheet {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     z-index: 2;
-    min-height: calc(100vh - 264rpx);
-    margin-top: -28rpx;
+    height: auto;
+    min-height: 0;
+    margin-top: 28rpx;
     padding: 34rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     border-radius: 34rpx 34rpx 0 0;
@@ -316,38 +313,48 @@
   }
 
   .history-section {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
     margin-top: 64rpx;
     padding-top: 30rpx;
     border-top: 1rpx solid var(--theme-border);
   }
 
-  .history-links {
+  .history-tabs {
     display: flex;
-    gap: 18rpx;
     margin-top: 20rpx;
     padding: 8rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 20rpx;
-    background: var(--theme-surface);
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
   }
 
-  .history-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .history-tab {
     flex: 1;
-    gap: 10rpx;
-    min-height: 78rpx;
-    padding: 12rpx 18rpx;
-    box-sizing: border-box;
+    height: 64rpx;
+    margin: 0;
     border-radius: 14rpx;
-    color: var(--theme-brand);
+    color: var(--theme-text-secondary);
+    background: transparent;
     font-size: 25rpx;
-    font-weight: 600;
-    text-align: center;
+    line-height: 64rpx;
   }
 
-  .history-link--hover {
-    background: var(--theme-surface-muted);
+  .history-tab::after {
+    display: none;
+  }
+
+  .history-tab--active {
+    color: var(--theme-brand);
+    background: var(--theme-surface);
+    font-weight: 700;
+  }
+
+  .history-content {
+    flex: 1;
+    min-height: 0;
+    height: 0;
+    margin-top: 18rpx;
   }
 </style>

@@ -57,6 +57,8 @@ export interface getQuickTransferSentRecordsResItems {
     | 'deleting'
     | 'deleted'
   summary: getQuickTransferSentRecordsResItemsSummary
+  /** 飞船标题；旧记录由 displayTitle 兼容回退 */
+  title: string
   transferId: string
 }
 
@@ -84,6 +86,8 @@ export interface getQuickTransferSentRecordsSentRecordIdRes {
     | 'cancelled'
     | 'deleting'
     | 'deleted'
+  /** 飞船标题；旧记录由 displayTitle 兼容回退 */
+  title: string
   transferId: string
 }
 
@@ -91,6 +95,8 @@ export interface getQuickTransferSentRecordsSentRecordIdRes {
 export interface getQuickTransferSentRecordsSentRecordIdResContentFiles {
   /** 当前根据 Transfer 文件状态判断的可用性 */
   available: boolean
+  /** 对用户展示及下载使用的文件名 */
+  displayName: string
   fileId: string
   mimeType: string
   name: string
@@ -122,6 +128,15 @@ export interface getQuickTransferSentRecordsSentRecordIdResContent {
 }
 
 /**
+ * @description QuickTransferSentRecord/删除我发送的飞船记录--接口返回值
+ * @url DELETE /quick-transfer-sent-records/{sentRecordId}
+ */
+export interface deleteQuickTransferSentRecordsSentRecordIdRes {
+  deletedAt: string
+  sentRecordId: string
+}
+
+/**
  * @description QuickTransferSentRecord/重新访问我发送的附件--接口路径参数
  * @url POST /quick-transfer-sent-records/{sentRecordId}/files/{fileId}/access
  */
@@ -138,13 +153,4 @@ export interface postFilesFileIdAccessPathQuery {
 export interface postFilesFileIdAccessRes {
   expiresAt: string
   url: string
-}
-
-/**
- * @description QuickTransferSentRecord/删除我发送的飞船记录--接口返回值
- * @url DELETE /quick-transfer-sent-records/{sentRecordId}
- */
-export interface deleteQuickTransferSentRecordsSentRecordIdRes {
-  deletedAt: string
-  sentRecordId: string
 }

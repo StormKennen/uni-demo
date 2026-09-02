@@ -30,6 +30,15 @@ describe('quick transfer share semantics', () => {
     })
   })
 
+  it('uses the canonical title for a live transfer share', () => {
+    expect(
+      getQuickTransferTransferSharePayload('share-1', '2026-08-27T12:00:00.000Z', '营业执照.jpg', Date.parse('2026-08-27T11:00:00.000Z')),
+    ).toMatchObject({
+      kind: 'transfer',
+      title: '飞船｜营业执照.jpg',
+    })
+  })
+
   it('shares the receiver scene when no transfer ticket is present', () => {
     expect(getQuickTransferReceiveSharePayload()).toEqual({
       kind: 'receiver',

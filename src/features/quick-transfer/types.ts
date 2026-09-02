@@ -24,6 +24,7 @@ export type QuickShipFileUploadState = 'pending' | 'uploading' | 'uploaded' | 'c
 export interface QuickTransferFileMetadata {
   fileId?: string
   name: string
+  displayName: string
   size: number
   mimeType: string
   available?: boolean
@@ -47,6 +48,8 @@ export interface QuickShipReferenceDraft {
 export interface QuickShipFileDraft {
   clientFileId: string
   name: string
+  defaultDisplayName: string
+  displayName: string
   size: number
   mimeType: string
   localPath?: string
@@ -83,6 +86,7 @@ export interface QuickTransferUploadDescriptor {
 export interface QuickTransferCreateFileMetadata {
   clientFileId: string
   name: string
+  displayName: string
   size: number
   mimeType: string
 }
@@ -96,7 +100,7 @@ export interface QuickTransferReferencePayload {
 }
 
 export interface QuickTransferCreatePayload {
-  title: string
+  title?: string
   content: {
     text?: string
     links: Array<{ title?: string; url: string }>
@@ -108,6 +112,7 @@ export interface QuickTransferCreatePayload {
 }
 
 export interface QuickTransferCreateResult {
+  title: string
   code: string
   expiresAt: string
   shareToken: string

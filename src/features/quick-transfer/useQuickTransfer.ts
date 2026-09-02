@@ -13,6 +13,8 @@ import { QUICK_TRANSFER_POLL_INTERVAL, QUICK_TRANSFER_UPLOAD_CONCURRENCY } from 
 import {
   canTransitionQuickTransferSendState,
   formatQuickTransferCountdown,
+  getFinalQuickTransferDisplayName,
+  hasQuickShipPayload,
   isQuickTransferDownloadValid,
   isQuickTransferTerminalStatus,
   isValidQuickTransferTitle,
@@ -63,6 +65,7 @@ export const useQuickTransfer = () => {
   const activeClaimRequestId = ref<string | null>(null)
   const activeClaimInputKey = ref('')
   const inspectResult = ref<QuickTransferInspectResult | null>(null)
+  const resolvedTitle = ref('')
   const countdown = ref('')
   const isActionRunning = ref(false)
   const isDownloading = ref(false)
@@ -184,7 +187,7 @@ export const useQuickTransfer = () => {
         )
       }
       file.uploadState = previousState === 'ready' ? 'ready' : 'uploaded'
-      file.error = getQuickTransferErrorMessage(error, `${file.name} 校验失败，请重新校验`)
+      file.error = getQuickTransferErrorMessage(error, `${getFinalQuickTransferDisplayName(file)} 校验失败，请重新校验`)
       file.errorCode = getQuickTransferErrorCode(error) || 'COMPLETE_FAILED'
       throw error
     }
@@ -192,7 +195,7 @@ export const useQuickTransfer = () => {
 
   const uploadOneFile = async (file: QuickShipFileDraft, descriptor: QuickTransferUploadDescriptor, files: QuickShipFileDraft[]) => {
     const selectedFile: SelectedFile | undefined = file.selectedFile
-    if (!selectedFile) throw createUploadError(`${file.name} 的本地文件不可用，请重新选择`)
+    if (!selectedFile) throw createUploadError(`${getFinalQuickTransferDisplayName(file)} 的本地文件不可用，请重新选择`)
     file.uploadState = 'uploading'
     file.progress = 0
     file.error = undefined
@@ -211,7 +214,8 @@ export const useQuickTransfer = () => {
     let completeAttempted = false
     try {
       const uploadResult = await uploadTask.promise
-      if (uploadResult.statusCode !== descriptor.successStatus) throw createUploadError(`${file.name} 上传未成功，请重试`)
+      if (uploadResult.statusCode !== descriptor.successStatus)
+        throw createUploadError(`${getFinalQuickTransferDisplayName(file)} 上传未成功，请重试`)
       file.uploadState = 'uploaded'
       file.progress = 100
       updateOverallProgress(files)
@@ -223,7 +227,7 @@ export const useQuickTransfer = () => {
         file.uploadState = 'error'
         file.errorCode = getQuickTransferErrorCode(error) || 'UPLOAD_FAILED'
       }
-      file.error = getQuickTransferErrorMessage(error, `${file.name} 上传失败，请重试`)
+      file.error = getQuickTransferErrorMessage(error, `${getFinalQuickTransferDisplayName(file)} 上传失败，请重试`)
       throw error
     } finally {
       uploadAborts.delete(file.clientFileId)
@@ -241,7 +245,10 @@ export const useQuickTransfer = () => {
         if (!file) return
         const descriptor = uploadDescriptors.value[file.clientFileId]
         if (!descriptor) {
-          const error = createUploadError(`${file.name} 的上传凭证不可用，请重新准备飞船`, 'TRANSFER_UPLOAD_NOT_AVAILABLE')
+          const error = createUploadError(
+            `${getFinalQuickTransferDisplayName(file)} 的上传凭证不可用，请重新准备飞船`,
+            'TRANSFER_UPLOAD_NOT_AVAILABLE',
+          )
           file.uploadState = 'error'
           file.error = getQuickTransferErrorMessage(error)
           file.errorCode = 'TRANSFER_UPLOAD_NOT_AVAILABLE'
@@ -329,6 +336,7 @@ export const useQuickTransfer = () => {
     uploadProgress.value = null
     uploadDescriptors.value = {}
     transferId.value = context.transferId
+    resolvedTitle.value = context.title
     code.value = context.code
     shareToken.value = context.shareToken
     expiresAt.value = context.expiresAt
@@ -361,6 +369,7 @@ export const useQuickTransfer = () => {
     sendState.value = 'idle'
     sendError.value = null
     transferId.value = ''
+    resolvedTitle.value = ''
     code.value = ''
     shareToken.value = ''
     expiresAt.value = ''
@@ -383,8 +392,12 @@ export const useQuickTransfer = () => {
     if (!isValidQuickTransferTitle(draft.title)) {
       sendError.value = {
         code: 'INVALID_TITLE',
-        message: normalizeQuickTransferTitle(draft.title).length > 0 ? '标题最多 40 个字符' : '请输入飞船标题',
+        message: '标题最多 40 个字符',
       }
+      return false
+    }
+    if (!hasQuickShipPayload(draft)) {
+      sendError.value = { code: 'EMPTY_PAYLOAD', message: '请至少填写标题或添加一项飞船内容' }
       return false
     }
     const fileError = validateQuickTransferFiles(draft.files)
@@ -396,11 +409,17 @@ export const useQuickTransfer = () => {
     sendError.value = null
     sendState.value = 'creating'
     const payload: QuickTransferCreatePayload = {
-      title: normalizeQuickTransferTitle(draft.title),
+      ...(normalizeQuickTransferTitle(draft.title) ? { title: normalizeQuickTransferTitle(draft.title) } : {}),
       content: {
         text: draft.text.trim() || undefined,
         links: draft.links.map(link => ({ title: link.title.trim() || undefined, url: link.url.trim() })),
-        files: draft.files.map(file => ({ clientFileId: file.clientFileId, name: file.name, size: file.size, mimeType: file.mimeType })),
+        files: draft.files.map(file => ({
+          clientFileId: file.clientFileId,
+          name: file.name,
+          displayName: getFinalQuickTransferDisplayName(file),
+          size: file.size,
+          mimeType: file.mimeType,
+        })),
         references: draft.references.map(reference => ({
           type: reference.type,
           resourceId: reference.resourceId,
@@ -415,6 +434,7 @@ export const useQuickTransfer = () => {
     try {
       const created = await createQuickTransfer(payload)
       transferId.value = created.transferId
+      resolvedTitle.value = created.title
       code.value = created.code
       shareToken.value = created.shareToken
       expiresAt.value = created.expiresAt
@@ -431,7 +451,7 @@ export const useQuickTransfer = () => {
         file.serverFileId = descriptor?.fileId
         file.uploadState = descriptor ? 'pending' : 'error'
         file.progress = descriptor ? 0 : undefined
-        file.error = descriptor ? undefined : `${file.name} 的上传凭证不可用，请重新准备飞船`
+        file.error = descriptor ? undefined : `${getFinalQuickTransferDisplayName(file)} 的上传凭证不可用，请重新准备飞船`
         file.errorCode = descriptor ? undefined : 'TRANSFER_UPLOAD_NOT_AVAILABLE'
       })
       if (!draft.files.length) {
@@ -470,14 +490,15 @@ export const useQuickTransfer = () => {
         const file = files[index]
         if (!file) return
         try {
-          if (!file.serverFileId) throw createUploadError(`${file.name} 的上传信息不可用，请重新准备飞船`, 'TRANSFER_FILE_NOT_FOUND')
+          if (!file.serverFileId)
+            throw createUploadError(`${getFinalQuickTransferDisplayName(file)} 的上传信息不可用，请重新准备飞船`, 'TRANSFER_FILE_NOT_FOUND')
           const descriptor = await refreshQuickTransferUploadPolicy(transferId.value, file.serverFileId, file.clientFileId)
           uploadDescriptors.value = { ...uploadDescriptors.value, [file.clientFileId]: descriptor }
           file.uploadState = 'pending'
           await uploadOneFile(file, descriptor, draft.files)
         } catch (error) {
           file.uploadState = 'error'
-          file.error = getQuickTransferErrorMessage(error, `${file.name} 上传失败，请重试`)
+          file.error = getQuickTransferErrorMessage(error, `${getFinalQuickTransferDisplayName(file)} 上传失败，请重试`)
           file.errorCode = getQuickTransferErrorCode(error) || 'UPLOAD_FAILED'
           errors.push(error)
         }
@@ -642,7 +663,7 @@ export const useQuickTransfer = () => {
       if (!access) receiveError.value ||= { code: 'DOWNLOAD_NOT_AVAILABLE', message: '文件访问凭证已失效' }
       return false
     }
-    const success = await downloadFileDirect({ url: access.url, fileName: file.name, mimeType: file.mimeType })
+    const success = await downloadFileDirect({ url: access.url, fileName: file.displayName, mimeType: file.mimeType })
     isDownloading.value = false
     if (!success) receiveError.value = { code: 'DOWNLOAD_FAILED', message: '文件打开失败，请稍后重试' }
     return success
@@ -674,6 +695,7 @@ export const useQuickTransfer = () => {
     senderStatus,
     uploadDescriptors,
     receivedResult,
+    resolvedTitle,
     claimToken,
     activeClaimRequestId,
     inspectResult,

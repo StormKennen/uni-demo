@@ -7,6 +7,30 @@
 
 ## Unreleased
 
+- 2026-09-02 [tools/quick-transfer] 管理首页移除大尺寸分享封面背景，改为参考接龙页的轻量文字页头，避免首屏加载和展示不必要的封面内容（Codex）
+
+- 2026-09-02 [tools/relay] 接龙首页工作台、工具目录及记录工作间入口统一使用 Relay 图标 `relay-icon.jpg`（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页 Hero 改为将 `QUICK_SHIP_SHARE_COVER_URL` 作为整块背景图使用，移除单独的图片标签展示（Codex）
+
+- 2026-09-02 [tools/quick-transfer/visual] 拆分飞船展示图与动画图：管理首页 Hero 及分享封面改用 `quick-ship-share.jpg`，飞船动画和工具目录入口继续使用 `quick-ship.png`（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页 Hero 图片改为直接使用 `QUICK_SHIP_SHARE_COVER_URL`，避免页面视觉资源仅通过分享 payload 间接引用（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页历史记录页签改为与接龙页一致的按钮式 Tabs，并将历史列表限制在独立竖向滚动容器内，保持上方 Hero、操作区、历史标题和页签固定（Codex）
+
+- 2026-09-02 [tools/quick-transfer/share] 将飞船管理、发送、票据、接收及历史页面的微信分享生命周期提升到页面组件，显式开启右上角分享菜单，并统一使用飞船专用封面（Codex）
+
+- 2026-09-02 [tools/relay] 新增通用接龙 Relay V1：支持创建、分享、动态字段、参与/修改/撤回、统计、图片上传和创建者管理（Codex）
+
+- 2026-09-02 [tools/relay] 为首页、创建、详情、参与和管理页面统一增加微信右上角分享，并使用 Relay 专用分享封面图（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 管理首页 Hero 改为展示分享使用的飞船封面图，并将副标题优化为突出分享给好友的使用场景（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 将管理首页的发送记录与接收记录改为同页 Tab，默认加载发送记录，切换历史类型时复用当前页面并保留下拉刷新与分页加载（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 接入飞船标题与附件业务展示名：标题改为可选并统一使用后端 canonical title；附件生成稳定的本地日期序号默认名，支持主体编辑、清空恢复和扩展名锁定，Create/接收/历史/下载链路优先使用 `displayName`（Codex）
+
 - 2026-09-01 [tools/quick-transfer,home/workspaces,sharing] 飞船品牌图片统一迁移至 `/img/share/quick-ship.png`：工具配置新增图片型入口能力，首页工作台、工作间列表和完整工具目录均优先使用 `image` + `aspectFit`，飞船动画与微信分享封面同步复用同一资源并移除旧地址（Codex）
 
 - 2026-09-01 [tools/quick-transfer] 放开空内容飞船发送：仅校验标题必填，移除“请至少添加一项内容”的发送拦截与表单提示，保留文件及其他参数校验（Codex）

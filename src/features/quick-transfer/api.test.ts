@@ -28,7 +28,7 @@ describe('quick transfer V2 response adapter', () => {
       content: {
         text: 'hello',
         links: [{ title: 'Docs', url: 'https://example.com' }],
-        files: [{ fileId: 'file-1', name: 'photo.jpg', size: 12, mimeType: 'image/jpeg' }],
+        files: [{ fileId: 'file-1', name: 'photo.jpg', displayName: 'photo.jpg', size: 12, mimeType: 'image/jpeg' }],
         references: [{ type: 'memoDetail', resourceId: 'memo-1', title: '旅行计划', subtitle: undefined, params: undefined }],
       },
     })
@@ -128,6 +128,24 @@ describe('quick transfer V2 response adapter', () => {
       claimId: 'claim-id-3',
       receiptId: 'receipt-3',
       expiresAt: '2026-08-26T03:00:00.000Z',
+    })
+  })
+
+  it('prefers response displayName and keeps name as original metadata', () => {
+    expect(
+      normalizeQuickTransferResolvedResult({
+        title: '资料',
+        transferId: 'transfer-display-name',
+        claimId: 'claim-display-name',
+        claimToken: 'claim-token',
+        content: {
+          links: [],
+          files: [{ fileId: 'file-1', name: 'tmp_a83f92.jpg', displayName: '营业执照.jpg', size: 12, mimeType: 'image/jpeg' }],
+          references: [],
+        },
+      }),
+    ).toMatchObject({
+      content: { files: [{ name: 'tmp_a83f92.jpg', displayName: '营业执照.jpg' }] },
     })
   })
 })

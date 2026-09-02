@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+  import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipSendForm from '../components/QuickShipSendForm.vue'
   import QuickShipReferencePicker from '../components/QuickShipReferencePicker.vue'
@@ -20,15 +20,17 @@
   import {
     createQuickShipDraft,
     createQuickShipFileDraft,
+    getFileExtension,
+    hasQuickShipPayload,
     isValidQuickTransferTitle,
     isValidQuickTransferMaxClaims,
     isValidQuickTransferUrl,
-    normalizeQuickTransferTitle,
+    normalizeQuickTransferDisplayName,
+    restoreQuickTransferDisplayName,
     validateQuickTransferFiles,
   } from '@/features/quick-transfer/helpers'
   import { getQuickTransferSendButtonLabel } from '@/features/quick-transfer/presentation'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
-  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { consumeQuickShipReferences } from '@/features/quick-transfer/reference/registry'
   import { setQuickTransferSendResultContext } from '@/features/quick-transfer/sendResultContext'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
@@ -64,7 +66,22 @@
   // #endif
 
   const sharePayload = getQuickTransferToolSharePayload()
-  registerQuickTransferPageShare(sharePayload)
+
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
+  onShareAppMessage(() => ({
+    title: sharePayload.title,
+    path: sharePayload.path,
+    imageUrl: sharePayload.imageUrl,
+  }))
+
+  onShareTimeline(() => ({
+    title: QUICK_TRANSFER_TOOL_SHARE_TITLE,
+    query: '',
+    imageUrl: sharePayload.imageUrl,
+  }))
+  // #endif
+
   const canSend = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isSending = computed(() => ['creating', 'uploading', 'completing'].includes(quickTransfer.sendState.value))
   const sendErrorMessage = computed(() => quickTransfer.sendError.value?.message || '')
@@ -82,11 +99,12 @@
       uni.getFileInfo({ filePath: path, success: result => resolve(result.size), fail: reject })
     })
 
-  const normalizePickedFiles = async (files: SelectedFile[]): Promise<QuickShipFileDraft[]> => {
+  const normalizePickedFiles = async (files: SelectedFile[], sequenceOffset = 0): Promise<QuickShipFileDraft[]> => {
     const normalized: QuickShipFileDraft[] = []
-    for (const file of files) {
+    const selectedAt = new Date()
+    for (const [index, file] of files.entries()) {
       const size = file.size ?? (file.path ? await readFileSize(file.path) : undefined)
-      normalized.push(createQuickShipFileDraft({ ...file, size }))
+      normalized.push(createQuickShipFileDraft({ ...file, size }, selectedAt, sequenceOffset + index + 1))
     }
     return normalized
   }
@@ -105,7 +123,7 @@
         isMiniProgram.value && kind === 'image'
           ? await filePicker.pickImage({ count: remaining, sizeType: ['original'], sourceType: ['album'] })
           : await filePicker.pickFile({ count: remaining, type: 'all' })
-      const nextFiles = await normalizePickedFiles(files)
+      const nextFiles = await normalizePickedFiles(files, draft.value.files.length)
       const error = validateQuickTransferFiles([...draft.value.files, ...nextFiles])
       if (error) {
         fileError.value = error
@@ -131,6 +149,16 @@
     if (isSending.value) return
     draft.value.files = draft.value.files.filter(item => item.clientFileId !== file.clientFileId)
     fileError.value = ''
+  }
+
+  const updateFileDisplayName = (file: QuickShipFileDraft, value: string, restore = false) => {
+    if (isSending.value) return
+    if (restore) {
+      file.displayName = restoreQuickTransferDisplayName(file)
+      return
+    }
+    const extension = getFileExtension(file.defaultDisplayName)
+    file.displayName = normalizeQuickTransferDisplayName(value, extension) || extension
   }
 
   const createLocalId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -186,9 +214,12 @@
       return
     }
     fileError.value = ''
-    const normalizedTitle = normalizeQuickTransferTitle(draft.value.title)
     if (!isValidQuickTransferTitle(draft.value.title)) {
-      titleError.value = normalizedTitle ? '标题最多 40 个字符' : '请输入飞船标题'
+      titleError.value = '标题最多 40 个字符'
+      return
+    }
+    if (!hasQuickShipPayload(draft.value)) {
+      fileError.value = '请至少填写标题或添加一项飞船内容'
       return
     }
     titleError.value = ''
@@ -210,7 +241,7 @@
       return
     }
     setQuickTransferSendResultContext({
-      title: normalizedTitle,
+      title: quickTransfer.resolvedTitle.value || '飞船',
       transferId: status.transferId,
       code: quickTransfer.code.value,
       shareToken: quickTransfer.shareToken.value,
@@ -282,6 +313,11 @@
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
     :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+    <!-- #ifdef MP-WEIXIN -->
+    <template #nav-right>
+      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
+    </template>
+    <!-- #endif -->
     <view class="send-create-page">
       <view v-if="showSendGate" class="gate-panel">
         <text class="page-kicker">SEND SHIP</text>
@@ -320,6 +356,7 @@
           @add-file="openFileSourceSheet"
           @add-reference="openAddReference"
           @remove-file="removeFile"
+          @update:file-display-name="updateFileDisplayName"
           @remove-reference="removeReference"
           @submit="submitSend"
           @retry-upload="retryUpload"
@@ -356,6 +393,30 @@
 </template>
 
 <style lang="scss">
+  .nav-share-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88rpx;
+    height: 58rpx;
+    margin: 0;
+    padding: 0 16rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.68);
+    border-radius: 999rpx;
+    color: #fff;
+    background: rgba(7, 20, 38, 0.28);
+    font-size: 22rpx;
+    line-height: 1;
+  }
+
+  .nav-share-button::after {
+    border: 0;
+  }
+
+  .nav-share-button--hover {
+    opacity: 0.78;
+  }
+
   .send-create-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));

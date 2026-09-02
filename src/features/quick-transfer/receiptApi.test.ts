@@ -92,7 +92,9 @@ describe('quick transfer receipt API adapter', () => {
         text: null,
         links: [],
         references: [],
-        files: [{ fileId: 'file-2', name: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false }],
+        files: [
+          { fileId: 'file-2', name: 'report.pdf', displayName: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false },
+        ],
       },
     })
 
@@ -104,7 +106,9 @@ describe('quick transfer receipt API adapter', () => {
         text: undefined,
         links: [],
         references: [],
-        files: [{ fileId: 'file-2', name: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false }],
+        files: [
+          { fileId: 'file-2', name: 'report.pdf', displayName: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false },
+        ],
       },
     })
   })

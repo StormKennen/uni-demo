@@ -3,16 +3,19 @@
  * @url POST /quick-transfers
  */
 export interface postQuickTransfersBody {
-  content: postQuickTransfersBodyContent
+  /** 可选；可创建只有标题的飞船 */
+  content?: postQuickTransfersBodyContent
   expiresIn?: number
   maxClaims?: number
-  /** 飞船标题 */
-  title: string
+  /** 可选；未提供或为空时由服务端按文本、链接、文件 displayName、引用生成 */
+  title?: string
 }
 
 /** postQuickTransfersBodyContentFiles */
 export interface postQuickTransfersBodyContentFiles {
   clientFileId?: any
+  /** 对外展示及下载名称；新客户端应提供，缺失时兼容回退到 name；不得修改文件扩展名 */
+  displayName?: string
   mimeType: string
   name: string
   size: number

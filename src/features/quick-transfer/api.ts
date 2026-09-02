@@ -10,7 +10,7 @@ import type {
   QuickTransferReceiveInput,
 } from './types'
 import { QUICK_TRANSFER_DEFAULT_MAX_CLAIMS } from './constants'
-import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims } from './helpers'
+import { normalizeQuickTransferClaimCount, normalizeQuickTransferMaxClaims, normalizeQuickTransferTitle } from './helpers'
 import { normalizeQuickTransferInspectResult, normalizeQuickTransferResolvedResult } from './response'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import {
@@ -137,6 +137,10 @@ export const createQuickTransfer = async (payload: QuickTransferCreatePayload): 
     ? record.uploads.map(value => normalizeUpload(value)).filter((value): value is QuickTransferUploadDescriptor => Boolean(value))
     : []
   return {
+    title:
+      normalizeQuickTransferTitle(typeof record.title === 'string' ? record.title : '') ||
+      normalizeQuickTransferTitle(payload.title || '') ||
+      '飞船',
     code: requiredString(record, 'code'),
     claimCount: normalizeQuickTransferClaimCount(record.claimCount),
     expiresAt: requiredString(record, 'expiresAt'),

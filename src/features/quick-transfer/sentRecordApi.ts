@@ -61,7 +61,12 @@ const normalizePreview = (value: unknown): QuickTransferSentRecordPreview => {
     text: typeof record.text === 'string' ? record.text : undefined,
     referenceTitle: typeof record.referenceTitle === 'string' ? record.referenceTitle : undefined,
     linkTitle: typeof record.linkTitle === 'string' ? record.linkTitle : undefined,
-    fileName: typeof record.fileName === 'string' ? record.fileName : undefined,
+    fileName:
+      typeof record.displayName === 'string' && record.displayName
+        ? record.displayName
+        : typeof record.fileName === 'string'
+          ? record.fileName
+          : undefined,
   }
 }
 

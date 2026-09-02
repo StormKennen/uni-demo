@@ -17,11 +17,16 @@ import {
   canTransitionQuickTransferSendState,
   createQuickShipDraft,
   createQuickShipFileDraft,
+  createQuickTransferDefaultDisplayName,
   extractQuickTransferCode,
   formatQuickTransferExpiry,
   getQuickTransferIndexRedirectRoute,
   getQuickTransferMimeType,
+  getFileExtension,
+  getFileNameBase,
+  getFinalQuickTransferDisplayName,
   hasQuickShipContent,
+  hasQuickShipPayload,
   isQuickTransferDownloadValid,
   isValidQuickTransferCode,
   isValidQuickTransferMaxClaims,
@@ -32,8 +37,10 @@ import {
   normalizeQuickTransferMaxClaims,
   normalizeQuickTransferCode,
   normalizeQuickTransferCodeInput,
+  normalizeQuickTransferDisplayName,
   normalizeQuickTransferTitle,
   parseQuickTransferPageQuery,
+  restoreQuickTransferDisplayName,
   validateQuickTransferFile,
   validateQuickTransferFiles,
 } from './helpers'
@@ -47,15 +54,17 @@ describe('quick transfer V2 helpers', () => {
     expect(hasQuickShipContent(draft)).toBe(true)
   })
 
-  it('normalizes and validates the required ship title independently from its content', () => {
+  it('normalizes and validates the optional ship title independently from its content', () => {
     expect(normalizeQuickTransferTitle(' 项目资料 ')).toBe('项目资料')
     expect(normalizeQuickTransferTitle('     ')).toBe('')
     expect(isValidQuickTransferTitle('项目资料')).toBe(true)
-    expect(isValidQuickTransferTitle('     ')).toBe(false)
+    expect(isValidQuickTransferTitle('     ')).toBe(true)
     expect(isValidQuickTransferTitle('a'.repeat(41))).toBe(false)
     const titleOnlyDraft = createQuickShipDraft()
     titleOnlyDraft.title = '只有标题'
     expect(hasQuickShipContent(titleOnlyDraft)).toBe(false)
+    expect(hasQuickShipPayload(titleOnlyDraft)).toBe(true)
+    expect(hasQuickShipPayload(createQuickShipDraft())).toBe(false)
   })
 
   it('extracts labeled or standalone codes without letting English labels win', () => {
@@ -82,6 +91,8 @@ describe('quick transfer V2 helpers', () => {
     expect(getQuickTransferMimeType('unknown.qtf')).toBe('application/octet-stream')
     const draftFile = createQuickShipFileDraft({ name: 'a.txt', path: '/tmp/a.txt', size: 12, type: 'file' })
     expect(draftFile.clientFileId).toContain('quick-file-')
+    expect(draftFile.defaultDisplayName).toMatch(/^\d{8}_\d{6}_01\.txt$/)
+    expect(draftFile.displayName).toBe(draftFile.defaultDisplayName)
     expect(validateQuickTransferFiles([draftFile])).toBeNull()
     expect(validateQuickTransferFiles(Array.from({ length: MAX_QUICK_TRANSFER_FILE_COUNT + 1 }, () => draftFile))).toContain('最多')
   })
@@ -130,12 +141,33 @@ describe('quick transfer V2 helpers', () => {
     })
     expect(getQuickTransferSendButtonLabel('idle', null)).toBe('发送飞船')
     expect(getQuickTransferSendButtonLabel('uploading', 38)).toBe('正在装船 38%')
-    expect(getQuickTransferFileStateLabel({ clientFileId: 'f', name: 'a', size: 1, mimeType: 'text/plain', uploadState: 'ready' })).toBe(
-      '已完成 ✓',
-    )
+    expect(
+      getQuickTransferFileStateLabel({
+        clientFileId: 'f',
+        name: 'a',
+        defaultDisplayName: 'default.txt',
+        displayName: 'default.txt',
+        size: 1,
+        mimeType: 'text/plain',
+        uploadState: 'ready',
+      }),
+    ).toBe('已完成 ✓')
     expect(getQuickTransferErrorMessage({ data: { code: 'QUICK_TRANSFER_RECEIPT_FILE_NOT_AVAILABLE' } })).toBe('文件已经过期')
     expect(isQuickTransferClaimResultUnknown({ code: 'NETWORK_ERROR' })).toBe(true)
     expect(isQuickTransferClaimResultUnknown({ statusCode: 503 })).toBe(true)
     expect(isQuickTransferClaimResultUnknown({ statusCode: 400 })).toBe(false)
+  })
+
+  it('creates stable editable display names with locked extensions', () => {
+    const selectedAt = new Date(2026, 8, 1, 19, 47, 35)
+    expect(createQuickTransferDefaultDisplayName('tmp_a.jpg', 'image/jpeg', selectedAt, 1)).toBe('20260901_194735_01.jpg')
+    expect(createQuickTransferDefaultDisplayName('tmp_b.pdf', 'application/pdf', selectedAt, 2)).toBe('20260901_194735_02.pdf')
+    expect(getFileExtension('营业执照.JPG')).toBe('.jpg')
+    expect(getFileNameBase('营业执照.JPG')).toBe('营业执照')
+    expect(normalizeQuickTransferDisplayName(' 营业/执照.pdf ', '.jpg')).toBe('营业执照.jpg')
+    expect(normalizeQuickTransferDisplayName('.jpg', '.jpg')).toBe('')
+    const file = { defaultDisplayName: '20260901_194735_01.jpg', displayName: '.jpg' }
+    expect(restoreQuickTransferDisplayName(file)).toBe(file.defaultDisplayName)
+    expect(getFinalQuickTransferDisplayName({ name: 'tmp.jpg', ...file })).toBe(file.defaultDisplayName)
   })
 })

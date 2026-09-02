@@ -52,6 +52,7 @@ const status = (transferId: string, statusValue: QuickTransferStatusResult['stat
 })
 
 const createResult = (fileCount: number): QuickTransferCreateResult => ({
+  title: '项目资料',
   code: '123456',
   expiresAt: new Date(Date.now() + 60_000).toISOString(),
   shareToken: 'share-1',
@@ -78,6 +79,8 @@ const createDraft = (fileCount: number): QuickShipDraft => {
   draft.files = Array.from({ length: fileCount }, (_, index) => ({
     clientFileId: `file-${index + 1}`,
     name: `file-${index + 1}.txt`,
+    defaultDisplayName: `default-${index + 1}.txt`,
+    displayName: `default-${index + 1}.txt`,
     size: 1,
     mimeType: 'text/plain',
     selectedFile: { name: `file-${index + 1}.txt`, path: `/tmp/file-${index + 1}.txt`, size: 1, type: 'text/plain' },
@@ -99,18 +102,19 @@ beforeEach(() => {
 })
 
 describe('useQuickTransfer upload recovery', () => {
-  it('requires a valid title and sends its trimmed value in the create payload', async () => {
+  it('allows an empty title when content exists and omits it from the create payload', async () => {
     const draft = createDraft(0)
     const quickTransfer = useQuickTransfer()
     draft.title = '   '
 
-    expect(await quickTransfer.send(draft)).toBe(false)
-    expect(quickTransfer.sendError.value).toEqual({ code: 'INVALID_TITLE', message: '请输入飞船标题' })
-    expect(mocks.createQuickTransfer).not.toHaveBeenCalled()
-
-    draft.title = ' 项目交接资料 '
     mocks.createQuickTransfer.mockResolvedValue(createResult(0))
     expect(await quickTransfer.send(draft)).toBe(true)
+    expect(mocks.createQuickTransfer).toHaveBeenCalledWith(expect.not.objectContaining({ title: expect.anything() }))
+
+    const titledDraft = createDraft(0)
+    titledDraft.title = ' 项目交接资料 '
+    const titledTransfer = useQuickTransfer()
+    expect(await titledTransfer.send(titledDraft)).toBe(true)
     expect(mocks.createQuickTransfer).toHaveBeenCalledWith(
       expect.objectContaining({ title: '项目交接资料', content: expect.objectContaining({ text: 'hello' }) }),
     )
@@ -130,6 +134,27 @@ describe('useQuickTransfer upload recovery', () => {
         content: { text: undefined, links: [], files: [], references: [] },
       }),
     )
+  })
+
+  it('sends the editable display name while retaining original file metadata', async () => {
+    const draft = createDraft(1)
+    draft.title = ''
+    draft.text = ''
+    draft.files[0]!.name = 'tmp_a83f92.jpg'
+    draft.files[0]!.defaultDisplayName = '20260901_194735_01.jpg'
+    draft.files[0]!.displayName = '营业执照.jpg'
+    mocks.createQuickTransfer.mockResolvedValue(createResult(1))
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.send(draft)).toBe(true)
+    expect(mocks.createQuickTransfer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          files: [expect.objectContaining({ name: 'tmp_a83f92.jpg', displayName: '营业执照.jpg' })],
+        }),
+      }),
+    )
+    expect(mocks.createQuickTransfer.mock.calls.slice(-1)[0]?.[0]).not.toHaveProperty('title')
   })
 
   it('continues the queue after multiple files fail and retries only failed files', async () => {
@@ -203,7 +228,7 @@ describe('useQuickTransfer receiver recovery', () => {
       content: {
         text: undefined,
         links: [],
-        files: [{ fileId: 'file-1', name: 'a.txt', size: 1, mimeType: 'text/plain' }],
+        files: [{ fileId: 'file-1', name: 'a.txt', displayName: 'a.txt', size: 1, mimeType: 'text/plain' }],
         references: [],
       },
     }

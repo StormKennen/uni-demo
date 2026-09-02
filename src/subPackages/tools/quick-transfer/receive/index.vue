@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+  import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipReceivePanel from '../components/QuickShipReceivePanel.vue'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
@@ -20,7 +20,6 @@
     getQuickTransferTransferSharePayload,
     QUICK_TRANSFER_TOOL_SHARE_TITLE,
   } from '@/features/quick-transfer/share'
-  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
   import type { QuickTransferContentReference, QuickTransferPageQuery } from '@/features/quick-transfer/types'
   import { getQuickShipTransitionForReceive, type QuickShipTransitionType } from '@/features/quick-transfer/visual'
@@ -39,13 +38,31 @@
 
   const sharePayload = computed(() =>
     shareToken.value
-      ? getQuickTransferTransferSharePayload(shareToken.value, quickTransfer.inspectResult.value?.expiresAt || '')
+      ? getQuickTransferTransferSharePayload(
+          shareToken.value,
+          quickTransfer.inspectResult.value?.expiresAt || '',
+          quickTransfer.inspectResult.value?.title || '飞船',
+        )
       : getQuickTransferReceiveSharePayload(),
   )
   const shareTimelineQuery = computed(() =>
     sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(shareToken.value)}` : '',
   )
-  registerQuickTransferPageShare(sharePayload)
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
+  onShareAppMessage(() => ({
+    title: sharePayload.value.title,
+    path: sharePayload.value.path,
+    imageUrl: sharePayload.value.imageUrl,
+  }))
+
+  onShareTimeline(() => ({
+    title: sharePayload.value.title || QUICK_TRANSFER_TOOL_SHARE_TITLE,
+    query: shareTimelineQuery.value,
+    imageUrl: sharePayload.value.imageUrl,
+  }))
+  // #endif
+
   const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
   const isReceiving = computed(() => ['inspecting', 'resolving'].includes(quickTransfer.receiveState.value))
   const receivedContent = computed(() => quickTransfer.receivedResult.value?.content || null)
@@ -161,6 +178,11 @@
     :share-timeline-title="sharePayload.title || QUICK_TRANSFER_TOOL_SHARE_TITLE"
     :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+    <!-- #ifdef MP-WEIXIN -->
+    <template #nav-right>
+      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
+    </template>
+    <!-- #endif -->
     <view class="receive-page">
       <view class="page-heading">
         <text class="page-kicker">RECEIVE SHIP</text>
@@ -210,6 +232,30 @@
 </template>
 
 <style lang="scss">
+  .nav-share-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88rpx;
+    height: 58rpx;
+    margin: 0;
+    padding: 0 16rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.68);
+    border-radius: 999rpx;
+    color: #fff;
+    background: rgba(7, 20, 38, 0.28);
+    font-size: 22rpx;
+    line-height: 1;
+  }
+
+  .nav-share-button::after {
+    border: 0;
+  }
+
+  .nav-share-button--hover {
+    opacity: 0.78;
+  }
+
   .receive-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));

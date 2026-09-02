@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
@@ -13,7 +13,6 @@
   import { downloadFileDirect } from '@/platform/file'
   import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
-  import { registerQuickTransferPageShare } from '@/features/quick-transfer/pageShare'
   import { getQuickTransferToolSharePayload } from '@/features/quick-transfer/share'
 
   const receipts = useQuickTransferReceipts()
@@ -23,7 +22,17 @@
   const isDownloading = ref(false)
   const isReceiptNotFound = computed(() => error.value?.code === 'QUICK_TRANSFER_RECEIPT_NOT_FOUND')
   const sharePayload = getQuickTransferToolSharePayload()
-  registerQuickTransferPageShare(sharePayload)
+
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
+  onShareAppMessage(() => ({
+    title: sharePayload.title,
+    path: sharePayload.path,
+    imageUrl: sharePayload.imageUrl,
+  }))
+
+  onShareTimeline(() => ({ title: sharePayload.title, query: '', imageUrl: sharePayload.imageUrl }))
+  // #endif
 
   const loadDetail = () => {
     isInvalidReceiptId.value = !isValidQuickTransferReceiptId(receiptId.value)
@@ -68,7 +77,7 @@
         uni.showToast({ title: '文件访问链接已失效，请重新打开', icon: 'none' })
         return
       }
-      const success = await downloadFileDirect({ url: access.url, fileName: file.name, mimeType: file.mimeType })
+      const success = await downloadFileDirect({ url: access.url, fileName: file.displayName, mimeType: file.mimeType })
       if (!success) uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
     } catch {
       uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
@@ -91,6 +100,11 @@
     :share-image-url="sharePayload.imageUrl"
     :back-fallback="QUICK_TRANSFER_RECEIPTS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+    <!-- #ifdef MP-WEIXIN -->
+    <template #nav-right>
+      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
+    </template>
+    <!-- #endif -->
     <view class="receipt-detail-page">
       <view v-if="isInvalidReceiptId" class="state-panel">
         <text class="state-title">记录参数无效</text>
@@ -130,6 +144,30 @@
 </template>
 
 <style scoped lang="scss">
+  .nav-share-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88rpx;
+    height: 58rpx;
+    margin: 0;
+    padding: 0 16rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.68);
+    border-radius: 999rpx;
+    color: #fff;
+    background: rgba(7, 20, 38, 0.28);
+    font-size: 22rpx;
+    line-height: 1;
+  }
+
+  .nav-share-button::after {
+    border: 0;
+  }
+
+  .nav-share-button--hover {
+    opacity: 0.78;
+  }
+
   .receipt-detail-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));

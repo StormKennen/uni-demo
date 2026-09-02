@@ -63,10 +63,10 @@
       <view class="section-heading"
         ><text class="section-title">文件</text><text class="section-count">{{ props.content.files.length }} 个</text></view
       >
-      <view v-for="(file, index) in props.content.files" :key="`${file.fileId || file.name}-${index}`" class="received-row">
+      <view v-for="(file, index) in props.content.files" :key="`${file.fileId || file.displayName}-${index}`" class="received-row">
         <view class="item-icon item-icon--file">FILE</view>
         <view class="item-main">
-          <text class="item-title">{{ file.name }}</text>
+          <text class="item-title">{{ file.displayName }}</text>
           <text class="item-subtitle"
             >{{ formatQuickTransferFileSize(file.size) }} · {{ getQuickTransferFileTypeLabel(file.mimeType) }}</text
           >

@@ -15,7 +15,7 @@ subPackages/tools/quick-transfer/receipt/list
 subPackages/tools/quick-transfer/receipt/detail
 ```
 
-管理页只负责三个 Tab：操作、我发送的、我收到的。操作 Tab 只提供发送飞船和接收飞船两个入口；发送与接收业务状态不得嵌入管理页。历史列表抽取为可嵌入管理页的组件，原 sent/receipt list 页面保留为兼容壳。
+管理页负责操作区和历史记录区：操作区只提供发送飞船和接收飞船两个入口，历史记录区提供「发送记录 / 接收记录」两个 Tab。发送与接收业务状态不得嵌入管理页；历史列表抽取为可嵌入管理页的组件，原 sent/receipt list 页面保留为兼容壳。
 
 发送创建页复用 `QuickShipSendForm`，创建成功后将 `transferId/code/shareToken/expiresAt/claimCount/maxClaims/status` 写入 JS 内存 transient context，并使用 `redirectTo` 进入发送票据页。票据页负责当前飞船的分享、状态轮询、召回和终态展示；无 transient context 时只显示安全返回和历史入口，不展示空票据。票据页分享固定进入 Receiver 路由，不在历史详情中重新生成分享凭证。
 
@@ -50,7 +50,7 @@ Sender Draft：
 
 ```ts
 interface QuickShipDraft {
-  title: string
+  title?: string
   text: string
   links: Array<{ localId: string; title: string; url: string }>
   files: QuickShipFileDraft[]
@@ -102,7 +102,7 @@ content.references[]
 
 页面固定展示“留言 / 链接 / 文件 / 引用”四个区域。留言允许为空；链接仅接受 `http/https`，支持添加、修改、删除；文件一行一个，不渲染图片宫格；引用只能由业务页面带入，不在飞船页内浏览资源。
 
-标题为必填项，留言、链接、文件和引用内容均可为空；空内容飞船仍允许创建。前端继续校验：单文件不超过 50 MiB，最多 10 个文件，合计不超过 500 MiB；文件限制后端仍是最终校验来源。微信的 `image/fileType` 标签必须经过文件名推断为标准 MIME，0 字节文件禁止添加。
+标题为可选项；标题、留言、链接、文件和引用不能全部为空。前端继续校验：单文件不超过 50 MiB，最多 10 个文件，合计不超过 500 MiB；文件限制后端仍是最终校验来源。微信的 `image/fileType` 标签必须经过文件名推断为标准 MIME，0 字节文件禁止添加。
 
 Create 后：
 
@@ -236,7 +236,7 @@ subPackages/tools/quick-transfer/sent/detail
 
 ## 12. V3.1 管理与历史卡片
 
-管理页继续保留 `操作 / 我发送的 / 我收到的` 三个 Tab，操作 Tab 精简为同宽的「发飞船」和「收飞船」两个入口，不重复展示说明文字或箭头；Hero 保留既有背景视觉，只移除 `FAST TRANSFER` 辅助文案以降低首屏密度。发送创建、发送票据、接收和分享页面架构不变。
+管理页保留操作区与历史记录区；操作区精简为同宽的「发飞船」和「收飞船」两个入口，不重复展示说明文字或箭头，历史记录区使用同页的「发送记录 / 接收记录」两个 Tab，默认加载发送记录，切换不跳转新页面。Hero 保留既有背景视觉，只移除 `FAST TRANSFER` 辅助文案以降低首屏密度。发送创建、发送票据、接收和分享页面架构不变。
 
 Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和导航，但每一条记录统一使用 `QuickShipHistoryCard` 展示。卡片直接消费后端的 `displayTitle`、`primaryType`、`summary.imageCount` 和 `summary.otherFileCount`，使用现有 `uni-icons` 显示文字、图片、文件、链接、引用或混合内容图标；Sent 额外在标题行显示状态，并将领取进度合并到时间行，Receipt 不显示发送方状态。
 
@@ -246,9 +246,9 @@ Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和�
 
 ## 13. V3.2 首页收敛与发送反馈
 
-管理首页不再展示 `操作 / 我发送的 / 我收到的` 三个 Tab，也不再嵌入历史列表或维护历史刷新状态；页面固定为 Hero、同宽的「发船 / 收船」主操作，以及「发送记录 / 接收记录」两个轻量文字入口，分别进入 `sent/list` 和 `receipt/list`。主操作区与历史记录区通过标题、分隔线和留白建立明显层级，历史入口不与发船/收船使用同等按钮视觉。`?tab=sent`、`?tab=received` 作为旧入口继续由首页重定向到对应独立列表，`?tab=operation` 直接留在首页；`shareToken` 和 `mode=receive` 继续重定向到 Receiver。
+管理首页不再展示 `操作 / 我发送的 / 我收到的` 三个顶层 Tab；页面固定为 Hero、同宽的「发船 / 收船」主操作，以及历史记录区的「发送记录 / 接收记录」两个同页 Tab。进入页面默认挂载并加载发送记录，切换接收记录时仍留在当前管理页，不新开历史容器；下拉刷新和触底加载只作用于当前 Tab。主操作区与历史记录区通过标题、分隔线和留白建立明显层级，历史 Tab 不与发船/收船使用同等按钮视觉。`?tab=sent`、`?tab=received` 作为旧入口继续由首页重定向到对应独立列表，`?tab=operation` 直接留在首页；`shareToken` 和 `mode=receive` 继续重定向到 Receiver。
 
-发送创建页的「添加链接 / 添加文件」保持 Secondary Action 层级，使用主题边界增强识别度，不改既有选择器和弹层行为。主按钮只表达发送状态：空闲时固定为「发送飞船」，创建、上传、确认阶段显示对应进行中状态；标题通过必填校验，内容可以为空，不再展示或执行“请至少添加一项内容”提示。只有发送进行中或存在当前处理中飞船时禁用主按钮，文件/API 错误继续独立展示。
+发送创建页的「添加链接 / 添加文件」保持 Secondary Action 层级，使用主题边界增强识别度，不改既有选择器和弹层行为。主按钮只表达发送状态：空闲时固定为「发送飞船」，创建、上传、确认阶段显示对应进行中状态；标题可留空，但标题与内容不能同时为空。只有发送进行中或存在当前处理中飞船时禁用主按钮，文件/API 错误继续独立展示。
 
 ## 14. Quick Transfer 前端体验收口
 
@@ -266,7 +266,9 @@ H5 继续复制当前 Hash Router 下的完整 Receiver URL。微信小程序的
 
 ## 16. V3.x 标题、历史记录管理与兑换券分享
 
-Quick Transfer 的 `QuickShipDraft` 正式包含必填 `title`，标题与可选的 `text` 内容语义分离。标题在发送表单中置于内容区域顶部，单行、最多 40 个字符，发送前执行 trim 与空值/长度校验；留言、链接、文件和引用均可为空，Create 请求携带空内容包时仍允许创建。`hasQuickShipContent(draft)` 仅作为内容判断工具保留，不再阻止只有标题的空飞船。Create 请求携带 trim 后的 `title`，发送结果上下文、Inspect / Resolve 接收结果及 Sent / Receipt 详情均保留并展示标题。
+Quick Transfer 的 `QuickShipDraft` 正式包含可选 `title`，标题与可选的 `text` 内容语义分离。标题在发送表单中置于内容区域顶部，单行、最多 40 个字符，发送前执行 trim 与长度校验；留言、链接、文件和引用均可为空，但整艘飞船至少需要标题或一项内容。`hasQuickShipPayload(draft)` 负责统一判断该规则。Create 请求仅在标题非空时携带 trim 后的 `title`，最终展示标题以后端返回的 canonical `title` 为准，发送结果上下文、Inspect / Resolve 接收结果及 Sent / Receipt 详情均保留并展示标题。
+
+Quick Ship 文件 Draft 同时保留平台原始 `name`、前端稳定的 `defaultDisplayName` 和用户可编辑的 `displayName`。附件首次选择时按本地日期时间、同批序号和真实扩展名生成默认名；UI 只编辑主体，扩展名锁定，清空后在失焦或提交时恢复 `defaultDisplayName`。Create 请求保留原始 `name` 并发送最终 `displayName`；Response、接收内容、历史记录和下载提示优先展示 `displayName`，旧数据继续回退到 `name`。
 
 历史记录列表以 `title` 为记录识别信息，旧数据仅在标题为空时兼容 `displayTitle`，最终回退为「飞船」；列表卡片不再主展示内容类型图标、summary 或 preview，仅保留标题、时间、必要状态/领取进度与右下角删除热区。删除入口先通过 `uni.showModal` 二次确认，按记录 ID 管理删除中状态，成功后移除当前卡片并提示「已删除」，失败时保留记录并提示「删除失败，请重试」。发送记录删除不召回飞船，接收记录删除不撤销领取；详情页不重复增加删除按钮。列表删除均通过 Quick Transfer Feature Adapter 调用已生成的 SentRecord / Receipt 删除 API。
 
@@ -274,6 +276,6 @@ Quick Transfer 的 `QuickShipDraft` 正式包含必填 `title`，标题与可选
 
 ## 17. 飞船品牌图片统一
 
-飞船品牌视觉统一使用公开 OSS 图片 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/quick-ship.png`，该地址同时用于首页与工具目录入口、飞船动画以及微信小程序工具分享和收船分享封面，不保留历史飞船图片或其他飞船分享封面地址。
+飞船视觉资源分为分享封面、工具入口图与动画图：微信小程序工具分享/收船分享封面使用公开 OSS 图片 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/quick-ship-share.jpg`，由 `QUICK_SHIP_SHARE_COVER_URL` 提供；管理首页采用轻量文字页头，不加载分享封面；工具目录入口与飞船动画继续使用 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/quick-ship.png`，由 `QUICK_SHIP_IMAGE_URL` 提供。管理首页副标题突出“分享给好友”，不将使用场景限制为跨设备传递。
 
 `ToolItem` 支持可选 `image` 字段。工具入口存在 `image` 时使用 `<image mode="aspectFit">`，否则继续使用 `icon`；飞船入口只配置共享图片，不使用 `send`、`paperplane`、`transfer`、`paperclip` 等通用图标。横向图片在既有图标容器内允许更宽展示，但不得撑高工具卡片。

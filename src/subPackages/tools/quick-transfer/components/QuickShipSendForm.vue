@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { getQuickTransferFileStateLabel, getQuickTransferFileTypeLabel } from '@/features/quick-transfer/presentation'
-  import { formatQuickTransferFileSize } from '@/features/quick-transfer/helpers'
+  import { formatQuickTransferFileSize, getFileExtension, getFileNameBase } from '@/features/quick-transfer/helpers'
   import type { QuickShipDraft, QuickShipFileDraft, QuickShipLinkDraft, QuickTransferTtl } from '@/features/quick-transfer/types'
 
   interface Props {
@@ -32,6 +32,7 @@
     'add-file': []
     'add-reference': []
     'remove-file': [file: QuickShipFileDraft]
+    'update:file-display-name': [file: QuickShipFileDraft, value: string, restore: boolean]
     'remove-reference': [localId: string]
     submit: []
     'retry-upload': []
@@ -59,6 +60,14 @@
     emit('update:title', getInputValue(event))
   }
 
+  const handleFileNameInput = (file: QuickShipFileDraft, event: { detail?: { value?: string } }) => {
+    emit('update:file-display-name', file, getInputValue(event), false)
+  }
+
+  const handleFileNameBlur = (file: QuickShipFileDraft) => {
+    emit('update:file-display-name', file, getFileNameBase(file.displayName), true)
+  }
+
   const handleTtlChange = (event: { detail: { value: number | string } }) => {
     const option = props.ttlOptions[Number(event.detail.value)]
     if (option) emit('update:expires-in', option.value)
@@ -74,7 +83,7 @@
   <view class="send-form">
     <view class="title-field">
       <view class="title-label-row">
-        <text class="title-label">标题 <text class="required-mark">*</text></text>
+        <text class="title-label">标题</text>
         <text class="title-count">{{ draft.title.length }} / 40</text>
       </view>
       <input
@@ -82,14 +91,14 @@
         type="text"
         :value="draft.title"
         :maxlength="40"
-        placeholder="输入飞船标题"
+        placeholder="输入标题，可以留空"
         :disabled="props.isSending"
         @input="handleTitleInput" />
       <text v-if="props.titleError" class="title-error">{{ props.titleError }}</text>
     </view>
 
     <view class="content-heading">
-      <text class="content-title">传输内容</text>
+      <text class="content-title">内容</text>
       <text v-if="draft.files.length" class="content-count">{{ draft.files.length }} / {{ props.maxFileCount }} 个文件</text>
     </view>
 
@@ -119,7 +128,17 @@
       <view v-for="file in draft.files" :key="file.clientFileId" class="content-row">
         <view class="item-icon item-icon--file">FILE</view>
         <view class="item-main">
-          <text class="item-title">{{ file.name }}</text>
+          <view class="file-name-editor">
+            <input
+              class="file-name-input"
+              type="text"
+              :value="getFileNameBase(file.displayName)"
+              :maxlength="120"
+              :disabled="props.isSending"
+              @input="handleFileNameInput(file, $event)"
+              @blur="handleFileNameBlur(file)" />
+            <text class="file-extension">{{ getFileExtension(file.defaultDisplayName) }}</text>
+          </view>
           <text class="item-subtitle"
             >{{ formatQuickTransferFileSize(file.size) }} · {{ getQuickTransferFileTypeLabel(file.mimeType) }}</text
           >
@@ -366,6 +385,31 @@
   .item-main {
     flex: 1;
     min-width: 0;
+  }
+
+  .file-name-editor {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .file-name-input {
+    flex: 1;
+    min-width: 0;
+    height: 54rpx;
+    padding: 0 12rpx;
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 10rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface-muted);
+    font-size: 27rpx;
+  }
+
+  .file-extension {
+    flex: 0 0 auto;
+    color: var(--theme-text-secondary);
+    font-size: 25rpx;
   }
 
   .item-title,

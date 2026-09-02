@@ -211,6 +211,45 @@
           }
         },
         {
+          "path": "relay/index",
+          "style": {
+            "navigationBarTitleText": "接龙",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 80
+          }
+        },
+        {
+          "path": "relay/create",
+          "style": {
+            "navigationBarTitleText": "创建接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "relay/detail",
+          "style": {
+            "navigationBarTitleText": "接龙详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 80
+          }
+        },
+        {
+          "path": "relay/submit",
+          "style": {
+            "navigationBarTitleText": "参与接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "relay/manage",
+          "style": {
+            "navigationBarTitleText": "管理接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "image-privacy/index",
           "style": {
             "navigationBarTitleText": "图片隐私清理",

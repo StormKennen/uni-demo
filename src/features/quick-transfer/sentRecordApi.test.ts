@@ -114,7 +114,9 @@ describe('quick transfer sent record API adapter', () => {
         text: '请查收',
         links: [{ title: '文档', url: 'https://example.com/report' }],
         references: [],
-        files: [{ fileId: 'file-2', name: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false }],
+        files: [
+          { fileId: 'file-2', name: 'report.pdf', displayName: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false },
+        ],
       },
     })
 
@@ -135,7 +137,9 @@ describe('quick transfer sent record API adapter', () => {
         text: '请查收',
         links: [{ title: '文档', url: 'https://example.com/report' }],
         references: [],
-        files: [{ fileId: 'file-2', name: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false }],
+        files: [
+          { fileId: 'file-2', name: 'report.pdf', displayName: 'report.pdf', size: 1024, mimeType: 'application/pdf', available: false },
+        ],
       },
     })
   })
