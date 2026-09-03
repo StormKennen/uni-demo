@@ -18,7 +18,10 @@ const mocks = vi.hoisted(() => ({
   cancelQuickTransfer: vi.fn(),
   inspectQuickTransferShare: vi.fn(),
   uploadFileDirect: vi.fn(),
-  downloadFileDirect: vi.fn(),
+  downloadFileToLocal: vi.fn(),
+  logFileOperationFailure: vi.fn(),
+  previewLocalImage: vi.fn(),
+  saveLocalFile: vi.fn(),
 }))
 
 vi.mock('./api', () => ({
@@ -35,7 +38,11 @@ vi.mock('./api', () => ({
 vi.mock(
   '@/platform/file',
   () => ({
-    downloadFileDirect: mocks.downloadFileDirect,
+    FileOperationError: class FileOperationError extends Error {},
+    downloadFileToLocal: mocks.downloadFileToLocal,
+    logFileOperationFailure: mocks.logFileOperationFailure,
+    previewLocalImage: mocks.previewLocalImage,
+    saveLocalFile: mocks.saveLocalFile,
     uploadFileDirect: mocks.uploadFileDirect,
   }),
   { virtual: true },
@@ -96,9 +103,17 @@ const uploadSuccess = () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal('uni', { showToast: vi.fn() })
   mocks.completeQuickTransferFile.mockImplementation((transferId: string) => Promise.resolve(status(transferId, 'uploading')))
   mocks.getQuickTransferStatus.mockImplementation((transferId: string) => Promise.resolve(status(transferId, 'ready')))
   mocks.uploadFileDirect.mockImplementation(() => uploadSuccess())
+  mocks.downloadFileToLocal.mockResolvedValue({
+    path: '/tmp/received-file',
+    isRemote: false,
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+  })
+  mocks.previewLocalImage.mockResolvedValue(true)
+  mocks.saveLocalFile.mockResolvedValue(true)
 })
 
 describe('useQuickTransfer upload recovery', () => {
@@ -240,6 +255,38 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(false)
     expect(mocks.resolveQuickTransfer).toHaveBeenCalledTimes(1)
     expect(quickTransfer.receiveError.value).toEqual({ code: 'CLAIM_TOKEN_EXPIRED', message: '文件访问凭证已失效' })
+  })
+
+  it('caches the local file across preview and save actions', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '图片资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'image-1', name: 'photo.jpg', displayName: '产品截图.jpg', size: 1, mimeType: 'image/jpeg' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferFile.mockResolvedValue({
+      url: 'https://signed.example/image',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
+    expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
+    expect(await quickTransfer.downloadReceivedFile('image-1')).toBe(true)
+    expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(1)
+    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(1)
+    expect(mocks.saveLocalFile).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/tmp/received-file' }),
+      expect.objectContaining({ fileName: '产品截图.jpg', mimeType: 'image/jpeg' }),
+    )
   })
 
   it('clears an inspect result when the last receive is taken first', async () => {

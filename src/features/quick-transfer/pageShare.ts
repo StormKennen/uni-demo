@@ -9,7 +9,7 @@ const getShareTimelineQuery = (path: string): string => {
 
 /**
  * 小程序分享生命周期必须注册在页面组件中，不能只依赖 PageLayout 子组件。
- * 动态票据分享始终从当前页面内存读取，不持久化分享凭证。
+ * 动态飞船分享始终从当前页面内存读取，不持久化分享凭证。
  */
 export const registerQuickTransferPageShare = (source: MaybeRefOrGetter<QuickTransferSharePayload>): void => {
   // #ifdef MP-WEIXIN

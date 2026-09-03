@@ -1,6 +1,8 @@
 <script setup lang="ts">
+  import { ref } from 'vue'
   import { formatQuickTransferFileSize } from '@/features/quick-transfer/helpers'
   import { getQuickTransferFileTypeLabel } from '@/features/quick-transfer/presentation'
+  import { logFileOperationFailure } from '@/platform/file'
   import type {
     QuickTransferContent,
     QuickTransferContentReference,
@@ -12,15 +14,56 @@
     content: QuickTransferContent
     isDownloading: boolean
     context?: 'received' | 'sent'
+    previewFile: (fileId: string) => Promise<string | null>
   }
 
   const props = withDefaults(defineProps<Props>(), { context: 'received' })
+  const previewImageUrl = ref('')
+  const previewImageFileId = ref('')
+  const previewImageMimeType = ref('')
   const emit = defineEmits<{
     copyText: []
     openUrl: [url: string]
     downloadFile: [fileId: string]
     openReference: [reference: QuickTransferContentReference]
+    previewFailed: []
   }>()
+
+  const handlePreviewFile = async (fileId: string): Promise<void> => {
+    const url = await props.previewFile(fileId)
+    if (url) {
+      const file = props.content.files.find(item => item.fileId === fileId)
+      previewImageFileId.value = fileId
+      previewImageMimeType.value = file?.mimeType || ''
+      previewImageUrl.value = url
+    }
+  }
+
+  const getPreviewErrorMessage = (event: unknown): string => {
+    if (!event || typeof event !== 'object') return 'image load error'
+    const detail = (event as { detail?: unknown }).detail
+    if (!detail || typeof detail !== 'object') return 'image load error'
+    const errMsg = (detail as { errMsg?: unknown }).errMsg
+    return typeof errMsg === 'string' && errMsg ? errMsg : 'image load error'
+  }
+
+  const handlePreviewImageError = (event: unknown): void => {
+    logFileOperationFailure(
+      'PREVIEW_FAILED',
+      { fileId: previewImageFileId.value, mimeType: previewImageMimeType.value },
+      { errMsg: getPreviewErrorMessage(event) },
+    )
+    previewImageUrl.value = ''
+    previewImageFileId.value = ''
+    previewImageMimeType.value = ''
+    emit('previewFailed')
+  }
+
+  const closePreview = (): void => {
+    previewImageUrl.value = ''
+    previewImageFileId.value = ''
+    previewImageMimeType.value = ''
+  }
 
   const isImageFile = (file: QuickTransferFileMetadata): boolean => file.mimeType.startsWith('image/')
   const linkKey = (link: QuickTransferContentLink, index: number): string => `${link.url}-${index}`
@@ -72,12 +115,28 @@
           >
         </view>
         <text v-if="file.available === false" class="file-expired-badge">已过期</text>
+        <template v-else-if="isImageFile(file)">
+          <view class="file-actions">
+            <button
+              class="quick-ship-button secondary-small-button"
+              :disabled="props.isDownloading"
+              @click="handlePreviewFile(file.fileId || '')"
+              >预览</button
+            >
+            <button
+              class="quick-ship-button primary-small-button"
+              :disabled="props.isDownloading"
+              @click="emit('downloadFile', file.fileId || '')"
+              >保存</button
+            >
+          </view>
+        </template>
         <button
           v-else
           class="quick-ship-button primary-small-button"
           :disabled="props.isDownloading"
           @click="emit('downloadFile', file.fileId || '')">
-          {{ isImageFile(file) ? '预览' : '打开' }}
+          下载
         </button>
       </view>
     </view>
@@ -99,6 +158,13 @@
         <text class="item-arrow">›</text>
       </view>
     </view>
+
+    <!-- #ifdef H5 -->
+    <view v-if="previewImageUrl" class="image-preview-overlay" @click="closePreview">
+      <view class="image-preview-close" aria-label="关闭预览" @click.stop="closePreview">×</view>
+      <image class="image-preview" :src="previewImageUrl" mode="aspectFit" @error="handlePreviewImageError" @click.stop />
+    </view>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -239,6 +305,7 @@
   }
 
   .primary-small-button,
+  .secondary-small-button,
   .secondary-button {
     flex: 0 0 auto;
     border: 0;
@@ -250,6 +317,18 @@
     padding: 13rpx 16rpx;
     color: #fff;
     background: linear-gradient(135deg, #2563eb, #14b8a6);
+  }
+
+  .secondary-small-button {
+    padding: 13rpx 16rpx;
+    color: var(--theme-text);
+    background: var(--theme-surface-muted);
+  }
+
+  .file-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 10rpx;
   }
 
   .secondary-button {
@@ -270,5 +349,42 @@
 
   button[disabled] {
     opacity: 0.45;
+  }
+
+  .image-preview-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 96rpx 28rpx;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.88);
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 100%;
+  }
+
+  .image-preview-close {
+    position: absolute;
+    top: 28rpx;
+    right: 28rpx;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64rpx;
+    height: 64rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.65);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 44rpx;
+    line-height: 1;
   }
 </style>

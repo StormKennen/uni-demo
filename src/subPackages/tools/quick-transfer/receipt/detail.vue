@@ -10,7 +10,7 @@
   import { useQuickTransferReceipts } from '@/features/quick-transfer/useQuickTransferReceipts'
   import type { QuickTransferContentReference } from '@/features/quick-transfer/types'
   import { formatQuickTransferReceiptDate } from '@/features/quick-transfer/presentation'
-  import { downloadFileDirect } from '@/platform/file'
+  import { downloadFileDirect, downloadFileToLocal, previewLocalImage } from '@/platform/file'
   import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
   import { getQuickTransferToolSharePayload } from '@/features/quick-transfer/share'
@@ -58,6 +58,7 @@
   }
 
   const openReference = (reference: QuickTransferContentReference) => openQuickTransferReference(reference)
+  const handlePreviewFailed = () => uni.showToast({ title: '图片预览失败，请稍后重试', icon: 'none' })
 
   const downloadFile = async (fileId: string) => {
     const file = receipts.detail.value?.content.files.find(item => item.fileId === fileId)
@@ -78,11 +79,33 @@
         return
       }
       const success = await downloadFileDirect({ url: access.url, fileName: file.displayName, mimeType: file.mimeType })
-      if (!success) uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
+      if (!success) uni.showToast({ title: '文件下载失败，请稍后重试', icon: 'none' })
     } catch {
-      uni.showToast({ title: '文件打开失败，请稍后重试', icon: 'none' })
+      uni.showToast({ title: '文件下载失败，请稍后重试', icon: 'none' })
     } finally {
       isDownloading.value = false
+    }
+  }
+
+  const previewFile = async (fileId: string): Promise<string | null> => {
+    const file = receipts.detail.value?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !file.mimeType.startsWith('image/') || !receiptId.value) return null
+    try {
+      const access = await receipts.accessReceiptFile(receiptId.value, fileId)
+      if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
+        uni.showToast({ title: '文件访问链接已失效，请重新打开', icon: 'none' })
+        return null
+      }
+      const localFile = await downloadFileToLocal(
+        { url: access.url, fileName: file.displayName, mimeType: file.mimeType, fileId },
+        access.expiresAt,
+      )
+      const success = await previewLocalImage(localFile, { fileId, mimeType: file.mimeType })
+      if (!success) uni.showToast({ title: '图片预览失败，请稍后重试', icon: 'none' })
+      return localFile.path
+    } catch (error) {
+      uni.showToast({ title: error instanceof Error ? error.message : '图片预览失败，请稍后重试', icon: 'none' })
+      return null
     }
   }
 
@@ -134,9 +157,11 @@
         <QuickShipReceivedContent
           :content="detail.content"
           :is-downloading="isDownloading"
+          :preview-file="previewFile"
           @copy-text="copyText"
           @open-url="openUrl"
           @download-file="downloadFile"
+          @preview-failed="handlePreviewFailed"
           @open-reference="openReference" />
       </template>
     </view>

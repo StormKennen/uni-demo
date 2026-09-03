@@ -51,6 +51,7 @@
     // #endif
     return url
   })
+  const showShareLinkWarning = computed(() => import.meta.env.PROD && quickTransfer.sendState.value === 'ready' && !shareUrl.value)
   const shareTimelineQuery = computed(() =>
     sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(quickTransfer.shareToken.value)}` : '',
   )
@@ -111,7 +112,7 @@
 
 <template>
   <PageLayout
-    title="飞船票据"
+    title="飞船码"
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
@@ -127,9 +128,9 @@
     <view class="send-result-page">
       <template v-if="hasContext">
         <view class="page-heading">
-          <text class="page-kicker">TRANSFER TICKET</text>
-          <text class="page-title">当前飞船</text>
-          <text class="page-description">这是一艘刚刚创建的飞船。</text>
+          <text class="page-kicker">QUICK TRANSFER</text>
+          <text class="page-title">飞船码</text>
+          <text class="page-description">用飞船码或网页链接，把内容交给另一端。</text>
         </view>
         <QuickShipSendResult
           :state="quickTransfer.sendState.value"
@@ -140,6 +141,7 @@
           :countdown="quickTransfer.countdown.value"
           :claim-label="senderClaimLabel"
           :show-share-link="Boolean(shareUrl)"
+          :show-share-link-warning="showShareLinkWarning"
           @copy-code="copyCode"
           @copy-share-url="copyShareUrl"
           @cancel="cancelSend"
@@ -148,7 +150,7 @@
       </template>
       <view v-else class="missing-context-panel">
         <view class="missing-context-mark">⌁</view>
-        <text class="missing-context-title">这张飞船票据已经离开本次会话</text>
+        <text class="missing-context-title">这艘飞船已经离开本次会话</text>
         <text class="missing-context-description">你仍可以在「我发送的」查看发送记录。</text>
         <button class="quick-ship-button primary-button full-button" @click="openHistory">查看我发送的</button>
         <button class="quick-ship-button text-button full-button" @click="openCreate">返回飞船</button>

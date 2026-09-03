@@ -10,6 +10,7 @@
     countdown: string
     claimLabel: string
     showShareLink: boolean
+    showShareLinkWarning: boolean
   }
 
   const props = defineProps<Props>()
@@ -24,10 +25,10 @@
 
 <template>
   <view class="result-wrap">
-    <view class="result-ticket">
-      <view class="ticket-topline">
-        <text class="ticket-kicker">TRANSFER TICKET</text>
-        <text class="ticket-status">{{
+    <view class="result-card">
+      <view class="result-topline">
+        <text class="result-kicker">QUICK TRANSFER</text>
+        <text class="result-status">{{
           props.state === 'ready' ? '已发出' : props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回'
         }}</text>
       </view>
@@ -50,6 +51,7 @@
             ><text class="meta-label">领取进度</text><text class="meta-value">{{ props.claimLabel }}</text></view
           >
         </view>
+        <text v-if="props.showShareLinkWarning" class="share-link-warning">网页链接暂不可用，请使用飞船码</text>
         <!-- #ifdef MP-WEIXIN -->
         <button class="quick-ship-button primary-button full-button" open-type="share">分享给微信好友</button>
         <button v-if="props.showShareLink" class="quick-ship-button secondary-button full-button" @click="emit('copyShareUrl')"
@@ -77,8 +79,7 @@
     padding: 4rpx 0 12rpx;
   }
 
-  .result-ticket {
-    position: relative;
+  .result-card {
     padding: 26rpx 22rpx 30rpx;
     border: 1rpx solid rgba(37, 99, 235, 0.2);
     border-radius: 24rpx;
@@ -86,30 +87,7 @@
     box-shadow: 0 14rpx 34rpx var(--theme-shadow-xs);
   }
 
-  .result-ticket::before,
-  .result-ticket::after {
-    position: absolute;
-    top: 50%;
-    width: 20rpx;
-    height: 40rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 50%;
-    background: var(--theme-bg);
-    content: '';
-    transform: translateY(-50%);
-  }
-
-  .result-ticket::before {
-    left: -11rpx;
-    border-left: 0;
-  }
-
-  .result-ticket::after {
-    right: -11rpx;
-    border-right: 0;
-  }
-
-  .ticket-topline,
+  .result-topline,
   .result-meta,
   .action-row {
     display: flex;
@@ -117,20 +95,20 @@
     justify-content: space-between;
   }
 
-  .ticket-topline {
+  .result-topline {
     padding-bottom: 20rpx;
     border-bottom: 1rpx dashed var(--theme-border);
   }
 
-  .ticket-kicker,
-  .ticket-status,
+  .result-kicker,
+  .result-status,
   .meta-label {
     color: var(--theme-text-secondary);
     font-size: 20rpx;
     letter-spacing: 2rpx;
   }
 
-  .ticket-status {
+  .result-status {
     color: var(--theme-brand);
     letter-spacing: 0;
   }
@@ -217,6 +195,15 @@
 
   .result-meta > view {
     flex: 1;
+    text-align: center;
+  }
+
+  .share-link-warning {
+    display: block;
+    margin-top: 18rpx;
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    line-height: 1.5;
     text-align: center;
   }
 

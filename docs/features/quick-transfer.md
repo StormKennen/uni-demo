@@ -2,7 +2,7 @@
 
 ## 0.1 V2.3 页面分离与分享流
 
-V2.3 将飞船从单页多状态重构为职责清晰的管理页、发送创建页、创建人票据页和统一接收页。最终路由固定为：
+V2.3 将飞船从单页多状态重构为职责清晰的管理页、发送创建页、飞船码结果页和统一接收页。最终路由固定为：
 
 ```text
 subPackages/tools/quick-transfer/index
@@ -17,11 +17,11 @@ subPackages/tools/quick-transfer/receipt/detail
 
 管理页负责操作区和历史记录区：操作区只提供发送飞船和接收飞船两个入口，历史记录区提供「发送记录 / 接收记录」两个 Tab。发送与接收业务状态不得嵌入管理页；历史列表抽取为可嵌入管理页的组件，原 sent/receipt list 页面保留为兼容壳。
 
-发送创建页复用 `QuickShipSendForm`，创建成功后将 `transferId/code/shareToken/expiresAt/claimCount/maxClaims/status` 写入 JS 内存 transient context，并使用 `redirectTo` 进入发送票据页。票据页负责当前飞船的分享、状态轮询、召回和终态展示；无 transient context 时只显示安全返回和历史入口，不展示空票据。票据页分享固定进入 Receiver 路由，不在历史详情中重新生成分享凭证。
+发送创建页复用 `QuickShipSendForm`，创建成功后将 `transferId/code/shareToken/expiresAt/claimCount/maxClaims/status` 写入 JS 内存 transient context，并使用 `redirectTo` 进入飞船码结果页。结果页负责当前飞船的分享、状态轮询、召回和终态展示；无 transient context 时只显示安全返回和历史入口，不展示空结果卡片。结果页分享固定进入 Receiver 路由，不在历史详情中重新生成分享凭证。
 
 Receiver 页面统一承载手工六位码和 `shareToken` 分享入口：分享进入先 Inspect，用户点击接收后才 Resolve；Resolve 成功后播放 arrive 动画，点击查看内容在当前页面展开正文。`claimRequestId` 继续只在当前页面内存中复用，网络未知结果重试复用原 ID，明确失败或成功后清除。
 
-管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；微信管理首页同时提供显式「分享」按钮，仍使用同一工具分享 payload，不携带 `shareToken`。票据页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
+管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；微信管理首页同时提供显式「分享」按钮，仍使用同一工具分享 payload，不携带 `shareToken`。飞船码结果页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
 
 所有本轮新增页面与 Quick Transfer 组件必须同时兼容 H5 和微信小程序；微信功能范围内的 button 清除原生 `button::after` 边框，每页只保留一个强主 CTA。
 
@@ -190,11 +190,11 @@ QUICK_TRANSFER_NOT_CONFIGURED
 
 ## 9. 飞船视觉层（UI V3）
 
-飞船页面采用“科技海报 Hero + 上浮操作舱”结构。Hero 由 CSS 渐变、光晕和轨迹装饰组成，不使用海报图片、Canvas 或粒子库；沉浸式导航通过 `PageLayout` 的 `navOverlay`、透明背景和 `light` 导航样式实现。Hero 只展示“飞船 / 跨设备快速传递内容”和“发送 / 接收”切换，不展示常驻飞船 PNG。
+飞船管理首页采用轻量文字页头、操作区与历史记录区结构。不加载分享封面图片、Canvas 或粒子库；分享功能仍通过 `QUICK_SHIP_SHARE_COVER_URL` 提供微信分享封面。首页只展示“飞船 / 文本、链接、图片、文件，快速送达另一端”和“发船 / 收船”操作，不展示常驻飞船 PNG。
 
 `src/features/quick-transfer/visual.ts` 只公开现有 OSS PNG 和两种 UI Transition 类型：`depart`、`arrive`。`QuickShipTransition` 是 fixed Overlay，仅负责一次性 CSS 动画、图片加载失败兜底和 `finished` 事件，不参与 API、上传、领取或定时器。发送按钮点击后立即播放 `depart`；Resolve 成功后播放 `arrive`，且 Arrive 通过独立方向容器水平翻转 PNG，让船头始终朝运动方向；动画结束或图片加载失败均收口 Overlay。H5 的 reduced-motion 环境关闭动画，但仍由生命周期定时器触发完成事件。
 
-业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用飞船码票据样式，接收成功后再展开留言、链接、文件、引用内容。
+业务状态不再自动映射为常驻视觉状态。Ready、received、expired、cancelled 等状态只由业务面板展示，页面不显示悬浮飞船插画。发送内容收敛到一张“传输内容”卡，链接和文件添加按钮并排；有效期与领取次数使用跨 H5 / 微信小程序兼容的原生 `picker`；发送结果使用飞船码结果卡片，接收成功后再展开留言、链接、文件、引用内容。
 
 发送或接收处于 `creating`、`uploading`、`completing`、`inspecting`、`resolving` 时锁定 Hero 的 Mode Switch，仅降低视觉强调，不弹 Toast；Ready、consumed、expired、cancelled、received 仍允许切换。Receive 的首次领取和手工码 retry 统一经过页面 `performReceive`，只有 Resolve 成功才播放 `arrive`，失败不会自动重试或占用领取次数。
 
@@ -236,7 +236,7 @@ subPackages/tools/quick-transfer/sent/detail
 
 ## 12. V3.1 管理与历史卡片
 
-管理页保留操作区与历史记录区；操作区精简为同宽的「发飞船」和「收飞船」两个入口，不重复展示说明文字或箭头，历史记录区使用同页的「发送记录 / 接收记录」两个 Tab，默认加载发送记录，切换不跳转新页面。Hero 保留既有背景视觉，只移除 `FAST TRANSFER` 辅助文案以降低首屏密度。发送创建、发送票据、接收和分享页面架构不变。
+管理页保留操作区与历史记录区；操作区精简为同宽的「发飞船」和「收飞船」两个入口，不重复展示说明文字或箭头，历史记录区使用同页的「发送记录 / 接收记录」两个 Tab，默认加载发送记录，切换不跳转新页面。首页采用轻量文字页头以降低首屏密度。发送创建、飞船码结果、接收和分享页面架构不变。
 
 Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和导航，但每一条记录统一使用 `QuickShipHistoryCard` 展示。卡片直接消费后端的 `displayTitle`、`primaryType`、`summary.imageCount` 和 `summary.otherFileCount`，使用现有 `uni-icons` 显示文字、图片、文件、链接、引用或混合内容图标；Sent 额外在标题行显示状态，并将领取进度合并到时间行，Receipt 不显示发送方状态。
 
@@ -252,11 +252,17 @@ Sent / Receipt 历史列表继续分别负责数据加载、分页、错误和�
 
 ## 14. Quick Transfer 前端体验收口
 
-飞船码是当前 6 位数字 Code 的统一产品名称。Ready 票据在飞船码右侧提供复制图标，复制内容固定为 `飞船码：583921`，不再额外展示重复的文字复制按钮。
+飞船码是当前 6 位数字 Code 的统一产品名称。Ready 结果卡片在飞船码右侧提供复制图标，复制内容固定为 `飞船码：583921`，不再额外展示重复的文字复制按钮。
 
 Receiver 输入框使用文本模式并允许整段粘贴；公共解析器优先识别 `飞船码：XXXXXX`、独立的 6 位英数字 token，再处理普通输入中的空格和大小写。解析后输入框只展示归一化结果；当前提交前校验仍严格遵守后端的 6 位纯数字契约，英数字结果仅作为未来兼容预留。
 
 H5 继续复制当前 Hash Router 下的完整 Receiver URL。微信小程序的“复制网页链接”复用 `VITE_PUBLIC_THIS_H5_URL`，生成包含 `#/subPackages/tools/quick-transfer/receive/index?shareToken=...` 的完整 H5 URL；配置缺失、本机地址或相对路径时隐藏该入口，不复制无效链接。本轮不新增游客身份归属、H5 Guest Session、后端改造或 H5 → 微信 JS-SDK 分享。
+
+## 15. 收船文件预览与下载收口
+
+收船成功后不自动加载文件。只有 `image/*` 文件提供“预览”操作；微信小程序先通过 `file-access` 获取 Signed URL，再用 `uni.downloadFile` 下载到页面生命周期内的本地临时文件后调用 `uni.previewImage`，图片“保存”复用同一临时文件并调用 `uni.saveImageToPhotosAlbum`。H5 图片预览使用 Signed URL 的轻量全屏遮罩，图片下载继续使用浏览器 `<a download="displayName">`。
+
+PDF、Word、Excel、PPT、ZIP 等非图片文件不提供预览，仅提供下载；微信小程序下载到本地后调用 `uni.saveFile`，H5 使用 `displayName` 作为浏览器下载文件名。页面级缓存只保留本地文件路径和有效期相关元数据，不持久化 Signed URL；微信本地文件不会因为远端 Signed URL 过期而重复下载。开发环境区分记录 `FILE_ACCESS_FAILED`、`DOWNLOAD_FAILED`、`PREVIEW_FAILED`、`SAVE_FAILED`，日志不输出 claimToken、shareToken 或完整 Signed URL。
 
 ## 15. 入口归类与发送引用选择
 

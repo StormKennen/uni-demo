@@ -283,7 +283,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   },
   'quick-transfer': {
     name: '飞船',
-    desc: '文本、链接、文件，快速送达另一端',
+    desc: '文本、链接、图片、文件，快速送达另一端',
     image: QUICK_SHIP_IMAGE_URL,
     gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
     path: '/subPackages/tools/quick-transfer/index',

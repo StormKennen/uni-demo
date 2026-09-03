@@ -146,6 +146,9 @@
 
   const openReference = (reference: QuickTransferContentReference) => openQuickTransferReference(reference)
   const dismissReceiveError = () => quickTransfer.clearReceiveError()
+  const handlePreviewFailed = () => {
+    quickTransfer.receiveError.value = { code: 'PREVIEW_FAILED', message: '图片预览失败，请稍后重试' }
+  }
 
   const openReceivedHistory = () => {
     if (canViewHistory.value) uni.redirectTo({ url: QUICK_TRANSFER_RECEIPTS_ROUTE })
@@ -216,9 +219,11 @@
         v-if="isReceivedContentVisible && receivedContent"
         :content="receivedContent"
         :is-downloading="quickTransfer.isDownloading.value"
+        :preview-file="quickTransfer.previewReceivedFile"
         @copy-text="copyReceivedText"
         @open-url="openReceivedUrl"
         @download-file="quickTransfer.downloadReceivedFile"
+        @preview-failed="handlePreviewFailed"
         @open-reference="openReference" />
 
       <view v-if="isReceivedContentVisible" class="receive-footer-actions">

@@ -21,6 +21,12 @@ describe('quick transfer public H5 URL', () => {
         shareToken: 'share-1',
       }),
     ).toBe('https://example.com/superAppBridge.html#/subPackages/tools/quick-transfer/receive/index?shareToken=share-1')
+    expect(
+      buildQuickTransferPublicReceiveUrl({
+        baseUrl: 'https://liangzhikai.top/#',
+        shareToken: 'share-1',
+      }),
+    ).toBe('https://liangzhikai.top/#/subPackages/tools/quick-transfer/receive/index?shareToken=share-1')
   })
 
   it('normalizes and validates configured public H5 bases', () => {

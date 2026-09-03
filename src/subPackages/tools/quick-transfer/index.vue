@@ -7,6 +7,7 @@
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
   import { getQuickTransferIndexRedirectRoute } from '@/features/quick-transfer/helpers'
+  import { QUICK_TRANSFER_COPY } from '@/features/quick-transfer/presentation'
   import type { QuickTransferPageQuery } from '@/features/quick-transfer/types'
 
   const sharePayload = getQuickTransferToolSharePayload()
@@ -97,14 +98,14 @@
       <view class="hero-panel">
         <text class="hero-eyebrow">QUICK TRANSFER</text>
         <text class="hero-title">飞船</text>
-        <text class="hero-desc">分享给好友，内容快速到达</text>
+        <text class="hero-desc">{{ QUICK_TRANSFER_COPY.heroDescription }}</text>
       </view>
 
       <view class="quick-transfer-sheet">
         <view class="operation-section">
           <view class="operation-heading">
             <text class="operation-heading__eyebrow">开始传递</text>
-            <text class="operation-heading__hint">选择一种方式</text>
+            <text class="operation-heading__hint">快速送达另一端</text>
           </view>
 
           <view class="operation-content">
@@ -113,12 +114,14 @@
                 <uni-icons type="paperplane-filled" size="24" color="#fff" />
               </view>
               <text class="operation-button__label">飞船</text>
+              <text class="operation-button__hint">快速发送内容</text>
             </button>
             <button class="operation-button operation-button--receive" hover-class="operation-button--hover" @click="openReceive">
               <view class="operation-button__icon operation-button__icon--receive">
                 <uni-icons type="download" size="24" color="var(--theme-brand)" />
               </view>
               <text class="operation-button__label">收船</text>
+              <text class="operation-button__hint">飞船码 / 分享链接</text>
             </button>
           </view>
         </view>
@@ -153,7 +156,9 @@
   .quick-transfer-page {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    flex: 1;
+    height: auto;
+    min-height: 0;
     box-sizing: border-box;
     overflow: hidden;
     background: var(--theme-bg);
@@ -294,7 +299,19 @@
   }
 
   .operation-button__label {
-    line-height: 1;
+    line-height: 1.2;
+  }
+
+  .operation-button__hint {
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    font-weight: 400;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .operation-button--send .operation-button__hint {
+    color: rgba(255, 255, 255, 0.78);
   }
 
   .operation-button--send {

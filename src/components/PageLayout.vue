@@ -158,7 +158,10 @@
     box-sizing: border-box;
 
     &__body {
+      display: flex;
+      flex-direction: column;
       flex: 1;
+      min-height: 0;
     }
 
     &__footer {

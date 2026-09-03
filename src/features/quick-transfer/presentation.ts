@@ -10,7 +10,7 @@ import type {
 } from './types'
 
 export const QUICK_TRANSFER_COPY = {
-  heroDescription: '跨设备快速传递内容',
+  heroDescription: '文本、链接、图片、文件，快速送达另一端',
   sendTab: '发送',
   receiveTab: '接收',
   sendButton: '发送飞船',

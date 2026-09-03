@@ -24,6 +24,7 @@ import {
 import {
   getQuickTransferErrorCode,
   getQuickTransferErrorMessage,
+  getQuickTransferErrorStatusCode,
   isQuickTransferClaimResultUnknown,
   toQuickTransferErrorInfo,
   toQuickTransferReceiveErrorInfo,
@@ -46,7 +47,15 @@ import type {
 } from './types'
 import { createQuickTransferClaimRequestId } from './requestId'
 import type { SelectedFile } from '@/platform/file'
-import { downloadFileDirect, uploadFileDirect } from '@/platform/file'
+import {
+  downloadFileToLocal,
+  FileOperationError,
+  logFileOperationFailure,
+  previewLocalImage,
+  saveLocalFile,
+  uploadFileDirect,
+} from '@/platform/file'
+import type { LocalFile } from '@/platform/file'
 
 export const useQuickTransfer = () => {
   const sendState = ref<QuickTransferSendState>('idle')
@@ -69,6 +78,8 @@ export const useQuickTransfer = () => {
   const countdown = ref('')
   const isActionRunning = ref(false)
   const isDownloading = ref(false)
+  const receivedLocalFiles = new Map<string, LocalFile>()
+  const receivedLocalFilePromises = new Map<string, Promise<LocalFile | null>>()
   const canRetryComplete = computed(() => Boolean(sendError.value?.canRetryComplete && transferId.value))
   const canRetryUpload = computed(() => Boolean(sendError.value?.canRetryUpload && transferId.value))
 
@@ -97,6 +108,12 @@ export const useQuickTransfer = () => {
   const abortUploads = () => {
     uploadAborts.forEach(abort => abort())
     uploadAborts.clear()
+  }
+
+  const getFileErrorMessage = (error: unknown): string => {
+    if (!error || typeof error !== 'object') return String(error || '')
+    const candidate = error as { errMsg?: unknown; message?: unknown }
+    return typeof candidate.errMsg === 'string' ? candidate.errMsg : typeof candidate.message === 'string' ? candidate.message : ''
   }
 
   const updateCountdown = () => {
@@ -607,6 +624,8 @@ export const useQuickTransfer = () => {
     receiveError.value = null
     receivedResult.value = null
     claimToken.value = ''
+    receivedLocalFiles.clear()
+    receivedLocalFilePromises.clear()
     try {
       const result = await resolveQuickTransfer({ ...input, claimRequestId: activeClaimRequestId.value || undefined })
       receivedResult.value = result
@@ -636,6 +655,8 @@ export const useQuickTransfer = () => {
     receivedResult.value = null
     claimToken.value = ''
     inspectResult.value = null
+    receivedLocalFiles.clear()
+    receivedLocalFilePromises.clear()
   }
 
   const clearReceiveError = () => {
@@ -648,8 +669,89 @@ export const useQuickTransfer = () => {
     try {
       return await accessQuickTransferFile(receivedResult.value.transferId, fileId, claimToken.value)
     } catch (error) {
-      receiveError.value = toQuickTransferReceiveErrorInfo(error)
+      logFileOperationFailure(
+        'FILE_ACCESS_FAILED',
+        { fileId, mimeType: file.mimeType },
+        { statusCode: getQuickTransferErrorStatusCode(error), errMsg: getFileErrorMessage(error) },
+      )
+      const errorCode = getQuickTransferErrorCode(error)
+      if (errorCode === 'CLAIM_TOKEN_INVALID' || errorCode === 'CLAIM_TOKEN_EXPIRED') {
+        receiveError.value = toQuickTransferReceiveErrorInfo(error)
+        return null
+      }
+      const info = toQuickTransferErrorInfo(error, '文件访问失败，请稍后重试')
+      receiveError.value = { ...info, code: info.code || 'FILE_ACCESS_FAILED' }
       return null
+    }
+  }
+
+  const setReceivedFileError = (error: unknown, fallbackCode: string, fallbackMessage: string): void => {
+    if (error instanceof FileOperationError) {
+      receiveError.value = { code: error.code, message: error.message }
+      return
+    }
+    const info = toQuickTransferErrorInfo(error, fallbackMessage)
+    receiveError.value = { ...info, code: info.code || fallbackCode }
+  }
+
+  const ensureReceivedFileLocal = async (fileId: string): Promise<LocalFile | null> => {
+    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !fileId) return null
+
+    const cached = receivedLocalFiles.get(fileId)
+    if (cached && (!cached.isRemote || !cached.expiresAt || isQuickTransferDownloadValid(cached.expiresAt))) return cached
+    const pending = receivedLocalFilePromises.get(fileId)
+    if (pending) return pending
+
+    const request = (async (): Promise<LocalFile | null> => {
+      const access = await getReceivedFileAccess(fileId)
+      if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
+        if (!access && (receiveError.value?.code === 'CLAIM_TOKEN_INVALID' || receiveError.value?.code === 'CLAIM_TOKEN_EXPIRED')) {
+          return null
+        }
+        receiveError.value = {
+          code: 'FILE_ACCESS_FAILED',
+          message: access ? '文件访问链接已失效，请重新打开' : '文件访问失败，请稍后重试',
+        }
+        return null
+      }
+      try {
+        const localFile = await downloadFileToLocal(
+          { url: access.url, fileName: file.displayName, mimeType: file.mimeType, fileId },
+          access.expiresAt,
+        )
+        receivedLocalFiles.set(fileId, localFile)
+        return localFile
+      } catch (error) {
+        setReceivedFileError(error, 'DOWNLOAD_FAILED', '文件下载失败，请稍后重试')
+        return null
+      }
+    })()
+    receivedLocalFilePromises.set(fileId, request)
+    try {
+      return await request
+    } finally {
+      receivedLocalFilePromises.delete(fileId)
+    }
+  }
+
+  const previewReceivedFile = async (fileId: string): Promise<string | null> => {
+    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !file.mimeType.startsWith('image/') || isDownloading.value) return null
+    isDownloading.value = true
+    try {
+      const localFile = await ensureReceivedFileLocal(fileId)
+      if (!localFile) return null
+      // #ifdef H5
+      return localFile.path
+      // #endif
+      // #ifdef MP-WEIXIN
+      const success = await previewLocalImage(localFile, { fileId, mimeType: file.mimeType })
+      if (!success) setReceivedFileError(undefined, 'PREVIEW_FAILED', '图片预览失败，请稍后重试')
+      return null
+      // #endif
+    } finally {
+      isDownloading.value = false
     }
   }
 
@@ -657,16 +759,28 @@ export const useQuickTransfer = () => {
     const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
     if (!file || isDownloading.value) return false
     isDownloading.value = true
-    const access = await getReceivedFileAccess(fileId)
-    if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
+    try {
+      const localFile = await ensureReceivedFileLocal(fileId)
+      if (!localFile) return false
+      const success = await saveLocalFile(localFile, {
+        url: localFile.path,
+        fileName: file.displayName,
+        mimeType: file.mimeType,
+        fileId,
+      })
+      if (!success) {
+        setReceivedFileError(
+          undefined,
+          'SAVE_FAILED',
+          file.mimeType.startsWith('image/') ? '图片保存失败，请检查相册权限后重试' : '文件保存失败，请稍后重试',
+        )
+        return false
+      }
+      uni.showToast({ title: file.mimeType.startsWith('image/') ? '已保存到相册' : '文件下载完成', icon: 'none' })
+      return true
+    } finally {
       isDownloading.value = false
-      if (!access) receiveError.value ||= { code: 'DOWNLOAD_NOT_AVAILABLE', message: '文件访问凭证已失效' }
-      return false
     }
-    const success = await downloadFileDirect({ url: access.url, fileName: file.displayName, mimeType: file.mimeType })
-    isDownloading.value = false
-    if (!success) receiveError.value = { code: 'DOWNLOAD_FAILED', message: '文件打开失败，请稍后重试' }
-    return success
   }
 
   const pauseTimers = () => clearTimers()
@@ -680,6 +794,8 @@ export const useQuickTransfer = () => {
   onBeforeUnmount(() => {
     clearTimers()
     abortUploads()
+    receivedLocalFiles.clear()
+    receivedLocalFilePromises.clear()
   })
 
   return {
@@ -714,6 +830,8 @@ export const useQuickTransfer = () => {
     resetReceive,
     clearReceiveError,
     getReceivedFileAccess,
+    ensureReceivedFileLocal,
+    previewReceivedFile,
     downloadReceivedFile,
     resetSendResult,
     pauseTimers,
