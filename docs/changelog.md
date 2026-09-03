@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+- 2026-09-03 [tools/quick-transfer/visual] 将飞船 depart/arrive 动画进一步延长至约 2.4 秒，避免飞入和离场过程一闪而过（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 延长飞船 depart/arrive 动画至约 1.8 秒，让飞入、减速和停靠过程更连贯可见（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 接收页 arrive 改为飞入后停靠在页面中：分享进入与收船成功后飞船不再淡出卸载，停稳后转为轻量悬浮（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 升级飞船 depart/arrive 动画并新增 standby 悬浮态：发送请求与离场动画并行，跳转等待动画完成；飞船码页入场只播一次，分享收船不再重复到达动画（Codex）
+
 - 2026-09-03 [tools/quick-transfer/file] 收船附件按图片预览、图片保存和文件下载拆分动作；补充微信本地文件缓存复用、H5 图片遮罩预览、历史详情微信图片预览及开发态下载/预览/保存错误分类（Codex）
 
 - 2026-09-02 [tools/quick-transfer] 将发送结果收敛为普通飞船码结果卡片，移除票据穿孔装饰；历史滚动容器补齐可收缩布局，并在生产网页链接不可用时给出明确提示（Codex）

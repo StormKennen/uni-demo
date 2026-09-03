@@ -2,6 +2,7 @@
   import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
   import { computed, ref } from 'vue'
   import QuickShipSendResult from '../components/QuickShipSendResult.vue'
+  import QuickShipTransition from '../components/QuickShipTransition.vue'
   import PageLayout from '@/components/PageLayout.vue'
   import { buildQuickTransferPublicReceiveUrl } from '@/features/quick-transfer/public-url'
   import { buildQuickTransferBrowserShareUrl } from '@/utilsH5/quick-transfer-share'
@@ -20,9 +21,11 @@
   import { clearQuickTransferSendResultContext, getQuickTransferSendResultContext } from '@/features/quick-transfer/sendResultContext'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
   import type { QuickTransferSendResultContext } from '@/features/quick-transfer/types'
+  import { getQuickShipAnimationForSendResultEntry, type QuickShipAnimationType } from '@/features/quick-transfer/visual'
 
   const quickTransfer = useQuickTransfer()
   const resultContext = ref<QuickTransferSendResultContext | null>(null)
+  const shipAnimation = ref<QuickShipAnimationType | null>(null)
 
   const hasContext = computed(() => Boolean(resultContext.value))
   const senderClaimCount = computed(() => quickTransfer.senderStatus.value?.claimCount ?? resultContext.value?.claimCount ?? 0)
@@ -103,6 +106,7 @@
     if (!context) return
     resultContext.value = context
     quickTransfer.initializeSendResult(context)
+    shipAnimation.value = getQuickShipAnimationForSendResultEntry()
   })
 
   onShow(() => quickTransfer.resumeTimers())
@@ -125,28 +129,30 @@
       <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
     </template>
     <!-- #endif -->
-    <view class="send-result-page">
+    <view class="send-result-page" :class="{ 'send-result-page--docking': Boolean(shipAnimation) }">
       <template v-if="hasContext">
         <view class="page-heading">
           <text class="page-kicker">QUICK TRANSFER</text>
           <text class="page-title">飞船码</text>
           <text class="page-description">用飞船码或网页链接，把内容交给另一端。</text>
         </view>
-        <QuickShipSendResult
-          :state="quickTransfer.sendState.value"
-          :ship-title="resultContext?.title || ''"
-          :title="senderStatusTitle"
-          :description="senderStatusDescription"
-          :code="quickTransfer.code.value"
-          :countdown="quickTransfer.countdown.value"
-          :claim-label="senderClaimLabel"
-          :show-share-link="Boolean(shareUrl)"
-          :show-share-link-warning="showShareLinkWarning"
-          @copy-code="copyCode"
-          @copy-share-url="copyShareUrl"
-          @cancel="cancelSend"
-          @reset="openCreate"
-          @view-history="openHistory" />
+        <view class="result-stage">
+          <QuickShipSendResult
+            :state="quickTransfer.sendState.value"
+            :ship-title="resultContext?.title || ''"
+            :title="senderStatusTitle"
+            :description="senderStatusDescription"
+            :code="quickTransfer.code.value"
+            :countdown="quickTransfer.countdown.value"
+            :claim-label="senderClaimLabel"
+            :show-share-link="Boolean(shareUrl)"
+            :show-share-link-warning="showShareLinkWarning"
+            @copy-code="copyCode"
+            @copy-share-url="copyShareUrl"
+            @cancel="cancelSend"
+            @reset="openCreate"
+            @view-history="openHistory" />
+        </view>
       </template>
       <view v-else class="missing-context-panel">
         <view class="missing-context-mark">⌁</view>
@@ -156,6 +162,7 @@
         <button class="quick-ship-button text-button full-button" @click="openCreate">返回飞船</button>
       </view>
     </view>
+    <QuickShipTransition v-if="shipAnimation" :type="shipAnimation" @finished="shipAnimation = null" />
   </PageLayout>
 </template>
 
@@ -189,6 +196,19 @@
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
     color: var(--theme-text);
+  }
+
+  .page-heading,
+  .result-stage {
+    transition:
+      opacity 280ms ease,
+      transform 280ms ease;
+  }
+
+  .send-result-page--docking .page-heading,
+  .send-result-page--docking .result-stage {
+    opacity: 0.7;
+    transform: translateY(10rpx);
   }
 
   .page-heading {
@@ -267,5 +287,16 @@
     padding: 0 18rpx;
     color: var(--theme-brand);
     background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-heading,
+    .result-stage,
+    .send-result-page--docking .page-heading,
+    .send-result-page--docking .result-stage {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 </style>

@@ -22,7 +22,12 @@
   } from '@/features/quick-transfer/share'
   import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
   import type { QuickTransferContentReference, QuickTransferPageQuery } from '@/features/quick-transfer/types'
-  import { getQuickShipTransitionForReceive, type QuickShipTransitionType } from '@/features/quick-transfer/visual'
+  import {
+    getQuickShipAnimationForInspectSuccess,
+    getQuickShipAnimationForReceiveSuccess,
+    getQuickShipAnimationForReceiverEntry,
+    type QuickShipAnimationType,
+  } from '@/features/quick-transfer/visual'
 
   const quickTransfer = useQuickTransfer()
   const receiveCode = ref('')
@@ -30,7 +35,10 @@
   const isMiniProgram = ref(false)
   const isLoggedIn = ref(false)
   const isReceivedContentOpened = ref(false)
-  const shipTransition = ref<QuickShipTransitionType | null>(null)
+  const pageShipType = ref<QuickShipAnimationType | null>(null)
+  const shipPlayId = ref(0)
+  const isShipParked = ref(false)
+  let hasPlayedArrive = false
 
   // #ifdef MP-WEIXIN
   isMiniProgram.value = true
@@ -101,10 +109,24 @@
     isLoggedIn.value = Boolean(getToken())
   }
 
+  const showPageShip = computed(() => Boolean(pageShipType.value) && !isReceivedContentVisible.value)
+  const isShipArriving = computed(() => pageShipType.value === 'arrive' && !isShipParked.value)
+
+  const playArriveOnce = () => {
+    if (hasPlayedArrive) return
+    hasPlayedArrive = true
+    isShipParked.value = false
+    shipPlayId.value += 1
+    pageShipType.value = 'arrive'
+  }
+
+  const onArriveFinished = () => {
+    isShipParked.value = true
+  }
+
   const performReceive = async (input: { code?: string; shareToken?: string }): Promise<boolean> => {
     const success = await quickTransfer.receive(input)
-    const transition = getQuickShipTransitionForReceive(success)
-    if (transition) shipTransition.value = transition
+    if (getQuickShipAnimationForReceiveSuccess(success, hasPlayedArrive)) playArriveOnce()
     return success
   }
 
@@ -120,8 +142,13 @@
   const retryReceive = () => {
     quickTransfer.resetReceive()
     isReceivedContentOpened.value = false
-    if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
-    else if (isReceiveCodeValid.value) void claim()
+    if (shareToken.value) {
+      void quickTransfer.inspectShare(shareToken.value).then(success => {
+        if (getQuickShipAnimationForInspectSuccess(success)) playArriveOnce()
+      })
+      return
+    }
+    if (isReceiveCodeValid.value) void claim()
   }
 
   const openReceivedContent = () => {
@@ -163,7 +190,13 @@
     const parsed = parseQuickTransferPageQuery((options || {}) as QuickTransferPageQuery)
     shareToken.value = parsed.shareToken
     refreshLoginState()
-    if (shareToken.value) void quickTransfer.inspectShare(shareToken.value)
+    if (!shareToken.value) {
+      pageShipType.value = getQuickShipAnimationForReceiverEntry(false)
+      return
+    }
+    void quickTransfer.inspectShare(shareToken.value).then(success => {
+      if (getQuickShipAnimationForInspectSuccess(success)) playArriveOnce()
+    })
   })
 
   onShow(refreshLoginState)
@@ -186,12 +219,20 @@
       <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
     </template>
     <!-- #endif -->
-    <view class="receive-page">
+    <view class="receive-page" :class="{ 'receive-page--docking': isShipArriving }">
       <view class="page-heading">
         <text class="page-kicker">RECEIVE SHIP</text>
         <text class="page-title">{{ shareToken ? '一艘飞船抵达了' : '接收飞船' }}</text>
         <text class="page-description">{{ shareToken ? '确认后即可领取别人送来的内容。' : '输入别人告诉你的 6 位飞船码。' }}</text>
       </view>
+
+      <QuickShipTransition
+        v-if="showPageShip && pageShipType"
+        :key="shipPlayId"
+        :type="pageShipType || 'standby'"
+        layout="inline"
+        :hold="pageShipType === 'arrive'"
+        @finished="onArriveFinished" />
 
       <QuickShipReceivePanel
         :share-token="shareToken"
@@ -231,8 +272,6 @@
         <button class="quick-ship-button text-button" @click="openSendCreate">我也要发送飞船</button>
       </view>
     </view>
-
-    <QuickShipTransition v-if="shipTransition" :type="shipTransition" @finished="shipTransition = null" />
   </PageLayout>
 </template>
 
@@ -265,12 +304,26 @@
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
     box-sizing: border-box;
+    overflow: visible;
     color: var(--theme-text);
+  }
+
+  .page-heading,
+  .receive-page :deep(.receive-panel) {
+    transition:
+      opacity 280ms ease,
+      transform 280ms ease;
   }
 
   .page-heading {
     padding: 18rpx 4rpx 28rpx;
     text-align: center;
+  }
+
+  .receive-page--docking .page-heading,
+  .receive-page--docking :deep(.receive-panel) {
+    opacity: 0.72;
+    transform: translateY(10rpx);
   }
 
   .page-kicker {
@@ -321,5 +374,16 @@
     padding: 0 18rpx;
     color: var(--theme-brand);
     background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-heading,
+    .receive-page :deep(.receive-panel),
+    .receive-page--docking .page-heading,
+    .receive-page--docking :deep(.receive-panel) {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 </style>

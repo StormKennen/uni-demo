@@ -41,7 +41,7 @@
     QuickShipReferenceDraft,
     QuickTransferTtl,
   } from '@/features/quick-transfer/types'
-  import { getQuickShipTransitionForSend, type QuickShipTransitionType } from '@/features/quick-transfer/visual'
+  import { getQuickShipAnimationForSend, type QuickShipAnimationType } from '@/features/quick-transfer/visual'
 
   interface LinkEditor {
     localId: string
@@ -59,7 +59,14 @@
   const showFileSourceSheet = ref(false)
   const showReferencePicker = ref(false)
   const linkEditor = ref<LinkEditor | null>(null)
-  const shipTransition = ref<QuickShipTransitionType | null>(null)
+  const shipTransition = ref<QuickShipAnimationType | null>(null)
+  let resolveShipAnimationFinished: (() => void) | null = null
+
+  const settleShipAnimation = () => {
+    shipTransition.value = null
+    resolveShipAnimationFinished?.()
+    resolveShipAnimationFinished = null
+  }
 
   // #ifdef MP-WEIXIN
   isMiniProgram.value = true
@@ -232,9 +239,13 @@
       fileError.value = fileLimitError
       return
     }
-    shipTransition.value = getQuickShipTransitionForSend()
+    const animationDone = new Promise<void>(resolve => {
+      resolveShipAnimationFinished = resolve
+    })
+    shipTransition.value = getQuickShipAnimationForSend()
     const success = await quickTransfer.send(draft.value)
     if (!success) return
+    await animationDone
     const status = quickTransfer.senderStatus.value
     if (!status) {
       fileError.value = '飞船状态暂时不可用，请稍后重试'
@@ -268,7 +279,7 @@
     }
     quickTransfer.resetSendResult(draft.value)
     draft.value = createQuickShipDraft()
-    shipTransition.value = null
+    settleShipAnimation()
   }
 
   const goToLogin = () => {
@@ -365,7 +376,7 @@
       </template>
     </view>
 
-    <QuickShipTransition v-if="shipTransition" :type="shipTransition" @finished="shipTransition = null" />
+    <QuickShipTransition v-if="shipTransition" :type="shipTransition" @finished="settleShipAnimation" />
 
     <QuickShipReferencePicker :visible="showReferencePicker" @cancel="showReferencePicker = false" @selected="addReference" />
 
