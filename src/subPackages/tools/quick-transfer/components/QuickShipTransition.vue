@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
   import {
-    QUICK_SHIP_ANIMATION_DURATION_MS,
+    QUICK_SHIP_ANIMATION_END_GUARD_MS,
+    QUICK_SHIP_ANIMATION_PLAY_DELAY_MS,
     QUICK_SHIP_IMAGE_URL,
     QUICK_SHIP_REDUCED_MOTION_FINISH_MS,
     getQuickShipAnimationFinishTimeoutMs,
@@ -14,21 +15,25 @@
     type: QuickShipAnimationType
     layout?: QuickShipAnimationLayout
     hold?: boolean
+    imageUrl?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     hold: false,
+    imageUrl: QUICK_SHIP_IMAGE_URL,
   })
   const emit = defineEmits<{
     finished: []
   }>()
 
   const resolvedLayout = computed(() => props.layout || getQuickShipAnimationLayout(props.type, { hold: props.hold }))
-  const durationMs = computed(() => QUICK_SHIP_ANIMATION_DURATION_MS[props.type])
   const imageFailed = ref(false)
   const finished = ref(false)
   const parked = ref(false)
+  const isPlaying = ref(false)
   let finishTimer: ReturnType<typeof setTimeout> | null = null
+  let playTimer: ReturnType<typeof setTimeout> | null = null
+  let playStartedAt = 0
 
   const shouldAutoFinish = computed(
     () => props.type !== 'standby' && (resolvedLayout.value === 'overlay' || (props.hold && props.type === 'arrive')),
@@ -44,11 +49,37 @@
   }
 
   const handleImageError = () => {
+    // Keep the animation layer mounted so delayed image errors cannot interrupt its timed exit.
     imageFailed.value = true
-    finish()
   }
 
-  const handleAnimationEnd = (event: { animationName?: string; detail?: { animationName?: string } }) => {
+  const startFinishTimer = () => {
+    if (!shouldAutoFinish.value || finishTimer) return
+    let timeout = getQuickShipAnimationFinishTimeoutMs(props.type)
+    // #ifdef WEB
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      timeout = QUICK_SHIP_REDUCED_MOTION_FINISH_MS
+    }
+    // #endif
+    finishTimer = setTimeout(finish, timeout)
+  }
+
+  const startPlay = () => {
+    if (isPlaying.value) return
+    isPlaying.value = true
+    playStartedAt = Date.now()
+    startFinishTimer()
+  }
+
+  const handleAnimationEnd = (event: {
+    animationName?: string
+    elapsedTime?: number
+    detail?: { animationName?: string; elapsedTime?: number }
+  }) => {
+    if (!isPlaying.value) return
+    if (Date.now() - playStartedAt < QUICK_SHIP_ANIMATION_END_GUARD_MS) return
+    const reportedElapsed = event.elapsedTime ?? event.detail?.elapsedTime
+    if (typeof reportedElapsed === 'number' && reportedElapsed < 0.4) return
     const animationName = event.animationName || event.detail?.animationName
     if (
       animationName === 'quick-ship-depart' ||
@@ -63,17 +94,11 @@
   }
 
   onMounted(() => {
-    if (!shouldAutoFinish.value) return
-    let timeout = getQuickShipAnimationFinishTimeoutMs(props.type)
-    // #ifdef WEB
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      timeout = QUICK_SHIP_REDUCED_MOTION_FINISH_MS
-    }
-    // #endif
-    finishTimer = setTimeout(finish, timeout)
+    playTimer = setTimeout(startPlay, QUICK_SHIP_ANIMATION_PLAY_DELAY_MS)
   })
 
   onBeforeUnmount(() => {
+    if (playTimer) clearTimeout(playTimer)
     if (finishTimer) clearTimeout(finishTimer)
     finish()
   })
@@ -81,15 +106,12 @@
 
 <template>
   <view
-    v-if="!imageFailed"
     class="ship-animation"
     :class="[
       `ship-animation--${props.type}`,
       `ship-animation--${resolvedLayout}`,
-      { 'ship-animation--hold': props.hold, 'ship-animation--parked': parked },
-    ]"
-    :style="{ '--ship-duration': `${durationMs}ms` }"
-    @animationend="handleAnimationEnd">
+      { 'ship-animation--hold': props.hold, 'ship-animation--parked': parked, 'ship-animation--play': isPlaying },
+    ]">
     <view v-if="resolvedLayout === 'overlay'" class="ship-animation__flash"></view>
     <view v-if="props.type === 'arrive'" class="ship-animation__wave"></view>
     <view v-if="props.type !== 'standby'" class="ship-animation__streaks">
@@ -101,7 +123,13 @@
       <view class="ship-animation__facing">
         <view class="ship-animation__exhaust"></view>
         <view class="ship-animation__glow"></view>
-        <image class="ship-animation__image" :src="QUICK_SHIP_IMAGE_URL" mode="aspectFit" :lazy-load="false" @error="handleImageError" />
+        <image
+          class="ship-animation__image"
+          :class="{ 'ship-animation__image--failed': imageFailed }"
+          :src="props.imageUrl"
+          mode="aspectFit"
+          :lazy-load="false"
+          @error="handleImageError" />
       </view>
     </view>
     <view class="ship-animation__particles">
@@ -114,7 +142,7 @@
 
 <style scoped lang="scss">
   .ship-animation {
-    --ship-duration: 2400ms;
+    position: relative;
   }
 
   .ship-animation--overlay {
@@ -158,11 +186,11 @@
   }
 
   .ship-animation--depart .ship-animation__flash {
-    animation: quick-ship-flash-depart var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--arrive .ship-animation__flash {
-    animation: quick-ship-flash-arrive var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation__wave {
@@ -174,7 +202,7 @@
     border: 4rpx solid rgba(20, 184, 166, 0.45);
     border-radius: 50%;
     opacity: 0;
-    animation: quick-ship-wave var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation__streaks,
@@ -197,7 +225,6 @@
     width: 340rpx;
     height: 220rpx;
     margin: -110rpx 0 0 -170rpx;
-    will-change: transform, opacity;
   }
 
   .ship-animation--inline .ship-animation__motion {
@@ -208,18 +235,18 @@
 
   .ship-animation--depart .ship-animation__motion {
     opacity: 0;
-    transform: translate3d(-52vw, 28vh, 0) rotate(-18deg) scale(0.9);
-    animation: quick-ship-depart var(--ship-duration) linear forwards;
+    transform: translate3d(-390rpx, 500rpx, 0) rotate(-18deg) scale(0.9);
+    animation: none;
   }
 
   .ship-animation--arrive .ship-animation__motion {
     opacity: 0;
-    transform: translate3d(64vw, -28vh, 0) rotate(12deg) scale(0.72);
-    animation: quick-ship-arrive var(--ship-duration) linear forwards;
+    transform: translate3d(480rpx, -500rpx, 0) rotate(12deg) scale(0.72);
+    animation: none;
   }
 
   .ship-animation--arrive.ship-animation--hold .ship-animation__motion {
-    animation-name: quick-ship-arrive-hold;
+    animation: none;
   }
 
   .ship-animation--arrive.ship-animation--parked .ship-animation__motion {
@@ -229,7 +256,7 @@
   }
 
   .ship-animation--standby .ship-animation__motion {
-    animation: quick-ship-standby var(--ship-duration) ease-in-out infinite;
+    animation: none;
   }
 
   .ship-animation--arrive .ship-animation__facing {
@@ -245,6 +272,10 @@
   .ship-animation__image {
     width: 100%;
     height: 100%;
+  }
+
+  .ship-animation__image--failed {
+    opacity: 0;
   }
 
   .ship-animation__exhaust,
@@ -266,7 +297,7 @@
 
   .ship-animation--depart .ship-animation__exhaust,
   .ship-animation--arrive .ship-animation__exhaust {
-    animation: quick-ship-exhaust var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--standby .ship-animation__exhaust,
@@ -276,7 +307,7 @@
     height: 18rpx;
     margin-top: -9rpx;
     opacity: 0.42;
-    animation: quick-ship-glow-breathe 3600ms ease-in-out infinite;
+    animation: none;
   }
 
   .ship-animation__glow {
@@ -292,7 +323,7 @@
 
   .ship-animation--depart .ship-animation__glow,
   .ship-animation--arrive .ship-animation__glow {
-    animation: quick-ship-glow var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--standby .ship-animation__glow,
@@ -302,7 +333,7 @@
     height: 28rpx;
     margin-top: -14rpx;
     opacity: 0.45;
-    animation: quick-ship-glow-breathe 3600ms ease-in-out infinite;
+    animation: none;
   }
 
   .ship-animation__line {
@@ -333,12 +364,12 @@
   }
 
   .ship-animation--depart .ship-animation__line {
-    animation: quick-ship-line-depart var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--arrive .ship-animation__line {
     transform: rotate(164deg);
-    animation: quick-ship-line-arrive var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--depart .ship-animation__line--2,
@@ -382,7 +413,7 @@
 
   .ship-animation--depart .ship-animation__particle,
   .ship-animation--arrive .ship-animation__particle {
-    animation: quick-ship-particle-fly var(--ship-duration) linear forwards;
+    animation: none;
   }
 
   .ship-animation--arrive .ship-animation__particle--1 {
@@ -396,12 +427,12 @@
 
   .ship-animation--standby .ship-animation__particle--1,
   .ship-animation--arrive.ship-animation--parked .ship-animation__particle--1 {
-    animation: quick-ship-particle-drift 3600ms ease-in-out infinite;
+    animation: none;
   }
 
   .ship-animation--standby .ship-animation__particle--2,
   .ship-animation--arrive.ship-animation--parked .ship-animation__particle--2 {
-    animation: quick-ship-particle-drift 3600ms ease-in-out 900ms infinite;
+    animation: none;
   }
 
   .ship-animation--arrive.ship-animation--parked .ship-animation__flash,
@@ -412,41 +443,110 @@
     opacity: 0;
   }
 
+  .ship-animation--play.ship-animation--depart .ship-animation__flash {
+    animation: quick-ship-flash-depart 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--arrive .ship-animation__flash {
+    animation: quick-ship-flash-arrive 2400ms linear forwards;
+  }
+
+  .ship-animation--play .ship-animation__wave {
+    animation: quick-ship-wave 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--depart .ship-animation__motion {
+    animation: quick-ship-depart 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--arrive .ship-animation__motion {
+    animation: quick-ship-arrive 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--arrive.ship-animation--hold .ship-animation__motion {
+    animation: quick-ship-arrive-hold 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--standby .ship-animation__motion,
+  .ship-animation--play.ship-animation--arrive.ship-animation--parked .ship-animation__motion {
+    animation: quick-ship-standby 3600ms ease-in-out infinite;
+  }
+
+  .ship-animation--play.ship-animation--depart .ship-animation__exhaust,
+  .ship-animation--play.ship-animation--arrive .ship-animation__exhaust {
+    animation: quick-ship-exhaust 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--standby .ship-animation__exhaust,
+  .ship-animation--play.ship-animation--arrive.ship-animation--parked .ship-animation__exhaust,
+  .ship-animation--play.ship-animation--standby .ship-animation__glow,
+  .ship-animation--play.ship-animation--arrive.ship-animation--parked .ship-animation__glow {
+    animation: quick-ship-glow-breathe 3600ms ease-in-out infinite;
+  }
+
+  .ship-animation--play.ship-animation--depart .ship-animation__glow,
+  .ship-animation--play.ship-animation--arrive .ship-animation__glow {
+    animation: quick-ship-glow 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--depart .ship-animation__line {
+    animation: quick-ship-line-depart 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--arrive .ship-animation__line {
+    animation: quick-ship-line-arrive 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--depart .ship-animation__particle,
+  .ship-animation--play.ship-animation--arrive .ship-animation__particle {
+    animation: quick-ship-particle-fly 2400ms linear forwards;
+  }
+
+  .ship-animation--play.ship-animation--standby .ship-animation__particle--1,
+  .ship-animation--play.ship-animation--arrive.ship-animation--parked .ship-animation__particle--1 {
+    animation: quick-ship-particle-drift 3600ms ease-in-out infinite;
+  }
+
+  .ship-animation--play.ship-animation--standby .ship-animation__particle--2,
+  .ship-animation--play.ship-animation--arrive.ship-animation--parked .ship-animation__particle--2 {
+    animation: quick-ship-particle-drift 3600ms ease-in-out 900ms infinite;
+  }
+
   @keyframes quick-ship-depart {
     0% {
       opacity: 0;
-      transform: translate3d(-52vw, 28vh, 0) rotate(-18deg) scale(0.9);
+      transform: translate3d(-390rpx, 500rpx, 0) rotate(-18deg) scale(0.9);
     }
     8% {
       opacity: 1;
-      transform: translate3d(-50vw, 26vh, 0) rotate(-16deg) scale(0.9);
+      transform: translate3d(-375rpx, 460rpx, 0) rotate(-16deg) scale(0.9);
     }
     18% {
       opacity: 1;
-      transform: translate3d(-54vw, 30vh, 0) rotate(-20deg) scale(0.86);
+      transform: translate3d(-405rpx, 540rpx, 0) rotate(-20deg) scale(0.86);
     }
     28% {
       opacity: 1;
-      transform: translate3d(-42vw, 18vh, 0) rotate(-16deg) scale(1);
+      transform: translate3d(-315rpx, 320rpx, 0) rotate(-16deg) scale(1);
     }
     58% {
       opacity: 1;
-      transform: translate3d(10vw, -6vh, 0) rotate(-15deg) scale(1.02);
+      transform: translate3d(75rpx, -110rpx, 0) rotate(-15deg) scale(1.02);
     }
     100% {
       opacity: 0;
-      transform: translate3d(68vw, -32vh, 0) rotate(-14deg) scale(0.6);
+      transform: translate3d(510rpx, -570rpx, 0) rotate(-14deg) scale(0.6);
     }
   }
 
   @keyframes quick-ship-arrive {
     0% {
       opacity: 0;
-      transform: translate3d(64vw, -28vh, 0) rotate(12deg) scale(0.7);
+      transform: translate3d(480rpx, -500rpx, 0) rotate(12deg) scale(0.7);
     }
     22% {
       opacity: 1;
-      transform: translate3d(20vw, -10vh, 0) rotate(7deg) scale(0.9);
+      transform: translate3d(150rpx, -180rpx, 0) rotate(7deg) scale(0.9);
     }
     48% {
       opacity: 1;
@@ -469,11 +569,11 @@
   @keyframes quick-ship-arrive-hold {
     0% {
       opacity: 0;
-      transform: translate3d(64vw, -28vh, 0) rotate(12deg) scale(0.7);
+      transform: translate3d(480rpx, -500rpx, 0) rotate(12deg) scale(0.7);
     }
     22% {
       opacity: 1;
-      transform: translate3d(20vw, -10vh, 0) rotate(7deg) scale(0.9);
+      transform: translate3d(150rpx, -180rpx, 0) rotate(7deg) scale(0.9);
     }
     48% {
       opacity: 1;
@@ -693,6 +793,7 @@
     }
   }
 
+  /* #ifndef MP-WEIXIN */
   @media (prefers-reduced-motion: reduce) {
     .ship-animation--depart .ship-animation__motion {
       transform: none;
@@ -737,4 +838,5 @@
       opacity: 0 !important;
     }
   }
+  /* #endif */
 </style>

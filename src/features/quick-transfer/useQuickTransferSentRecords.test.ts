@@ -132,4 +132,31 @@ describe('useQuickTransferSentRecords', () => {
     await expect(sentRecords.accessSentRecordFile('sent-2', 'file-2')).resolves.toBeNull()
     expect(apiMocks.accessQuickTransferSentRecordFile).toHaveBeenCalledTimes(1)
   })
+
+  it('refreshes sent record detail without clearing the current page', async () => {
+    const first: QuickTransferSentRecordDetail = {
+      sentRecordId: 'sent-4',
+      transferId: 'transfer-4',
+      displayTitle: '进度',
+      sentAt: '2026-08-27T10:00:00.000Z',
+      status: 'ready',
+      claimCount: 1,
+      maxClaims: 3,
+      canRecall: true,
+      content: { text: undefined, links: [], references: [], files: [] },
+    }
+    const sentRecords = useQuickTransferSentRecords()
+    apiMocks.getQuickTransferSentRecord.mockResolvedValueOnce(first).mockImplementationOnce(async () => {
+      expect(sentRecords.detail.value).toEqual(first)
+      expect(sentRecords.isLoading.value).toBe(false)
+      return { ...first, claimCount: 2 }
+    })
+
+    expect(await sentRecords.loadSentRecordDetail('sent-4')).toBe(true)
+    expect(sentRecords.detail.value?.claimCount).toBe(1)
+    expect(await sentRecords.refreshSentRecordDetail()).toBe(true)
+    expect(sentRecords.detail.value?.claimCount).toBe(2)
+    expect(sentRecords.isLoading.value).toBe(false)
+    expect(apiMocks.getQuickTransferSentRecord).toHaveBeenCalledTimes(2)
+  })
 })

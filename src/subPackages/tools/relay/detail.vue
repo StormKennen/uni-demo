@@ -122,6 +122,7 @@
   }
 
   // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
   onShareAppMessage(() => ({ title: shareTitle.value, path: sharePath.value, imageUrl: RELAY_SHARE_IMAGE_URL }))
   onShareTimeline(() => ({ title: shareTitle.value, query: sharePath.value.split('?')[1] || '', imageUrl: RELAY_SHARE_IMAGE_URL }))
   // #endif
@@ -152,14 +153,6 @@
 
 <template>
   <PageLayout title="接龙详情" :back-fallback="RELAY_HOME_ROUTE" nav-divider>
-    <template #nav-right>
-      <!-- #ifdef MP-WEIXIN -->
-      <button class="nav-share-button" open-type="share">分享</button>
-      <!-- #endif -->
-      <!-- #ifdef H5 -->
-      <text class="nav-share-button" @click="copyShareLink">分享</text>
-      <!-- #endif -->
-    </template>
     <view class="detail-page">
       <view v-if="relayDetail.isLoading.value && !detail" class="state-panel"><text class="state-title">正在读取接龙</text><text class="state-hint">请稍候…</text></view>
       <view v-else-if="relayDetail.error.value && !detail" class="state-panel">
@@ -219,20 +212,6 @@
     box-sizing: border-box;
     background: var(--theme-bg);
     color: var(--theme-text);
-  }
-
-  .nav-share-button {
-    margin: 0;
-    padding: 0 8rpx;
-    border: 0;
-    background: transparent;
-    color: var(--theme-brand);
-    font-size: 24rpx;
-    line-height: 60rpx;
-  }
-
-  .nav-share-button::after {
-    display: none;
   }
 
   .detail-header {

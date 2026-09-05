@@ -115,8 +115,10 @@ describe('quick transfer receipt API adapter', () => {
 
   it('uses receipt file access and delete endpoints without resolving again', async () => {
     mocks.postQuickTransferReceiptsFilesAccess.mockResolvedValue({
-      url: 'https://signed.example/file',
-      expiresAt: '2026-08-26T11:00:00.000Z',
+      data: {
+        url: 'https://signed.example/file',
+        expiresAt: '2026-08-26T11:00:00.000Z',
+      },
     })
     mocks.deleteQuickTransferReceiptsReceiptId.mockResolvedValue({ receiptId: 'receipt-3', deletedAt: '2026-08-26T11:00:00.000Z' })
 

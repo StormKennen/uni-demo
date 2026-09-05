@@ -11,6 +11,8 @@ import {
   getQuickShipTransitionForSend,
   isQuickShipModeSwitchLocked,
   QUICK_SHIP_ANIMATION_DURATION_MS,
+  QUICK_SHIP_ANIMATION_END_GUARD_MS,
+  QUICK_SHIP_ANIMATION_PLAY_DELAY_MS,
   QUICK_SHIP_IMAGE_URL,
   QUICK_SHIP_SHARE_COVER_URL,
   QUICK_SHIP_TOOL_SHARE_COVER_URL,
@@ -32,6 +34,8 @@ describe('quick ship transition visual', () => {
     expect(QUICK_SHIP_ANIMATION_DURATION_MS.depart).toBeGreaterThanOrEqual(2200)
     expect(QUICK_SHIP_ANIMATION_DURATION_MS.depart).toBeLessThanOrEqual(2800)
     expect(getQuickShipAnimationFinishTimeoutMs('depart')).toBeGreaterThan(QUICK_SHIP_ANIMATION_DURATION_MS.depart)
+    expect(QUICK_SHIP_ANIMATION_PLAY_DELAY_MS).toBeGreaterThan(0)
+    expect(QUICK_SHIP_ANIMATION_END_GUARD_MS).toBeGreaterThan(QUICK_SHIP_ANIMATION_PLAY_DELAY_MS)
   })
 
   it('maps send-result entry and inspect success to a one-shot arrive overlay', () => {

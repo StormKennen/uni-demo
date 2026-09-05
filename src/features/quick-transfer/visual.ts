@@ -17,6 +17,8 @@ export const QUICK_SHIP_ANIMATION_DURATION_MS = {
 
 export const QUICK_SHIP_ANIMATION_FINISH_BUFFER_MS = 80
 export const QUICK_SHIP_REDUCED_MOTION_FINISH_MS = 360
+export const QUICK_SHIP_ANIMATION_PLAY_DELAY_MS = 120
+export const QUICK_SHIP_ANIMATION_END_GUARD_MS = 400
 
 export const getQuickShipAnimationLayout = (type: QuickShipAnimationType, options: { hold?: boolean } = {}): QuickShipAnimationLayout => {
   if (type === 'standby' || (type === 'arrive' && options.hold)) return 'inline'

@@ -9,7 +9,6 @@
   import { isValidQuickTransferReceiptId } from '@/features/quick-transfer/receiptApi'
   import { useQuickTransferReceipts } from '@/features/quick-transfer/useQuickTransferReceipts'
   import type { QuickTransferContentReference } from '@/features/quick-transfer/types'
-  import { formatQuickTransferReceiptDate } from '@/features/quick-transfer/presentation'
   import { downloadFileDirect, downloadFileToLocal, previewLocalImage } from '@/platform/file'
   import { safeBack } from '@/utils/navigation'
   import { openQuickTransferBrowserUrl } from '@/utilsH5/quick-transfer-url'
@@ -89,7 +88,8 @@
 
   const previewFile = async (fileId: string): Promise<string | null> => {
     const file = receipts.detail.value?.content.files.find(item => item.fileId === fileId)
-    if (!file || file.available === false || !file.mimeType.startsWith('image/') || !receiptId.value) return null
+    if (!file || file.available === false || !file.mimeType.startsWith('image/') || !receiptId.value || isDownloading.value) return null
+    isDownloading.value = true
     try {
       const access = await receipts.accessReceiptFile(receiptId.value, fileId)
       if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
@@ -106,6 +106,8 @@
     } catch (error) {
       uni.showToast({ title: error instanceof Error ? error.message : '图片预览失败，请稍后重试', icon: 'none' })
       return null
+    } finally {
+      isDownloading.value = false
     }
   }
 
@@ -117,17 +119,12 @@
 
 <template>
   <PageLayout
-    title="已收飞船"
+    title="我接受的"
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
     :back-fallback="QUICK_TRANSFER_RECEIPTS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
-    <!-- #ifdef MP-WEIXIN -->
-    <template #nav-right>
-      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
-    </template>
-    <!-- #endif -->
     <view class="receipt-detail-page">
       <view v-if="isInvalidReceiptId" class="state-panel">
         <text class="state-title">记录参数无效</text>
@@ -148,12 +145,6 @@
       </view>
 
       <template v-else-if="detail">
-        <view class="detail-heading">
-          <text class="detail-kicker">RECEIVED SHIP</text>
-          <text class="detail-title">{{ detail.displayTitle }}</text>
-          <text class="detail-meta">{{ formatQuickTransferReceiptDate(detail.claimedAt) }} 收到</text>
-        </view>
-
         <QuickShipReceivedContent
           :content="detail.content"
           :is-downloading="isDownloading"
@@ -169,30 +160,6 @@
 </template>
 
 <style scoped lang="scss">
-  .nav-share-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88rpx;
-    height: 58rpx;
-    margin: 0;
-    padding: 0 16rpx;
-    border: 1rpx solid rgba(255, 255, 255, 0.68);
-    border-radius: 999rpx;
-    color: #fff;
-    background: rgba(7, 20, 38, 0.28);
-    font-size: 22rpx;
-    line-height: 1;
-  }
-
-  .nav-share-button::after {
-    border: 0;
-  }
-
-  .nav-share-button--hover {
-    opacity: 0.78;
-  }
-
   .receipt-detail-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
@@ -200,29 +167,6 @@
     color: var(--theme-text);
   }
 
-  .detail-heading {
-    padding: 18rpx 4rpx 28rpx;
-    text-align: center;
-  }
-
-  .detail-kicker {
-    display: block;
-    color: var(--theme-brand);
-    font-size: 19rpx;
-    font-weight: 700;
-    letter-spacing: 3rpx;
-  }
-
-  .detail-title {
-    display: block;
-    margin-top: 10rpx;
-    color: var(--theme-text);
-    font-size: 40rpx;
-    font-weight: 800;
-    word-break: break-all;
-  }
-
-  .detail-meta,
   .state-description {
     display: block;
     margin-top: 10rpx;
@@ -244,6 +188,15 @@
 
   .state-description {
     line-height: 1.6;
+  }
+
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .secondary-button {

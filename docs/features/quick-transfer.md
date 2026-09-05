@@ -21,7 +21,7 @@ subPackages/tools/quick-transfer/receipt/detail
 
 Receiver 页面统一承载手工六位码和 `shareToken` 分享入口：分享进入先 Inspect，用户点击接收后才 Resolve；Resolve 成功后播放 arrive 动画，点击查看内容在当前页面展开正文。`claimRequestId` 继续只在当前页面内存中复用，网络未知结果重试复用原 ID，明确失败或成功后清除。
 
-管理页右上角分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`；微信管理首页同时提供显式「分享」按钮，仍使用同一工具分享 payload，不携带 `shareToken`。飞船码结果页右上角分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
+管理页使用微信小程序右上角原生分享菜单，分享永远是工具分享：`飞船｜跨设备快速传递内容` → `/subPackages/tools/quick-transfer/index`，不携带 `shareToken`。飞船码结果页使用同一原生分享菜单，分享永远是当前飞船分享：`给你送来一艘飞船，点击接收` → `/subPackages/tools/quick-transfer/receive/index?shareToken=...`。页面不增加自定义分享按钮。动画 PNG 与分享封面常量分离，封面继续使用公开 HTTPS OSS URL。
 
 所有本轮新增页面与 Quick Transfer 组件必须同时兼容 H5 和微信小程序；微信功能范围内的 button 清除原生 `button::after` 边框，每页只保留一个强主 CTA。
 
@@ -114,7 +114,7 @@ Create 后：
 - Complete 只允许已完成 OSS 上传的文件参与；Complete 暂时失败只重新校验，不能把 pending/uploading 文件误当成已上传对象。
 - `UPLOAD_DANGEROUS_CONTENT`、`UPLOAD_CONTENT_TYPE_MISMATCH` 等确定性错误不自动重试。
 
-Ready 后显示飞船码、倒计时、领取进度；H5 显示复制分享链接，微信显示“分享给微信好友”和“复制网页链接”。ready 状态不显示“再送一艘”，只有 consumed/expired/cancelled 才显示。
+Ready 后显示飞船码、倒计时、领取进度；H5 显示复制分享链接，微信保留“复制网页链接”，分享通过小程序右上角原生分享菜单完成。ready 状态不显示“再送一艘”，只有 consumed/expired/cancelled 才显示。
 
 ## 4. Receiver
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onPullDownRefresh, onReachBottom, onShow, onShareAppMessage } from '@dcloudio/uni-app'
+  import { onLoad, onPullDownRefresh, onReachBottom, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getRelaysMine } from '@/services/apifox/NODEJSDEMO/RELAYS/apifox'
   import PageLayout from '@/components/PageLayout.vue'
   import { isUserLoggedIn } from '@/utils/autoLogin'
@@ -67,7 +67,9 @@
   onLoad(() => void load())
 
   // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
   onShareAppMessage(() => ({ title: '发起一个接龙，邀请大家一起参加', path: RELAY_HOME_ROUTE, imageUrl: RELAY_SHARE_IMAGE_URL }))
+  onShareTimeline(() => ({ title: '发起一个接龙，邀请大家一起参加', query: '', imageUrl: RELAY_SHARE_IMAGE_URL }))
   // #endif
 
   onShow(() => {

@@ -194,9 +194,15 @@
   }
 
   .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
     border: 0;
     border-radius: 14rpx;
     font-size: 24rpx;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .quick-ship-button::after {

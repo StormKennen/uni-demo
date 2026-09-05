@@ -271,6 +271,8 @@ export interface QuickTransferFileAccessResult {
   expiresAt: string
 }
 
+export type QuickTransferFileAccessPurpose = 'download' | 'preview'
+
 export interface QuickTransferPageQuery {
   mode?: string
   tab?: string

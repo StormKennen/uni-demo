@@ -1,9 +1,11 @@
 import type { RelayFieldValue, RelayFieldViewModel, RelayStatus, RelayViewModel } from './types'
+import { QUICK_SHIP_IMAGE_URL } from '@/features/quick-transfer/visual'
 
 export const RELAY_HOME_ROUTE = '/subPackages/tools/relay/index'
 export const RELAY_DETAIL_ROUTE = '/subPackages/tools/relay/detail'
 export const RELAY_CREATE_ROUTE = '/subPackages/tools/relay/create'
 export const RELAY_SHARE_IMAGE_URL = 'https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/relay-share.jpg'
+export const RELAY_ANIMATION_IMAGE_URL = QUICK_SHIP_IMAGE_URL
 
 export const buildRelayDetailRoute = (options: { id?: string; shareCode?: string }): string => {
   const query = options.shareCode ? `shareCode=${encodeURIComponent(options.shareCode)}` : `id=${encodeURIComponent(options.id || '')}`

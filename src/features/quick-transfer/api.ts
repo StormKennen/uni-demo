@@ -2,6 +2,7 @@ import type {
   QuickTransferCreatePayload,
   QuickTransferCreateResult,
   QuickTransferFileAccessResult,
+  QuickTransferFileAccessPurpose,
   QuickTransferInspectResult,
   QuickTransferResolvedResult,
   QuickTransferStatusResult,
@@ -54,7 +55,7 @@ const unwrapData = (value: unknown): Record<string, unknown> => {
   const record = asRecord(parsed)
   if (!record) throw new Error('飞船接口返回格式异常')
   const data = asRecord(record.data)
-  if (data && (record.code === undefined || record.status === undefined) && Object.keys(data).length > 0) return data
+  if (data && Object.keys(data).length > 0) return data
   return record
 }
 
@@ -208,9 +209,10 @@ export const accessQuickTransferFile = async (
   transferId: string,
   fileId: string,
   claimToken: string,
+  purpose: QuickTransferFileAccessPurpose = 'download',
 ): Promise<QuickTransferFileAccessResult> => {
   const pathParams = { transferId, fileId } as postFilesFileIdAccessPathQuery
-  const body = { claimToken } as postFilesFileIdAccessBody
+  const body = { claimToken, purpose } as postFilesFileIdAccessBody & { purpose: QuickTransferFileAccessPurpose }
   const response = await postQuickTransfersFilesAccess(pathParams, body)
   const record = unwrapData(response)
   const url = typeof record.url === 'string' ? record.url : typeof record.signedUrl === 'string' ? record.signedUrl : ''

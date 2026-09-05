@@ -43,37 +43,6 @@
     :share-image-url="sharePayload.imageUrl"
     :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
-    <!-- #ifdef MP-WEIXIN -->
-    <template #nav-right>
-      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
-    </template>
-    <!-- #endif -->
     <QuickShipSentRecordList ref="listRef" :refresh-key="refreshKey" />
   </PageLayout>
 </template>
-
-<style lang="scss">
-  .nav-share-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88rpx;
-    height: 58rpx;
-    margin: 0;
-    padding: 0 16rpx;
-    border: 1rpx solid rgba(255, 255, 255, 0.68);
-    border-radius: 999rpx;
-    color: #fff;
-    background: rgba(7, 20, 38, 0.28);
-    font-size: 22rpx;
-    line-height: 1;
-  }
-
-  .nav-share-button::after {
-    border: 0;
-  }
-
-  .nav-share-button--hover {
-    opacity: 0.78;
-  }
-</style>

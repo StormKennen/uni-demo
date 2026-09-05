@@ -322,6 +322,15 @@
     margin-top: 18rpx;
   }
 
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-align: center;
+  }
+
   .add-button,
   .primary-button,
   .secondary-button {

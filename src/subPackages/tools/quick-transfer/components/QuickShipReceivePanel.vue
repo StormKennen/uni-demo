@@ -178,6 +178,15 @@
     margin-top: 24rpx;
   }
 
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-align: center;
+  }
+
   .primary-button,
   .secondary-button {
     min-height: 82rpx;

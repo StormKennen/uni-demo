@@ -3,9 +3,13 @@
   import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
   import QuickShipReceivedContent from '../components/QuickShipReceivedContent.vue'
   import PageLayout from '@/components/PageLayout.vue'
-  import { QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
+  import { QUICK_TRANSFER_POLL_INTERVAL, QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
   import { isQuickTransferDownloadValid } from '@/features/quick-transfer/helpers'
-  import { formatQuickTransferReceiptDate, getQuickTransferSentStatusLabel } from '@/features/quick-transfer/presentation'
+  import {
+    formatQuickTransferReceiptDate,
+    getQuickTransferSentStatusLabel,
+    isQuickTransferSentRecordProgressActive,
+  } from '@/features/quick-transfer/presentation'
   import { isValidQuickTransferSentRecordId } from '@/features/quick-transfer/sentRecordApi'
   import { useQuickTransferSentRecords } from '@/features/quick-transfer/useQuickTransferSentRecords'
   import type { QuickTransferContentReference } from '@/features/quick-transfer/types'
@@ -36,14 +40,23 @@
 
   const loadDetail = () => {
     isInvalidSentRecordId.value = !isValidQuickTransferSentRecordId(sentRecordId.value)
-    if (!isInvalidSentRecordId.value) void sentRecords.loadSentRecordDetail(sentRecordId.value)
+    if (isInvalidSentRecordId.value) return
+    void sentRecords.loadSentRecordDetail(sentRecordId.value).then(success => {
+      if (success && detail.value && isQuickTransferSentRecordProgressActive(detail.value.status)) startProgressPolling()
+      else stopProgressPolling()
+    })
   }
 
   const startProgressPolling = () => {
     if (progressTimer || isInvalidSentRecordId.value) return
     progressTimer = setInterval(() => {
+      const status = detail.value?.status
+      if (!status || !isQuickTransferSentRecordProgressActive(status)) {
+        stopProgressPolling()
+        return
+      }
       if (!isLoading.value && !isRecalling.value) void sentRecords.refreshSentRecordDetail()
-    }, 3000)
+    }, QUICK_TRANSFER_POLL_INTERVAL)
   }
 
   const stopProgressPolling = () => {
@@ -95,13 +108,14 @@
 
   const previewFile = async (fileId: string): Promise<string | null> => {
     const file = sentRecords.detail.value?.content.files.find(item => item.fileId === fileId)
-    if (!file || file.available === false || !file.mimeType.startsWith('image/') || !sentRecordId.value) return null
+    if (!file || file.available === false || !file.mimeType.startsWith('image/') || !sentRecordId.value || isDownloading.value) return null
     try {
       const access = await sentRecords.accessSentRecordFile(sentRecordId.value, fileId)
       if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
         uni.showToast({ title: '文件访问链接已失效，请重新打开', icon: 'none' })
         return null
       }
+      sentRecords.isDownloading.value = true
       const localFile = await downloadFileToLocal(
         { url: access.url, fileName: file.displayName, mimeType: file.mimeType, fileId },
         access.expiresAt,
@@ -112,6 +126,8 @@
     } catch (error) {
       uni.showToast({ title: error instanceof Error ? error.message : '图片预览失败，请稍后重试', icon: 'none' })
       return null
+    } finally {
+      sentRecords.isDownloading.value = false
     }
   }
 
@@ -142,10 +158,11 @@
   onLoad((options: Record<string, string | undefined>) => {
     sentRecordId.value = options.sentRecordId?.trim() || ''
     loadDetail()
-    startProgressPolling()
   })
 
-  onShow(() => startProgressPolling())
+  onShow(() => {
+    if (detail.value && isQuickTransferSentRecordProgressActive(detail.value.status)) startProgressPolling()
+  })
   onHide(stopProgressPolling)
   onUnload(stopProgressPolling)
 </script>
@@ -158,11 +175,6 @@
     :share-image-url="sharePayload.imageUrl"
     :back-fallback="QUICK_TRANSFER_SENT_RECORDS_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
-    <!-- #ifdef MP-WEIXIN -->
-    <template #nav-right>
-      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
-    </template>
-    <!-- #endif -->
     <view class="sent-detail-page">
       <view v-if="isInvalidSentRecordId" class="state-panel">
         <text class="state-title">记录参数无效</text>
@@ -183,11 +195,11 @@
       </view>
 
       <template v-else-if="detail">
-        <view class="detail-heading">
+        <!-- <view class="detail-heading">
           <text class="detail-kicker">SENT SHIP</text>
           <text class="detail-title">{{ detail.displayTitle }}</text>
           <text class="detail-meta">{{ formatQuickTransferReceiptDate(detail.sentAt) }} 发送</text>
-        </view>
+        </view> -->
 
         <view class="status-card">
           <view class="status-card__line">
@@ -197,6 +209,10 @@
           <view class="status-card__line">
             <text class="status-card__label">领取进度</text>
             <text class="status-card__value">已领取 {{ detail.claimCount }} / {{ detail.maxClaims }}</text>
+          </view>
+          <view class="status-card__line">
+            <text class="status-card__label">时间</text>
+            <text class="status-card__value">{{ formatQuickTransferReceiptDate(detail.sentAt) }}</text>
           </view>
         </view>
 
@@ -222,30 +238,6 @@
 </template>
 
 <style scoped lang="scss">
-  .nav-share-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88rpx;
-    height: 58rpx;
-    margin: 0;
-    padding: 0 16rpx;
-    border: 1rpx solid rgba(255, 255, 255, 0.68);
-    border-radius: 999rpx;
-    color: #fff;
-    background: rgba(7, 20, 38, 0.28);
-    font-size: 22rpx;
-    line-height: 1;
-  }
-
-  .nav-share-button::after {
-    border: 0;
-  }
-
-  .nav-share-button--hover {
-    opacity: 0.78;
-  }
-
   .sent-detail-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
@@ -323,6 +315,15 @@
 
   .state-description {
     line-height: 1.6;
+  }
+
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .secondary-button {

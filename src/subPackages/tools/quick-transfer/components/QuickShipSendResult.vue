@@ -53,7 +53,6 @@
         </view>
         <text v-if="props.showShareLinkWarning" class="share-link-warning">网页链接暂不可用，请使用飞船码</text>
         <!-- #ifdef MP-WEIXIN -->
-        <button class="quick-ship-button primary-button full-button" open-type="share">分享给微信好友</button>
         <button v-if="props.showShareLink" class="quick-ship-button secondary-button full-button" @click="emit('copyShareUrl')"
           >复制网页链接</button
         >
@@ -225,6 +224,15 @@
 
   .action-row > button {
     flex: 1;
+  }
+
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .primary-button,

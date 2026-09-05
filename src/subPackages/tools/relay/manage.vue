@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
-  import { onLoad, onShow, onShareAppMessage } from '@dcloudio/uni-app'
+  import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import PageLayout from '@/components/PageLayout.vue'
   import {
     deleteRelaysRelayId,
@@ -187,9 +187,15 @@
   })
 
   // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
   onShareAppMessage(() => ({
     title: detail.value ? `${detail.value.relay.title}，等你参加` : '接龙管理',
     path: buildRelayDetailRoute({ id: relayId.value, shareCode: shareCode.value || undefined }),
+    imageUrl: RELAY_SHARE_IMAGE_URL,
+  }))
+  onShareTimeline(() => ({
+    title: detail.value ? `${detail.value.relay.title}，等你参加` : '接龙管理',
+    query: buildRelayDetailRoute({ id: relayId.value, shareCode: shareCode.value || undefined }).split('?')[1] || '',
     imageUrl: RELAY_SHARE_IMAGE_URL,
   }))
   // #endif

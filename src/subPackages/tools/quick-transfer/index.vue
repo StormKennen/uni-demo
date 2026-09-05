@@ -83,23 +83,18 @@
 
 <template>
   <PageLayout
-    title=""
+    title="飞船"
     :share-title="sharePayload.title"
     :share-path="sharePayload.path"
     :share-image-url="sharePayload.imageUrl"
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
     nav-divider>
-    <!-- #ifdef MP-WEIXIN -->
-    <template #nav-right>
-      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
-    </template>
-    <!-- #endif -->
     <view class="quick-transfer-page">
-      <view class="hero-panel">
+      <!-- <view class="hero-panel">
         <text class="hero-eyebrow">QUICK TRANSFER</text>
         <text class="hero-title">飞船</text>
         <text class="hero-desc">{{ QUICK_TRANSFER_COPY.heroDescription }}</text>
-      </view>
+      </view> -->
 
       <view class="quick-transfer-sheet">
         <view class="operation-section">
@@ -162,30 +157,6 @@
     box-sizing: border-box;
     overflow: hidden;
     background: var(--theme-bg);
-  }
-
-  .nav-share-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88rpx;
-    height: 58rpx;
-    margin: 0;
-    padding: 0 16rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 999rpx;
-    color: var(--theme-text);
-    background: var(--theme-surface);
-    font-size: 22rpx;
-    line-height: 1;
-  }
-
-  .nav-share-button::after {
-    border: 0;
-  }
-
-  .nav-share-button--hover {
-    opacity: 0.78;
   }
 
   .hero-panel {
@@ -271,6 +242,7 @@
     height: 148rpx;
     margin: 0;
     padding: 0 12rpx;
+    box-sizing: border-box;
     border: 1rpx solid var(--theme-border);
     border-radius: 24rpx;
     font-size: 28rpx;
@@ -348,14 +320,18 @@
   }
 
   .history-tab {
+    display: flex;
     flex: 1;
+    align-items: center;
+    justify-content: center;
     height: 64rpx;
     margin: 0;
+    box-sizing: border-box;
     border-radius: 14rpx;
     color: var(--theme-text-secondary);
     background: transparent;
     font-size: 25rpx;
-    line-height: 64rpx;
+    line-height: 1.2;
   }
 
   .history-tab::after {

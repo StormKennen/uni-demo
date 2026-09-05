@@ -1,15 +1,24 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
-  import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-  import PageLayout from '@/components/PageLayout.vue'
-  import { postRelays } from '@/services/apifox/NODEJSDEMO/RELAYS/apifox'
-  import { getToken } from '@/utils/storage'
-  import { buildRelayDetailRoute, RELAY_CREATE_ROUTE, RELAY_HOME_ROUTE, RELAY_SHARE_IMAGE_URL, readRelayErrorMessage } from './constants'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import {
+    buildRelayDetailRoute,
+    RELAY_ANIMATION_IMAGE_URL,
+    RELAY_CREATE_ROUTE,
+    RELAY_HOME_ROUTE,
+    RELAY_SHARE_IMAGE_URL,
+    readRelayErrorMessage,
+  } from './constants'
   import { getRelayPreset, RELAY_PRESETS } from './presets'
   import { buildRelayCreatePayload, createRelayFormState, validateRelayForm } from './composables/useRelayForm'
   import { normalizeRelay } from './normalizers'
   import { setRelayShareCode } from './share-code'
   import type { RelayFormState } from './types'
+  import { getToken } from '@/utils/storage'
+  import QuickShipTransition from '@/subPackages/tools/quick-transfer/components/QuickShipTransition.vue'
+  import type { QuickShipAnimationType } from '@/features/quick-transfer/visual'
+  import { postRelays } from '@/services/apifox/NODEJSDEMO/RELAYS/apifox'
+  import PageLayout from '@/components/PageLayout.vue'
 
   interface PickerChangeEvent {
     detail?: { value?: string }
@@ -21,10 +30,32 @@
   const isReady = ref(false)
   const deadlineDate = ref('')
   const deadlineTime = ref('')
+  const shipTransition = ref<QuickShipAnimationType | null>(null)
+  let resolveShipAnimationFinished: (() => void) | null = null
   const activePreset = computed(() => getRelayPreset(form.preset))
+
+  const settleShipAnimation = () => {
+    shipTransition.value = null
+    resolveShipAnimationFinished?.()
+    resolveShipAnimationFinished = null
+  }
+
+  const playShipAnimation = () => {
+    const animationDone = new Promise<void>(resolve => {
+      resolveShipAnimationFinished = resolve
+    })
+    shipTransition.value = 'depart'
+    return animationDone
+  }
 
   const syncDeadline = () => {
     form.deadline = deadlineDate.value && deadlineTime.value ? `${deadlineDate.value}T${deadlineTime.value}:00` : ''
+  }
+
+  const clearDeadline = () => {
+    deadlineDate.value = ''
+    deadlineTime.value = ''
+    syncDeadline()
   }
 
   const readPickerValue = (event: PickerChangeEvent): string => event.detail?.value || event.value || ''
@@ -68,7 +99,8 @@
       if (relay.share.shareCode) setRelayShareCode(relay.id, relay.share.shareCode)
       uni.hideLoading()
       uni.showToast({ title: '接龙创建成功', icon: 'success' })
-      setTimeout(() => uni.redirectTo({ url: buildRelayDetailRoute({ id: relay.id, shareCode: relay.share.shareCode || undefined }) }), 350)
+      await playShipAnimation()
+      uni.redirectTo({ url: buildRelayDetailRoute({ id: relay.id, shareCode: relay.share.shareCode || undefined }) })
     } catch (error: unknown) {
       uni.hideLoading()
       uni.showToast({ title: readRelayErrorMessage(error, '创建失败，请稍后重试'), icon: 'none' })
@@ -86,7 +118,9 @@
   })
 
   // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
   onShareAppMessage(() => ({ title: '创建一个通用接龙', path: RELAY_CREATE_ROUTE, imageUrl: RELAY_SHARE_IMAGE_URL }))
+  onShareTimeline(() => ({ title: '创建一个通用接龙', query: '', imageUrl: RELAY_SHARE_IMAGE_URL }))
   // #endif
 </script>
 
@@ -109,7 +143,12 @@
             <text class="form-label">说明</text>
             <text class="counter">{{ form.description.length }} / 5000</text>
           </view>
-          <textarea v-model="form.description" class="textarea-control" :maxlength="5000" placeholder="补充时间、地点或参与规则（可选）" auto-height />
+          <textarea
+            v-model="form.description"
+            class="textarea-control"
+            :maxlength="5000"
+            placeholder="补充时间、地点或参与规则（可选）"
+            auto-height />
         </view>
       </view>
 
@@ -118,7 +157,12 @@
         <text class="section-hint">昵称会单独保存，不会占用动态字段</text>
       </view>
       <view class="preset-list">
-        <view v-for="preset in RELAY_PRESETS" :key="preset.key" class="preset-card" :class="{ selected: form.preset === preset.key }" @click="selectPreset(preset.key)">
+        <view
+          v-for="preset in RELAY_PRESETS"
+          :key="preset.key"
+          class="preset-card"
+          :class="{ selected: form.preset === preset.key }"
+          @click="selectPreset(preset.key)">
           <view class="preset-radio">{{ form.preset === preset.key ? '✓' : '' }}</view>
           <view class="preset-copy">
             <text class="preset-label">{{ preset.label }}</text>
@@ -134,31 +178,57 @@
         </view>
         <view class="setting-row" @click="toggle('enableStatistics')">
           <view><text class="setting-label">数量统计</text><text class="setting-hint">活动报名会统计 number 字段合计</text></view>
-          <text class="toggle" :class="{ on: form.enableStatistics, disabled: form.preset !== 'activity' }">{{ form.enableStatistics && form.preset === 'activity' ? '开' : '关' }}</text>
+          <text class="toggle" :class="{ on: form.enableStatistics, disabled: form.preset !== 'activity' }">{{
+            form.enableStatistics && form.preset === 'activity' ? '开' : '关'
+          }}</text>
         </view>
         <view v-if="form.preset === 'activity'" class="setting-row">
           <view><text class="setting-label">默认报名人数</text><text class="setting-hint">参与时可继续调整</text></view>
-          <view class="number-stepper"><button @click.stop="incrementDefaultNumber(-1)">−</button><text>{{ form.defaultNumber }}</text><button @click.stop="incrementDefaultNumber(1)">＋</button></view>
+          <view class="number-stepper"
+            ><button @click.stop="incrementDefaultNumber(-1)">−</button><text>{{ form.defaultNumber }}</text
+            ><button @click.stop="incrementDefaultNumber(1)">＋</button></view
+          >
         </view>
         <view class="setting-row">
-          <view><text class="setting-label">截止时间</text><text class="setting-hint">{{ form.deadline ? '到期后由后端禁止提交' : '不限制' }}</text></view>
+          <view
+            ><text class="setting-label">截止时间</text
+            ><text class="setting-hint">{{ form.deadline ? '到期后由后端禁止提交' : '不限制' }}</text></view
+          >
           <view class="picker-group">
-            <picker mode="date" :value="deadlineDate" @change="onDateChange"><view class="picker-value">{{ deadlineDate || '选择日期' }}</view></picker>
-            <picker mode="time" :value="deadlineTime" @change="onTimeChange"><view class="picker-value">{{ deadlineTime || '时间' }}</view></picker>
+            <picker mode="date" :value="deadlineDate" @change="onDateChange"
+              ><view class="picker-value">{{ deadlineDate || '选择日期' }}</view></picker
+            >
+            <picker mode="time" :value="deadlineTime" @change="onTimeChange"
+              ><view class="picker-value">{{ deadlineTime || '时间' }}</view></picker
+            >
           </view>
         </view>
-        <view v-if="form.deadline" class="clear-deadline" @click="deadlineDate = ''; deadlineTime = ''; syncDeadline()">清除截止时间</view>
+        <view v-if="form.deadline" class="clear-deadline" @click="clearDeadline">清除截止时间</view>
       </view>
 
       <view class="form-card setting-card">
-        <view class="setting-row" @click="toggle('allowEditNickname')"><text class="setting-label">允许修改昵称</text><text class="toggle" :class="{ on: form.allowEditNickname }">{{ form.allowEditNickname ? '开' : '关' }}</text></view>
-        <view class="setting-row" @click="toggle('allowEditEntry')"><text class="setting-label">允许修改自己的接龙</text><text class="toggle" :class="{ on: form.allowEditEntry }">{{ form.allowEditEntry ? '开' : '关' }}</text></view>
-        <view class="setting-row" @click="toggle('allowWithdraw')"><text class="setting-label">允许撤回自己的接龙</text><text class="toggle" :class="{ on: form.allowWithdraw }">{{ form.allowWithdraw ? '开' : '关' }}</text></view>
+        <view class="setting-row" @click="toggle('allowEditNickname')"
+          ><text class="setting-label">允许修改昵称</text
+          ><text class="toggle" :class="{ on: form.allowEditNickname }">{{ form.allowEditNickname ? '开' : '关' }}</text></view
+        >
+        <view class="setting-row" @click="toggle('allowEditEntry')"
+          ><text class="setting-label">允许修改自己的接龙</text
+          ><text class="toggle" :class="{ on: form.allowEditEntry }">{{ form.allowEditEntry ? '开' : '关' }}</text></view
+        >
+        <view class="setting-row" @click="toggle('allowWithdraw')"
+          ><text class="setting-label">允许撤回自己的接龙</text
+          ><text class="toggle" :class="{ on: form.allowWithdraw }">{{ form.allowWithdraw ? '开' : '关' }}</text></view
+        >
       </view>
 
       <button class="submit-button" :disabled="isSubmitting" @click="submit">{{ isSubmitting ? '创建中…' : '创建接龙' }}</button>
       <text class="schema-hint">{{ activePreset.label }}将转换为通用动态字段，创建后无需接触字段配置。</text>
     </view>
+    <QuickShipTransition
+      v-if="shipTransition"
+      :type="shipTransition"
+      :image-url="RELAY_ANIMATION_IMAGE_URL"
+      @finished="settleShipAnimation" />
   </PageLayout>
 </template>
 

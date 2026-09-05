@@ -7,6 +7,26 @@
 
 ## Unreleased
 
+- 2026-09-05 [tools/quick-transfer/file] 接收页文件 Access 显式使用 `purpose=download` 并兼容 `data.url` 响应；已收/已发送详情图片预览补齐下载进行态，统一复用临时 URL 下载链路（Codex）
+
+- 2026-09-05 [tools/quick-transfer/file] 分离接收页图片预览与保存链路：预览使用 `purpose=preview`，保存始终重新获取 `purpose=download` 的临时 URL，不复用预览缓存，并区分两类失败提示（Codex）
+
+- 2026-09-05 [tools/quick-transfer/ui] 统一飞船模块所有按钮、历史 Tab、引用弹窗和文件操作按钮的 flex 垂直居中与行高，修复微信小程序原生按钮文案偏移（Codex）
+
+- 2026-09-05 [tools/quick-transfer/receipt] 精简已收飞船详情页，移除与内容标题重复的空头部，仅保留内容展示区（Codex）
+
+- 2026-09-05 [tools/quick-transfer/sent] 发送记录详情轮询改为静默刷新：不再清空当前详情或切换到“正在读取发送记录”，终态后停止轮询（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual] 修复 iOS 微信真机飞船动画瞬间结束：延迟一帧后再挂播放类，关键帧位移改为 rpx，并忽略过早的 animationend（Codex）
+
+- 2026-09-04 [tools/relay/share] 移除接龙详情页自定义分享按钮，仅保留微信原生右上角分享能力（Codex）
+
+- 2026-09-04 [tools/quick-transfer/share, tools/relay/share] 飞船与接龙全部页面统一使用微信小程序右上角原生分享菜单，移除页面内分享按钮并保留好友、朋友圈分享回调、路径和封面配置（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual, tools/relay] 固定飞船关键帧时长并隔离图片加载失败，兼容 iOS 真机动画；接龙创建和参与成功后复用通用飞船出发动画（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual] 接收页同时保留两份到达视觉：一艘飞入后淡出，另一艘飞入后停靠并持续悬浮（Codex）
+
 - 2026-09-03 [tools/quick-transfer/visual] 将飞船 depart/arrive 动画进一步延长至约 2.4 秒，避免飞入和离场过程一闪而过（Codex）
 
 - 2026-09-03 [tools/quick-transfer/visual] 延长飞船 depart/arrive 动画至约 1.8 秒，让飞入、减速和停靠过程更连贯可见（Codex）

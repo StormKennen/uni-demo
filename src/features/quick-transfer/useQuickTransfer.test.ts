@@ -257,7 +257,7 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(quickTransfer.receiveError.value).toEqual({ code: 'CLAIM_TOKEN_EXPIRED', message: '文件访问凭证已失效' })
   })
 
-  it('caches the local file across preview and save actions', async () => {
+  it('uses separate preview and download chains for preview and save actions', async () => {
     const result: QuickTransferResolvedResult = {
       title: '图片资料',
       transferId: 'transfer-1',
@@ -281,8 +281,10 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
     expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
     expect(await quickTransfer.downloadReceivedFile('image-1')).toBe(true)
-    expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(1)
-    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(1)
+    expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(2)
+    expect(mocks.accessQuickTransferFile).toHaveBeenNthCalledWith(1, 'transfer-1', 'image-1', 'claim-1', 'preview')
+    expect(mocks.accessQuickTransferFile).toHaveBeenNthCalledWith(2, 'transfer-1', 'image-1', 'claim-1', 'download')
+    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(2)
     expect(mocks.saveLocalFile).toHaveBeenCalledWith(
       expect.objectContaining({ path: '/tmp/received-file' }),
       expect.objectContaining({ fileName: '产品截图.jpg', mimeType: 'image/jpeg' }),

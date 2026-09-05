@@ -114,7 +114,15 @@ export const useQuickTransferSentRecords = () => {
 
   const refreshSentRecordDetail = async (): Promise<boolean> => {
     const sentRecordId = detail.value?.sentRecordId
-    return sentRecordId ? loadSentRecordDetail(sentRecordId) : false
+    if (!sentRecordId || isLoading.value) return false
+    try {
+      detail.value = await getQuickTransferSentRecord(sentRecordId)
+      error.value = null
+      return true
+    } catch (cause) {
+      error.value = toQuickTransferErrorInfo(cause, '发送记录详情加载失败，请稍后重试')
+      return false
+    }
   }
 
   const deleteSentRecord = async (sentRecordId: string): Promise<boolean> => {

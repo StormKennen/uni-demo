@@ -77,6 +77,9 @@ export const getQuickTransferSentStatusLabel = (status: QuickTransferStatus): st
   return '已结束'
 }
 
+export const isQuickTransferSentRecordProgressActive = (status: QuickTransferStatus): boolean =>
+  status === 'uploading' || status === 'ready'
+
 export const getQuickTransferSentClaimLabel = (claimCount: number, maxClaims: number): string => `已领取 ${claimCount} / ${maxClaims}`
 
 export const formatQuickTransferSentRecordSummary = (summary: QuickTransferSentRecordSummary): string =>

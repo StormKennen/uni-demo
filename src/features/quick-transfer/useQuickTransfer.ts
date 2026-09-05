@@ -35,6 +35,7 @@ import type {
   QuickTransferCreatePayload,
   QuickTransferErrorInfo,
   QuickTransferFileAccessResult,
+  QuickTransferFileAccessPurpose,
   QuickTransferInspectResult,
   QuickTransferReceiveState,
   QuickTransferReceiveInput,
@@ -663,11 +664,14 @@ export const useQuickTransfer = () => {
     receiveError.value = null
   }
 
-  const getReceivedFileAccess = async (fileId: string): Promise<QuickTransferFileAccessResult | null> => {
+  const getReceivedFileAccess = async (
+    fileId: string,
+    purpose: QuickTransferFileAccessPurpose = 'download',
+  ): Promise<QuickTransferFileAccessResult | null> => {
     const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
     if (!file || file.available === false || !claimToken.value || !fileId) return null
     try {
-      return await accessQuickTransferFile(receivedResult.value.transferId, fileId, claimToken.value)
+      return await accessQuickTransferFile(receivedResult.value.transferId, fileId, claimToken.value, purpose)
     } catch (error) {
       logFileOperationFailure(
         'FILE_ACCESS_FAILED',
@@ -694,17 +698,21 @@ export const useQuickTransfer = () => {
     receiveError.value = { ...info, code: info.code || fallbackCode }
   }
 
-  const ensureReceivedFileLocal = async (fileId: string): Promise<LocalFile | null> => {
+  const ensureReceivedFileLocal = async (
+    fileId: string,
+    purpose: QuickTransferFileAccessPurpose = 'download',
+  ): Promise<LocalFile | null> => {
     const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
     if (!file || file.available === false || !fileId) return null
 
-    const cached = receivedLocalFiles.get(fileId)
+    const cacheKey = `${purpose}:${fileId}`
+    const cached = receivedLocalFiles.get(cacheKey)
     if (cached && (!cached.isRemote || !cached.expiresAt || isQuickTransferDownloadValid(cached.expiresAt))) return cached
-    const pending = receivedLocalFilePromises.get(fileId)
+    const pending = receivedLocalFilePromises.get(cacheKey)
     if (pending) return pending
 
     const request = (async (): Promise<LocalFile | null> => {
-      const access = await getReceivedFileAccess(fileId)
+      const access = await getReceivedFileAccess(fileId, purpose)
       if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
         if (!access && (receiveError.value?.code === 'CLAIM_TOKEN_INVALID' || receiveError.value?.code === 'CLAIM_TOKEN_EXPIRED')) {
           return null
@@ -720,18 +728,22 @@ export const useQuickTransfer = () => {
           { url: access.url, fileName: file.displayName, mimeType: file.mimeType, fileId },
           access.expiresAt,
         )
-        receivedLocalFiles.set(fileId, localFile)
+        receivedLocalFiles.set(cacheKey, localFile)
         return localFile
       } catch (error) {
-        setReceivedFileError(error, 'DOWNLOAD_FAILED', '文件下载失败，请稍后重试')
+        setReceivedFileError(
+          error,
+          purpose === 'preview' ? 'PREVIEW_FAILED' : 'DOWNLOAD_FAILED',
+          purpose === 'preview' ? '图片预览失败，请稍后重试' : '文件下载失败，请稍后重试',
+        )
         return null
       }
     })()
-    receivedLocalFilePromises.set(fileId, request)
+    receivedLocalFilePromises.set(cacheKey, request)
     try {
       return await request
     } finally {
-      receivedLocalFilePromises.delete(fileId)
+      receivedLocalFilePromises.delete(cacheKey)
     }
   }
 
@@ -740,7 +752,7 @@ export const useQuickTransfer = () => {
     if (!file || file.available === false || !file.mimeType.startsWith('image/') || isDownloading.value) return null
     isDownloading.value = true
     try {
-      const localFile = await ensureReceivedFileLocal(fileId)
+      const localFile = await ensureReceivedFileLocal(fileId, 'preview')
       if (!localFile) return null
       // #ifdef H5
       return localFile.path
@@ -760,7 +772,7 @@ export const useQuickTransfer = () => {
     if (!file || isDownloading.value) return false
     isDownloading.value = true
     try {
-      const localFile = await ensureReceivedFileLocal(fileId)
+      const localFile = await ensureReceivedFileLocal(fileId, 'download')
       if (!localFile) return false
       const success = await saveLocalFile(localFile, {
         url: localFile.path,

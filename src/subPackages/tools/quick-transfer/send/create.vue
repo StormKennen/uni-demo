@@ -324,11 +324,6 @@
     :share-timeline-title="QUICK_TRANSFER_TOOL_SHARE_TITLE"
     :back-fallback="QUICK_TRANSFER_ROUTE"
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
-    <!-- #ifdef MP-WEIXIN -->
-    <template #nav-right>
-      <button class="nav-share-button" hover-class="nav-share-button--hover" open-type="share">分享</button>
-    </template>
-    <!-- #endif -->
     <view class="send-create-page">
       <view v-if="showSendGate" class="gate-panel">
         <text class="page-kicker">SEND SHIP</text>
@@ -338,11 +333,11 @@
       </view>
 
       <template v-else>
-        <view class="page-heading">
+        <!-- <view class="page-heading">
           <text class="page-kicker">SEND SHIP</text>
           <text class="page-title">装载一艘飞船</text>
           <text class="page-description">内容会在有效期内安全送达对方。</text>
-        </view>
+        </view> -->
         <QuickShipSendForm
           :draft="draft"
           :is-sending="isSending"
@@ -404,30 +399,6 @@
 </template>
 
 <style lang="scss">
-  .nav-share-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 88rpx;
-    height: 58rpx;
-    margin: 0;
-    padding: 0 16rpx;
-    border: 1rpx solid rgba(255, 255, 255, 0.68);
-    border-radius: 999rpx;
-    color: #fff;
-    background: rgba(7, 20, 38, 0.28);
-    font-size: 22rpx;
-    line-height: 1;
-  }
-
-  .nav-share-button::after {
-    border: 0;
-  }
-
-  .nav-share-button--hover {
-    opacity: 0.78;
-  }
-
   .send-create-page {
     min-height: 100vh;
     padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
@@ -471,9 +442,15 @@
   }
 
   .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
     border: 0;
     border-radius: 16rpx;
     font-size: 26rpx;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .quick-ship-button::after {

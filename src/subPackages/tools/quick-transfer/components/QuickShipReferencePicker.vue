@@ -279,12 +279,18 @@
   }
 
   .picker-button {
+    display: flex;
     flex: 1;
+    align-items: center;
+    justify-content: center;
     min-height: 78rpx;
     margin: 0;
+    box-sizing: border-box;
     border: 0;
     border-radius: 16rpx;
     font-size: 26rpx;
+    line-height: 1.2;
+    text-align: center;
   }
 
   .picker-button::after {

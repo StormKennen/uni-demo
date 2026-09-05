@@ -1,17 +1,30 @@
 <script setup lang="ts">
   import { computed, reactive, ref } from 'vue'
-  import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
-  import PageLayout from '@/components/PageLayout.vue'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import RelayDynamicForm from './components/RelayDynamicForm.vue'
-  import { patchRelayIdParticipantsMe, patchRelaysEntries, postRelayIdParticipantsMe, postRelaysRelayIdEntries } from '@/services/apifox/NODEJSDEMO/RELAYS/apifox'
-  import { getUserInfo, getToken } from '@/utils/storage'
-  import { buildRelayDetailRoute, RELAY_DETAIL_ROUTE, RELAY_SHARE_IMAGE_URL, readRelayErrorMessage } from './constants'
+  import {
+    buildRelayDetailRoute,
+    RELAY_ANIMATION_IMAGE_URL,
+    RELAY_DETAIL_ROUTE,
+    RELAY_SHARE_IMAGE_URL,
+    readRelayErrorMessage,
+  } from './constants'
   import { getFieldDefaultValue } from './constants'
   import { useRelayDetail } from './composables/useRelayDetail'
   import { useRelayEntries } from './composables/useRelayEntries'
   import { validateRelayEntryForm } from './composables/useRelayForm'
   import { normalizeParticipant } from './normalizers'
   import type { RelayEntryFormState, RelayImageValue, RelayFieldValue } from './types'
+  import { getUserInfo, getToken } from '@/utils/storage'
+  import {
+    patchRelayIdParticipantsMe,
+    patchRelaysEntries,
+    postRelayIdParticipantsMe,
+    postRelaysRelayIdEntries,
+  } from '@/services/apifox/NODEJSDEMO/RELAYS/apifox'
+  import PageLayout from '@/components/PageLayout.vue'
+  import QuickShipTransition from '@/subPackages/tools/quick-transfer/components/QuickShipTransition.vue'
+  import type { QuickShipAnimationType } from '@/features/quick-transfer/visual'
 
   const relayDetail = useRelayDetail()
   const relayEntries = useRelayEntries()
@@ -21,6 +34,8 @@
   const isSubmitting = ref(false)
   const isUploading = ref(false)
   const currentEntryId = ref('')
+  const shipTransition = ref<QuickShipAnimationType | null>(null)
+  let resolveShipAnimationFinished: (() => void) | null = null
   const validationErrors = ref<Record<string, string>>({})
   const form = reactive<RelayEntryFormState>({
     nickname: getUserInfo()?.name || '',
@@ -32,6 +47,20 @@
   const isEditing = computed(() => Boolean(currentEntryId.value))
   const pageTitle = computed(() => (isEditing.value ? '修改我的接龙' : '参与接龙'))
   const canUploadImages = computed(() => Boolean(getToken()))
+
+  const settleShipAnimation = () => {
+    shipTransition.value = null
+    resolveShipAnimationFinished?.()
+    resolveShipAnimationFinished = null
+  }
+
+  const playShipAnimation = () => {
+    const animationDone = new Promise<void>(resolve => {
+      resolveShipAnimationFinished = resolve
+    })
+    shipTransition.value = 'depart'
+    return animationDone
+  }
 
   const setInitialValues = () => {
     if (!detail.value) return
@@ -50,15 +79,25 @@
     const entry = relayEntries.entries.value.find(item => item.isMine && item.status === 'active')
     if (!entry || !detail.value) return
     currentEntryId.value = entry.id
-    form.values = { ...form.values, ...Object.entries(entry.values).reduce<Record<string, RelayFieldValue>>((result, [key, value]) => {
-      if (typeof value === 'string' || typeof value === 'number' || value === null || Array.isArray(value)) result[key] = value as RelayFieldValue
-      return result
-    }, {}) }
-    detail.value.relay.fields.filter(field => field.type === 'image').forEach(field => {
-      const raw = entry.values[field.key]
-      const images = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === 'string').map(fileId => ({ fileId, url: fileId.startsWith('http') ? fileId : '', state: 'uploaded' as const })) : []
-      form.images = { ...form.images, [field.key]: images }
-    })
+    form.values = {
+      ...form.values,
+      ...Object.entries(entry.values).reduce<Record<string, RelayFieldValue>>((result, [key, value]) => {
+        if (typeof value === 'string' || typeof value === 'number' || value === null || Array.isArray(value))
+          result[key] = value as RelayFieldValue
+        return result
+      }, {}),
+    }
+    detail.value.relay.fields
+      .filter(field => field.type === 'image')
+      .forEach(field => {
+        const raw = entry.values[field.key]
+        const images = Array.isArray(raw)
+          ? raw
+              .filter((item): item is string => typeof item === 'string')
+              .map(fileId => ({ fileId, url: fileId.startsWith('http') ? fileId : '', state: 'uploaded' as const }))
+          : []
+        form.images = { ...form.images, [field.key]: images }
+      })
   }
 
   const load = async () => {
@@ -115,7 +154,8 @@
       }
       uni.hideLoading()
       uni.showToast({ title: isEditing.value ? '修改成功' : '接龙成功', icon: 'success' })
-      setTimeout(() => uni.redirectTo({ url: buildRelayDetailRoute({ id: detail.value?.relay.id || relayId.value }) }), 350)
+      await playShipAnimation()
+      uni.redirectTo({ url: buildRelayDetailRoute({ id: detail.value?.relay.id || relayId.value }) })
     } catch (error: unknown) {
       uni.hideLoading()
       uni.showToast({ title: readRelayErrorMessage(error, '提交失败，请稍后重试'), icon: 'none' })
@@ -140,9 +180,15 @@
   })
 
   // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
   onShareAppMessage(() => ({
     title: detail.value ? `${detail.value.relay.title}，等你参加` : '参加接龙',
     path: buildRelayDetailRoute({ id: relayId.value, shareCode: shareCode.value || undefined }),
+    imageUrl: RELAY_SHARE_IMAGE_URL,
+  }))
+  onShareTimeline(() => ({
+    title: detail.value ? `${detail.value.relay.title}，等你参加` : '参加接龙',
+    query: buildRelayDetailRoute({ id: relayId.value, shareCode: shareCode.value || undefined }).split('?')[1] || '',
     imageUrl: RELAY_SHARE_IMAGE_URL,
   }))
   // #endif
@@ -179,10 +225,17 @@
             @uploading-change="isUploading = $event" />
         </view>
 
-        <button class="submit-button" :disabled="isSubmitting || isUploading" @click="submit">{{ isSubmitting ? '保存中…' : isEditing ? '保存修改' : '确认接龙' }}</button>
+        <button class="submit-button" :disabled="isSubmitting || isUploading" @click="submit">{{
+          isSubmitting ? '保存中…' : isEditing ? '保存修改' : '确认接龙'
+        }}</button>
         <text class="form-hint">提交后会立即返回详情页，统计和序号以服务端结果为准。</text>
       </template>
     </view>
+    <QuickShipTransition
+      v-if="shipTransition"
+      :type="shipTransition"
+      :image-url="RELAY_ANIMATION_IMAGE_URL"
+      @finished="settleShipAnimation" />
   </PageLayout>
 </template>
 
