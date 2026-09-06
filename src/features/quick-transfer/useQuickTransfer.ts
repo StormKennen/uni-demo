@@ -47,10 +47,12 @@ import type {
   QuickTransferUploadDescriptor,
 } from './types'
 import { createQuickTransferClaimRequestId } from './requestId'
+import { accessQuickTransferReceiptFile } from './receiptApi'
 import type { SelectedFile } from '@/platform/file'
 import {
   downloadFileToLocal,
   FileOperationError,
+  isLocalFileAvailable,
   logFileOperationFailure,
   previewLocalImage,
   saveLocalFile,
@@ -668,10 +670,13 @@ export const useQuickTransfer = () => {
     fileId: string,
     purpose: QuickTransferFileAccessPurpose = 'download',
   ): Promise<QuickTransferFileAccessResult | null> => {
-    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
-    if (!file || file.available === false || !claimToken.value || !fileId) return null
+    const result = receivedResult.value
+    const file = result?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !fileId) return null
     try {
-      return await accessQuickTransferFile(receivedResult.value.transferId, fileId, claimToken.value, purpose)
+      if (purpose === 'download' && result.receiptId) return await accessQuickTransferReceiptFile(result.receiptId, fileId)
+      if (!result.transferId || !claimToken.value) return null
+      return await accessQuickTransferFile(result.transferId, fileId, claimToken.value, purpose)
     } catch (error) {
       logFileOperationFailure(
         'FILE_ACCESS_FAILED',
@@ -702,12 +707,17 @@ export const useQuickTransfer = () => {
     fileId: string,
     purpose: QuickTransferFileAccessPurpose = 'download',
   ): Promise<LocalFile | null> => {
-    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
+    const result = receivedResult.value
+    const file = result?.content.files.find(item => item.fileId === fileId)
     if (!file || file.available === false || !fileId) return null
 
     const cacheKey = `${purpose}:${fileId}`
     const cached = receivedLocalFiles.get(cacheKey)
-    if (cached && (!cached.isRemote || !cached.expiresAt || isQuickTransferDownloadValid(cached.expiresAt))) return cached
+    const mustRefreshReceiptUrl = Boolean(result.receiptId && cached?.isRemote)
+    if (!mustRefreshReceiptUrl && cached && (!cached.isRemote || !cached.expiresAt || isQuickTransferDownloadValid(cached.expiresAt))) {
+      if (await isLocalFileAvailable(cached, { fileId, mimeType: file.mimeType })) return cached
+      receivedLocalFiles.delete(cacheKey)
+    }
     const pending = receivedLocalFilePromises.get(cacheKey)
     if (pending) return pending
 
@@ -751,6 +761,7 @@ export const useQuickTransfer = () => {
     const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
     if (!file || file.available === false || !file.mimeType.startsWith('image/') || isDownloading.value) return null
     isDownloading.value = true
+    receiveError.value = null
     try {
       const localFile = await ensureReceivedFileLocal(fileId, 'preview')
       if (!localFile) return null
@@ -771,6 +782,7 @@ export const useQuickTransfer = () => {
     const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
     if (!file || isDownloading.value) return false
     isDownloading.value = true
+    receiveError.value = null
     try {
       const localFile = await ensureReceivedFileLocal(fileId, 'download')
       if (!localFile) return false
@@ -780,15 +792,21 @@ export const useQuickTransfer = () => {
         mimeType: file.mimeType,
         fileId,
       })
-      if (!success) {
+      if (!success.success) {
         setReceivedFileError(
           undefined,
           'SAVE_FAILED',
-          file.mimeType.startsWith('image/') ? '图片保存失败，请检查相册权限后重试' : '文件保存失败，请稍后重试',
+          file.mimeType.startsWith('image/') || file.mimeType.startsWith('video/')
+            ? '媒体保存失败，请检查相册权限后重试'
+            : '文件保存失败，请稍后重试',
         )
         return false
       }
-      uni.showToast({ title: file.mimeType.startsWith('image/') ? '已保存到相册' : '文件下载完成', icon: 'none' })
+      if (success.consumesSource) receivedLocalFiles.delete(`download:${fileId}`)
+      uni.showToast({
+        title: file.mimeType.startsWith('image/') || file.mimeType.startsWith('video/') ? '已保存到相册' : '文件下载完成',
+        icon: 'none',
+      })
       return true
     } finally {
       isDownloading.value = false

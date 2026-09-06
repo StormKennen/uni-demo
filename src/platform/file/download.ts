@@ -15,6 +15,22 @@ export interface LocalFile {
   expiresAt?: string
 }
 
+export interface SaveLocalFileResult {
+  success: boolean
+  consumesSource: boolean
+}
+
+interface SaveCallbacks {
+  success: () => void
+  fail: (error: unknown) => void
+}
+
+export interface WeixinFileSaveAdapter {
+  saveImage: (options: SaveCallbacks & { filePath: string }) => void
+  saveVideo: (options: SaveCallbacks & { filePath: string }) => void
+  saveFile: (options: SaveCallbacks & { tempFilePath: string }) => void
+}
+
 export class FileOperationError extends Error {
   readonly code: FileOperationCode
   readonly statusCode?: number
@@ -108,33 +124,68 @@ export const previewLocalImage = (file: LocalFile, options: Pick<DirectDownloadO
   return Promise.resolve(false)
 }
 
-export const saveLocalFile = (file: LocalFile, options: DirectDownloadOptions): Promise<boolean> => {
-  // #ifdef H5
-  return Promise.resolve(openQuickTransferBrowserDownload(file.path, options.fileName))
-  // #endif
+export const isLocalFileAvailable = (file: LocalFile, options: Pick<DirectDownloadOptions, 'fileId' | 'mimeType'>): Promise<boolean> => {
+  if (file.isRemote) return Promise.resolve(Boolean(file.path))
 
   // #ifdef MP-WEIXIN
   return new Promise(resolve => {
-    const onFail = (error: unknown) => {
-      const details = { errMsg: getErrorMessage(error) }
-      logFileOperationFailure('SAVE_FAILED', options, details)
-      resolve(false)
-    }
-    if (options.mimeType.startsWith('image/')) {
-      uni.saveImageToPhotosAlbum({ filePath: file.path, success: () => resolve(true), fail: onFail })
-      return
-    }
-    uni.saveFile({ tempFilePath: file.path, success: () => resolve(true), fail: onFail })
+    uni.getFileInfo({
+      filePath: file.path,
+      success: () => resolve(true),
+      fail: error => {
+        logFileOperationFailure('DOWNLOAD_FAILED', options, { errMsg: getErrorMessage(error) })
+        resolve(false)
+      },
+    })
   })
   // #endif
 
-  return Promise.resolve(false)
+  return Promise.resolve(Boolean(file.path))
+}
+
+export const saveLocalFileWithWeixinAdapter = (
+  file: LocalFile,
+  options: DirectDownloadOptions,
+  adapter: WeixinFileSaveAdapter,
+): Promise<SaveLocalFileResult> =>
+  new Promise(resolve => {
+    const onFail = (error: unknown) => {
+      const details = { errMsg: getErrorMessage(error) }
+      logFileOperationFailure('SAVE_FAILED', options, details)
+      resolve({ success: false, consumesSource: false })
+    }
+    if (options.mimeType.startsWith('image/')) {
+      adapter.saveImage({ filePath: file.path, success: () => resolve({ success: true, consumesSource: false }), fail: onFail })
+      return
+    }
+    if (options.mimeType.startsWith('video/')) {
+      adapter.saveVideo({ filePath: file.path, success: () => resolve({ success: true, consumesSource: false }), fail: onFail })
+      return
+    }
+    adapter.saveFile({ tempFilePath: file.path, success: () => resolve({ success: true, consumesSource: true }), fail: onFail })
+  })
+
+export const saveLocalFile = (file: LocalFile, options: DirectDownloadOptions): Promise<SaveLocalFileResult> => {
+  // #ifdef H5
+  return Promise.resolve({ success: openQuickTransferBrowserDownload(file.path, options.fileName), consumesSource: false })
+  // #endif
+
+  // #ifdef MP-WEIXIN
+  return saveLocalFileWithWeixinAdapter(file, options, {
+    saveImage: saveOptions => uni.saveImageToPhotosAlbum(saveOptions),
+    saveVideo: saveOptions => uni.saveVideoToPhotosAlbum(saveOptions),
+    saveFile: saveOptions => uni.saveFile(saveOptions),
+  })
+  // #endif
+
+  return Promise.resolve({ success: false, consumesSource: false })
 }
 
 export const downloadFileDirect = async (options: DirectDownloadOptions): Promise<boolean> => {
   try {
     const file = await downloadFileToLocal(options)
-    return await saveLocalFile(file, options)
+    const result = await saveLocalFile(file, options)
+    return result.success
   } catch (error) {
     if (error instanceof FileOperationError) return false
     const details = { errMsg: getErrorMessage(error) }

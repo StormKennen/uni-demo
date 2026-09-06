@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   refreshQuickTransferUploadPolicy: vi.fn(),
   resolveQuickTransfer: vi.fn(),
   accessQuickTransferFile: vi.fn(),
+  accessQuickTransferReceiptFile: vi.fn(),
   cancelQuickTransfer: vi.fn(),
   inspectQuickTransferShare: vi.fn(),
   uploadFileDirect: vi.fn(),
@@ -22,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   logFileOperationFailure: vi.fn(),
   previewLocalImage: vi.fn(),
   saveLocalFile: vi.fn(),
+  isLocalFileAvailable: vi.fn(),
 }))
 
 vi.mock('./api', () => ({
@@ -35,6 +37,8 @@ vi.mock('./api', () => ({
   resolveQuickTransfer: mocks.resolveQuickTransfer,
 }))
 
+vi.mock('./receiptApi', () => ({ accessQuickTransferReceiptFile: mocks.accessQuickTransferReceiptFile }))
+
 vi.mock(
   '@/platform/file',
   () => ({
@@ -43,6 +47,7 @@ vi.mock(
     logFileOperationFailure: mocks.logFileOperationFailure,
     previewLocalImage: mocks.previewLocalImage,
     saveLocalFile: mocks.saveLocalFile,
+    isLocalFileAvailable: mocks.isLocalFileAvailable,
     uploadFileDirect: mocks.uploadFileDirect,
   }),
   { virtual: true },
@@ -113,7 +118,8 @@ beforeEach(() => {
     expiresAt: new Date(Date.now() + 60_000).toISOString(),
   })
   mocks.previewLocalImage.mockResolvedValue(true)
-  mocks.saveLocalFile.mockResolvedValue(true)
+  mocks.isLocalFileAvailable.mockResolvedValue(true)
+  mocks.saveLocalFile.mockResolvedValue({ success: true, consumesSource: false })
 })
 
 describe('useQuickTransfer upload recovery', () => {
@@ -238,7 +244,6 @@ describe('useQuickTransfer receiver recovery', () => {
       title: '附件资料',
       transferId: 'transfer-1',
       claimId: 'claim-id-1',
-      receiptId: 'receipt-1',
       claimToken: 'claim-1',
       content: {
         text: undefined,
@@ -289,6 +294,178 @@ describe('useQuickTransfer receiver recovery', () => {
       expect.objectContaining({ path: '/tmp/received-file' }),
       expect.objectContaining({ fileName: '产品截图.jpg', mimeType: 'image/jpeg' }),
     )
+  })
+
+  it('refreshes Receipt file access instead of reusing a cached remote URL', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '视频资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'video-1', name: 'clip.mp4', displayName: 'clip.mp4', size: 1, mimeType: 'video/mp4' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferReceiptFile.mockResolvedValue({
+      url: 'https://signed.example/video',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    mocks.downloadFileToLocal.mockResolvedValue({
+      path: 'https://signed.example/video',
+      isRemote: true,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('video-1')).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('video-1')).toBe(true)
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(2)
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenNthCalledWith(1, 'receipt-1', 'video-1')
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenNthCalledWith(2, 'receipt-1', 'video-1')
+    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(2)
+    expect(mocks.accessQuickTransferFile).not.toHaveBeenCalled()
+  })
+
+  it('drops a consumed local file and requests fresh Receipt access for the next regular-file download', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '普通文件',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'file-1', name: 'report.pdf', displayName: 'report.pdf', size: 1, mimeType: 'application/pdf' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferReceiptFile.mockResolvedValue({
+      url: 'https://signed.example/report',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    mocks.downloadFileToLocal
+      .mockResolvedValueOnce({ path: '/tmp/report-1', isRemote: false })
+      .mockResolvedValueOnce({ path: '/tmp/report-2', isRemote: false })
+    mocks.saveLocalFile.mockResolvedValue({ success: true, consumesSource: true })
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(true)
+    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(2)
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(2)
+    expect(mocks.accessQuickTransferFile).not.toHaveBeenCalled()
+  })
+
+  it('redownloads when a cached WeChat temp file has expired', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '视频资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'video-1', name: 'clip.mp4', displayName: 'clip.mp4', size: 1, mimeType: 'video/mp4' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferReceiptFile.mockResolvedValue({
+      url: 'https://signed.example/video',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    mocks.downloadFileToLocal
+      .mockResolvedValueOnce({ path: '/tmp/video-1', isRemote: false })
+      .mockResolvedValueOnce({ path: '/tmp/video-2', isRemote: false })
+    mocks.isLocalFileAvailable.mockResolvedValueOnce(false)
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('video-1')).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('video-1')).toBe(true)
+    expect(mocks.isLocalFileAvailable).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/tmp/video-1' }),
+      expect.objectContaining({ fileId: 'video-1', mimeType: 'video/mp4' }),
+    )
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(2)
+    expect(mocks.downloadFileToLocal).toHaveBeenCalledTimes(2)
+  })
+
+  it('releases download loading after access or save failure and allows a retry', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '重试资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'file-1', name: 'report.pdf', displayName: 'report.pdf', size: 1, mimeType: 'application/pdf' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferReceiptFile
+      .mockRejectedValueOnce({ data: { code: 'QUICK_TRANSFER_RECEIPT_FILE_ACCESS_TEMPORARILY_UNAVAILABLE' } })
+      .mockResolvedValue({ url: 'https://signed.example/report', expiresAt: new Date(Date.now() + 60_000).toISOString() })
+    mocks.saveLocalFile
+      .mockResolvedValueOnce({ success: false, consumesSource: false })
+      .mockResolvedValue({ success: true, consumesSource: true })
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(false)
+    expect(quickTransfer.isDownloading.value).toBe(false)
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(false)
+    expect(quickTransfer.isDownloading.value).toBe(false)
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(true)
+    expect(quickTransfer.receiveError.value).toBeNull()
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(2)
+    expect(mocks.saveLocalFile).toHaveBeenCalledTimes(2)
+  })
+
+  it('blocks a duplicate click while the same download operation is running', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '防重复资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      receiptId: 'receipt-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'file-1', name: 'report.pdf', displayName: 'report.pdf', size: 1, mimeType: 'application/pdf' }],
+        references: [],
+      },
+    }
+    let resolveAccess: (value: { url: string; expiresAt: string }) => void = () => undefined
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferReceiptFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveAccess = resolve
+        }),
+    )
+
+    const quickTransfer = useQuickTransfer()
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    const firstDownload = quickTransfer.downloadReceivedFile('file-1')
+    expect(await quickTransfer.downloadReceivedFile('file-1')).toBe(false)
+    expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(1)
+    resolveAccess({ url: 'https://signed.example/report', expiresAt: new Date(Date.now() + 60_000).toISOString() })
+    expect(await firstDownload).toBe(true)
+    expect(quickTransfer.isDownloading.value).toBe(false)
   })
 
   it('clears an inspect result when the last receive is taken first', async () => {

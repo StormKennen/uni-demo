@@ -271,6 +271,8 @@ export const canTransitionQuickTransferSendState = (from: QuickTransferSendState
 
 export const canSendQuickTransfer = (isMiniProgram: boolean, isLoggedIn: boolean): boolean => isMiniProgram || isLoggedIn
 
+export const canViewQuickTransferHistory = (isMiniProgram: boolean, isLoggedIn: boolean): boolean => isMiniProgram || isLoggedIn
+
 const getQueryValue = (value: string | string[] | undefined): string => (Array.isArray(value) ? value[0] || '' : value || '')
 
 export const parseQuickTransferPageQuery = (query: QuickTransferPageQuery): { mode: 'send' | 'receive'; shareToken: string } => {

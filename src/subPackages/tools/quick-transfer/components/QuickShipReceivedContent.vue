@@ -66,6 +66,7 @@
   }
 
   const isImageFile = (file: QuickTransferFileMetadata): boolean => file.mimeType.startsWith('image/')
+  const isVideoFile = (file: QuickTransferFileMetadata): boolean => file.mimeType.startsWith('video/')
   const linkKey = (link: QuickTransferContentLink, index: number): string => `${link.url}-${index}`
   const referenceKey = (reference: QuickTransferContentReference, index: number): string =>
     `${reference.type}-${reference.resourceId || reference.title}-${index}`
@@ -136,7 +137,7 @@
           class="quick-ship-button primary-small-button"
           :disabled="props.isDownloading"
           @click="emit('downloadFile', file.fileId || '')">
-          下载
+          {{ isVideoFile(file) ? '保存' : '下载' }}
         </button>
       </view>
     </view>

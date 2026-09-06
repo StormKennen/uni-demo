@@ -6,7 +6,7 @@
   import PageLayout from '@/components/PageLayout.vue'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
-  import { getQuickTransferIndexRedirectRoute } from '@/features/quick-transfer/helpers'
+  import { canViewQuickTransferHistory, getQuickTransferIndexRedirectRoute } from '@/features/quick-transfer/helpers'
   import type { QuickTransferPageQuery } from '@/features/quick-transfer/types'
   import { getToken } from '@/utils/storage'
 
@@ -38,7 +38,7 @@
   isMiniProgram.value = true
   // #endif
 
-  const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
+  const canViewHistory = computed(() => canViewQuickTransferHistory(isMiniProgram.value, isLoggedIn.value))
 
   const refreshLoginState = (): void => {
     isLoggedIn.value = Boolean(getToken())
@@ -323,6 +323,7 @@
     display: flex;
     flex: 1;
     flex-direction: column;
+    height: 0;
     min-height: 0;
     margin-top: 64rpx;
     padding-top: 30rpx;

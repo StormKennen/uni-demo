@@ -42,8 +42,12 @@
   const retry = (): void => {
     void refresh()
   }
+  const loadMore = async (): Promise<boolean> => {
+    if (!props.canViewHistory) return false
+    return sentRecords.loadMore()
+  }
   const retryLoadMore = (): void => {
-    void sentRecords.loadMore()
+    void loadMore()
   }
   const handleMounted = (): void => {
     void refresh()
@@ -54,7 +58,7 @@
     () => void refresh(),
   )
 
-  defineExpose({ refresh, loadMore: sentRecords.loadMore })
+  defineExpose({ refresh, loadMore })
 </script>
 
 <template>

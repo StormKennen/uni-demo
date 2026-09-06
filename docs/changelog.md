@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- 2026-09-06 [tools/quick-transfer/history] 修复管理首页内嵌历史列表滚动容器在微信小程序中高度为零导致发送记录和接收记录不可见的问题（Codex）
+
+- 2026-09-06 [tools/quick-transfer/file] 微信端视频改用保存到相册 API，校验临时文件有效性并在普通文件保存后清除已消费缓存；收船页有 Receipt 时优先申请 Receipt 文件访问地址（Codex）
+
 - 2026-09-06 [tools/quick-transfer/history] 首页历史记录复用跨端登录权限判断：H5 未登录不再误请求发送/接收记录接口，微信游客仍可正常查看历史（Codex）
 
 - 2026-09-05 [tools/quick-transfer/file] 接收页文件 Access 显式使用 `purpose=download` 并兼容 `data.url` 响应；已收/已发送详情图片预览补齐下载进行态，统一复用临时 URL 下载链路（Codex）

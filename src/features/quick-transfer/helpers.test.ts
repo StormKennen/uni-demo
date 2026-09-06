@@ -15,6 +15,7 @@ import {
   buildQuickTransferSharePath,
   canSendQuickTransfer,
   canTransitionQuickTransferSendState,
+  canViewQuickTransferHistory,
   createQuickShipDraft,
   createQuickShipFileDraft,
   createQuickTransferDefaultDisplayName,
@@ -107,6 +108,12 @@ describe('quick transfer V2 helpers', () => {
     expect(normalizeQuickTransferClaimCount('2')).toBe(2)
     expect(canSendQuickTransfer(false, false)).toBe(false)
     expect(canSendQuickTransfer(true, false)).toBe(true)
+  })
+
+  it('keeps H5 guest history private without blocking mini-program guests', () => {
+    expect(canViewQuickTransferHistory(false, false)).toBe(false)
+    expect(canViewQuickTransferHistory(false, true)).toBe(true)
+    expect(canViewQuickTransferHistory(true, false)).toBe(true)
   })
 
   it('covers state transitions, expiry and share parsing', () => {
