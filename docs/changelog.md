@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+- 2026-09-06 [tools/quick-transfer/history] 首页历史记录复用跨端登录权限判断：H5 未登录不再误请求发送/接收记录接口，微信游客仍可正常查看历史（Codex）
+
 - 2026-09-05 [tools/quick-transfer/file] 接收页文件 Access 显式使用 `purpose=download` 并兼容 `data.url` 响应；已收/已发送详情图片预览补齐下载进行态，统一复用临时 URL 下载链路（Codex）
 
 - 2026-09-05 [tools/quick-transfer/file] 分离接收页图片预览与保存链路：预览使用 `purpose=preview`，保存始终重新获取 `purpose=download` 的临时 URL，不复用预览缓存，并区分两类失败提示（Codex）

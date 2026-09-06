@@ -1,14 +1,14 @@
 <script setup lang="ts">
   import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import QuickShipReceiptList from './components/QuickShipReceiptList.vue'
   import QuickShipSentRecordList from './components/QuickShipSentRecordList.vue'
   import PageLayout from '@/components/PageLayout.vue'
   import { getQuickTransferToolSharePayload, QUICK_TRANSFER_TOOL_SHARE_TITLE } from '@/features/quick-transfer/share'
   import { QUICK_TRANSFER_RECEIVE_ROUTE, QUICK_TRANSFER_SEND_CREATE_ROUTE } from '@/features/quick-transfer/constants'
   import { getQuickTransferIndexRedirectRoute } from '@/features/quick-transfer/helpers'
-  import { QUICK_TRANSFER_COPY } from '@/features/quick-transfer/presentation'
   import type { QuickTransferPageQuery } from '@/features/quick-transfer/types'
+  import { getToken } from '@/utils/storage'
 
   const sharePayload = getQuickTransferToolSharePayload()
 
@@ -29,8 +29,20 @@
 
   const activeHistoryTab = ref<'sent' | 'received'>('sent')
   const refreshKey = ref(0)
+  const isMiniProgram = ref(false)
+  const isLoggedIn = ref(false)
   const sentListRef = ref<InstanceType<typeof QuickShipSentRecordList> | null>(null)
   const receivedListRef = ref<InstanceType<typeof QuickShipReceiptList> | null>(null)
+
+  // #ifdef MP-WEIXIN
+  isMiniProgram.value = true
+  // #endif
+
+  const canViewHistory = computed(() => isMiniProgram.value || isLoggedIn.value)
+
+  const refreshLoginState = (): void => {
+    isLoggedIn.value = Boolean(getToken())
+  }
 
   const openSendCreate = () => {
     uni.navigateTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
@@ -55,6 +67,7 @@
   }
 
   onShow(() => {
+    refreshLoginState()
     refreshKey.value += 1
   })
 
@@ -138,8 +151,13 @@
             >
           </view>
           <scroll-view class="history-content" scroll-y lower-threshold="160" @scrolltolower="loadMoreActiveHistory">
-            <QuickShipSentRecordList v-if="activeHistoryTab === 'sent'" ref="sentListRef" :refresh-key="refreshKey" embedded />
-            <QuickShipReceiptList v-else ref="receivedListRef" :refresh-key="refreshKey" embedded />
+            <QuickShipSentRecordList
+              v-if="activeHistoryTab === 'sent'"
+              ref="sentListRef"
+              :can-view-history="canViewHistory"
+              :refresh-key="refreshKey"
+              embedded />
+            <QuickShipReceiptList v-else ref="receivedListRef" :can-view-history="canViewHistory" :refresh-key="refreshKey" embedded />
           </scroll-view>
         </view>
       </view>
