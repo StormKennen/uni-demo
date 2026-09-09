@@ -122,14 +122,14 @@
                 <uni-icons type="paperplane-filled" size="24" color="#fff" />
               </view>
               <text class="operation-button__label">飞船</text>
-              <text class="operation-button__hint">快速发送内容</text>
+              <!-- <text class="operation-button__hint">快速发送内容</text> -->
             </button>
             <button class="operation-button operation-button--receive" hover-class="operation-button--hover" @click="openReceive">
               <view class="operation-button__icon operation-button__icon--receive">
                 <uni-icons type="download" size="24" color="var(--theme-brand)" />
               </view>
               <text class="operation-button__label">收船</text>
-              <text class="operation-button__hint">飞船码 / 分享链接</text>
+              <!-- <text class="operation-button__hint">飞船码 / 分享链接</text> -->
             </button>
           </view>
         </view>
@@ -141,13 +141,13 @@
           </view>
           <view class="history-tabs">
             <button class="history-tab" :class="{ 'history-tab--active': activeHistoryTab === 'sent' }" @click="switchHistoryTab('sent')"
-              >发送记录</button
+              >已发送</button
             >
             <button
               class="history-tab"
               :class="{ 'history-tab--active': activeHistoryTab === 'received' }"
               @click="switchHistoryTab('received')"
-              >接收记录</button
+              >已接收</button
             >
           </view>
           <scroll-view class="history-content" scroll-y lower-threshold="160" @scrolltolower="loadMoreActiveHistory">

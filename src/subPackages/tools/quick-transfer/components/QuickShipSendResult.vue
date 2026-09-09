@@ -26,31 +26,37 @@
 <template>
   <view class="result-wrap">
     <view class="result-card">
-      <view class="result-topline">
+      <view class="result-meta">
+        <view
+          ><text class="meta-label">有效期</text><text class="meta-value">{{ props.countdown }} 后返航</text></view
+        >
+        <view
+          ><text class="meta-label">领取进度</text><text class="meta-value">{{ props.claimLabel }}</text></view
+        >
+      </view>
+      <!-- <view class="result-topline">
         <text class="result-kicker">QUICK TRANSFER</text>
         <text class="result-status">{{
           props.state === 'ready' ? '已发出' : props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回'
         }}</text>
-      </view>
-      <text class="result-title">{{ props.title }}</text>
+      </view> -->
+      <!-- <text class="result-title">{{ props.title }}</text> -->
       <text v-if="props.shipTitle" class="result-ship-title">{{ props.shipTitle }}</text>
       <text class="result-description">{{ props.description }}</text>
       <template v-if="props.state === 'ready'">
-        <text class="result-label">飞船码</text>
+        <text class="result-label">
+          <text>飞船码</text>
+          <text class="result-status">{{
+            props.state === 'ready' ? '已发出' : props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回'
+          }}</text>
+        </text>
         <view class="ready-code-row">
           <text class="ready-code" selectable>{{ props.code }}</text>
           <view class="code-copy-button" aria-label="复制飞船码" @click="emit('copyCode')">
             <text class="copy-icon">⧉</text>
           </view>
         </view>
-        <view class="result-meta">
-          <view
-            ><text class="meta-label">有效期</text><text class="meta-value">{{ props.countdown }} 后返航</text></view
-          >
-          <view
-            ><text class="meta-label">领取进度</text><text class="meta-value">{{ props.claimLabel }}</text></view
-          >
-        </view>
+
         <text v-if="props.showShareLinkWarning" class="share-link-warning">网页链接暂不可用，请使用飞船码</text>
         <!-- #ifdef MP-WEIXIN -->
         <button v-if="props.showShareLink" class="quick-ship-button secondary-button full-button" @click="emit('copyShareUrl')"

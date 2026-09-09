@@ -126,11 +126,11 @@
     nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
     <view class="send-result-page" :class="{ 'send-result-page--docking': Boolean(shipAnimation) }">
       <template v-if="hasContext">
-        <view class="page-heading">
+        <!-- <view class="page-heading">
           <text class="page-kicker">QUICK TRANSFER</text>
           <text class="page-title">飞船码</text>
           <text class="page-description">用飞船码或网页链接，把内容交给另一端。</text>
-        </view>
+        </view> -->
         <view class="result-stage">
           <QuickShipSendResult
             :state="quickTransfer.sendState.value"
