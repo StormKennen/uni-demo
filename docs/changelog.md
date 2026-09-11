@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- 2026-09-11 [tools/memo/list-block] 新增通用 ListBlock 的有序列表与 P0-P3 优先级列表能力，支持描述、手动上下移、背景色/对齐配置及旧列表模式兼容读取；序号按数组下标渲染，不改变 Memo API 与后端结构（Codex）
+
+- 2026-09-10 [memo/route] 扩展 RouteNode 的时间点、停留时长、地址与经纬度字段；同步增强两套备忘录编辑器的字段编辑与 JSON 导入、详情页按坐标复用现有地图导航，并保持旧 time 字段兼容（Codex）
+
+- 2026-09-09 [tools/quick-transfer/ui] 重构发送结果页信息层级，将飞船状态、飞船内容、飞船码、有效期与领取进度、操作区拆分为独立容器（Codex）
+
 - 2026-09-06 [tools/quick-transfer/history] 修复管理首页内嵌历史列表滚动容器在微信小程序中高度为零导致发送记录和接收记录不可见的问题（Codex）
 
 - 2026-09-06 [tools/quick-transfer/file] 微信端视频改用保存到相册 API，校验临时文件有效性并在普通文件保存后清除已消费缓存；收船页有 Receipt 时优先申请 Receipt 文件访问地址（Codex）

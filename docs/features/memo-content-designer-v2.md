@@ -34,7 +34,7 @@
 - Block 操作收敛到选中态菜单：设置、复制、上移、下移、移动到、锁定、删除。
 - 复制 Block 必须深拷贝、生成新 anchor、插入原块之后，并进入 Undo/Redo 历史。
 - Schema 面板按「内容、布局、样式、交互、高级」分组；Block 与 Item 共用同一表单协议。
-- List 支持 bullet、number、checklist；Table 支持 keyValue、table；Callout 使用有限 tone；LinkCard 点击走 ContentAction。
+- List 支持 `ordered` / `priority` 两种通用模式；新建列表使用 `sortMode: 'manual'`，优先级只做标记，不改变 children 顺序。历史 bullet/number/checklist 数据继续兼容读取。Table 支持 keyValue、table；Callout 使用有限 tone；LinkCard 点击走 ContentAction。
 - Image Item 的预览及跳转、Text Item、LinkCard 共用 ContentAction。
 - Media 显式保存 `mediaType`，不再只依赖 URL 后缀；Attachment 新数据只保存文件元信息，旧腾讯文档字段继续读取。
 - settings 持久化包含 `editorVersion: 2`、padding、border、appearance、typography、layout、features。
@@ -57,4 +57,3 @@
 - [ ] 旧内容归一化测试通过
 - [ ] Undo/Redo、本地草稿和保存流程无回归
 - [ ] `pnpm lint`、`pnpm type-check`、H5/微信构建通过
-

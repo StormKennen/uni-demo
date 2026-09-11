@@ -14,11 +14,18 @@
           <text>{{ node.isEnd ? '🏁' : node.type === 'transfer' ? '🔄' : '📍' }}</text>
         </view>
         <view class="rbr-content">
+          <text v-if="node.startTime" class="rbr-start-time">{{ node.startTime }}</text>
           <view class="rbr-name-row">
             <text class="rbr-name">{{ node.name || '未命名站点' }}</text>
             <text v-if="showTime && node.time" class="rbr-time">{{ node.time }}</text>
           </view>
+          <view v-if="node.duration || node.icon" class="rbr-meta">
+            <text v-if="node.duration" class="rbr-duration">停留：{{ node.duration }}</text>
+            <text v-if="node.duration && node.icon" class="rbr-meta-divider">·</text>
+            <text v-if="node.icon" class="rbr-icon">{{ node.icon }}</text>
+          </view>
           <text v-if="node.desc" class="rbr-desc">{{ node.desc }}</text>
+          <text v-if="node.address" class="rbr-address">{{ node.address }}</text>
         </view>
         <view class="rbr-item-actions">
           <view class="rbr-item-btn" @click.stop="$emit('select-item', blockIndex, idx)">⚙️</view>
@@ -127,6 +134,12 @@
     flex: 1;
     padding-top: 8rpx;
   }
+  .rbr-start-time {
+    display: block;
+    margin-bottom: 4rpx;
+    color: #667eea;
+    font-size: 22rpx;
+  }
   .rbr-name-row {
     display: flex;
     justify-content: space-between;
@@ -148,6 +161,23 @@
     color: var(--theme-text-secondary);
     margin-top: 6rpx;
     display: block;
+  }
+  .rbr-meta {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-top: 8rpx;
+    color: #667eea;
+    font-size: 22rpx;
+  }
+  .rbr-meta-divider {
+    color: #aaa;
+  }
+  .rbr-address {
+    display: block;
+    margin-top: 6rpx;
+    color: #888;
+    font-size: 22rpx;
   }
   .rbr-empty {
     padding: 40rpx;

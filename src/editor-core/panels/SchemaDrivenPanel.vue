@@ -103,7 +103,9 @@ watch(
     if (mode === 'item') {
       const arr = (blk as any)[itemArrayKey.value] || []
       const target = arr[idx as number]
-      draft.value = target ? JSON.parse(JSON.stringify(target)) : null
+      const itemDraft = target ? JSON.parse(JSON.stringify(target)) : null
+      if (itemDraft && props.schema?.type === 'list') itemDraft.__listMode = blk.mode
+      draft.value = itemDraft
     } else {
       draft.value = JSON.parse(JSON.stringify(blk))
     }
@@ -139,7 +141,9 @@ const onSave = () => {
     return
   }
   if (props.mode === 'item') {
-    emit('save', { itemIndex: props.itemIndex, item: draft.value })
+    const item = { ...draft.value }
+    if (props.schema?.type === 'list') delete item.__listMode
+    emit('save', { itemIndex: props.itemIndex, item })
   } else {
     emit('save', draft.value)
   }

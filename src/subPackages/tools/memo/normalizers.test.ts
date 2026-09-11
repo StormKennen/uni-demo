@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeContentAction, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
+import { normalizeContentAction, normalizeMemoContent, normalizeMemoSettings, parseRouteNodes } from './normalizers'
 
 describe('memo V2 normalizers', () => {
   it('converts legacy text interactions into ContentAction', () => {
@@ -46,6 +46,67 @@ describe('memo V2 normalizers', () => {
     ])
     expect(mediaBlock.children).toEqual([{ url: 'https://cdn.test/a.mp3', mediaType: 'audio' }])
     expect(legacy[0].layout.type).toBe('free')
+  })
+
+  it('keeps route travel fields and converts coordinate strings', () => {
+    const nodes = parseRouteNodes([
+      {
+        name: '双桥沟',
+        time: '3h',
+        startTime: '09:30',
+        duration: '4h',
+        address: '四川省阿坝州小金县',
+        latitude: '31.135',
+        longitude: 102.309,
+        icon: '🚗',
+      },
+    ])
+    expect(nodes[0]).toMatchObject({
+      name: '双桥沟',
+      time: '3h',
+      startTime: '09:30',
+      duration: '4h',
+      address: '四川省阿坝州小金县',
+      latitude: 31.135,
+      longitude: 102.309,
+    })
+  })
+
+  it('normalizes ordered and priority list blocks without changing item order', () => {
+    const source = [
+      {
+        type: 'list',
+        mode: 'priority',
+        children: [
+          { text: '酒店', priority: 'P1', desc: '今天完成' },
+          { text: '机场', priority: 'P0' },
+          { text: '氧气瓶', priority: 'P2' },
+          { text: '机位', priority: 'P3' },
+        ],
+      },
+    ]
+    const [block] = normalizeMemoContent(source)
+    expect(block).toMatchObject({ type: 'list', mode: 'priority', sortMode: 'manual' })
+    if (!block || block.type !== 'list') throw new Error('Expected list block')
+    expect(block.children).toEqual([
+      { text: '酒店', priority: 'P1', desc: '今天完成' },
+      { text: '机场', priority: 'P0' },
+      { text: '氧气瓶', priority: 'P2' },
+      { text: '机位', priority: 'P3' },
+    ])
+    expect(normalizeMemoContent([{ type: 'list', mode: 'ordered', children: [{ text: '第一项' }, { text: '第二项' }] }])[0]).toMatchObject({
+      mode: 'ordered',
+      sortMode: 'manual',
+    })
+  })
+
+  it('tolerates malformed list data and converts legacy descriptions', () => {
+    const [block] = normalizeMemoContent([
+      { type: 'list', mode: 'priority', children: [{ text: '测试', priority: 'P9', description: '旧说明' }] },
+    ])
+    if (!block || block.type !== 'list') throw new Error('Expected list block')
+    expect(block.children).toEqual([{ text: '测试', desc: '旧说明' }])
+    expect(normalizeMemoContent([{ type: 'list', mode: 'priority' }])[0]).toMatchObject({ children: [] })
   })
 
   it('upgrades partial settings to editor version 2', () => {

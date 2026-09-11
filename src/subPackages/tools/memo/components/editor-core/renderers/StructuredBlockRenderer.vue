@@ -2,6 +2,7 @@
   <view
     class="sbr-root"
     :class="[{ 'sbr-selected': selected, 'sbr-readonly': mode === 'readonly' }, `sbr-${block.type}`]"
+    :style="rootStyle"
     @click="selectBlock">
     <view v-if="mode === 'edit'" class="sbr-editor-header">
       <text class="sbr-tag">{{ blockLabel }}</text>
@@ -13,10 +14,19 @@
         <view v-if="block.mode === 'checklist'" class="sbr-check" :class="{ checked: item.checked }" @click.stop="toggleChecked(itemIndex)">
           <text>{{ item.checked ? '✓' : '' }}</text>
         </view>
-        <text v-else class="sbr-marker">{{ block.mode === 'number' ? `${itemIndex + 1}.` : '•' }}</text>
+        <text v-else-if="block.mode === 'priority'" class="sbr-marker">{{ itemIndex + 1 }}.</text>
+        <text v-else class="sbr-marker">{{ block.mode === 'ordered' || block.mode === 'number' ? `${itemIndex + 1}.` : '•' }}</text>
         <view class="sbr-list-content">
-          <text class="sbr-list-text" :class="{ checked: item.checked }">{{ item.text || '未填写内容' }}</text>
-          <text v-if="item.description" class="sbr-list-description">{{ item.description }}</text>
+          <view class="sbr-list-title-row">
+            <text
+              v-if="block.mode === 'priority' && isListPriority(item.priority)"
+              class="sbr-priority-badge"
+              :class="`priority-${item.priority}`">
+              {{ item.priority }}
+            </text>
+            <text class="sbr-list-text" :class="{ checked: item.checked }">{{ item.text || '未填写内容' }}</text>
+          </view>
+          <text v-if="item.desc || item.description" class="sbr-list-description">{{ item.desc || item.description }}</text>
         </view>
         <view v-if="mode === 'edit'" class="sbr-item-actions">
           <view class="sbr-icon-btn" :class="{ disabled: itemIndex === 0 }" @click.stop="moveItem(itemIndex, -1)">↑</view>
@@ -98,7 +108,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import type { ContentAction, StructuredMemoBlock, TableBlockData } from '../../../content-model'
+  import type { ContentAction, ListPriority, StructuredMemoBlock, TableBlockData } from '../../../content-model'
 
   interface Props {
     block: StructuredMemoBlock
@@ -131,6 +141,17 @@
       linkCard: '链接卡片',
     }
     return labels[props.block.type]
+  })
+
+  const isListPriority = (value: unknown): value is ListPriority => value === 'P0' || value === 'P1' || value === 'P2' || value === 'P3'
+
+  const rootStyle = computed(() => {
+    const style: Record<string, string> = {}
+    const backgroundColor = props.block.style?.backgroundColor
+    const textAlign = props.block.style?.textAlign
+    if (typeof backgroundColor === 'string' && backgroundColor) style.backgroundColor = backgroundColor
+    if (textAlign === 'left' || textAlign === 'center' || textAlign === 'right') style.textAlign = textAlign
+    return style
   })
 
   const selectBlock = () => {
@@ -321,6 +342,11 @@
     display: flex;
     flex-direction: column;
   }
+  .sbr-list-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10rpx;
+  }
   .sbr-list-text {
     color: var(--theme-text);
     font-size: 28rpx;
@@ -335,6 +361,30 @@
     color: var(--theme-text-secondary);
     font-size: 23rpx;
     line-height: 1.45;
+  }
+  .sbr-priority-badge {
+    min-width: 44rpx;
+    padding: 2rpx 8rpx;
+    border-radius: 6rpx;
+    font-size: 20rpx;
+    line-height: 30rpx;
+    text-align: center;
+  }
+  .priority-P0 {
+    background: #fde8e8;
+    color: #c53030;
+  }
+  .priority-P1 {
+    background: #fff1dc;
+    color: #b7791f;
+  }
+  .priority-P2 {
+    background: #e8f0fe;
+    color: #3b62a3;
+  }
+  .priority-P3 {
+    background: #edf2f7;
+    color: #718096;
   }
   .sbr-add {
     padding: 18rpx;

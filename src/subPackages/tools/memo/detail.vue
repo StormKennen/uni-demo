@@ -211,19 +211,28 @@
                   </view>
 
                   <!-- 右侧内容 -->
-                  <view class="route-content">
-                    <!-- 站点名称 -->
-                    <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                  <view
+                    class="route-content"
+                    :class="{ 'route-content-navigable': hasRouteCoordinates(node) }"
+                    @click="navigateToRouteNode(node)">
+                    <!-- 时间点与站点名称 -->
+                    <text v-if="node.startTime" class="route-start-time">{{ node.startTime }}</text>
+                    <view class="route-name-row">
+                      <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                      <text v-if="hasRouteCoordinates(node)" class="route-nav-icon" @click.stop="navigateToRouteNode(node)">📍</text>
+                    </view>
 
-                    <!-- 信息胶囊（非终点显示） -->
-                    <view v-if="!node.isEnd && (node.time || node.icon)" class="route-info-tag">
+                    <!-- 信息胶囊 -->
+                    <view v-if="node.time || node.duration || node.icon" class="route-info-tag">
                       <text v-if="node.time" class="tag-time">🕒 {{ node.time }}</text>
-                      <text v-if="node.time && node.icon" class="tag-divider">·</text>
+                      <text v-if="node.time && (node.duration || node.icon)" class="tag-divider">·</text>
+                      <text v-if="node.duration" class="tag-duration">停留：{{ node.duration }}</text>
+                      <text v-if="node.duration && node.icon" class="tag-divider">·</text>
                       <text v-if="node.icon" class="tag-icon">{{ node.icon }}</text>
                     </view>
 
-                    <!-- 描述（非终点显示） -->
-                    <text v-if="!node.isEnd && node.desc" class="route-desc">{{ node.desc }}</text>
+                    <text v-if="node.desc" class="route-desc">{{ node.desc }}</text>
+                    <text v-if="node.address" class="route-address">{{ node.address }}</text>
                   </view>
                 </view>
               </view>
@@ -870,6 +879,17 @@
     if (!memoData.value || !memoData.value.content) return []
     return normalizeMemoContent(memoData.value.content)
   })
+
+  const hasRouteCoordinates = (node: { latitude?: unknown; longitude?: unknown }) => {
+    const hasValue = (value: unknown) =>
+      (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && Number.isFinite(Number(value))
+    return hasValue(node.latitude) && hasValue(node.longitude)
+  }
+
+  const navigateToRouteNode = (node: { name?: string; address?: string; latitude?: unknown; longitude?: unknown }) => {
+    if (!hasRouteCoordinates(node)) return
+    openMapNavigation(Number(node.latitude), Number(node.longitude), node.name || '目的地', node.address)
+  }
 
   const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock =>
     block.type === 'list' || block.type === 'table' || block.type === 'callout' || block.type === 'linkCard'
@@ -2901,6 +2921,29 @@
     line-height: 1.4;
   }
 
+  .route-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .route-content-navigable {
+    cursor: pointer;
+  }
+
+  .route-start-time {
+    display: block;
+    margin-bottom: 4rpx;
+    color: #667eea;
+    font-size: 24rpx;
+    font-weight: 600;
+  }
+
+  .route-nav-icon {
+    flex-shrink: 0;
+    font-size: 26rpx;
+  }
+
   // 信息胶囊标签
   .route-info-tag {
     display: inline-flex;
@@ -2923,6 +2966,11 @@
       color: var(--theme-text-tertiary);
     }
 
+    .tag-duration {
+      font-size: 24rpx;
+      color: var(--theme-text-secondary);
+    }
+
     .tag-icon {
       font-size: 24rpx;
     }
@@ -2934,6 +2982,14 @@
     font-size: 26rpx;
     color: var(--theme-text-tertiary);
     line-height: 1.5;
+  }
+
+  .route-address {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 23rpx;
+    line-height: 1.45;
   }
 
   // 回到顶部按钮

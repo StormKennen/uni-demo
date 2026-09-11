@@ -25,38 +25,68 @@
 
 <template>
   <view class="result-wrap">
-    <view class="result-card">
-      <view class="result-meta">
-        <view
-          ><text class="meta-label">有效期</text><text class="meta-value">{{ props.countdown }} 后返航</text></view
-        >
-        <view
-          ><text class="meta-label">领取进度</text><text class="meta-value">{{ props.claimLabel }}</text></view
-        >
+    <view class="status-card">
+      <view class="status-icon" :class="{ 'status-icon--terminal': props.state !== 'ready' }">
+        <text>{{ props.state === 'ready' ? '↗' : '✓' }}</text>
       </view>
-      <!-- <view class="result-topline">
-        <text class="result-kicker">QUICK TRANSFER</text>
-        <text class="result-status">{{
-          props.state === 'ready' ? '已发出' : props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回'
-        }}</text>
-      </view> -->
-      <!-- <text class="result-title">{{ props.title }}</text> -->
-      <text v-if="props.shipTitle" class="result-ship-title">{{ props.shipTitle }}</text>
-      <text class="result-description">{{ props.description }}</text>
-      <template v-if="props.state === 'ready'">
-        <text class="result-label">
-          <text>飞船码</text>
+      <view class="status-copy">
+        <view class="status-heading">
+          <text class="status-kicker">飞船状态</text>
           <text class="result-status">{{
             props.state === 'ready' ? '已发出' : props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回'
           }}</text>
-        </text>
+        </view>
+        <text class="result-title">{{ props.title }}</text>
+        <text class="result-description">{{ props.description }}</text>
+      </view>
+    </view>
+
+    <view class="content-card">
+      <view class="section-heading">
+        <view class="section-icon"><text>✦</text></view>
+        <view class="section-heading-copy">
+          <text class="section-kicker">TRANSFER CONTENT</text>
+          <text class="section-title">飞船内容</text>
+        </view>
+      </view>
+      <view class="content-preview">
+        <text class="content-label">内容标题</text>
+        <text v-if="props.shipTitle" class="result-ship-title">{{ props.shipTitle }}</text>
+        <text v-else class="content-empty">未设置标题</text>
+      </view>
+    </view>
+
+    <template v-if="props.state === 'ready'">
+      <view class="code-card">
+        <view class="section-heading code-heading">
+          <view class="section-icon section-icon--code"><text>#</text></view>
+          <view class="section-heading-copy">
+            <text class="section-kicker">RECEIVE CODE</text>
+            <text class="section-title">飞船码</text>
+          </view>
+          <text class="code-status">已发出</text>
+        </view>
         <view class="ready-code-row">
           <text class="ready-code" selectable>{{ props.code }}</text>
           <view class="code-copy-button" aria-label="复制飞船码" @click="emit('copyCode')">
             <text class="copy-icon">⧉</text>
           </view>
         </view>
+      </view>
 
+      <view class="result-meta">
+        <view class="meta-item">
+          <text class="meta-label">有效期</text>
+          <text class="meta-value">{{ props.countdown }} 后返航</text>
+        </view>
+        <view class="meta-divider" />
+        <view class="meta-item">
+          <text class="meta-label">领取进度</text>
+          <text class="meta-value">{{ props.claimLabel }}</text>
+        </view>
+      </view>
+
+      <view class="action-card">
         <text v-if="props.showShareLinkWarning" class="share-link-warning">网页链接暂不可用，请使用飞船码</text>
         <!-- #ifdef MP-WEIXIN -->
         <button v-if="props.showShareLink" class="quick-ship-button secondary-button full-button" @click="emit('copyShareUrl')"
@@ -70,95 +100,194 @@
         <!-- #endif -->
         <button class="quick-ship-button text-button full-button" @click="emit('view-history')">查看发送记录</button>
         <view class="cancel-link" @click="emit('cancel')">召回飞船</view>
-      </template>
-      <template v-else>
-        <view class="terminal-mark">✓</view>
+      </view>
+    </template>
+    <template v-else>
+      <view class="result-meta result-meta--terminal">
+        <view class="meta-item">
+          <text class="meta-label">飞船状态</text>
+          <text class="meta-value">{{ props.state === 'consumed' ? '已完成' : props.state === 'expired' ? '已返航' : '已召回' }}</text>
+        </view>
+        <view class="meta-divider" />
+        <view class="meta-item">
+          <text class="meta-label">领取进度</text>
+          <text class="meta-value">{{ props.claimLabel }}</text>
+        </view>
+      </view>
+      <view class="action-card action-card--terminal">
         <button class="quick-ship-button secondary-button full-button" @click="emit('reset')">再发一艘</button>
-      </template>
-    </view>
+      </view>
+    </template>
   </view>
 </template>
 
 <style scoped lang="scss">
   .result-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16rpx;
     padding: 4rpx 0 12rpx;
   }
 
-  .result-card {
-    padding: 26rpx 22rpx 30rpx;
-    border: 1rpx solid rgba(37, 99, 235, 0.2);
-    border-radius: 24rpx;
+  .status-card,
+  .content-card,
+  .code-card,
+  .result-meta,
+  .action-card {
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 22rpx;
     background: var(--theme-surface);
-    box-shadow: 0 14rpx 34rpx var(--theme-shadow-xs);
+    box-shadow: 0 10rpx 28rpx var(--theme-shadow-xs);
   }
 
-  .result-topline,
-  .result-meta,
-  .action-row {
+  .status-card {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 18rpx;
+    padding: 24rpx 22rpx;
+    border: 1rpx solid rgba(37, 99, 235, 0.2);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.06)), var(--theme-surface);
   }
 
-  .result-topline {
-    padding-bottom: 20rpx;
-    border-bottom: 1rpx dashed var(--theme-border);
+  .status-icon,
+  .section-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .result-kicker,
-  .result-status,
+  .status-icon {
+    flex: 0 0 auto;
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 24rpx;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+    font-size: 42rpx;
+    font-weight: 800;
+  }
+
+  .status-icon--terminal {
+    background: var(--theme-surface-muted);
+    color: var(--theme-brand);
+  }
+
+  .status-copy,
+  .section-heading-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .status-heading,
+  .section-heading,
+  .result-meta {
+    display: flex;
+    align-items: center;
+  }
+
+  .status-heading {
+    gap: 14rpx;
+  }
+
+  .status-kicker,
+  .section-kicker,
   .meta-label {
     color: var(--theme-text-secondary);
-    font-size: 20rpx;
-    letter-spacing: 2rpx;
+    font-size: 19rpx;
+    letter-spacing: 1.5rpx;
   }
 
   .result-status {
     color: var(--theme-brand);
-    letter-spacing: 0;
+    font-size: 22rpx;
+    font-weight: 600;
   }
 
   .result-title {
     display: block;
-    margin-top: 28rpx;
+    margin-top: 8rpx;
     color: var(--theme-text);
-    font-size: 36rpx;
+    font-size: 32rpx;
     font-weight: 800;
-    text-align: center;
   }
 
   .result-ship-title {
     display: block;
-    margin-top: 12rpx;
+    margin-top: 8rpx;
     color: var(--theme-text);
     font-size: 28rpx;
     font-weight: 600;
-    text-align: center;
+    line-height: 1.45;
+    word-break: break-all;
   }
 
-  .result-description {
+  .result-description,
+  .content-empty {
     display: block;
-    margin-top: 10rpx;
+    margin-top: 6rpx;
     color: var(--theme-text-secondary);
-    font-size: 24rpx;
+    font-size: 23rpx;
     line-height: 1.5;
-    text-align: center;
   }
 
-  .result-label {
+  .content-card,
+  .code-card,
+  .action-card {
+    padding: 22rpx;
+  }
+
+  .section-heading {
+    gap: 14rpx;
+  }
+
+  .section-icon {
+    flex: 0 0 auto;
+    width: 54rpx;
+    height: 54rpx;
+    border-radius: 16rpx;
+    color: var(--theme-brand);
+    background: rgba(37, 99, 235, 0.1);
+    font-size: 27rpx;
+    font-weight: 700;
+  }
+
+  .section-icon--code {
+    font-size: 25rpx;
+  }
+
+  .section-kicker {
     display: block;
-    margin-top: 30rpx;
+    font-size: 17rpx;
+  }
+
+  .section-title {
+    display: block;
+    margin-top: 4rpx;
+    color: var(--theme-text);
+    font-size: 28rpx;
+    font-weight: 700;
+  }
+
+  .content-preview {
+    margin-top: 18rpx;
+    padding: 18rpx;
+    border-radius: 16rpx;
+    background: var(--theme-surface-muted);
+  }
+
+  .content-label {
+    display: block;
     color: var(--theme-text-secondary);
-    font-size: 22rpx;
-    text-align: center;
+    font-size: 21rpx;
   }
 
   .ready-code {
+    display: block;
     color: var(--theme-brand);
-    font-size: 64rpx;
+    font-size: 60rpx;
     font-weight: 800;
     letter-spacing: 10rpx;
-    text-align: center;
   }
 
   .ready-code-row {
@@ -167,7 +296,7 @@
     justify-content: center;
     gap: 8rpx;
     min-height: 92rpx;
-    margin-top: 6rpx;
+    margin-top: 10rpx;
   }
 
   .code-copy-button {
@@ -191,21 +320,29 @@
   }
 
   .result-meta {
-    gap: 12rpx;
-    margin-top: 22rpx;
-    padding: 18rpx 0;
-    border-top: 1rpx solid var(--theme-border);
-    border-bottom: 1rpx solid var(--theme-border);
+    gap: 0;
+    min-height: 104rpx;
+    padding: 16rpx 8rpx;
   }
 
-  .result-meta > view {
+  .result-meta--terminal {
+    margin-top: 0;
+  }
+
+  .meta-item {
     flex: 1;
     text-align: center;
   }
 
+  .meta-divider {
+    width: 1rpx;
+    height: 54rpx;
+    background: var(--theme-border);
+  }
+
   .share-link-warning {
     display: block;
-    margin-top: 18rpx;
+    margin: 0 8rpx 16rpx;
     color: var(--theme-text-secondary);
     font-size: 22rpx;
     line-height: 1.5;
@@ -223,13 +360,15 @@
     font-size: 23rpx;
   }
 
-  .action-row {
-    gap: 14rpx;
-    margin-top: 22rpx;
+  .code-heading {
+    justify-content: flex-start;
   }
 
-  .action-row > button {
-    flex: 1;
+  .code-status {
+    margin-left: auto;
+    color: var(--theme-brand);
+    font-size: 22rpx;
+    font-weight: 600;
   }
 
   .quick-ship-button {
@@ -262,21 +401,13 @@
 
   .full-button {
     width: 100%;
-    margin-top: 14rpx;
+    margin-top: 12rpx;
   }
 
   .cancel-link {
-    margin-top: 24rpx;
+    margin-top: 18rpx;
     color: var(--theme-danger);
     font-size: 23rpx;
-    text-align: center;
-  }
-
-  .terminal-mark {
-    margin-top: 24rpx;
-    color: var(--theme-brand);
-    font-size: 56rpx;
-    font-weight: 800;
     text-align: center;
   }
 

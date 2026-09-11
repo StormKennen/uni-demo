@@ -394,7 +394,7 @@
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'
   import { getAllBlockSchemas, getBlockSchema } from './schemas'
-  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
+  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings, parseRouteNodes } from './normalizers'
   import { uploadWithOssSignature } from '@/hooks/use-oss-upload'
 
   // ===== 备忘录元信息 =====
@@ -770,17 +770,17 @@
       return
     }
     try {
-      const parsed = JSON.parse(raw)
-      const nodes: any[] = Array.isArray(parsed) ? parsed : Array.isArray(parsed.content) ? parsed.content : null
-      if (!nodes) throw new Error('需要 RouteNode[] 或 { content: RouteNode[] } 格式')
-      if (!nodes.every(n => typeof n.name === 'string')) throw new Error('每个节点需要 name 字段')
-      const block = doc[jsonImportBlockIdx.value] as any
+      const parsed: unknown = JSON.parse(raw)
+      const source = Array.isArray(parsed) ? parsed : parsed && typeof parsed === 'object' && 'content' in parsed ? parsed.content : null
+      const nodes = parseRouteNodes(source)
+      const block = doc[jsonImportBlockIdx.value] as { content?: unknown[] } | undefined
       if (!block) throw new Error('块不存在')
       block.content = nodes
       jsonImportVisible.value = false
       uni.showToast({ title: `已导入 ${nodes.length} 个节点`, icon: 'success' })
-    } catch (e: any) {
-      uni.showToast({ title: `JSON 错误: ${e.message}`, icon: 'none' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '格式不正确'
+      uni.showToast({ title: `JSON 错误: ${message}`, icon: 'none' })
     }
   }
 
@@ -1046,9 +1046,10 @@
     try {
       uni.showLoading({ title: '保存中...', mask: true })
 
+      const normalizedContent = normalizeMemoContent(doc)
       const memoData: any = {
         name: memoName.value,
-        content: JSON.parse(JSON.stringify(doc)),
+        content: JSON.parse(JSON.stringify(normalizedContent)),
         tags: tags.value,
         settings: JSON.parse(JSON.stringify(normalizeMemoSettings(settings))),
       }
