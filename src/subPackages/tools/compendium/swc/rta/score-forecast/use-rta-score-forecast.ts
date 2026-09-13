@@ -59,7 +59,11 @@ export const useRtaScoreForecast = () => {
   const errorMessage = ref('')
   const currentError = ref('')
   const historyError = ref('')
+  const configCache = new Map<string, ScoreConfig>()
+  const currentCache = new Map<string, ScoreCurrent>()
+  const historyCache = new Map<string, ScoreHistory>()
   let requestVersion = 0
+  let chartRequestVersion = 0
 
   const serverOptions = computed<ScoreSimpleOption[]>(() => options.value?.servers || [])
   const seasonOptions = computed<ScoreSeasonOption[]>(() => options.value?.seasons || [])
@@ -80,6 +84,9 @@ export const useRtaScoreForecast = () => {
 
   const selectionKey = (): string => `${server.value}:${season.value || ''}:${league.value}:${provider.value}:${targetKey.value}`
 
+  const getFilterCacheKey = (selection: Pick<ScoreSelection, 'server' | 'season' | 'league' | 'provider'>): string =>
+    `${selection.server}:${selection.season}:${selection.league}:${selection.provider || ''}`
+
   const getSelection = (): ScoreSelection | null => {
     if (!server.value || !season.value || !league.value || !targetKey.value) return null
     return {
@@ -97,14 +104,37 @@ export const useRtaScoreForecast = () => {
     seasonHistorySeries.value = []
   }
 
-  const loadHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreHistory[]> => {
-    const results = await Promise.allSettled(targets.map(target => fetchScoreHistory({ ...selection, targetKey: target.key })))
-    const successful = results
-      .filter((result): result is PromiseFulfilledResult<ScoreHistory> => result.status === 'fulfilled')
-      .map(result => result.value)
-    if (successful.length || !results.length) return successful
-    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
-    throw failure?.reason || new Error('当前趋势暂不可用')
+  const syncTargetOptions = (nextCurrent: ScoreCurrent) => {
+    if (!options.value) return
+    const cutoffByKey = new Map(nextCurrent.cutoffs.map(cutoff => [cutoff.key, cutoff]))
+    const nextTargets = options.value.targets.map(target => {
+      const cutoff = cutoffByKey.get(target.key)
+      return cutoff
+        ? {
+            ...target,
+            rank: cutoff.rank,
+            latestScore: cutoff.score,
+            available: cutoff.available,
+          }
+        : target
+    })
+    options.value = { ...options.value, targets: nextTargets }
+    const nextVisibleTargets = nextTargets.filter(isVisibleTarget)
+    if (!nextVisibleTargets.some(target => target.key === targetKey.value)) {
+      targetKey.value = nextVisibleTargets[0]?.key || targetKey.value
+    }
+  }
+
+  const getHistoryCacheKey = (selection: ScoreSelection): string =>
+    `${selection.server}:${selection.season}:${selection.league}:${selection.provider || ''}:${selection.targetKey}`
+
+  const loadHistorySeries = async (selection: ScoreSelection): Promise<ScoreHistory[]> => {
+    const cacheKey = getHistoryCacheKey(selection)
+    const cached = historyCache.get(cacheKey)
+    if (cached) return [cached]
+    const result = await fetchScoreHistory(selection)
+    historyCache.set(cacheKey, result)
+    return [result]
   }
 
   const loadSeasonHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreSeasonHistory[]> => {
@@ -160,33 +190,54 @@ export const useRtaScoreForecast = () => {
   const loadData = async (version: number, keepData: boolean): Promise<void> => {
     const selection = getSelection()
     if (!selection) throw new Error('暂无可用的 RTA 分数筛选项')
-    const currentSelectionKey = selectionKey()
     const capabilities = config.value?.capabilities
     if (!keepData) clearData()
     currentError.value = ''
     historyError.value = ''
     dataLoading.value = true
+    const currentCacheKey = getFilterCacheKey(selection)
+    const cachedCurrent = currentCache.get(currentCacheKey)
+    const shouldLoadCurrent = Boolean(cachedCurrent || capabilities?.current || config.value?.researchDisplay.current)
+    const currentTask = shouldLoadCurrent
+      ? cachedCurrent
+        ? Promise.resolve(cachedCurrent)
+        : fetchScoreCurrent(selection)
+      : Promise.resolve(null)
+    const [currentResult] = await Promise.allSettled([currentTask])
+    if (version !== requestVersion) return
+    if (currentResult.status === 'fulfilled') {
+      current.value = currentResult.value
+      if (currentResult.value) {
+        currentCache.set(currentCacheKey, currentResult.value)
+        syncTargetOptions(currentResult.value)
+      }
+    } else currentError.value = getScoreErrorMessage(currentResult.reason, '当前分数线暂不可用')
 
-    const currentTask =
-      capabilities?.current || config.value?.researchDisplay.current ? fetchScoreCurrent(selection) : Promise.resolve(null)
+    const nextSelection = getSelection()
+    if (!nextSelection) {
+      dataLoading.value = false
+      return
+    }
+    const chartSelectionKey = selectionKey()
+    const chartVersion = ++chartRequestVersion
+    const nextCapabilities = config.value?.capabilities
+    const chartIsHistorical = isHistoricalSeason.value
     const historyTask =
-      !isHistoricalSeason.value && (capabilities?.history || config.value?.researchDisplay.history)
-        ? loadHistorySeries(selection, targetOptions.value)
+      !chartIsHistorical && (nextCapabilities?.history || config.value?.researchDisplay.history)
+        ? loadHistorySeries(nextSelection)
         : Promise.resolve([] as ScoreHistory[])
-    const seasonHistoryTask = isHistoricalSeason.value
-      ? loadSeasonHistorySeries(selection, targetOptions.value)
+    const seasonHistoryTask = chartIsHistorical
+      ? loadSeasonHistorySeries(nextSelection, targetOptions.value)
       : Promise.resolve([] as ScoreSeasonHistory[])
-    const results = await Promise.allSettled([currentTask, historyTask, seasonHistoryTask])
-    if (version !== requestVersion || currentSelectionKey !== selectionKey()) return
-
-    const [currentResult, historyResult, seasonHistoryResult] = results
-    if (currentResult.status === 'fulfilled') current.value = currentResult.value
-    else currentError.value = getScoreErrorMessage(currentResult.reason, '当前分数线暂不可用')
-    if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
-    else historyError.value = getScoreErrorMessage(historyResult.reason, '当前趋势暂不可用')
-    if (seasonHistoryResult.status === 'fulfilled') seasonHistorySeries.value = seasonHistoryResult.value
-    else historyError.value = getScoreErrorMessage(seasonHistoryResult.reason, '历史赛季趋势暂不可用')
-    dataLoading.value = false
+    const chartTask = Promise.allSettled([historyTask, seasonHistoryTask]).then(([historyResult, seasonHistoryResult]) => {
+      if (version !== requestVersion || chartVersion !== chartRequestVersion || chartSelectionKey !== selectionKey()) return
+      if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
+      else historyError.value = getScoreErrorMessage(historyResult.reason, '当前趋势暂不可用')
+      if (seasonHistoryResult.status === 'fulfilled') seasonHistorySeries.value = seasonHistoryResult.value
+      else historyError.value = getScoreErrorMessage(seasonHistoryResult.reason, '历史赛季趋势暂不可用')
+      dataLoading.value = false
+    })
+    void chartTask
   }
 
   const loadSelection = async (reloadOptions: boolean, keepData: boolean): Promise<boolean> => {
@@ -198,20 +249,30 @@ export const useRtaScoreForecast = () => {
     const previousSelectionKey = selectionKey()
     if (!keepData) clearData()
     try {
-      if (reloadOptions || !options.value) {
-        const scopedOptions = await fetchScoreOptions(getSelection() || undefined)
+      const shouldLoadOptions = reloadOptions || !options.value
+      let preloadedConfig: ScoreConfig | undefined
+      if (shouldLoadOptions) {
+        const requestedSelection = getSelection() || undefined
+        const [scopedOptions, parallelConfig] = await Promise.all([
+          fetchScoreOptions(requestedSelection),
+          fetchScoreConfig(requestedSelection),
+        ])
         if (version !== requestVersion) return false
         const nextOptions = options.value ? mergeFilterOptions(options.value, scopedOptions) : scopedOptions
         applyOptions(nextOptions, Boolean(options.value))
+        preloadedConfig = parallelConfig
       }
       if (previousSelectionKey !== selectionKey()) {
         keepData = false
         clearData()
       }
       const selection = getSelection()
-      const nextConfig = await fetchScoreConfig(selection || undefined)
+      const configCacheKey = selection ? getFilterCacheKey(selection) : ''
+      const cachedConfig = configCacheKey ? configCache.get(configCacheKey) : undefined
+      const nextConfig = preloadedConfig || cachedConfig || (await fetchScoreConfig(selection || undefined))
       if (version !== requestVersion) return false
       config.value = nextConfig
+      if (configCacheKey && !cachedConfig) configCache.set(configCacheKey, nextConfig)
       if (!selection) {
         clearData()
         currentError.value = '暂无可用的 RTA 分数筛选项'
@@ -225,11 +286,11 @@ export const useRtaScoreForecast = () => {
     } catch (error) {
       if (version !== requestVersion) return false
       errorMessage.value = getScoreErrorMessage(error, 'RTA 分数数据加载失败')
+      dataLoading.value = false
       return false
     } finally {
       if (version === requestVersion) {
         loading.value = false
-        dataLoading.value = false
       }
     }
   }
@@ -241,36 +302,67 @@ export const useRtaScoreForecast = () => {
 
   const refresh = async (): Promise<void> => {
     if (loading.value) return
+    configCache.clear()
+    currentCache.clear()
+    historyCache.clear()
     await loadSelection(true, true)
   }
 
   const selectServer = async (value: string): Promise<void> => {
     if (!serverOptions.value.some(item => item.key === value && item.selectable) || value === server.value) return
     server.value = value
-    await loadSelection(true, false)
+    await loadSelection(false, false)
   }
 
   const selectSeason = async (value: number): Promise<void> => {
     if (!seasonOptions.value.some(item => item.season === value && item.selectable) || value === season.value) return
     season.value = value
-    await loadSelection(true, false)
+    await loadSelection(false, false)
   }
 
   const selectLeague = async (value: string): Promise<void> => {
     if (!leagueOptions.value.some(item => item.key === value && item.selectable) || value === league.value) return
     league.value = value
-    await loadSelection(true, false)
+    await loadSelection(false, false)
   }
 
   const selectProvider = async (value: string): Promise<void> => {
     if (!providerOptions.value.some(item => item.key === value && item.selectable) || value === provider.value) return
     provider.value = value
-    await loadSelection(true, false)
+    await loadSelection(false, false)
   }
 
   const selectTarget = async (value: string): Promise<void> => {
     if (!targetOptions.value.some(item => item.key === value && item.selectable) || value === targetKey.value) return
     targetKey.value = value
+    if (isHistoricalSeason.value) return
+
+    const selection = getSelection()
+    if (!selection) return
+    const chartVersion = ++chartRequestVersion
+    const cacheKey = getHistoryCacheKey(selection)
+    const cached = historyCache.get(cacheKey)
+    historySeries.value = cached ? [cached] : []
+    historyError.value = ''
+    if (cached) {
+      dataLoading.value = false
+      return
+    }
+    dataLoading.value = true
+    try {
+      const result = await fetchScoreHistory(selection)
+      if (
+        chartVersion !== chartRequestVersion ||
+        selectionKey() !== `${selection.server}:${selection.season}:${selection.league}:${selection.provider || ''}:${value}`
+      )
+        return
+      historyCache.set(cacheKey, result)
+      historySeries.value = [result]
+    } catch (error) {
+      if (chartVersion === chartRequestVersion) historyError.value = getScoreErrorMessage(error, '当前趋势暂不可用')
+    } finally {
+      if (chartVersion === chartRequestVersion) dataLoading.value = false
+    }
   }
 
   const retry = async (): Promise<void> => {

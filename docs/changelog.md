@@ -7,7 +7,12 @@
 
 ## Unreleased
 
+- 2026-09-13 [tools/compendium-swc/rta] 重新优化 RTA 分数页读链路：首屏并行加载 options/config，按筛选缓存 config/current/history，current 返回后同步目标可用性，趋势图继续异步加载（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 筛选切换复用已加载的 options，避免重复请求筛选枚举；补齐 season-history 的 provider 请求类型，减少筛选切换首屏等待（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数线页面增加筛选栏与内容区加载骨架动画，避免首屏接口串行加载和筛选切换时出现白屏、空态闪烁（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页补充微信好友与朋友圈页面级分享回调，使用用户提供的 `swc.jpg` OSS 封面（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 将分数线数据时间移动到卡片标题右侧，并改为“生成于”格式展示（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 收紧 RTA 分数线筛选栏顶部间距，暂不启用吸顶以避免被自定义导航栏遮挡（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 支持切换已落库的历史赛季并展示 `FINAL` 分数线；历史赛季不展示无法按绝对日期对齐的趋势图，当前赛季继续展示日趋势（Codex）
 
 - 2026-09-13 [config/compendium-swc] 将用户提供的魔灵召唤 PNG logo 接入“魔灵图鉴”综合入口和工具目录入口，保留其他入口的 uni-icons 图标方案（Codex）

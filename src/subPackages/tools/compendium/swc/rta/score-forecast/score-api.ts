@@ -76,6 +76,7 @@ export const fetchScoreSeasonHistory = async (selection: ScoreSelection): Promis
     season: selection.season,
     targetKey: selection.targetKey,
     ...(selection.league ? { league: selection.league } : {}),
+    ...(selection.provider ? { provider: selection.provider } : {}),
   }
   return normalizeScoreSeasonHistory(await getRtaScoreSeasonHistory(query))
 }

@@ -139,6 +139,8 @@ export interface getRtaScoreSeasonHistoryQuery {
 
   season?: number
 
+  provider?: string
+
   targetKey: string
 
   league?: string

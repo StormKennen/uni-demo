@@ -1,7 +1,7 @@
 <template>
   <PageLayout
     title="RTA分数线"
-    share-title="魔灵召唤 RTA分数预测｜每日分数线趋势"
+    share-title="魔灵召唤 RTA分数预测｜趋势"
     :share-image-url="SWC_RTA_SCORE_SHARE_IMAGE"
     :nav-back="true"
     back-fallback="/subPackages/tools/compendium/swc/index"
@@ -72,11 +72,21 @@
               </view>
             </scroll-view>
           </view>
-        </view>
-
-        <view v-if="isHistoricalSeason && seasonHistorySeries.length" class="scope-notice historical-notice">
-          <uni-icons type="info" size="16" color="var(--theme-text-secondary)" />
-          <text>历史赛季按距结算日读取 FINAL 分数线，暂无可对齐的绝对日期，不展示历史趋势。</text>
+          <view v-if="providerOptions.length" class="filter-row">
+            <text class="filter-label">来源</text>
+            <scroll-view class="chip-scroll" scroll-x enable-flex>
+              <view class="chip-list">
+                <view
+                  v-for="option in providerOptions"
+                  :key="option.key"
+                  class="filter-chip"
+                  :class="{ active: provider === option.key, disabled: !option.selectable }"
+                  @click="selectProviderOption(option)">
+                  <text>{{ option.name }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
         </view>
 
         <!-- <view v-if="scopeUnverified" class="scope-notice">
@@ -118,6 +128,7 @@
                 <text class="section-title">分数线</text>
                 <!-- <text class="section-subtitle">S{{ season }} · {{ selectedServer?.name || server }} · 各段位当前分数</text> -->
               </view>
+              <text v-if="current" class="section-generated-at">生成于 {{ formatDateTime(current.capturedAt) }}</text>
             </view>
 
             <view v-if="cutoffGroups.length" class="cutoff-groups">
@@ -141,18 +152,7 @@
             </view>
             <view v-if="current" class="metadata-row">
               <text>赛季结束 {{ formatDateTime(current.seasonEndsAt) }}</text>
-              <text>数据时间 {{ formatDateTime(current.capturedAt) }}</text>
               <!-- <text>来源更新时间 {{ formatDateTime(current.sourceUpdatedAt, '来源未提供') }}</text> -->
-            </view>
-            <view v-if="current?.seasonEndsAt" class="metadata-row">
-              <text>赛季结束 {{ formatDateTime(current.seasonEndsAt) }}</text>
-              <!-- <text v-if="config?.researchDisplay.collectionUntil">
-                观察截止 {{ formatDateTime(config.researchDisplay.collectionUntil) }}
-              </text> -->
-            </view>
-            <view v-else-if="isHistoricalSeason && seasonHistorySeries.length" class="metadata-row">
-              <text>S{{ season }} · 相对结算阶段</text>
-              <text>10D～FINAL</text>
             </view>
           </view>
 
@@ -234,7 +234,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
+  import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import dayjs from 'dayjs'
   import StateBlock from '../components/state-block.vue'
   import { SWC_RTA_SCORE_SHARE_IMAGE } from '../share'
@@ -273,6 +273,8 @@
     errorMessage,
     isStale,
     seasonOptions,
+    providerOptions,
+    provider,
     targetOptions,
     selectedTarget,
     currentError,
@@ -281,6 +283,7 @@
     initialize,
     refresh,
     selectSeason,
+    selectProvider,
     selectTarget,
     retry,
   } = useRtaScoreForecast()
@@ -417,6 +420,10 @@
     if (option.selectable) void selectSeason(option.season)
   }
 
+  const selectProviderOption = (option: { key: string; selectable: boolean }) => {
+    if (option.selectable) void selectProvider(option.key)
+  }
+
   const selectTargetOption = (option: ScoreTargetOption) => {
     if (option.selectable) void selectTarget(option.key)
   }
@@ -428,6 +435,20 @@
   onShow(() => {
     reportToolVisit('compendium-swc-rta-score-forecast')
   })
+
+  // #ifdef MP-WEIXIN
+  onShareAppMessage(() => ({
+    title: '魔灵召唤 RTA分数预测｜每日分数线趋势',
+    path: '/subPackages/tools/compendium/swc/rta/score-forecast',
+    imageUrl: SWC_RTA_SCORE_SHARE_IMAGE,
+  }))
+
+  onShareTimeline(() => ({
+    title: '魔灵召唤 RTA分数预测｜每日分数线趋势',
+    query: '',
+    imageUrl: SWC_RTA_SCORE_SHARE_IMAGE,
+  }))
+  // #endif
 
   onPullDownRefresh(async () => {
     try {
@@ -464,6 +485,13 @@
     display: flex;
     flex-direction: column;
     gap: 8rpx;
+  }
+
+  .section-generated-at {
+    flex-shrink: 0;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+    line-height: 1.45;
   }
 
   .section-subtitle,
@@ -512,6 +540,11 @@
     border-radius: 22rpx;
     background: var(--theme-surface);
     box-shadow: 0 6rpx 18rpx var(--theme-shadow-xs);
+  }
+
+  .season-filter-panel,
+  .initial-loading .filter-skeleton-panel {
+    margin-top: 0;
   }
 
   .filter-row {
