@@ -123,10 +123,7 @@
                   <text class="cutoff-group-subtitle">一 / 二 / 三</text>
                 </view>
                 <view class="cutoff-group-grid">
-                  <view
-                    v-for="cutoff in group.cutoffs"
-                    :key="cutoff.key"
-                    :class="['cutoff-card', `group-${cutoff.group}`, { highlighted: targetKey === cutoff.key }]">
+                  <view v-for="cutoff in group.cutoffs" :key="cutoff.key" :class="['cutoff-card', `group-${cutoff.group}`]">
                     <text class="cutoff-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text>
                     <text class="cutoff-score">{{ formatScore(cutoff.score) }}</text>
                     <text v-if="cutoff.rank !== null" class="cutoff-rank">目标名次 {{ formatRank(cutoff.rank) }}</text>
@@ -664,15 +661,11 @@
     background: var(--theme-surface-2);
   }
 
-  .cutoff-card.highlighted {
-    border-color: var(--theme-brand);
-  }
-
-  .cutoff-card.group-green:not(.highlighted) {
+  .cutoff-card.group-green {
     border-left: 6rpx solid #4ba36d;
   }
 
-  .cutoff-card.group-red:not(.highlighted) {
+  .cutoff-card.group-red {
     border-left: 6rpx solid #cf6679;
   }
 
