@@ -183,14 +183,31 @@
             </view>
           </view>
 
-          <view v-else-if="historyError" class="section-card">
+          <view v-if="selectedTargetChartPoints.length" class="section-card">
+            <view class="section-heading">
+              <view class="heading-copy">
+                <text class="section-title">分段趋势 · {{ selectedTargetLabel }}</text>
+                <text class="section-subtitle">按日期变化 · 当前段位独立刻度</text>
+              </view>
+              <text class="section-badge">{{ selectedTargetChartPoints.length }} 个样本</text>
+            </view>
+            <StageLineChart
+              :categories="selectedTargetChartCategories"
+              :series="selectedTargetChartSeries"
+              :width="chartWidth(selectedTargetChartCategories.length)" />
+            <view class="metadata-row">
+              <text>时间范围 {{ formatDate(selectedTargetChartRange.from) }} - {{ formatDate(selectedTargetChartRange.to) }}</text>
+            </view>
+          </view>
+
+          <view v-if="historyError && !historyChartSeries.length" class="section-card">
             <view class="section-state section-error-state">
               <text>{{ historyError }}</text>
               <button class="text-button" size="mini" @click="retry">重试</button>
             </view>
           </view>
 
-          <view v-else-if="config?.capabilities.history && dataLoading" class="section-card">
+          <view v-if="!historyChartSeries.length && !historyError && config?.capabilities.history && dataLoading" class="section-card">
             <view class="section-heading"><text class="section-title">当前趋势</text></view>
             <view class="chart-skeleton"><view class="skeleton-line wide" /><view class="skeleton-line" /></view>
           </view>
@@ -244,6 +261,7 @@
     providerOptions,
     targetOptions,
     selectedServer,
+    selectedTarget,
     currentError,
     historyError,
     initialize,
@@ -261,6 +279,7 @@
   const hasDataError = computed(() => Boolean(currentError.value || historyError.value))
   const displayErrorMessage = computed(() => [errorMessage.value, currentError.value, historyError.value].filter(Boolean).join('；'))
   const scopeUnverified = computed(() => Boolean(config.value?.researchDisplay.available && !config.value.researchDisplay.scopeVerified))
+  const selectedTargetLabel = computed(() => formatTargetLabel(selectedTarget.value?.key, selectedTarget.value?.name || '当前目标'))
   const cutoffGroups = computed(() => {
     const groups = [
       { key: 'green', name: '绿段' },
@@ -341,6 +360,32 @@
   const historyChartRange = computed(() => ({
     from: historyChartSeries.value[0]?.key || null,
     to: historyChartSeries.value[historyChartSeries.value.length - 1]?.key || null,
+  }))
+
+  const selectedTargetChartPoints = computed(() => {
+    const targetHistory = historySeries.value.find(item => item.target.key === targetKey.value)
+    return (targetHistory?.points || [])
+      .filter(point => typeof point.score === 'number' && Number.isFinite(point.score) && dayjs(point.capturedAt).isValid())
+      .map(point => ({
+        key: point.capturedAt,
+        label: dayjs(point.capturedAt).format('MM-DD'),
+        score: point.score as number,
+      }))
+  })
+
+  const selectedTargetChartCategories = computed(() => selectedTargetChartPoints.value.map(point => point.label))
+
+  const selectedTargetChartSeries = computed<TrendSeries[]>(() => [
+    {
+      key: `target-${targetKey.value}`,
+      label: selectedTargetLabel.value,
+      points: selectedTargetChartPoints.value.map((point, index) => ({ ...point, index })),
+    },
+  ])
+
+  const selectedTargetChartRange = computed(() => ({
+    from: selectedTargetChartPoints.value[0]?.key || null,
+    to: selectedTargetChartPoints.value[selectedTargetChartPoints.value.length - 1]?.key || null,
   }))
 
   const selectServerOption = (option: ScoreSimpleOption) => {
@@ -532,6 +577,41 @@
     background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
     font-size: 20rpx;
+  }
+
+  .stage-bar-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14rpx;
+  }
+
+  .stage-bar-card {
+    min-width: 0;
+    padding: 16rpx 12rpx 12rpx;
+    overflow: hidden;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .stage-bar-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8rpx;
+    margin-bottom: 10rpx;
+  }
+
+  .stage-bar-title {
+    color: var(--theme-text);
+    font-size: 24rpx;
+    font-weight: 800;
+  }
+
+  .stage-bar-latest {
+    flex-shrink: 0;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
   }
 
   .cutoff-group-grid,
