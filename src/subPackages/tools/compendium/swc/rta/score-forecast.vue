@@ -14,11 +14,34 @@
         <button class="notice-action" size="mini" :disabled="loading" @click="refresh">刷新</button>
       </view>
 
-      <view v-if="loading && !options" class="skeleton-list">
-        <view v-for="index in 4" :key="index" class="skeleton-card">
+      <view v-if="initialLoading" class="initial-loading">
+        <view class="filter-panel filter-skeleton-panel">
+          <view class="skeleton-filter-row">
+            <view class="skeleton-filter-label" />
+            <view class="skeleton-chip-list">
+              <view v-for="index in 4" :key="index" class="skeleton-chip" />
+            </view>
+          </view>
+        </view>
+
+        <view class="section-card content-skeleton-card">
           <view class="skeleton-line wide" />
-          <view class="skeleton-line" />
-          <view class="skeleton-line short" />
+          <view class="skeleton-line content-subtitle-line" />
+          <view class="skeleton-cutoff-grid">
+            <view v-for="index in 6" :key="index" class="skeleton-cutoff-card">
+              <view class="skeleton-line" />
+              <view class="skeleton-line wide" />
+              <view class="skeleton-line short" />
+            </view>
+          </view>
+        </view>
+
+        <view class="section-card content-skeleton-card">
+          <view class="skeleton-line wide" />
+          <view class="chart-skeleton">
+            <view class="skeleton-line wide" />
+            <view class="skeleton-line" />
+          </view>
         </view>
       </view>
 
@@ -33,24 +56,8 @@
           <button class="text-button" size="mini" @click="retry">重试</button>
         </view>
 
-        <view class="filter-panel">
-          <view v-if="serverOptions.length" class="filter-row">
-            <text class="filter-label">区服</text>
-            <scroll-view class="chip-scroll" scroll-x enable-flex>
-              <view class="chip-list">
-                <view
-                  v-for="option in serverOptions"
-                  :key="option.key"
-                  class="filter-chip"
-                  :class="{ active: server === option.key, disabled: !option.selectable }"
-                  @click="selectServerOption(option)">
-                  <text>{{ option.name }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
-
-          <view v-if="seasonOptions.length" class="filter-row">
+        <view v-if="seasonOptions.length" class="filter-panel season-filter-panel">
+          <view class="filter-row">
             <text class="filter-label">赛季</text>
             <scroll-view class="chip-scroll" scroll-x enable-flex>
               <view class="chip-list">
@@ -65,47 +72,42 @@
               </view>
             </scroll-view>
           </view>
-
-          <view v-if="leagueOptions.length" class="filter-row">
-            <text class="filter-label">分区</text>
-            <scroll-view class="chip-scroll" scroll-x enable-flex>
-              <view class="chip-list">
-                <view
-                  v-for="option in leagueOptions"
-                  :key="option.key"
-                  class="filter-chip"
-                  :class="{ active: league === option.key, disabled: !option.selectable }"
-                  @click="selectLeagueOption(option)">
-                  <text>{{ option.name }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
-
-          <view v-if="providerOptions.length" class="filter-row">
-            <text class="filter-label">来源</text>
-            <scroll-view class="chip-scroll" scroll-x enable-flex>
-              <view class="chip-list">
-                <view
-                  v-for="option in providerOptions"
-                  :key="option.key"
-                  class="filter-chip"
-                  :class="{ active: provider === option.key, disabled: !option.selectable }"
-                  @click="selectProviderOption(option)">
-                  <text>{{ option.name }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
         </view>
 
-        <view v-if="scopeUnverified" class="scope-notice">
+        <view v-if="isHistoricalSeason && seasonHistorySeries.length" class="scope-notice historical-notice">
+          <uni-icons type="info" size="16" color="var(--theme-text-secondary)" />
+          <text>历史赛季按距结算日读取 FINAL 分数线，暂无可对齐的绝对日期，不展示历史趋势。</text>
+        </view>
+
+        <!-- <view v-if="scopeUnverified" class="scope-notice">
           <uni-icons type="info" size="16" color="var(--theme-text-secondary)" />
           <text>来源覆盖范围尚未完成核验，当前页面仅展示可用分数线，不用于分数预测。</text>
+        </view> -->
+
+        <view v-if="contentLoading && hasSelection" class="content-loading">
+          <view class="section-card content-skeleton-card">
+            <view class="skeleton-line wide" />
+            <view class="skeleton-line content-subtitle-line" />
+            <view class="skeleton-cutoff-grid">
+              <view v-for="index in 6" :key="index" class="skeleton-cutoff-card">
+                <view class="skeleton-line" />
+                <view class="skeleton-line wide" />
+                <view class="skeleton-line short" />
+              </view>
+            </view>
+          </view>
+
+          <view v-if="!isHistoricalSeason" class="section-card content-skeleton-card">
+            <view class="skeleton-line wide" />
+            <view class="chart-skeleton">
+              <view class="skeleton-line wide" />
+              <view class="skeleton-line" />
+            </view>
+          </view>
         </view>
 
-        <view v-if="!hasAnyData && !hasDataError && !dataLoading" class="state-card">
-          <StateBlock text="当前筛选暂无可展示数据" action-text="重新加载" theme="teal" @action="retry" />
+        <view v-if="!hasAnyData && !hasDataError && !contentLoading" class="state-card">
+          <StateBlock text="暂无数据" action-text="重新加载" theme="teal" @action="retry" />
           <text class="state-detail">可以切换赛季或稍后刷新查看新的数据</text>
         </view>
 
@@ -113,8 +115,8 @@
           <view v-if="cutoffGroups.length || currentError" class="section-card cutoff-board-card">
             <view class="section-heading">
               <view class="heading-copy">
-                <text class="section-title">当前赛季分段分界线</text>
-                <text class="section-subtitle">S{{ season }} · {{ selectedServer?.name || server }} · 各段位当前分数</text>
+                <text class="section-title">分数线</text>
+                <!-- <text class="section-subtitle">S{{ season }} · {{ selectedServer?.name || server }} · 各段位当前分数</text> -->
               </view>
             </view>
 
@@ -122,7 +124,7 @@
               <view v-for="group in cutoffGroups" :key="group.key" class="cutoff-group">
                 <view class="cutoff-group-heading">
                   <text class="cutoff-group-title">{{ group.name }}</text>
-                  <text class="cutoff-group-subtitle">一 / 二 / 三</text>
+                  <!-- <text class="cutoff-group-subtitle">一 / 二 / 三</text> -->
                 </view>
                 <view class="cutoff-group-grid">
                   <view v-for="cutoff in group.cutoffs" :key="cutoff.key" :class="['cutoff-card', `group-${cutoff.group}`]">
@@ -138,22 +140,27 @@
               <button class="text-button" size="mini" @click="retry">重试</button>
             </view>
             <view v-if="current" class="metadata-row">
+              <text>赛季结束 {{ formatDateTime(current.seasonEndsAt) }}</text>
               <text>数据时间 {{ formatDateTime(current.capturedAt) }}</text>
-              <text>来源更新时间 {{ formatDateTime(current.sourceUpdatedAt, '来源未提供') }}</text>
+              <!-- <text>来源更新时间 {{ formatDateTime(current.sourceUpdatedAt, '来源未提供') }}</text> -->
             </view>
             <view v-if="current?.seasonEndsAt" class="metadata-row">
               <text>赛季结束 {{ formatDateTime(current.seasonEndsAt) }}</text>
-              <text v-if="config?.researchDisplay.collectionUntil">
+              <!-- <text v-if="config?.researchDisplay.collectionUntil">
                 观察截止 {{ formatDateTime(config.researchDisplay.collectionUntil) }}
-              </text>
+              </text> -->
+            </view>
+            <view v-else-if="isHistoricalSeason && seasonHistorySeries.length" class="metadata-row">
+              <text>S{{ season }} · 相对结算阶段</text>
+              <text>10D～FINAL</text>
             </view>
           </view>
 
-          <view v-if="historyChartSeries.length" class="section-card">
+          <!-- <view v-if="historyChartSeries.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
                 <text class="section-title">当前趋势</text>
-                <text class="section-subtitle">各绿段 / 红段 · 按日期对比</text>
+                <text class="section-subtitle">各绿区 / 红区 · 按日期对比</text>
               </view>
               <text class="section-badge">{{ historyChartSeries.length }} 天</text>
             </view>
@@ -164,15 +171,15 @@
             <view class="metadata-row">
               <text>时间范围 {{ formatDate(historyChartRange.from) }} - {{ formatDate(historyChartRange.to) }}</text>
             </view>
-          </view>
+          </view> -->
 
-          <view v-if="selectedTargetChartPoints.length" class="section-card">
+          <view v-if="!isHistoricalSeason && selectedTargetChartPoints.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
-                <text class="section-title">分段趋势 · {{ selectedTargetLabel }}</text>
-                <text class="section-subtitle">按日期变化 · 当前段位独立刻度</text>
+                <text class="section-title">趋势</text>
+                <!-- <text class="section-subtitle">按日期变化 · 当前段位独立刻度</text> -->
               </view>
-              <text class="section-badge">{{ selectedTargetChartPoints.length }} 个样本</text>
+              <!-- <text class="section-badge">{{ selectedTargetChartPoints.length }} 个样本</text> -->
             </view>
             <view v-if="targetOptions.length" class="chart-filter-row">
               <text class="filter-label">目标</text>
@@ -205,8 +212,18 @@
             </view>
           </view>
 
-          <view v-if="!historyChartSeries.length && !historyError && config?.capabilities.history && dataLoading" class="section-card">
-            <view class="section-heading"><text class="section-title">当前趋势</text></view>
+          <view
+            v-if="
+              !historyChartSeries.length &&
+              !selectedTargetChartPoints.length &&
+              !historyError &&
+              !isHistoricalSeason &&
+              (config?.capabilities.history || config?.capabilities.historicalSeasonHistory) &&
+              hasAnyData &&
+              dataLoading
+            "
+            class="section-card">
+            <view class="section-heading"><text class="section-title">趋势</text></view>
             <view class="chart-skeleton"><view class="skeleton-line wide" /><view class="skeleton-line" /></view>
           </view>
         </template>
@@ -223,7 +240,7 @@
   import { SWC_RTA_SCORE_SHARE_IMAGE } from '../share'
   import StageLineChart from './score-forecast/stage-line-chart.vue'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
-  import type { ScoreHistory, ScoreSeasonOption, ScoreSimpleOption, ScoreTargetOption } from './score-forecast/score-types'
+  import type { ScoreCutoff, ScoreHistory, ScoreSeasonOption, ScoreTargetOption } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -245,49 +262,65 @@
     config,
     current,
     historySeries,
+    seasonHistorySeries,
     server,
     season,
     league,
-    provider,
     targetKey,
+    initialized,
     loading,
     dataLoading,
     errorMessage,
     isStale,
-    serverOptions,
     seasonOptions,
-    leagueOptions,
-    providerOptions,
     targetOptions,
-    selectedServer,
     selectedTarget,
     currentError,
     historyError,
+    isHistoricalSeason,
     initialize,
     refresh,
-    selectServer,
     selectSeason,
-    selectLeague,
-    selectProvider,
     selectTarget,
     retry,
   } = useRtaScoreForecast()
 
   const hasSelection = computed(() => Boolean(server.value && season.value && league.value && targetKey.value))
-  const hasAnyData = computed(() => Boolean(current.value || historySeries.value.some(item => item.points.length)))
+  const hasAnyData = computed(() =>
+    Boolean(
+      current.value || historySeries.value.some(item => item.points.length) || seasonHistorySeries.value.some(item => item.points.length),
+    ),
+  )
+  const initialLoading = computed(() => loading.value && !initialized.value)
+  const contentLoading = computed(() => (loading.value || dataLoading.value) && !hasAnyData.value)
   const hasDataError = computed(() => Boolean(currentError.value || historyError.value))
   const displayErrorMessage = computed(() => [errorMessage.value, currentError.value, historyError.value].filter(Boolean).join('；'))
-  const scopeUnverified = computed(() => Boolean(config.value?.researchDisplay.available && !config.value.researchDisplay.scopeVerified))
   const selectedTargetLabel = computed(() => formatTargetLabel(selectedTarget.value?.key, selectedTarget.value?.name || '当前目标'))
+  const historicalCutoffs = computed<ScoreCutoff[]>(() =>
+    seasonHistorySeries.value
+      .map(item => {
+        const target = targetOptions.value.find(option => option.key === item.target.key)
+        const finalPoint = item.points.find(point => point.phase === 'FINAL' || point.daysToFinal === 0)
+        if (!target || typeof finalPoint?.score !== 'number' || !Number.isFinite(finalPoint.score)) return null
+        return {
+          ...target,
+          latestScore: finalPoint.score,
+          available: true,
+          score: finalPoint.score,
+        }
+      })
+      .filter((cutoff): cutoff is ScoreCutoff => cutoff !== null),
+  )
   const cutoffGroups = computed(() => {
     const groups = [
-      { key: 'green', name: '绿段' },
-      { key: 'red', name: '红段' },
+      { key: 'green', name: '绿区' },
+      { key: 'red', name: '红区' },
     ]
+    const cutoffs = current.value?.cutoffs ?? historicalCutoffs.value
     return groups
       .map(group => ({
         ...group,
-        cutoffs: (current.value?.cutoffs || []).filter(cutoff => cutoff.group === group.key && cutoff.available),
+        cutoffs: cutoffs.filter(cutoff => cutoff.group === group.key && cutoff.available),
       }))
       .filter(group => group.cutoffs.length)
   })
@@ -320,8 +353,6 @@
       ),
     ),
   )
-
-  const historyChartCategories = computed(() => trendTargets.value.map(target => formatTarget(target.key, target.name)))
 
   const historyChartSeries = computed<TrendSeries[]>(() => {
     const targetIndexes = new Map(trendTargets.value.map((target, index) => [target.key, index]))
@@ -356,11 +387,6 @@
       .filter(series => series.points.length > 0)
   })
 
-  const historyChartRange = computed(() => ({
-    from: historyChartSeries.value[0]?.key || null,
-    to: historyChartSeries.value[historyChartSeries.value.length - 1]?.key || null,
-  }))
-
   const selectedTargetChartPoints = computed(() => {
     const targetHistory = historySeries.value.find(item => item.target.key === targetKey.value)
     return (targetHistory?.points || [])
@@ -387,20 +413,8 @@
     to: selectedTargetChartPoints.value[selectedTargetChartPoints.value.length - 1]?.key || null,
   }))
 
-  const selectServerOption = (option: ScoreSimpleOption) => {
-    if (option.selectable) void selectServer(option.key)
-  }
-
   const selectSeasonOption = (option: ScoreSeasonOption) => {
     if (option.selectable) void selectSeason(option.season)
-  }
-
-  const selectLeagueOption = (option: ScoreSimpleOption) => {
-    if (option.selectable) void selectLeague(option.key)
-  }
-
-  const selectProviderOption = (option: ScoreSimpleOption) => {
-    if (option.selectable) void selectProvider(option.key)
   }
 
   const selectTargetOption = (option: ScoreTargetOption) => {
@@ -821,16 +835,69 @@
     text-align: center;
   }
 
-  .skeleton-list {
+  .initial-loading,
+  .content-loading {
     display: flex;
     flex-direction: column;
-    gap: 16rpx;
-    margin-top: 20rpx;
   }
 
-  .skeleton-card {
-    min-height: 170rpx;
-    padding: 26rpx;
+  .filter-skeleton-panel,
+  .content-skeleton-card {
+    overflow: hidden;
+  }
+
+  .skeleton-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+  }
+
+  .skeleton-filter-label {
+    width: 64rpx;
+    height: 28rpx;
+    flex-shrink: 0;
+    border-radius: 12rpx;
+    background: var(--theme-surface-2);
+    animation: skeleton-pulse 1.35s ease-in-out infinite;
+  }
+
+  .skeleton-chip-list {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    gap: 12rpx;
+    overflow: hidden;
+  }
+
+  .skeleton-chip {
+    width: 128rpx;
+    height: 62rpx;
+    flex-shrink: 0;
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    animation: skeleton-pulse 1.35s ease-in-out infinite;
+  }
+
+  .content-skeleton-card {
+    min-height: 250rpx;
+  }
+
+  .content-subtitle-line {
+    width: 54%;
+    margin-top: 16rpx;
+  }
+
+  .skeleton-cutoff-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12rpx;
+    margin-top: 22rpx;
+  }
+
+  .skeleton-cutoff-card {
+    min-width: 0;
+    min-height: 132rpx;
+    padding: 18rpx;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -838,7 +905,7 @@
     box-sizing: border-box;
     border: 1rpx solid var(--theme-border);
     border-radius: 22rpx;
-    background: var(--theme-surface);
+    background: var(--theme-surface-2);
   }
 
   .skeleton-line {
@@ -846,6 +913,7 @@
     height: 22rpx;
     border-radius: 12rpx;
     background: var(--theme-surface-2);
+    animation: skeleton-pulse 1.35s ease-in-out infinite;
   }
 
   .skeleton-line.wide {
@@ -855,5 +923,16 @@
 
   .skeleton-line.short {
     width: 46%;
+  }
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 0.52;
+    }
+
+    50% {
+      opacity: 1;
+    }
   }
 </style>

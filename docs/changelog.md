@@ -7,6 +7,9 @@
 
 ## Unreleased
 
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数线页面增加筛选栏与内容区加载骨架动画，避免首屏接口串行加载和筛选切换时出现白屏、空态闪烁（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 支持切换已落库的历史赛季并展示 `FINAL` 分数线；历史赛季不展示无法按绝对日期对齐的趋势图，当前赛季继续展示日趋势（Codex）
+
 - 2026-09-13 [config/compendium-swc] 将用户提供的魔灵召唤 PNG logo 接入“魔灵图鉴”综合入口和工具目录入口，保留其他入口的 uni-icons 图标方案（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 将 RTA 分数预测微信分享封面切换为项目 OSS 地址，避免生产环境依赖官网图片直链（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页面接入微信好友与朋友圈分享，并使用《魔灵召唤》官网公开分享图作为封面（后续可替换为项目 OSS 地址）（Codex）
