@@ -28,6 +28,15 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     path: '/subPackages/tools/compendium/swc/rta/index',
   },
   {
+    id: 'rta-score-forecast',
+    title: 'RTA分数预测',
+    desc: '查看赛季分数线与结算前趋势',
+    icon: 'bars',
+    accent: '#7c3aed',
+    accentSoft: 'rgba(124, 58, 237, 0.14)',
+    path: '/subPackages/tools/compendium/swc/rta/score-forecast',
+  },
+  {
     id: 'coupons',
     title: '魔灵兑换券',
     desc: '管理账号并快速兑换礼包码',

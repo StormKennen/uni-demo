@@ -63,6 +63,17 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     isNew: true,
     recentAliasKey: 'compendium-swc',
   },
+  'compendium-swc-rta-score-forecast': {
+    name: 'RTA分数预测',
+    desc: '赛季分数线与结算前趋势',
+    icon: 'bars',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+    path: '/subPackages/tools/compendium/swc/rta/score-forecast',
+    workspace: 'swc',
+    isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
+  },
   'compendium-swc-admin': {
     name: '魔灵召唤·图鉴管理',
     desc: '管理员内联编辑图鉴',

@@ -413,6 +413,15 @@
           }
         },
         {
+          "path": "compendium/swc/rta/score-forecast",
+          "style": {
+            "navigationBarTitleText": "RTA分数预测",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "compendium/swc/rta/detail",
           "style": {
             "navigationBarTitleText": "人物 RTA 详情",

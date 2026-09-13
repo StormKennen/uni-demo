@@ -124,10 +124,16 @@ const normalizeTarget = (source: unknown): ScoreTargetOption | null => {
   const record = toRecord(source)
   const key = toText(record.key ?? record.value)
   if (!key) return null
+  const rank = toInteger(record.rank)
+  const latestScore = toFiniteNumber(record.latestScore)
   return {
     key,
     name: toText(record.name ?? record.label) || key,
-    rank: toInteger(record.rank),
+    group: toText(record.group),
+    groupName: toText(record.groupName),
+    rank,
+    latestScore,
+    available: toBoolean(record.available, latestScore !== null),
     selectable: normalizeSelectable(source),
   }
 }
@@ -173,12 +179,17 @@ const normalizeCutoff = (source: unknown): ScoreCutoff | null => {
   const record = toRecord(source)
   const key = toText(record.key ?? record.value)
   if (!key) return null
+  const score = toFiniteNumber(record.score)
   return {
     key,
     name: toText(record.name ?? record.label) || key,
+    group: toText(record.group),
+    groupName: toText(record.groupName),
     rank: toInteger(record.rank),
+    latestScore: score,
+    available: toBoolean(record.available, score !== null),
     selectable: true,
-    score: toFiniteNumber(record.score),
+    score,
   }
 }
 
@@ -192,6 +203,7 @@ export const normalizeScoreOptions = (response: unknown): ScoreOptions => {
   return {
     servers: normalizeSimpleOptions(data.servers),
     leagues: normalizeSimpleOptions(data.leagues),
+    providers: normalizeSimpleOptions(data.providers),
     seasons: normalizeSeasons(data.seasons),
     targets: normalizeTargets(data.targets),
     defaultSeason: toInteger(data.defaultSeason),
@@ -205,6 +217,7 @@ export const normalizeScoreConfig = (response: unknown): ScoreConfig => {
   const data = unwrapBusinessData(response)
   const capabilities = toRecord(data.capabilities)
   const provider = toText(data.provider)
+  const researchDisplay = toRecord(data.researchDisplay)
   return {
     provider,
     dataStatus: normalizeDataStatus(data.dataStatus),
@@ -214,6 +227,15 @@ export const normalizeScoreConfig = (response: unknown): ScoreConfig => {
       history: toBoolean(capabilities.history),
       historicalSeasonHistory: toBoolean(capabilities.historicalSeasonHistory),
       scoreForecast: toBoolean(capabilities.scoreForecast),
+    },
+    researchDisplay: {
+      available: toBoolean(researchDisplay.available),
+      current: toBoolean(researchDisplay.current),
+      history: toBoolean(researchDisplay.history),
+      providers: Array.isArray(researchDisplay.providers) ? researchDisplay.providers.map(toText).filter(Boolean) : [],
+      scopeVerified: toBoolean(researchDisplay.scopeVerified),
+      seasonEndsAt: toText(researchDisplay.seasonEndsAt) || null,
+      collectionUntil: toText(researchDisplay.collectionUntil) || null,
     },
     meta: normalizeMeta(data.meta, provider),
   }
@@ -234,6 +256,10 @@ export const normalizeScoreCurrent = (response: unknown): ScoreCurrent => {
     cutoffs: normalizeCutoffs(data.cutoffs),
     dataQuality: {
       status: normalizeCurrentQuality(quality.status),
+      complete: toBoolean(quality.complete),
+      expectedTargetCount: toInteger(quality.expectedTargetCount) ?? undefined,
+      availableTargetCount: toInteger(quality.availableTargetCount) ?? undefined,
+      missingTargets: Array.isArray(quality.missingTargets) ? quality.missingTargets.map(toText).filter(Boolean) : [],
       warnings: Array.isArray(quality.warnings) ? quality.warnings.map(toText).filter(Boolean) : [],
       latestAgeMinutes: toFiniteNumber(quality.latestAgeMinutes),
     },
@@ -252,7 +278,17 @@ const normalizeHistoryPoint = (source: unknown): ScoreHistory['points'][number] 
 }
 
 const normalizeHistoryTarget = (source: unknown): ScoreCutoff =>
-  normalizeCutoff(source) || { key: '', name: '', rank: null, selectable: true, score: null }
+  normalizeCutoff(source) || {
+    key: '',
+    name: '',
+    group: '',
+    groupName: '',
+    rank: null,
+    latestScore: null,
+    available: false,
+    selectable: true,
+    score: null,
+  }
 
 export const normalizeScoreHistory = (response: unknown): ScoreHistory => {
   const data = unwrapBusinessData(response)
@@ -387,17 +423,32 @@ export const formatRankValue = (value: number | null | undefined): string => {
 }
 
 const RTA_TARGET_LABELS: Readonly<Record<string, string>> = {
-  c1: '一绿',
-  c2: '二绿',
-  c3: '三绿',
-  p1: '一金',
-  p2: '二金',
-  p3: '三金',
+  f1: '一银',
+  f2: '二银',
+  f3: '三银',
+  c1: '一金',
+  c2: '二金',
+  c3: '三金',
+  p1: '一绿',
+  p2: '二绿',
+  p3: '三绿',
   g1: '一红',
   g2: '二红',
   g3: '三红',
   top100: '前百',
   'top-100': '前百',
+  'silver-1': '一银',
+  'silver-2': '二银',
+  'silver-3': '三银',
+  'gold-1': '一金',
+  'gold-2': '二金',
+  'gold-3': '三金',
+  'green-1': '一绿',
+  'green-2': '二绿',
+  'green-3': '三绿',
+  'red-1': '一红',
+  'red-2': '二红',
+  'red-3': '三红',
 }
 
 export const formatTargetLabel = (key: string | null | undefined, fallback = ''): string => {
