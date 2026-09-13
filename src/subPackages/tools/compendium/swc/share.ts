@@ -17,6 +17,9 @@ interface QueryValueMap {
 }
 
 const SWC_SHARE_IMAGE = '/static/logo.png'
+// Official Summoners War landing-page og:image. Replace this single constant
+// with the OSS URL after the project-owned copy is uploaded.
+export const SWC_RTA_SCORE_SHARE_IMAGE = 'https://event-fn.qpyou.cn/event/event/sns/smon_brand_231123_smon_3000_en.jpg'
 const SWC_COUPONS_SHARE_IMAGE = SWC_GAME_COUPON_CONFIG.managementHeroImage
 const SWC_HOME_PATH = '/subPackages/tools/compendium/swc/index'
 const SWC_LIST_PATH = '/subPackages/tools/compendium/swc/list'

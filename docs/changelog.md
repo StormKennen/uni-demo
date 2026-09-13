@@ -7,6 +7,7 @@
 
 ## Unreleased
 
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页面接入微信好友与朋友圈分享，并使用《魔灵召唤》官网公开分享图作为封面（后续可替换为项目 OSS 地址）（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 修复 RTA 分数筛选后选项逐步收窄的问题：按当前赛季/来源读取目标数据时保留完整的区服、赛季、分区和来源筛选项，避免筛选切换后页面无法继续加载（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 优化 RTA 分数页赛季与目标文案：仅为当前赛季添加“当前”标识，C/P/G 段位转换为一绿/一金/一红等中文名称，并新增当前赛季分段分界线面板及无快照空状态（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 将 RTA 分数页收敛为采集数据展示：复用 Apifox season-history 接口动态加载历史序列，支持区服/赛季/分区/目标筛选、选定赛季阶段走势与多赛季阶段对比；当前 Snapshot/预测不可用时仍可展示历史数据（Codex）

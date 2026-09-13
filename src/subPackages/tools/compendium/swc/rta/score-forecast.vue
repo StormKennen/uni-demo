@@ -1,6 +1,8 @@
 <template>
   <PageLayout
     title="RTA分数线"
+    share-title="魔灵召唤 RTA分数预测｜每日分数线趋势"
+    :share-image-url="SWC_RTA_SCORE_SHARE_IMAGE"
     :nav-back="true"
     back-fallback="/subPackages/tools/compendium/swc/index"
     nav-init-bg-color="var(--theme-surface)"
@@ -218,6 +220,7 @@
   import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
   import dayjs from 'dayjs'
   import StateBlock from '../components/state-block.vue'
+  import { SWC_RTA_SCORE_SHARE_IMAGE } from '../share'
   import StageLineChart from './score-forecast/stage-line-chart.vue'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
   import type { ScoreHistory, ScoreSeasonOption, ScoreSimpleOption, ScoreTargetOption } from './score-forecast/score-types'
