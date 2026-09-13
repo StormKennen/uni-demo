@@ -1,8 +1,11 @@
+import { SWC_LOGO_IMAGE_URL } from './tool-assets'
+
 export interface SwcPortalEntry {
   id: string
   title: string
   desc: string
   icon: string
+  image?: string
   accent: string
   accentSoft: string
   path: string
@@ -14,6 +17,7 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     title: '魔灵图鉴',
     desc: '检索人物、筛选属性、查看详情',
     icon: 'star',
+    image: SWC_LOGO_IMAGE_URL,
     accent: '#f97316',
     accentSoft: 'rgba(249, 115, 22, 0.14)',
     path: '/subPackages/tools/compendium/swc/list',

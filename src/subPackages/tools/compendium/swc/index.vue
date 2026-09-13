@@ -14,7 +14,8 @@
       <view class="portal-list">
         <view v-for="entry in portalEntries" :key="entry.id" class="portal-card" @click="openEntry(entry.path)">
           <view class="entry-icon" :style="{ background: entry.accentSoft }">
-            <uni-icons :type="entry.icon as any" size="22" :color="entry.accent" />
+            <image v-if="entry.image" class="entry-icon-image" :src="entry.image" mode="aspectFit" />
+            <uni-icons v-else :type="entry.icon as any" size="22" :color="entry.accent" />
           </view>
           <view class="entry-main">
             <text class="entry-title">{{ entry.title }}</text>
@@ -132,6 +133,13 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+  }
+
+  .entry-icon-image {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 18rpx;
+    display: block;
   }
 
   .entry-main {

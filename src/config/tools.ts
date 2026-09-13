@@ -1,4 +1,4 @@
-import { QUICK_SHIP_IMAGE_URL, RELAY_ICON_URL } from './tool-assets'
+import { QUICK_SHIP_IMAGE_URL, RELAY_ICON_URL, SWC_LOGO_IMAGE_URL } from './tool-assets'
 import type { ToolWorkspaceKey } from '@/config/workspaces'
 
 /** 工具节点（不含 key，key 作为字典的键） */
@@ -47,6 +47,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     name: '魔灵图鉴',
     desc: '检索人物、筛选属性、查看详情',
     icon: 'star',
+    image: SWC_LOGO_IMAGE_URL,
     gradient: 'linear-gradient(135deg, #f97316 0%, #fbbf24 100%)',
     path: '/subPackages/tools/compendium/swc/list',
     workspace: 'swc',
