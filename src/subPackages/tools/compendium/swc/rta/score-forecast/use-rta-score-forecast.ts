@@ -15,6 +15,32 @@ import type {
 const firstSelectable = <T extends { selectable: boolean }>(items: T[]): T | undefined => items.find(item => item.selectable)
 const isVisibleTarget = (item: ScoreTargetOption): boolean => item.available && (item.group === 'green' || item.group === 'red')
 
+const mergeSimpleOptions = (previous: ScoreSimpleOption[], next: ScoreSimpleOption[]): ScoreSimpleOption[] => {
+  const merged = new Map(previous.map(item => [item.key, item]))
+  next.forEach(item => {
+    const previousItem = merged.get(item.key)
+    merged.set(item.key, previousItem ? { ...previousItem, ...item } : item)
+  })
+  return [...merged.values()]
+}
+
+const mergeSeasonOptions = (previous: ScoreSeasonOption[], next: ScoreSeasonOption[]): ScoreSeasonOption[] => {
+  const merged = new Map(previous.map(item => [item.season, item]))
+  next.forEach(item => {
+    const previousItem = merged.get(item.season)
+    merged.set(item.season, previousItem ? { ...previousItem, ...item } : item)
+  })
+  return [...merged.values()].sort((left, right) => right.season - left.season)
+}
+
+const mergeFilterOptions = (previous: ScoreOptions, next: ScoreOptions): ScoreOptions => ({
+  ...next,
+  servers: mergeSimpleOptions(previous.servers, next.servers),
+  leagues: mergeSimpleOptions(previous.leagues, next.leagues),
+  providers: mergeSimpleOptions(previous.providers, next.providers),
+  seasons: mergeSeasonOptions(previous.seasons, next.seasons),
+})
+
 export const useRtaScoreForecast = () => {
   const options = ref<ScoreOptions | null>(null)
   const config = ref<ScoreConfig | null>(null)
@@ -148,8 +174,9 @@ export const useRtaScoreForecast = () => {
     if (!keepData) clearData()
     try {
       if (reloadOptions || !options.value) {
-        const nextOptions = await fetchScoreOptions(getSelection() || undefined)
+        const scopedOptions = await fetchScoreOptions(getSelection() || undefined)
         if (version !== requestVersion) return false
+        const nextOptions = options.value ? mergeFilterOptions(options.value, scopedOptions) : scopedOptions
         applyOptions(nextOptions, Boolean(options.value))
       }
       if (previousSelectionKey !== selectionKey()) {
