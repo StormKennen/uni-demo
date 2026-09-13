@@ -62,6 +62,7 @@ export const useRtaScoreForecast = () => {
   const configCache = new Map<string, ScoreConfig>()
   const currentCache = new Map<string, ScoreCurrent>()
   const historyCache = new Map<string, ScoreHistory>()
+  const seasonHistoryCache = new Map<string, ScoreSeasonHistory>()
   let requestVersion = 0
   let chartRequestVersion = 0
 
@@ -138,10 +139,22 @@ export const useRtaScoreForecast = () => {
   }
 
   const loadSeasonHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreSeasonHistory[]> => {
-    const results = await Promise.allSettled(targets.map(target => fetchScoreSeasonHistory({ ...selection, targetKey: target.key })))
-    const successful = results
-      .filter((result): result is PromiseFulfilledResult<ScoreSeasonHistory> => result.status === 'fulfilled')
-      .map(result => result.value)
+    const resultsByKey = new Map<string, ScoreSeasonHistory>()
+    const pendingTargets = targets.filter(target => {
+      const cacheKey = getHistoryCacheKey({ ...selection, targetKey: target.key })
+      const cached = seasonHistoryCache.get(cacheKey)
+      if (cached) resultsByKey.set(target.key, cached)
+      return !cached
+    })
+    const results = await Promise.allSettled(pendingTargets.map(target => fetchScoreSeasonHistory({ ...selection, targetKey: target.key })))
+    results.forEach((result, index) => {
+      if (result.status !== 'fulfilled') return
+      const target = pendingTargets[index]
+      const cacheKey = getHistoryCacheKey({ ...selection, targetKey: target.key })
+      seasonHistoryCache.set(cacheKey, result.value)
+      resultsByKey.set(target.key, result.value)
+    })
+    const successful = targets.map(target => resultsByKey.get(target.key)).filter((item): item is ScoreSeasonHistory => Boolean(item))
     if (successful.length || !results.length) return successful
     const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
     throw failure?.reason || new Error('历史赛季趋势暂不可用')
@@ -305,6 +318,7 @@ export const useRtaScoreForecast = () => {
     configCache.clear()
     currentCache.clear()
     historyCache.clear()
+    seasonHistoryCache.clear()
     await loadSelection(true, true)
   }
 
