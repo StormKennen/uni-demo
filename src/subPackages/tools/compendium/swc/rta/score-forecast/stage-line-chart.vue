@@ -13,17 +13,30 @@
           <view class="grid-line middle" />
           <view class="grid-line bottom" />
 
-          <view v-for="segment in segments" :key="segment.key" class="line-segment" :style="segment.style" />
+          <view
+            v-for="segment in segments"
+            :key="segment.key"
+            class="line-segment"
+            :style="{ ...segment.style, backgroundColor: segment.color }" />
 
-          <view v-for="point in chartPoints" :key="point.key" class="line-point" :style="{ left: `${point.x}%`, top: `${point.y}%` }">
-            <text class="point-score">{{ formatScore(point.score) }}</text>
-            <view class="point-dot" />
-          </view>
+          <template v-for="series in chartSeries" :key="series.key">
+            <view v-for="point in series.points" :key="point.key" class="line-point" :style="{ left: `${point.x}%`, top: `${point.y}%` }">
+              <text class="point-score" :style="{ color: point.color }">{{ formatScore(point.score) }}</text>
+              <view class="point-dot" :style="{ backgroundColor: point.color, boxShadow: `0 0 0 2rpx ${point.color}` }" />
+            </view>
+          </template>
         </view>
 
         <view class="label-list">
-          <view v-for="point in chartPoints" :key="`${point.key}-label`" class="label-item" :style="{ left: `${point.x}%` }">
-            <text>{{ point.label }}</text>
+          <view v-for="(category, index) in categories" :key="category" class="label-item" :style="{ left: `${xForIndex(index)}%` }">
+            <text>{{ category }}</text>
+          </view>
+        </view>
+
+        <view class="chart-legend">
+          <view v-for="series in chartSeries" :key="`${series.key}-legend`" class="legend-item">
+            <view class="legend-line" :style="{ backgroundColor: series.color }" />
+            <text>{{ series.label }}</text>
           </view>
         </view>
       </view>
@@ -39,15 +52,29 @@
     key: string
     label: string
     score: number
+    index: number
+  }
+
+  interface StageLineSeries {
+    key: string
+    label: string
+    points: StageLinePoint[]
   }
 
   interface ChartPoint extends StageLinePoint {
     x: number
     y: number
+    color: string
+  }
+
+  interface ChartSeries extends StageLineSeries {
+    color: string
+    points: ChartPoint[]
   }
 
   interface ChartSegment {
     key: string
+    color: string
     style: {
       left: string
       top: string
@@ -57,13 +84,17 @@
   }
 
   const props = defineProps<{
-    points: StageLinePoint[]
+    categories: string[]
+    series: StageLineSeries[]
     width: string
   }>()
 
-  const plotWidth = computed(() => Math.max(300, props.points.length * 110))
+  const COLORS = ['#2864c7', '#31a36c', '#e08a2e', '#9b5bc7', '#d05264', '#4d849f']
+  const plotWidth = computed(() => Math.max(300, props.categories.length * 110))
   const plotHeight = 230
-  const scores = computed(() => props.points.map(point => point.score).filter(score => Number.isFinite(score)))
+  const scores = computed(() =>
+    props.series.flatMap(series => series.points.map(point => point.score)).filter(score => Number.isFinite(score)),
+  )
   const chartMax = computed(() => (scores.value.length ? Math.max(...scores.value) : null))
   const chartMin = computed(() => (scores.value.length ? Math.min(...scores.value) : null))
   const chartMid = computed(() => {
@@ -72,8 +103,8 @@
   })
 
   const xForIndex = (index: number): number => {
-    if (props.points.length <= 1) return 50
-    return 10 + (index / (props.points.length - 1)) * 80
+    if (props.categories.length <= 1) return 50
+    return 10 + (index / (props.categories.length - 1)) * 80
   }
 
   const yForScore = (score: number): number => {
@@ -82,35 +113,46 @@
     return 88 - ratio * 76
   }
 
-  const chartPoints = computed<ChartPoint[]>(() =>
-    props.points.map((point, index) => ({
-      ...point,
-      x: xForIndex(index),
-      y: yForScore(point.score),
+  const chartSeries = computed<ChartSeries[]>(() =>
+    props.series.map((series, seriesIndex) => ({
+      ...series,
+      color: COLORS[seriesIndex % COLORS.length],
+      points: series.points.map(point => ({
+        ...point,
+        x: xForIndex(point.index),
+        y: yForScore(point.score),
+        color: COLORS[seriesIndex % COLORS.length],
+      })),
     })),
   )
 
   const segments = computed<ChartSegment[]>(() =>
-    chartPoints.value.slice(1).map((point, index) => {
-      const previous = chartPoints.value[index]
-      const x1 = (previous.x / 100) * plotWidth.value
-      const y1 = (previous.y / 100) * plotHeight
-      const x2 = (point.x / 100) * plotWidth.value
-      const y2 = (point.y / 100) * plotHeight
-      const dx = x2 - x1
-      const dy = y2 - y1
-      const length = Math.sqrt(dx * dx + dy * dy)
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI
-      return {
-        key: `${previous.key}-${point.key}`,
-        style: {
-          left: `${previous.x}%`,
-          top: `${previous.y}%`,
-          width: `${length}rpx`,
-          transform: `rotate(${angle}deg)`,
-        },
-      }
-    }),
+    chartSeries.value.flatMap(series =>
+      series.points.slice(1).flatMap((point, pointIndex) => {
+        const previous = series.points[pointIndex]
+        if (point.index !== previous.index + 1) return []
+        const x1 = (previous.x / 100) * plotWidth.value
+        const y1 = (previous.y / 100) * plotHeight
+        const x2 = (point.x / 100) * plotWidth.value
+        const y2 = (point.y / 100) * plotHeight
+        const dx = x2 - x1
+        const dy = y2 - y1
+        const length = Math.sqrt(dx * dx + dy * dy)
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+        return [
+          {
+            key: `${series.key}-${previous.key}-${point.key}`,
+            color: series.color,
+            style: {
+              left: `${previous.x}%`,
+              top: `${previous.y}%`,
+              width: `${length}rpx`,
+              transform: `rotate(${angle}deg)`,
+            },
+          },
+        ]
+      }),
+    ),
   )
 
   const formatScore = (value: number | null): string => formatScoreValue(value)
@@ -118,7 +160,7 @@
 
 <style scoped lang="scss">
   .stage-chart {
-    min-height: 300rpx;
+    min-height: 360rpx;
     display: flex;
     gap: 14rpx;
   }
@@ -130,7 +172,6 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 0 0 0;
     box-sizing: border-box;
     color: var(--theme-text-tertiary);
     font-size: 18rpx;
@@ -146,7 +187,7 @@
 
   .chart-content {
     position: relative;
-    height: 300rpx;
+    height: 360rpx;
   }
 
   .plot-area {
@@ -178,7 +219,6 @@
     position: absolute;
     height: 4rpx;
     border-radius: 999rpx;
-    background: var(--theme-brand);
     transform-origin: left center;
   }
 
@@ -196,7 +236,6 @@
     left: 0;
     transform: translateX(-50%);
     white-space: nowrap;
-    color: var(--theme-text-secondary);
     font-size: 18rpx;
     line-height: 1;
   }
@@ -209,8 +248,6 @@
     height: 16rpx;
     border: 4rpx solid var(--theme-surface);
     border-radius: 50%;
-    background: var(--theme-brand);
-    box-shadow: 0 0 0 2rpx var(--theme-brand);
   }
 
   .label-list {
@@ -227,5 +264,29 @@
     line-height: 1;
     text-align: center;
     transform: translateX(-50%);
+  }
+
+  .chart-legend {
+    min-height: 48rpx;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12rpx 24rpx;
+    padding-top: 8rpx;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+    line-height: 1;
+  }
+
+  .legend-line {
+    width: 24rpx;
+    height: 4rpx;
+    border-radius: 999rpx;
   }
 </style>

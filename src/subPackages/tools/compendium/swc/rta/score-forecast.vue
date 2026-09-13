@@ -166,18 +166,20 @@
             </view>
           </view>
 
-          <view v-if="historyChartPoints.length" class="section-card">
+          <view v-if="historyChartSeries.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
                 <text class="section-title">当前趋势</text>
-                <text class="section-subtitle">{{ selectedTargetLabel }} · 按日期</text>
+                <text class="section-subtitle">各绿段 / 红段 · 按日期对比</text>
               </view>
-              <text class="section-badge">{{ historyChartPoints.length }} 个样本</text>
+              <text class="section-badge">{{ historyChartSeries.length }} 天</text>
             </view>
-            <StageLineChart :points="historyChartPoints" :width="chartWidth(historyChartPoints.length)" />
+            <StageLineChart
+              :categories="historyChartCategories"
+              :series="historyChartSeries"
+              :width="chartWidth(historyChartCategories.length)" />
             <view class="metadata-row">
-              <text>时间范围 {{ formatDate(history?.range.from) }} - {{ formatDate(history?.range.to) }}</text>
-              <text v-if="history?.dataQuality.status === 'insufficient'">样本较少</text>
+              <text>时间范围 {{ formatDate(historyChartRange.from) }} - {{ formatDate(historyChartRange.to) }}</text>
             </view>
           </view>
 
@@ -205,21 +207,28 @@
   import StateBlock from '../components/state-block.vue'
   import StageLineChart from './score-forecast/stage-line-chart.vue'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
-  import type { ScoreSeasonOption, ScoreSimpleOption, ScoreTargetOption } from './score-forecast/score-types'
+  import type { ScoreHistory, ScoreSeasonOption, ScoreSimpleOption, ScoreTargetOption } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
   import { reportToolVisit } from '@/utils/tracker'
 
-  interface InputPoint {
+  interface TrendPoint {
     key: string
     label: string
     score: number
+    index: number
+  }
+
+  interface TrendSeries {
+    key: string
+    label: string
+    points: TrendPoint[]
   }
 
   const {
     options,
     config,
     current,
-    history,
+    historySeries,
     server,
     season,
     league,
@@ -235,7 +244,6 @@
     providerOptions,
     targetOptions,
     selectedServer,
-    selectedTarget,
     currentError,
     historyError,
     initialize,
@@ -249,11 +257,10 @@
   } = useRtaScoreForecast()
 
   const hasSelection = computed(() => Boolean(server.value && season.value && league.value && targetKey.value))
-  const hasAnyData = computed(() => Boolean(current.value || history.value?.points.length))
+  const hasAnyData = computed(() => Boolean(current.value || historySeries.value.some(item => item.points.length)))
   const hasDataError = computed(() => Boolean(currentError.value || historyError.value))
   const displayErrorMessage = computed(() => [errorMessage.value, currentError.value, historyError.value].filter(Boolean).join('；'))
   const scopeUnverified = computed(() => Boolean(config.value?.researchDisplay.available && !config.value.researchDisplay.scopeVerified))
-  const selectedTargetLabel = computed(() => formatTargetLabel(selectedTarget.value?.key, selectedTarget.value?.name || '当前目标'))
   const cutoffGroups = computed(() => {
     const groups = [
       { key: 'green', name: '绿段' },
@@ -287,27 +294,54 @@
   const formatRank = (value: number | null | undefined): string => formatRankValue(value)
   const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
 
-  const toInputPoints = (points: Array<{ label: string; score: number | null; key?: string }>): InputPoint[] => {
-    const validPoints = points.filter(
-      (point): point is { label: string; score: number; key?: string } => typeof point.score === 'number' && Number.isFinite(point.score),
-    )
-    if (!validPoints.length) return []
-    return validPoints.map((point, index) => ({
-      key: `${point.key || point.label}-${index}`,
-      label: point.label,
-      score: point.score,
-    }))
-  }
-
-  const historyChartPoints = computed(() =>
-    toInputPoints(
-      (history.value?.points || []).map(point => ({
-        label: dayjs(point.capturedAt).format('MM-DD'),
-        score: point.score,
-        key: point.capturedAt,
-      })),
+  const trendTargets = computed(() =>
+    targetOptions.value.filter(target =>
+      historySeries.value.some(
+        item =>
+          item.target.key === target.key && item.points.some(point => typeof point.score === 'number' && Number.isFinite(point.score)),
+      ),
     ),
   )
+
+  const historyChartCategories = computed(() => trendTargets.value.map(target => formatTarget(target.key, target.name)))
+
+  const historyChartSeries = computed<TrendSeries[]>(() => {
+    const targetIndexes = new Map(trendTargets.value.map((target, index) => [target.key, index]))
+    const dateBuckets = new Map<string, { label: string; points: Map<string, TrendPoint> }>()
+
+    historySeries.value.forEach((historyItem: ScoreHistory) => {
+      const targetIndex = targetIndexes.get(historyItem.target.key)
+      if (targetIndex === undefined) return
+      historyItem.points.forEach(point => {
+        if (typeof point.score !== 'number' || !Number.isFinite(point.score)) return
+        const capturedDate = dayjs(point.capturedAt)
+        if (!capturedDate.isValid()) return
+        const dateKey = capturedDate.format('YYYY-MM-DD')
+        const bucket = dateBuckets.get(dateKey) || { label: capturedDate.format('MM-DD'), points: new Map() }
+        bucket.points.set(historyItem.target.key, {
+          key: `${dateKey}-${historyItem.target.key}`,
+          label: formatTarget(historyItem.target.key, historyItem.target.name),
+          score: point.score,
+          index: targetIndex,
+        })
+        dateBuckets.set(dateKey, bucket)
+      })
+    })
+
+    return [...dateBuckets.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, bucket]) => ({
+        key,
+        label: bucket.label,
+        points: [...bucket.points.values()].sort((left, right) => left.index - right.index),
+      }))
+      .filter(series => series.points.length > 0)
+  })
+
+  const historyChartRange = computed(() => ({
+    from: historyChartSeries.value[0]?.key || null,
+    to: historyChartSeries.value[historyChartSeries.value.length - 1]?.key || null,
+  }))
 
   const selectServerOption = (option: ScoreSimpleOption) => {
     if (option.selectable) void selectServer(option.key)

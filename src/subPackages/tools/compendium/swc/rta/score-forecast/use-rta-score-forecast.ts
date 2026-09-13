@@ -19,7 +19,7 @@ export const useRtaScoreForecast = () => {
   const options = ref<ScoreOptions | null>(null)
   const config = ref<ScoreConfig | null>(null)
   const current = ref<ScoreCurrent | null>(null)
-  const history = ref<ScoreHistory | null>(null)
+  const historySeries = ref<ScoreHistory[]>([])
   const server = ref('')
   const season = ref<number | null>(null)
   const league = ref('')
@@ -60,7 +60,17 @@ export const useRtaScoreForecast = () => {
 
   const clearData = () => {
     current.value = null
-    history.value = null
+    historySeries.value = []
+  }
+
+  const loadHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreHistory[]> => {
+    const results = await Promise.allSettled(targets.map(target => fetchScoreHistory({ ...selection, targetKey: target.key })))
+    const successful = results
+      .filter((result): result is PromiseFulfilledResult<ScoreHistory> => result.status === 'fulfilled')
+      .map(result => result.value)
+    if (successful.length || !results.length) return successful
+    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+    throw failure?.reason || new Error('当前趋势暂不可用')
   }
 
   const applyOptions = (nextOptions: ScoreOptions, preserveSelection: boolean) => {
@@ -116,14 +126,16 @@ export const useRtaScoreForecast = () => {
     const currentTask =
       capabilities?.current || config.value?.researchDisplay.current ? fetchScoreCurrent(selection) : Promise.resolve(null)
     const historyTask =
-      capabilities?.history || config.value?.researchDisplay.history ? fetchScoreHistory(selection) : Promise.resolve(null)
+      capabilities?.history || config.value?.researchDisplay.history
+        ? loadHistorySeries(selection, targetOptions.value)
+        : Promise.resolve([] as ScoreHistory[])
     const results = await Promise.allSettled([currentTask, historyTask])
     if (version !== requestVersion || currentSelectionKey !== selectionKey()) return
 
     const [currentResult, historyResult] = results
     if (currentResult.status === 'fulfilled') current.value = currentResult.value
     else currentError.value = getScoreErrorMessage(currentResult.reason, '当前分数线暂不可用')
-    if (historyResult.status === 'fulfilled') history.value = historyResult.value
+    if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
     else historyError.value = getScoreErrorMessage(historyResult.reason, '当前趋势暂不可用')
     dataLoading.value = false
   }
@@ -180,13 +192,6 @@ export const useRtaScoreForecast = () => {
     await loadSelection(true, true)
   }
 
-  const reloadData = async (): Promise<void> => {
-    if (!config.value) return
-    const version = ++requestVersion
-    errorMessage.value = ''
-    await loadData(version, false)
-  }
-
   const selectServer = async (value: string): Promise<void> => {
     if (!serverOptions.value.some(item => item.key === value && item.selectable) || value === server.value) return
     server.value = value
@@ -214,7 +219,6 @@ export const useRtaScoreForecast = () => {
   const selectTarget = async (value: string): Promise<void> => {
     if (!targetOptions.value.some(item => item.key === value && item.selectable) || value === targetKey.value) return
     targetKey.value = value
-    await reloadData()
   }
 
   const retry = async (): Promise<void> => {
@@ -226,7 +230,7 @@ export const useRtaScoreForecast = () => {
     options,
     config,
     current,
-    history,
+    historySeries,
     server,
     season,
     league,
