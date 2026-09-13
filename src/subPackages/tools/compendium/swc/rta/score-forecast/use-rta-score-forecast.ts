@@ -13,6 +13,7 @@ import type {
 } from './score-types'
 
 const firstSelectable = <T extends { selectable: boolean }>(items: T[]): T | undefined => items.find(item => item.selectable)
+const isVisibleTarget = (item: ScoreTargetOption): boolean => item.available && (item.group === 'green' || item.group === 'red')
 
 export const useRtaScoreForecast = () => {
   const options = ref<ScoreOptions | null>(null)
@@ -36,7 +37,7 @@ export const useRtaScoreForecast = () => {
   const seasonOptions = computed<ScoreSeasonOption[]>(() => options.value?.seasons || [])
   const leagueOptions = computed<ScoreSimpleOption[]>(() => options.value?.leagues || [])
   const providerOptions = computed<ScoreSimpleOption[]>(() => options.value?.providers || [])
-  const targetOptions = computed<ScoreTargetOption[]>(() => options.value?.targets || [])
+  const targetOptions = computed<ScoreTargetOption[]>(() => (options.value?.targets || []).filter(isVisibleTarget))
   const selectedServer = computed(() => serverOptions.value.find(item => item.key === server.value) || null)
   const selectedSeason = computed(() => seasonOptions.value.find(item => item.season === season.value) || null)
   const selectedLeague = computed(() => leagueOptions.value.find(item => item.key === league.value) || null)
@@ -84,13 +85,14 @@ export const useRtaScoreForecast = () => {
     const seasonCandidate = preserveSelection
       ? nextOptions.seasons.find(item => item.season === oldSelection.season && item.selectable)
       : undefined
+    const visibleTargets = nextOptions.targets.filter(isVisibleTarget)
     const targetCandidate = preserveSelection
-      ? nextOptions.targets.find(item => item.key === oldSelection.targetKey && item.selectable)
+      ? visibleTargets.find(item => item.key === oldSelection.targetKey && item.selectable)
       : undefined
     const defaultSeason =
       nextOptions.seasons.find(item => item.season === nextOptions.defaultSeason && item.selectable) || firstSelectable(nextOptions.seasons)
     const defaultTarget =
-      nextOptions.targets.find(item => item.key === nextOptions.defaultTarget && item.selectable) || firstSelectable(nextOptions.targets)
+      visibleTargets.find(item => item.key === nextOptions.defaultTarget && item.selectable) || firstSelectable(visibleTargets)
     const defaultProvider =
       nextOptions.providers.find(item => item.key === 'swrt' && item.selectable) || firstSelectable(nextOptions.providers)
 
@@ -122,7 +124,7 @@ export const useRtaScoreForecast = () => {
     if (currentResult.status === 'fulfilled') current.value = currentResult.value
     else currentError.value = getScoreErrorMessage(currentResult.reason, '当前分数线暂不可用')
     if (historyResult.status === 'fulfilled') history.value = historyResult.value
-    else historyError.value = getScoreErrorMessage(historyResult.reason, '当前采集趋势暂不可用')
+    else historyError.value = getScoreErrorMessage(historyResult.reason, '当前趋势暂不可用')
     dataLoading.value = false
   }
 

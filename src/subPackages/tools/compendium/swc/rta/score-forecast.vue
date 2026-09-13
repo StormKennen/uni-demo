@@ -107,7 +107,6 @@
                   :class="{ active: targetKey === option.key, disabled: !option.selectable }"
                   @click="selectTargetOption(option)">
                   <text>{{ formatTarget(option.key, option.name) }}</text>
-                  <text v-if="!option.available" class="chip-state">未采集</text>
                 </view>
               </view>
             </scroll-view>
@@ -116,24 +115,21 @@
 
         <view v-if="scopeUnverified" class="scope-notice">
           <uni-icons type="info" size="16" color="var(--theme-text-secondary)" />
-          <text>来源覆盖范围尚未完成核验，当前页面仅展示已采集数据，不用于分数预测。</text>
+          <text>来源覆盖范围尚未完成核验，当前页面仅展示可用分数线，不用于分数预测。</text>
         </view>
 
         <view v-if="!hasAnyData && !hasDataError && !dataLoading" class="state-card">
           <StateBlock text="当前筛选暂无可展示数据" action-text="重新加载" theme="teal" @action="retry" />
-          <text class="state-detail">可以切换赛季或稍后刷新查看新的采集结果</text>
+          <text class="state-detail">可以切换赛季或稍后刷新查看新的数据</text>
         </view>
 
         <template v-if="hasSelection">
-          <view class="section-card cutoff-board-card">
+          <view v-if="cutoffGroups.length || currentError" class="section-card cutoff-board-card">
             <view class="section-heading">
               <view class="heading-copy">
                 <text class="section-title">当前赛季分段分界线</text>
                 <text class="section-subtitle">S{{ season }} · {{ selectedServer?.name || server }} · 各段位当前分数</text>
               </view>
-              <text v-if="current?.cutoffs.length" class="section-badge">
-                {{ current.dataQuality.availableTargetCount ?? 0 }}/{{ current.dataQuality.expectedTargetCount ?? 12 }} 已采集
-              </text>
             </view>
 
             <view v-if="cutoffGroups.length" class="cutoff-groups">
@@ -148,10 +144,8 @@
                     :key="cutoff.key"
                     :class="['cutoff-card', `group-${cutoff.group}`, { highlighted: targetKey === cutoff.key }]">
                     <text class="cutoff-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text>
-                    <text v-if="cutoff.available" class="cutoff-score">{{ formatScore(cutoff.score) }}</text>
-                    <text v-else class="cutoff-score cutoff-score--missing">暂无采集</text>
-                    <text v-if="cutoff.available && cutoff.rank !== null" class="cutoff-rank">目标名次 {{ formatRank(cutoff.rank) }}</text>
-                    <text v-else class="cutoff-rank cutoff-rank--missing">来源未提供该段分界线</text>
+                    <text class="cutoff-score">{{ formatScore(cutoff.score) }}</text>
+                    <text v-if="cutoff.rank !== null" class="cutoff-rank">目标名次 {{ formatRank(cutoff.rank) }}</text>
                   </view>
                 </view>
               </view>
@@ -160,35 +154,27 @@
               <text>{{ currentError }}</text>
               <button class="text-button" size="mini" @click="retry">重试</button>
             </view>
-            <view v-else class="section-state cutoff-board-empty">
-              <text>当前来源没有返回有效分界线</text>
-              <text class="state-detail">低段位占位值不会作为真实分数展示，请稍后刷新或切换来源。</text>
-            </view>
-
             <view v-if="current" class="metadata-row">
-              <text>采集时间 {{ formatDateTime(current.capturedAt) }}</text>
+              <text>数据时间 {{ formatDateTime(current.capturedAt) }}</text>
               <text>来源更新时间 {{ formatDateTime(current.sourceUpdatedAt, '来源未提供') }}</text>
             </view>
             <view v-if="current?.seasonEndsAt" class="metadata-row">
               <text>赛季结束 {{ formatDateTime(current.seasonEndsAt) }}</text>
               <text v-if="config?.researchDisplay.collectionUntil">
-                采集至 {{ formatDateTime(config.researchDisplay.collectionUntil) }}
+                观察截止 {{ formatDateTime(config.researchDisplay.collectionUntil) }}
               </text>
-            </view>
-            <view v-if="current?.dataQuality.warnings.length" class="warning-list">
-              <text v-for="warning in current.dataQuality.warnings" :key="warning">{{ warning }}</text>
             </view>
           </view>
 
           <view v-if="historyChartPoints.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
-                <text class="section-title">当前采集趋势</text>
-                <text class="section-subtitle">{{ selectedTargetLabel }} · 按采集时间</text>
+                <text class="section-title">当前趋势</text>
+                <text class="section-subtitle">{{ selectedTargetLabel }} · 按日期</text>
               </view>
               <text class="section-badge">{{ historyChartPoints.length }} 个样本</text>
             </view>
-            <StageBarChart :points="historyChartPoints" :width="chartWidth(historyChartPoints.length)" />
+            <StageLineChart :points="historyChartPoints" :width="chartWidth(historyChartPoints.length)" />
             <view class="metadata-row">
               <text>时间范围 {{ formatDate(history?.range.from) }} - {{ formatDate(history?.range.to) }}</text>
               <text v-if="history?.dataQuality.status === 'insufficient'">样本较少</text>
@@ -203,7 +189,7 @@
           </view>
 
           <view v-else-if="config?.capabilities.history && dataLoading" class="section-card">
-            <view class="section-heading"><text class="section-title">当前采集趋势</text></view>
+            <view class="section-heading"><text class="section-title">当前趋势</text></view>
             <view class="chart-skeleton"><view class="skeleton-line wide" /><view class="skeleton-line" /></view>
           </view>
         </template>
@@ -217,7 +203,7 @@
   import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
   import dayjs from 'dayjs'
   import StateBlock from '../components/state-block.vue'
-  import StageBarChart from './score-forecast/stage-bar-chart.vue'
+  import StageLineChart from './score-forecast/stage-line-chart.vue'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
   import type { ScoreSeasonOption, ScoreSimpleOption, ScoreTargetOption } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
@@ -270,13 +256,14 @@
   const selectedTargetLabel = computed(() => formatTargetLabel(selectedTarget.value?.key, selectedTarget.value?.name || '当前目标'))
   const cutoffGroups = computed(() => {
     const groups = [
-      { key: 'silver', name: '银段' },
-      { key: 'gold', name: '金段' },
       { key: 'green', name: '绿段' },
       { key: 'red', name: '红段' },
     ]
     return groups
-      .map(group => ({ ...group, cutoffs: (current.value?.cutoffs || []).filter(cutoff => cutoff.group === group.key) }))
+      .map(group => ({
+        ...group,
+        cutoffs: (current.value?.cutoffs || []).filter(cutoff => cutoff.group === group.key && cutoff.available),
+      }))
       .filter(group => group.cutoffs.length)
   })
 
@@ -298,7 +285,7 @@
 
   const formatScore = (value: number | null | undefined): string => formatScoreValue(value)
   const formatRank = (value: number | null | undefined): string => formatRankValue(value)
-  const chartWidth = (count: number): string => `${Math.max(100, count * 92)}rpx`
+  const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
 
   const toInputPoints = (points: Array<{ label: string; score: number | null; key?: string }>): InputPoint[] => {
     const validPoints = points.filter(
@@ -492,17 +479,6 @@
     opacity: 0.42;
   }
 
-  .chip-state {
-    margin-left: 6rpx;
-    color: var(--theme-text-tertiary);
-    font-size: 18rpx;
-    font-weight: 500;
-  }
-
-  .filter-chip.active .chip-state {
-    color: rgba(255, 255, 255, 0.78);
-  }
-
   .section-heading {
     align-items: center;
     margin-bottom: 18rpx;
@@ -572,26 +548,12 @@
     border-color: var(--theme-brand);
   }
 
-  .cutoff-card.group-silver:not(.highlighted) {
-    border-left: 6rpx solid #9aa3ad;
-  }
-
-  .cutoff-card.group-gold:not(.highlighted) {
-    border-left: 6rpx solid #d4a72c;
-  }
-
   .cutoff-card.group-green:not(.highlighted) {
     border-left: 6rpx solid #4ba36d;
   }
 
   .cutoff-card.group-red:not(.highlighted) {
     border-left: 6rpx solid #cf6679;
-  }
-
-  .cutoff-board-empty {
-    flex-direction: column;
-    padding: 28rpx 18rpx;
-    text-align: center;
   }
 
   .cutoff-name,
@@ -617,20 +579,11 @@
     font-weight: 800;
   }
 
-  .cutoff-score--missing {
-    color: var(--theme-text-tertiary);
-    font-size: 26rpx;
-  }
-
   .cutoff-rank,
   .stage-summary-phase {
     margin-top: 6rpx;
     color: var(--theme-text-tertiary);
     font-size: 20rpx;
-  }
-
-  .cutoff-rank--missing {
-    color: var(--theme-text-tertiary);
   }
 
   .metadata-row {
@@ -641,7 +594,6 @@
     font-size: 20rpx;
   }
 
-  .warning-list,
   .quality-notice {
     margin-top: 14rpx;
     padding: 14rpx 16rpx;
@@ -650,12 +602,6 @@
     color: var(--theme-text-secondary);
     font-size: 21rpx;
     line-height: 1.5;
-  }
-
-  .warning-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4rpx;
   }
 
   .scope-notice + .state-card,
