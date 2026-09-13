@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- 2026-09-13 [tools/compendium-swc/rta] 优化 RTA 分数页赛季与目标文案：仅为当前赛季添加“当前”标识，C/P/G 段位转换为一绿/一金/一红等中文名称，并新增当前赛季分段分界线面板及无快照空状态（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 将 RTA 分数页收敛为采集数据展示：复用 Apifox season-history 接口动态加载历史序列，支持区服/赛季/分区/目标筛选、选定赛季阶段走势与多赛季阶段对比；当前 Snapshot/预测不可用时仍可展示历史数据（Codex）
+- 2026-09-12 [tools/compendium-swc-rta-score] 修复线上暂无 RTA 快照时的前端空筛选兜底，显示完整暂无数据状态并支持重试，同时允许无筛选项时读取 config 能力状态（Codex）
+
+- 2026-09-11 [tools/compendium-swc-rta-score] 通过 AAG 生成 RTASCORE 五个公开接口调用层，新增 RTA 分数预测页面与动态服务器/赛季/联赛/目标筛选、当前分数线、历史趋势、结算前预测、数据质量状态及魔灵召唤综合页同级入口（Codex）
+
 - 2026-09-11 [tools/memo/list-block] 新增通用 ListBlock 的有序列表与 P0-P3 优先级列表能力，支持描述、手动上下移、背景色/对齐配置及旧列表模式兼容读取；序号按数组下标渲染，不改变 Memo API 与后端结构（Codex）
 
 - 2026-09-10 [memo/route] 扩展 RouteNode 的时间点、停留时长、地址与经纬度字段；同步增强两套备忘录编辑器的字段编辑与 JSON 导入、详情页按坐标复用现有地图导航，并保持旧 time 字段兼容（Codex）
