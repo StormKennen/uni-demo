@@ -95,22 +95,6 @@
               </view>
             </scroll-view>
           </view>
-
-          <view v-if="targetOptions.length" class="filter-row">
-            <text class="filter-label">目标</text>
-            <scroll-view class="chip-scroll" scroll-x enable-flex>
-              <view class="chip-list">
-                <view
-                  v-for="option in targetOptions"
-                  :key="option.key"
-                  class="filter-chip"
-                  :class="{ active: targetKey === option.key, disabled: !option.selectable }"
-                  @click="selectTargetOption(option)">
-                  <text>{{ formatTarget(option.key, option.name) }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
         </view>
 
         <view v-if="scopeUnverified" class="scope-notice">
@@ -190,6 +174,21 @@
                 <text class="section-subtitle">按日期变化 · 当前段位独立刻度</text>
               </view>
               <text class="section-badge">{{ selectedTargetChartPoints.length }} 个样本</text>
+            </view>
+            <view v-if="targetOptions.length" class="chart-filter-row">
+              <text class="filter-label">目标</text>
+              <scroll-view class="chip-scroll" scroll-x enable-flex>
+                <view class="chip-list">
+                  <view
+                    v-for="option in targetOptions"
+                    :key="option.key"
+                    class="filter-chip"
+                    :class="{ active: targetKey === option.key, disabled: !option.selectable }"
+                    @click="selectTargetOption(option)">
+                    <text>{{ formatTarget(option.key, option.name) }}</text>
+                  </view>
+                </view>
+              </scroll-view>
             </view>
             <StageLineChart
               :categories="selectedTargetChartCategories"
@@ -509,6 +508,13 @@
 
   .filter-row + .filter-row {
     margin-top: 18rpx;
+  }
+
+  .chart-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 18rpx;
   }
 
   .filter-label {
