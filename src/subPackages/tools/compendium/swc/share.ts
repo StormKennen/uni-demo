@@ -1,4 +1,5 @@
 import { SWC_GAME_COUPON_CONFIG } from '../../game-coupons/config'
+import { SWC_RTA_SCORE_SHARE_IMAGE_URL } from '@/config/tool-assets'
 import type { ShareConfig } from '@/utils/share'
 
 export interface TimelineShareConfig {
@@ -17,8 +18,8 @@ interface QueryValueMap {
 }
 
 const SWC_SHARE_IMAGE = '/static/logo.png'
-// Project-owned OSS copy of the official Summoners War share image.
-export const SWC_RTA_SCORE_SHARE_IMAGE = 'https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/swc.jpg'
+// RTA 分享封面使用 OSS 资源，避免将大图打入微信小程序主包。
+export const SWC_RTA_SCORE_SHARE_IMAGE = SWC_RTA_SCORE_SHARE_IMAGE_URL
 const SWC_COUPONS_SHARE_IMAGE = SWC_GAME_COUPON_CONFIG.managementHeroImage
 const SWC_HOME_PATH = '/subPackages/tools/compendium/swc/index'
 const SWC_LIST_PATH = '/subPackages/tools/compendium/swc/list'
