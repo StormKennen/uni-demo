@@ -163,9 +163,10 @@
   const chartSeries = computed<ChartSeries[]>(() => allChartSeries.value.filter(series => isSeriesVisible(series.key)))
 
   const segments = computed<ChartSegment[]>(() =>
-    chartSeries.value.flatMap(series =>
-      series.points.slice(1).flatMap((point, pointIndex) => {
-        const previous = series.points[pointIndex]
+    chartSeries.value.flatMap(series => {
+      const orderedPoints = [...series.points].sort((left, right) => left.index - right.index)
+      return orderedPoints.slice(1).flatMap((point, pointIndex) => {
+        const previous = orderedPoints[pointIndex]
         if (point.index !== previous.index + 1) return []
         const x1 = (previous.x / 100) * plotWidth.value
         const y1 = (previous.y / 100) * plotHeight
@@ -187,8 +188,8 @@
             },
           },
         ]
-      }),
-    ),
+      })
+    }),
   )
 
   const formatScore = (value: number | null): string => formatScoreValue(value)

@@ -8,6 +8,7 @@
 ## Unreleased
 
 - 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 阶段趋势折线图横轴顺序，按剩余天数升序展示“剩1天、剩2天……”，并将“结算”放在末尾（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 修复阶段趋势折线在横轴倒计时升序后只显示数据点的问题，连线前按阶段索引重新排序，恢复完整曲线（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 统一分段星星颜色：银区、金区、绿区、红区内的一二三星分别使用同一区域的统一颜色，不再按星级使用渐变色（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 阶段明细改用“剩 N 天/结算”中文文案，表头仅展示对应的星星组件（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 统一 RTA 分数展示顺序：顶部列表、阶段明细和趋势筛选均按红区在前、绿区在后排列（Codex）
