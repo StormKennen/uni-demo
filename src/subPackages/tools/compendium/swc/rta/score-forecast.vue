@@ -258,7 +258,7 @@
   import { SWC_RTA_SCORE_SHARE_IMAGE } from '../share'
   import StageLineChart from './score-forecast/stage-line-chart.vue'
   import RtaTierStars from './score-forecast/RtaTierStars.vue'
-  import { getRtaTierColor } from './score-forecast/rta-tier'
+  import { getRtaTierColor, getRtaTierMeta } from './score-forecast/rta-tier'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
   import type { ScoreCutoff, ScoreSeasonHistory, ScoreSeasonHistoryPoint, ScoreSeasonOption } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
@@ -504,9 +504,16 @@
 
   const orderedPhaseChartSeries = computed<TrendSeries[]>(() => [...phaseChartSeries.value].sort(sortTrendSeries))
 
-  const phaseTableTargets = computed(() =>
-    ['red', 'green'].flatMap(group => (options.value?.targets || []).filter(target => target.group === group)),
-  )
+  const phaseTableTargets = computed(() => {
+    const groupOrder: Record<string, number> = { red: 0, green: 1 }
+    return (options.value?.targets || [])
+      .filter(target => target.group === 'red' || target.group === 'green')
+      .sort((left, right) => {
+        const groupDiff = groupOrder[left.group] - groupOrder[right.group]
+        if (groupDiff !== 0) return groupDiff
+        return (getRtaTierMeta(right.key)?.count || 0) - (getRtaTierMeta(left.key)?.count || 0)
+      })
+  })
 
   const phaseTableRows = computed<PhaseTableRow[]>(() =>
     phaseChartCategories.value.map(phase => {
