@@ -96,16 +96,31 @@
   }>()
 
   const COLORS = ['#2864c7', '#31a36c', '#e08a2e', '#9b5bc7', '#d05264', '#4d849f']
-  const selectedSeriesKey = ref<string | null>(null)
+  const selectedSeriesKeys = ref<Set<string> | null>(null)
   const plotWidth = computed(() => Math.max(300, props.categories.length * 110))
   const plotHeight = 230
   const seriesKeySignature = computed(() => props.series.map(series => series.key).join('|'))
   watch(seriesKeySignature, () => {
-    selectedSeriesKey.value = null
+    selectedSeriesKeys.value = null
   })
-  const isSeriesVisible = (key: string): boolean => !selectedSeriesKey.value || selectedSeriesKey.value === key
+  const isSeriesVisible = (key: string): boolean => !selectedSeriesKeys.value || selectedSeriesKeys.value.has(key)
   const toggleSeries = (key: string): void => {
-    selectedSeriesKey.value = selectedSeriesKey.value === key ? null : key
+    if (!selectedSeriesKeys.value) {
+      selectedSeriesKeys.value = new Set([key])
+      return
+    }
+
+    const next = new Set(selectedSeriesKeys.value)
+    if (next.has(key)) {
+      if (next.size === 1) {
+        selectedSeriesKeys.value = null
+        return
+      }
+      next.delete(key)
+    } else {
+      next.add(key)
+    }
+    selectedSeriesKeys.value = next
   }
   const visibleSeries = computed(() => props.series.filter(series => isSeriesVisible(series.key)))
   const scores = computed(() =>
