@@ -8,6 +8,7 @@
 ## Unreleased
 
 - 2026-09-14 [tools/compendium-swc/rta] 阶段明细改用“剩 N 天/结算”中文文案，表头仅展示对应的星星组件（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 统一 RTA 分数展示顺序：顶部列表、阶段明细和趋势筛选均按红区在前、绿区在后排列（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 为趋势图增加段位筛选和可点击图例，可查看单个分段或隐藏/恢复指定曲线（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 趋势图段位配色：绿区、红区分别按一/二/三档由浅到深显示，数据点改为无描边实心小圆点（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 适配 RTA 相对结算阶段数据：当前赛季优先展示完整 `10D`～`FINAL` 多目标趋势、按绿/红分区着色，并新增中文星级分数列表与可复用 RTA 星星组件；历史赛季继续展示 `FINAL` 分数线（Codex）

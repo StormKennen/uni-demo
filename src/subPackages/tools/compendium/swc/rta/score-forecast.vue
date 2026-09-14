@@ -348,8 +348,8 @@
   )
   const scoreSummaryGroups = computed<ScoreSummaryGroup[]>(() => {
     const groups: Array<{ key: ScoreSummaryGroup['key']; name: string }> = [
-      { key: 'green', name: '绿区' },
       { key: 'red', name: '红区' },
+      { key: 'green', name: '绿区' },
     ]
     const sourceCutoffs = current.value?.cutoffs ?? historicalCutoffs.value
     const cutoffByKey = new Map(sourceCutoffs.map(cutoff => [cutoff.key, cutoff]))
@@ -488,8 +488,18 @@
       .filter((series): series is TrendSeries => series !== null),
   )
 
+  const targetGroupOrder = (targetKey: string): number => {
+    const group = options.value?.targets.find(target => target.key === targetKey)?.group
+    return group === 'red' ? 0 : group === 'green' ? 1 : 2
+  }
+
+  const sortTrendSeries = (left: TrendSeries, right: TrendSeries): number =>
+    targetGroupOrder(left.targetKey) - targetGroupOrder(right.targetKey)
+
+  const orderedPhaseChartSeries = computed<TrendSeries[]>(() => [...phaseChartSeries.value].sort(sortTrendSeries))
+
   const phaseTableTargets = computed(() =>
-    (options.value?.targets || []).filter(target => target.group === 'green' || target.group === 'red'),
+    ['red', 'green'].flatMap(group => (options.value?.targets || []).filter(target => target.group === group)),
   )
 
   const phaseTableRows = computed<PhaseTableRow[]>(() =>
@@ -544,10 +554,12 @@
       .filter((series): series is TrendSeries => series !== null),
   )
 
-  const trendChartMode = computed<'phase' | 'date'>(() => (phaseChartSeries.value.length ? 'phase' : 'date'))
+  const orderedDateChartSeries = computed<TrendSeries[]>(() => [...dateChartSeries.value].sort(sortTrendSeries))
+
+  const trendChartMode = computed<'phase' | 'date'>(() => (orderedPhaseChartSeries.value.length ? 'phase' : 'date'))
   const trendChartCategories = computed(() => (trendChartMode.value === 'phase' ? phaseChartCategories.value : dateChartCategories.value))
   const trendChartSeries = computed<TrendSeries[]>(() =>
-    trendChartMode.value === 'phase' ? phaseChartSeries.value : dateChartSeries.value,
+    trendChartMode.value === 'phase' ? orderedPhaseChartSeries.value : orderedDateChartSeries.value,
   )
   const trendTargetFilter = ref('')
   const trendTargetFilterOptions = computed(() =>
