@@ -22,7 +22,7 @@
           <template v-for="series in chartSeries" :key="series.key">
             <view v-for="point in series.points" :key="point.key" class="line-point" :style="{ left: `${point.x}%`, top: `${point.y}%` }">
               <text class="point-score" :style="{ color: point.color }">{{ formatScore(point.score) }}</text>
-              <view class="point-dot" :style="{ backgroundColor: point.color, boxShadow: `0 0 0 2rpx ${point.color}` }" />
+              <view class="point-dot" :style="{ backgroundColor: point.color }" />
             </view>
           </template>
         </view>
@@ -248,9 +248,8 @@
     position: absolute;
     top: -8rpx;
     left: -8rpx;
-    width: 16rpx;
-    height: 16rpx;
-    border: 4rpx solid var(--theme-surface);
+    width: 12rpx;
+    height: 12rpx;
     border-radius: 50%;
   }
 
