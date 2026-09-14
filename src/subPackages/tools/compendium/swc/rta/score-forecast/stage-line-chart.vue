@@ -34,7 +34,12 @@
         </view>
 
         <view class="chart-legend">
-          <view v-for="series in chartSeries" :key="`${series.key}-legend`" class="legend-item">
+          <view
+            v-for="series in allChartSeries"
+            :key="`${series.key}-legend`"
+            class="legend-item"
+            :class="{ inactive: !isSeriesVisible(series.key) }"
+            @click="toggleSeries(series.key)">
             <view class="legend-line" :style="{ backgroundColor: series.color }" />
             <text>{{ series.label }}</text>
           </view>
@@ -45,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { formatScoreValue } from './score-normalizers'
 
   interface StageLinePoint {
@@ -91,10 +96,23 @@
   }>()
 
   const COLORS = ['#2864c7', '#31a36c', '#e08a2e', '#9b5bc7', '#d05264', '#4d849f']
+  const hiddenSeriesKeys = ref<Set<string>>(new Set())
   const plotWidth = computed(() => Math.max(300, props.categories.length * 110))
   const plotHeight = 230
+  const seriesKeySignature = computed(() => props.series.map(series => series.key).join('|'))
+  watch(seriesKeySignature, () => {
+    hiddenSeriesKeys.value = new Set()
+  })
+  const isSeriesVisible = (key: string): boolean => !hiddenSeriesKeys.value.has(key)
+  const toggleSeries = (key: string): void => {
+    const next = new Set(hiddenSeriesKeys.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    hiddenSeriesKeys.value = next
+  }
+  const visibleSeries = computed(() => props.series.filter(series => isSeriesVisible(series.key)))
   const scores = computed(() =>
-    props.series.flatMap(series => series.points.map(point => point.score)).filter(score => Number.isFinite(score)),
+    visibleSeries.value.flatMap(series => series.points.map(point => point.score)).filter(score => Number.isFinite(score)),
   )
   const chartMax = computed(() => (scores.value.length ? Math.max(...scores.value) : null))
   const chartMin = computed(() => (scores.value.length ? Math.min(...scores.value) : null))
@@ -114,7 +132,7 @@
     return 88 - ratio * 76
   }
 
-  const chartSeries = computed<ChartSeries[]>(() =>
+  const allChartSeries = computed<ChartSeries[]>(() =>
     props.series.map((series, seriesIndex) => {
       const color = series.color || COLORS[seriesIndex % COLORS.length]
       return {
@@ -129,6 +147,8 @@
       }
     }),
   )
+
+  const chartSeries = computed<ChartSeries[]>(() => allChartSeries.value.filter(series => isSeriesVisible(series.key)))
 
   const segments = computed<ChartSegment[]>(() =>
     chartSeries.value.flatMap(series =>
@@ -282,9 +302,14 @@
     display: inline-flex;
     align-items: center;
     gap: 8rpx;
+    padding: 8rpx 0;
     color: var(--theme-text-tertiary);
     font-size: 18rpx;
     line-height: 1;
+  }
+
+  .legend-item.inactive {
+    opacity: 0.35;
   }
 
   .legend-line {

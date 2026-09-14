@@ -208,9 +208,28 @@
                 <text class="section-subtitle">{{ trendChartMode === 'phase' ? '多目标 · 按距结算倒计时展示' : '按采集日期展示' }}</text>
               </view>
             </view>
+            <view v-if="trendTargetFilterOptions.length > 1" class="chart-filter-row">
+              <text class="filter-label">分段</text>
+              <scroll-view class="chip-scroll" scroll-x enable-flex>
+                <view class="chip-list">
+                  <view class="filter-chip" :class="{ active: !trendTargetFilter }" @click="selectTrendTarget('')">
+                    <text>全部</text>
+                  </view>
+                  <view
+                    v-for="option in trendTargetFilterOptions"
+                    :key="option.key"
+                    class="filter-chip"
+                    :class="{ active: trendTargetFilter === option.key }"
+                    @click="selectTrendTarget(option.key)">
+                    <RtaTierStars :target-key="option.key" :size="20" />
+                    <text>{{ option.name }}</text>
+                  </view>
+                </view>
+              </scroll-view>
+            </view>
             <StageLineChart
               :categories="trendChartCategories"
-              :series="trendChartSeries"
+              :series="visibleTrendChartSeries"
               :width="chartWidth(trendChartCategories.length)" />
             <view class="metadata-row">
               <text v-if="trendChartMode === 'phase'">
@@ -248,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import dayjs from 'dayjs'
   import StateBlock from '../components/state-block.vue'
@@ -270,6 +289,7 @@
 
   interface TrendSeries {
     key: string
+    targetKey: string
     label: string
     color?: string
     points: TrendPoint[]
@@ -478,6 +498,7 @@
         if (!target || !points.length) return null
         return {
           key: `phase-${item.target.key}`,
+          targetKey: target.key,
           label: formatTarget(target.key, target.name),
           color: getRtaTierColor(target.key),
           points,
@@ -533,6 +554,7 @@
         if (!points.length) return null
         return {
           key: `date-${item.target.key}`,
+          targetKey: target.key,
           label: formatTarget(target.key, target.name),
           color: getRtaTierColor(target.key),
           points,
@@ -546,6 +568,27 @@
   const trendChartSeries = computed<TrendSeries[]>(() =>
     trendChartMode.value === 'phase' ? phaseChartSeries.value : dateChartSeries.value,
   )
+  const trendTargetFilter = ref('')
+  const trendTargetFilterOptions = computed(() =>
+    trendChartSeries.value.map(series => ({
+      key: series.targetKey,
+      name: formatTarget(series.targetKey, series.label),
+    })),
+  )
+  watch(trendTargetFilterOptions, nextOptions => {
+    if (trendTargetFilter.value && !nextOptions.some(option => option.key === trendTargetFilter.value)) {
+      trendTargetFilter.value = ''
+    }
+  })
+  const visibleTrendChartSeries = computed<TrendSeries[]>(() => {
+    if (!trendTargetFilter.value || !trendChartSeries.value.some(series => series.targetKey === trendTargetFilter.value)) {
+      return trendChartSeries.value
+    }
+    return trendChartSeries.value.filter(series => series.targetKey === trendTargetFilter.value)
+  })
+  const selectTrendTarget = (key: string): void => {
+    trendTargetFilter.value = key
+  }
 
   const trendChartRange = computed(() => {
     const points = historySeries.value
