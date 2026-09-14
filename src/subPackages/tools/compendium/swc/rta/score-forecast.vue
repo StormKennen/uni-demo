@@ -1,7 +1,7 @@
 <template>
   <PageLayout
     title="RTA分数线"
-    share-title="魔灵召唤 RTA分数预测｜趋势"
+    :share-title="rtaShareTitle"
     :share-image-url="SWC_RTA_SCORE_SHARE_IMAGE"
     :nav-back="true"
     back-fallback="/subPackages/tools/compendium/swc/index"
@@ -396,6 +396,19 @@
   const formatScore = (value: number | null | undefined): string => formatScoreValue(value)
   const formatRank = (value: number | null | undefined): string => formatRankValue(value)
   const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
+  const defaultRtaShareTitle = '魔灵召唤 RTA分数预测｜趋势'
+  const shareNow = ref(Date.now())
+
+  const rtaShareTitle = computed(() => {
+    shareNow.value
+    if (isHistoricalSeason.value || !current.value?.seasonEndsAt) return defaultRtaShareTitle
+    if (current.value.season !== null && current.value.season !== season.value) return defaultRtaShareTitle
+
+    const seasonEndsAt = dayjs(current.value.seasonEndsAt)
+    const remainingDays = seasonEndsAt.diff(dayjs(shareNow.value), 'day', true)
+    if (!seasonEndsAt.isValid() || remainingDays <= 0) return defaultRtaShareTitle
+    return `RTA分数预测 ｜ 距离赛季结算，还剩${Math.ceil(remainingDays)}天`
+  })
 
   const formatPhase = (point: ScoreSeasonHistoryPoint): string => {
     if (point.daysToFinal === 0 || point.phase.trim().toUpperCase() === 'FINAL') return '结算'
@@ -616,18 +629,19 @@
   })
 
   onShow(() => {
+    shareNow.value = Date.now()
     reportToolVisit('compendium-swc-rta-score-forecast')
   })
 
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => ({
-    title: '魔灵召唤 RTA分数预测｜每日分数线趋势',
+    title: rtaShareTitle.value,
     path: '/subPackages/tools/compendium/swc/rta/score-forecast',
     imageUrl: SWC_RTA_SCORE_SHARE_IMAGE,
   }))
 
   onShareTimeline(() => ({
-    title: '魔灵召唤 RTA分数预测｜每日分数线趋势',
+    title: rtaShareTitle.value,
     query: '',
     imageUrl: SWC_RTA_SCORE_SHARE_IMAGE,
   }))
