@@ -125,7 +125,7 @@
                   <view v-for="cutoff in group.cutoffs" :key="cutoff.key" :class="['score-summary-item', `group-${cutoff.group}`]">
                     <view class="score-summary-target">
                       <RtaTierStars :target-key="cutoff.key" :size="24" />
-                      <text class="score-summary-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text>
+                      <!-- <text class="score-summary-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text> -->
                     </view>
                     <text class="score-summary-score">{{ formatScore(cutoff.score) }}</text>
                     <text v-if="cutoff.rank !== null" class="score-summary-rank">第 {{ formatRank(cutoff.rank) }} 名</text>

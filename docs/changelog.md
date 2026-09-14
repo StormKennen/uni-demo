@@ -15,6 +15,7 @@
 - 2026-09-14 [tools/compendium-swc/rta] 阶段明细改用“剩 N 天/结算”中文文案，表头仅展示对应的星星组件（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 统一 RTA 分数展示顺序：顶部列表、阶段明细和趋势筛选均按红区在前、绿区在后排列（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 为趋势图增加段位筛选和可点击图例，可查看单个分段或隐藏/恢复指定曲线（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 更新微信分享封面文案与角色构图：`魔灵召唤` 与同一行的 `RTA` 分行展示，替换为巨龙 Boss、光属性方舟天使和暗属性龙骑士（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 趋势图段位配色：绿区、红区分别按一/二/三档由浅到深显示，数据点改为无描边实心小圆点（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 适配 RTA 相对结算阶段数据：当前赛季优先展示完整 `10D`～`FINAL` 多目标趋势、按绿/红分区着色，并新增中文星级分数列表与可复用 RTA 星星组件；历史赛季继续展示 `FINAL` 分数线（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 缓存历史赛季相对曲线，避免切换筛选或返回页面时重复请求同一目标数据；刷新时统一清理各层缓存（Codex）
@@ -25,6 +26,7 @@
 - 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页补充微信好友与朋友圈页面级分享回调，使用用户提供的 `swc.jpg` OSS 封面（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 将分数线数据时间移动到卡片标题右侧，并改为“生成于”格式展示（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 收紧 RTA 分数线筛选栏顶部间距，暂不启用吸顶以避免被自定义导航栏遮挡（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 新增适配微信分享卡片的中文 RTA 分享封面，使用本地静态资源替换原英文远程封面（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 支持切换已落库的历史赛季并展示 `FINAL` 分数线；历史赛季不展示无法按绝对日期对齐的趋势图，当前赛季继续展示日趋势（Codex）
 
 - 2026-09-13 [config/compendium-swc] 将用户提供的魔灵召唤 PNG logo 接入“魔灵图鉴”综合入口和工具目录入口，保留其他入口的 uni-icons 图标方案（Codex）
