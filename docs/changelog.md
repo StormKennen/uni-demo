@@ -7,6 +7,7 @@
 
 ## Unreleased
 
+- 2026-09-14 [tools/compendium-swc/rta] 适配 RTA 相对结算阶段数据：当前赛季优先展示完整 `10D`～`FINAL` 多目标趋势、按绿/红分区着色，并新增中文星级分数列表与可复用 RTA 星星组件；历史赛季继续展示 `FINAL` 分数线（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 缓存历史赛季相对曲线，避免切换筛选或返回页面时重复请求同一目标数据；刷新时统一清理各层缓存（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 重新优化 RTA 分数页读链路：首屏并行加载 options/config，按筛选缓存 config/current/history，current 返回后同步目标可用性，趋势图继续异步加载（Codex）
 - 2026-09-13 [tools/compendium-swc/rta] 筛选切换复用已加载的 options，避免重复请求筛选枚举；补齐 season-history 的 provider 请求类型，减少筛选切换首屏等待（Codex）

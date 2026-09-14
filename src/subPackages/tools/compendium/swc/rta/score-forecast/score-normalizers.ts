@@ -316,11 +316,17 @@ export const normalizeScoreSeasonHistory = (response: unknown): ScoreSeasonHisto
   const data = unwrapBusinessData(response)
   const target = toRecord(data.target)
   const quality = toRecord(data.dataQuality)
+  const seasonStatus = toText(data.seasonStatus)
   return {
     server: toText(data.server),
     season: toInteger(data.season),
     league: toText(data.league),
-    target: { key: toText(target.key) },
+    seasonStartsAt: toText(data.seasonStartsAt) || null,
+    seasonEndsAt: toText(data.seasonEndsAt) || null,
+    seasonStatus: seasonStatus === 'upcoming' || seasonStatus === 'active' || seasonStatus === 'finalized' ? seasonStatus : null,
+    provider: toText(data.provider),
+    providers: Array.isArray(data.providers) ? data.providers.map(toText).filter(Boolean) : [],
+    target: { key: toText(target.key), name: toText(target.name) || undefined },
     seriesType: data.seriesType === 'relative-to-final' ? 'relative-to-final' : '',
     points: Array.isArray(data.points)
       ? data.points
@@ -338,6 +344,9 @@ export const normalizeScoreSeasonHistory = (response: unknown): ScoreSeasonHisto
     dataQuality: {
       scopeVerified: toBoolean(quality.scopeVerified),
       eligibleForForecast: toBoolean(quality.eligibleForForecast),
+      merged: toBoolean(quality.merged),
+      sourceCount: toInteger(quality.sourceCount) ?? undefined,
+      providers: Array.isArray(quality.providers) ? quality.providers.map(toText).filter(Boolean) : [],
     },
   }
 }

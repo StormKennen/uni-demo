@@ -144,14 +144,23 @@ export interface ScoreSeasonHistory {
   server: string
   season: number | null
   league: string
+  seasonStartsAt?: string | null
+  seasonEndsAt?: string | null
+  seasonStatus?: 'upcoming' | 'active' | 'finalized' | null
+  provider?: string
+  providers?: string[]
   target: {
     key: string
+    name?: string
   }
   seriesType: 'relative-to-final' | ''
   points: ScoreSeasonHistoryPoint[]
   dataQuality: {
     scopeVerified: boolean
     eligibleForForecast: boolean
+    merged?: boolean
+    sourceCount?: number
+    providers?: string[]
   }
 }
 

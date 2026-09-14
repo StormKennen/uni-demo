@@ -122,7 +122,7 @@
         </view>
 
         <template v-if="hasSelection">
-          <view v-if="cutoffGroups.length || currentError" class="section-card cutoff-board-card">
+          <view v-if="scoreSummaryGroups.length || currentError" class="section-card cutoff-board-card">
             <view class="section-heading">
               <view class="heading-copy">
                 <text class="section-title">分数线</text>
@@ -131,17 +131,19 @@
               <text v-if="current" class="section-generated-at">生成于 {{ formatDateTime(current.capturedAt) }}</text>
             </view>
 
-            <view v-if="cutoffGroups.length" class="cutoff-groups">
-              <view v-for="group in cutoffGroups" :key="group.key" class="cutoff-group">
+            <view v-if="scoreSummaryGroups.length" class="score-summary-groups">
+              <view v-for="group in scoreSummaryGroups" :key="group.key" class="score-summary-group">
                 <view class="cutoff-group-heading">
                   <text class="cutoff-group-title">{{ group.name }}</text>
-                  <!-- <text class="cutoff-group-subtitle">一 / 二 / 三</text> -->
                 </view>
-                <view class="cutoff-group-grid">
-                  <view v-for="cutoff in group.cutoffs" :key="cutoff.key" :class="['cutoff-card', `group-${cutoff.group}`]">
-                    <text class="cutoff-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text>
-                    <text class="cutoff-score">{{ formatScore(cutoff.score) }}</text>
-                    <text v-if="cutoff.rank !== null" class="cutoff-rank">目标名次 {{ formatRank(cutoff.rank) }}</text>
+                <view class="score-summary-list">
+                  <view v-for="cutoff in group.cutoffs" :key="cutoff.key" :class="['score-summary-item', `group-${cutoff.group}`]">
+                    <view class="score-summary-target">
+                      <RtaTierStars :target-key="cutoff.key" :size="24" />
+                      <text class="score-summary-name">{{ formatTarget(cutoff.key, cutoff.name) }}</text>
+                    </view>
+                    <text class="score-summary-score">{{ formatScore(cutoff.score) }}</text>
+                    <text v-if="cutoff.rank !== null" class="score-summary-rank">第 {{ formatRank(cutoff.rank) }} 名</text>
                   </view>
                 </view>
               </view>
@@ -173,39 +175,52 @@
             </view>
           </view> -->
 
-          <view v-if="!isHistoricalSeason && selectedTargetChartPoints.length" class="section-card">
+          <view v-if="!isHistoricalSeason && phaseTableRows.length" class="section-card">
+            <view class="section-heading">
+              <view class="heading-copy">
+                <text class="section-title">阶段明细</text>
+                <text class="section-subtitle">按距结算倒计时对照分数</text>
+              </view>
+            </view>
+            <scroll-view class="phase-table-scroll" scroll-x enable-flex>
+              <view class="phase-table" :style="{ width: phaseTableWidth }">
+                <view class="phase-table-row phase-table-header">
+                  <view class="phase-table-cell phase-table-phase">阶段</view>
+                  <view v-for="target in phaseTableTargets" :key="target.key" class="phase-table-cell phase-table-target">
+                    <RtaTierStars :target-key="target.key" :size="20" layout="stacked" />
+                    <text>{{ formatTarget(target.key, target.name) }}</text>
+                  </view>
+                </view>
+                <view v-for="row in phaseTableRows" :key="row.phase" class="phase-table-row">
+                  <view class="phase-table-cell phase-table-phase">{{ row.phase }}</view>
+                  <view v-for="target in phaseTableTargets" :key="`${row.phase}-${target.key}`" class="phase-table-cell phase-table-score">
+                    <text>{{ formatScore(row.scores[target.key]) }}</text>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view v-if="!isHistoricalSeason && trendChartSeries.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
                 <text class="section-title">趋势</text>
-                <!-- <text class="section-subtitle">按日期变化 · 当前段位独立刻度</text> -->
+                <text class="section-subtitle">{{ trendChartMode === 'phase' ? '多目标 · 按距结算倒计时展示' : '按采集日期展示' }}</text>
               </view>
-              <!-- <text class="section-badge">{{ selectedTargetChartPoints.length }} 个样本</text> -->
-            </view>
-            <view v-if="targetOptions.length" class="chart-filter-row">
-              <text class="filter-label">目标</text>
-              <scroll-view class="chip-scroll" scroll-x enable-flex>
-                <view class="chip-list">
-                  <view
-                    v-for="option in targetOptions"
-                    :key="option.key"
-                    class="filter-chip"
-                    :class="{ active: targetKey === option.key, disabled: !option.selectable }"
-                    @click="selectTargetOption(option)">
-                    <text>{{ formatTarget(option.key, option.name) }}</text>
-                  </view>
-                </view>
-              </scroll-view>
             </view>
             <StageLineChart
-              :categories="selectedTargetChartCategories"
-              :series="selectedTargetChartSeries"
-              :width="chartWidth(selectedTargetChartCategories.length)" />
+              :categories="trendChartCategories"
+              :series="trendChartSeries"
+              :width="chartWidth(trendChartCategories.length)" />
             <view class="metadata-row">
-              <text>时间范围 {{ formatDate(selectedTargetChartRange.from) }} - {{ formatDate(selectedTargetChartRange.to) }}</text>
+              <text v-if="trendChartMode === 'phase'">
+                阶段 {{ trendChartCategories[0] }} - {{ trendChartCategories[trendChartCategories.length - 1] }}
+              </text>
+              <text v-else>时间范围 {{ formatDate(trendChartRange.from) }} - {{ formatDate(trendChartRange.to) }}</text>
             </view>
           </view>
 
-          <view v-if="historyError && !historyChartSeries.length" class="section-card">
+          <view v-if="historyError && !trendChartSeries.length && !phaseTableRows.length" class="section-card">
             <view class="section-state section-error-state">
               <text>{{ historyError }}</text>
               <button class="text-button" size="mini" @click="retry">重试</button>
@@ -214,8 +229,8 @@
 
           <view
             v-if="
-              !historyChartSeries.length &&
-              !selectedTargetChartPoints.length &&
+              !trendChartSeries.length &&
+              !phaseTableRows.length &&
               !historyError &&
               !isHistoricalSeason &&
               (config?.capabilities.history || config?.capabilities.historicalSeasonHistory) &&
@@ -239,8 +254,10 @@
   import StateBlock from '../components/state-block.vue'
   import { SWC_RTA_SCORE_SHARE_IMAGE } from '../share'
   import StageLineChart from './score-forecast/stage-line-chart.vue'
+  import RtaTierStars from './score-forecast/RtaTierStars.vue'
+  import { getRtaTierColor } from './score-forecast/rta-tier'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
-  import type { ScoreCutoff, ScoreHistory, ScoreSeasonOption, ScoreTargetOption } from './score-forecast/score-types'
+  import type { ScoreCutoff, ScoreSeasonHistory, ScoreSeasonHistoryPoint, ScoreSeasonOption } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -254,7 +271,23 @@
   interface TrendSeries {
     key: string
     label: string
+    color?: string
     points: TrendPoint[]
+  }
+
+  interface PhaseChartPoint extends ScoreSeasonHistoryPoint {
+    label: string
+  }
+
+  interface ScoreSummaryGroup {
+    key: 'green' | 'red'
+    name: string
+    cutoffs: ScoreCutoff[]
+  }
+
+  interface PhaseTableRow {
+    phase: string
+    scores: Record<string, number | null>
   }
 
   const {
@@ -275,8 +308,6 @@
     seasonOptions,
     providerOptions,
     provider,
-    targetOptions,
-    selectedTarget,
     currentError,
     historyError,
     isHistoricalSeason,
@@ -284,7 +315,6 @@
     refresh,
     selectSeason,
     selectProvider,
-    selectTarget,
     retry,
   } = useRtaScoreForecast()
 
@@ -298,13 +328,14 @@
   const contentLoading = computed(() => (loading.value || dataLoading.value) && !hasAnyData.value)
   const hasDataError = computed(() => Boolean(currentError.value || historyError.value))
   const displayErrorMessage = computed(() => [errorMessage.value, currentError.value, historyError.value].filter(Boolean).join('；'))
-  const selectedTargetLabel = computed(() => formatTargetLabel(selectedTarget.value?.key, selectedTarget.value?.name || '当前目标'))
+  const isRenderableScore = (value: number | null | undefined): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value !== 1
   const historicalCutoffs = computed<ScoreCutoff[]>(() =>
     seasonHistorySeries.value
       .map(item => {
-        const target = targetOptions.value.find(option => option.key === item.target.key)
+        const target = options.value?.targets.find(option => option.key === item.target.key)
         const finalPoint = item.points.find(point => point.phase === 'FINAL' || point.daysToFinal === 0)
-        if (!target || typeof finalPoint?.score !== 'number' || !Number.isFinite(finalPoint.score)) return null
+        if (!target || !isRenderableScore(finalPoint?.score)) return null
         return {
           ...target,
           latestScore: finalPoint.score,
@@ -314,16 +345,33 @@
       })
       .filter((cutoff): cutoff is ScoreCutoff => cutoff !== null),
   )
-  const cutoffGroups = computed(() => {
-    const groups = [
+  const scoreSummaryGroups = computed<ScoreSummaryGroup[]>(() => {
+    const groups: Array<{ key: ScoreSummaryGroup['key']; name: string }> = [
       { key: 'green', name: '绿区' },
       { key: 'red', name: '红区' },
     ]
-    const cutoffs = current.value?.cutoffs ?? historicalCutoffs.value
+    const sourceCutoffs = current.value?.cutoffs ?? historicalCutoffs.value
+    const cutoffByKey = new Map(sourceCutoffs.map(cutoff => [cutoff.key, cutoff]))
     return groups
       .map(group => ({
         ...group,
-        cutoffs: cutoffs.filter(cutoff => cutoff.group === group.key && cutoff.available),
+        cutoffs: (options.value?.targets || [])
+          .filter(target => target.group === group.key)
+          .map(target => {
+            const cutoff = cutoffByKey.get(target.key)
+            const score = isRenderableScore(cutoff?.score) ? cutoff.score : null
+            return {
+              ...target,
+              ...(cutoff
+                ? {
+                    rank: cutoff.rank,
+                    latestScore: score,
+                    available: cutoff.available && score !== null,
+                  }
+                : { available: false, latestScore: null }),
+              score,
+            }
+          }),
       }))
       .filter(group => group.cutoffs.length)
   })
@@ -348,73 +396,167 @@
   const formatRank = (value: number | null | undefined): string => formatRankValue(value)
   const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
 
-  const trendTargets = computed(() =>
-    targetOptions.value.filter(target =>
-      historySeries.value.some(
-        item =>
-          item.target.key === target.key && item.points.some(point => typeof point.score === 'number' && Number.isFinite(point.score)),
-      ),
-    ),
+  const formatPhase = (point: ScoreSeasonHistoryPoint): string => {
+    if (point.daysToFinal === 0 || point.phase.trim().toUpperCase() === 'FINAL') return 'FINAL'
+    if (point.daysToFinal !== null && point.daysToFinal > 0) return `${point.daysToFinal}D`
+    const match = /^(\d+)\s*D$/i.exec(point.phase.trim())
+    return match ? `${Number(match[1])}D` : point.phase.trim().toUpperCase()
+  }
+
+  const phaseOrder = (point: PhaseChartPoint): number => {
+    if (point.daysToFinal !== null) return point.daysToFinal
+    if (point.label === 'FINAL') return 0
+    const match = /^(\d+)D$/.exec(point.label)
+    return match ? Number(match[1]) : -1
+  }
+
+  const dailyHistoryAsPhaseSeries = computed<ScoreSeasonHistory[]>(() => {
+    if (isHistoricalSeason.value || !current.value?.seasonEndsAt || seasonHistorySeries.value.some(item => item.points.length)) return []
+    const endOfSeason = dayjs(current.value.seasonEndsAt)
+    if (!endOfSeason.isValid()) return []
+    return historySeries.value
+      .map((history): ScoreSeasonHistory | null => {
+        const points = history.points
+          .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+          .map(point => {
+            const daysToFinal = Math.max(0, endOfSeason.startOf('day').diff(dayjs(point.capturedAt).startOf('day'), 'day'))
+            return {
+              phase: daysToFinal === 0 ? 'FINAL' : `${daysToFinal}D`,
+              daysToFinal,
+              score: point.score,
+            }
+          })
+        if (!points.length) return null
+        return {
+          server: server.value,
+          season: season.value,
+          league: league.value,
+          seasonEndsAt: current.value?.seasonEndsAt || null,
+          provider: history.meta.provider,
+          target: { key: history.target.key, name: history.target.name },
+          seriesType: 'relative-to-final',
+          points,
+          dataQuality: { scopeVerified: false, eligibleForForecast: false },
+        }
+      })
+      .filter((series): series is ScoreSeasonHistory => series !== null)
+  })
+
+  const phaseSourceSeries = computed<ScoreSeasonHistory[]>(() =>
+    seasonHistorySeries.value.some(item => item.points.length) ? seasonHistorySeries.value : dailyHistoryAsPhaseSeries.value,
   )
 
-  const historyChartSeries = computed<TrendSeries[]>(() => {
-    const targetIndexes = new Map(trendTargets.value.map((target, index) => [target.key, index]))
-    const dateBuckets = new Map<string, { label: string; points: Map<string, TrendPoint> }>()
-
-    historySeries.value.forEach((historyItem: ScoreHistory) => {
-      const targetIndex = targetIndexes.get(historyItem.target.key)
-      if (targetIndex === undefined) return
-      historyItem.points.forEach(point => {
-        if (typeof point.score !== 'number' || !Number.isFinite(point.score)) return
-        const capturedDate = dayjs(point.capturedAt)
-        if (!capturedDate.isValid()) return
-        const dateKey = capturedDate.format('YYYY-MM-DD')
-        const bucket = dateBuckets.get(dateKey) || { label: capturedDate.format('MM-DD'), points: new Map() }
-        bucket.points.set(historyItem.target.key, {
-          key: `${dateKey}-${historyItem.target.key}`,
-          label: formatTarget(historyItem.target.key, historyItem.target.name),
-          score: point.score,
-          index: targetIndex,
-        })
-        dateBuckets.set(dateKey, bucket)
+  const phaseChartCategories = computed(() => {
+    const pointsByPhase = new Map<string, PhaseChartPoint>()
+    phaseSourceSeries.value.forEach(targetHistory => {
+      targetHistory.points.forEach(point => {
+        const label = formatPhase(point)
+        if (!label || label === '--') return
+        const previous = pointsByPhase.get(label)
+        if (!previous || phaseOrder({ ...point, label }) > phaseOrder(previous)) pointsByPhase.set(label, { ...point, label })
       })
     })
-
-    return [...dateBuckets.entries()]
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, bucket]) => ({
-        key,
-        label: bucket.label,
-        points: [...bucket.points.values()].sort((left, right) => left.index - right.index),
-      }))
-      .filter(series => series.points.length > 0)
+    return [...pointsByPhase.values()].sort((left, right) => phaseOrder(right) - phaseOrder(left)).map(point => point.label)
   })
 
-  const selectedTargetChartPoints = computed(() => {
-    const targetHistory = historySeries.value.find(item => item.target.key === targetKey.value)
-    return (targetHistory?.points || [])
-      .filter(point => typeof point.score === 'number' && Number.isFinite(point.score) && dayjs(point.capturedAt).isValid())
-      .map(point => ({
-        key: point.capturedAt,
-        label: dayjs(point.capturedAt).format('MM-DD'),
-        score: point.score as number,
-      }))
+  const phaseChartSeries = computed<TrendSeries[]>(() =>
+    phaseSourceSeries.value
+      .map((item): TrendSeries | null => {
+        const target = options.value?.targets.find(option => option.key === item.target.key)
+        const points = item.points
+          .filter(point => isRenderableScore(point.score))
+          .map(point => {
+            const label = formatPhase(point)
+            return {
+              key: `${item.target.key}-${label}`,
+              label,
+              score: point.score as number,
+              index: phaseChartCategories.value.indexOf(label),
+            }
+          })
+          .filter(point => point.index >= 0)
+        if (!target || !points.length) return null
+        return {
+          key: `phase-${item.target.key}`,
+          label: formatTarget(target.key, target.name),
+          color: getRtaTierColor(target.key),
+          points,
+        }
+      })
+      .filter((series): series is TrendSeries => series !== null),
+  )
+
+  const phaseTableTargets = computed(() =>
+    (options.value?.targets || []).filter(target => target.group === 'green' || target.group === 'red'),
+  )
+
+  const phaseTableRows = computed<PhaseTableRow[]>(() =>
+    phaseChartCategories.value.map(phase => {
+      const scores: Record<string, number | null> = {}
+      phaseTableTargets.value.forEach(target => {
+        const targetHistory = phaseSourceSeries.value.find(item => item.target.key === target.key)
+        const point = targetHistory?.points.find(item => formatPhase(item) === phase)
+        scores[target.key] = isRenderableScore(point?.score) ? point.score : null
+      })
+      return { phase, scores }
+    }),
+  )
+
+  const phaseTableWidth = computed(() => `${Math.max(760, 150 + phaseTableTargets.value.length * 150)}rpx`)
+
+  const dateChartCategories = computed(() => {
+    const labels = historySeries.value.flatMap(item =>
+      item.points
+        .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+        .map(point => dayjs(point.capturedAt).format('MM-DD')),
+    )
+    return [...new Set(labels)]
   })
 
-  const selectedTargetChartCategories = computed(() => selectedTargetChartPoints.value.map(point => point.label))
+  const dateChartSeries = computed<TrendSeries[]>(() =>
+    historySeries.value
+      .map((item): TrendSeries | null => {
+        const target = options.value?.targets.find(option => option.key === item.target.key)
+        if (!target) return null
+        const points = item.points
+          .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+          .map(point => {
+            const label = dayjs(point.capturedAt).format('MM-DD')
+            return {
+              key: `${item.target.key}-${point.capturedAt}`,
+              label,
+              score: point.score as number,
+              index: dateChartCategories.value.indexOf(label),
+            }
+          })
+          .filter(point => point.index >= 0)
+        if (!points.length) return null
+        return {
+          key: `date-${item.target.key}`,
+          label: formatTarget(target.key, target.name),
+          color: getRtaTierColor(target.key),
+          points,
+        }
+      })
+      .filter((series): series is TrendSeries => series !== null),
+  )
 
-  const selectedTargetChartSeries = computed<TrendSeries[]>(() => [
-    {
-      key: `target-${targetKey.value}`,
-      label: selectedTargetLabel.value,
-      points: selectedTargetChartPoints.value.map((point, index) => ({ ...point, index })),
-    },
-  ])
+  const trendChartMode = computed<'phase' | 'date'>(() => (phaseChartSeries.value.length ? 'phase' : 'date'))
+  const trendChartCategories = computed(() => (trendChartMode.value === 'phase' ? phaseChartCategories.value : dateChartCategories.value))
+  const trendChartSeries = computed<TrendSeries[]>(() =>
+    trendChartMode.value === 'phase' ? phaseChartSeries.value : dateChartSeries.value,
+  )
 
-  const selectedTargetChartRange = computed(() => ({
-    from: selectedTargetChartPoints.value[0]?.key || null,
-    to: selectedTargetChartPoints.value[selectedTargetChartPoints.value.length - 1]?.key || null,
-  }))
+  const trendChartRange = computed(() => {
+    const points = historySeries.value
+      .flatMap(item => item.points)
+      .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+      .sort((left, right) => left.capturedAt.localeCompare(right.capturedAt))
+    return {
+      from: points[0]?.capturedAt || null,
+      to: points[points.length - 1]?.capturedAt || null,
+    }
+  })
 
   const selectSeasonOption = (option: ScoreSeasonOption) => {
     if (option.selectable) void selectSeason(option.season)
@@ -422,10 +564,6 @@
 
   const selectProviderOption = (option: { key: string; selectable: boolean }) => {
     if (option.selectable) void selectProvider(option.key)
-  }
-
-  const selectTargetOption = (option: ScoreTargetOption) => {
-    if (option.selectable) void selectTarget(option.key)
   }
 
   onLoad(() => {
@@ -690,6 +828,148 @@
   .cutoff-group-title {
     color: var(--theme-text);
     font-size: 23rpx;
+    font-weight: 800;
+  }
+
+  .score-summary-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 18rpx;
+  }
+
+  .score-summary-group .cutoff-group-heading {
+    margin-bottom: 10rpx;
+  }
+
+  .score-summary-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12rpx;
+  }
+
+  .score-summary-item {
+    min-width: 0;
+    min-height: 126rpx;
+    padding: 14rpx 12rpx 12rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    border: 1rpx solid var(--theme-border);
+    border-left-width: 6rpx;
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .score-summary-item.group-green {
+    border-left-color: #4aa875;
+  }
+
+  .score-summary-item.group-gold {
+    border-left-color: #e0a52f;
+  }
+
+  .score-summary-item.group-red {
+    border-left-color: #d45d69;
+  }
+
+  .score-summary-target {
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6rpx;
+  }
+
+  .score-summary-name,
+  .score-summary-score,
+  .score-summary-rank {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .score-summary-name {
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    font-weight: 700;
+  }
+
+  .score-summary-score {
+    margin-top: 8rpx;
+    color: var(--theme-text);
+    font-size: 32rpx;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .score-summary-rank {
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+  }
+
+  .phase-table-scroll {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .phase-table {
+    overflow: hidden;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .phase-table-row {
+    min-height: 78rpx;
+    display: flex;
+    align-items: stretch;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .phase-table-row:first-child {
+    border-top: 0;
+  }
+
+  .phase-table-header {
+    min-height: 106rpx;
+    background: var(--theme-surface);
+  }
+
+  .phase-table-cell {
+    flex: 0 0 150rpx;
+    padding: 12rpx 10rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
+    text-align: center;
+  }
+
+  .phase-table-phase {
+    flex-basis: 110rpx;
+    justify-content: flex-start;
+    color: var(--theme-text);
+    font-weight: 800;
+    text-align: left;
+  }
+
+  .phase-table-target {
+    flex-direction: column;
+    gap: 4rpx;
+    font-size: 18rpx;
+    font-weight: 700;
+  }
+
+  .phase-table-score {
+    color: var(--theme-text);
+    font-size: 24rpx;
     font-weight: 800;
   }
 

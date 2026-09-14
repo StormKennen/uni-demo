@@ -69,7 +69,10 @@ export const useRtaScoreForecast = () => {
   const serverOptions = computed<ScoreSimpleOption[]>(() => options.value?.servers || [])
   const seasonOptions = computed<ScoreSeasonOption[]>(() => options.value?.seasons || [])
   const leagueOptions = computed<ScoreSimpleOption[]>(() => options.value?.leagues || [])
-  const providerOptions = computed<ScoreSimpleOption[]>(() => options.value?.providers || [])
+  const providerOptions = computed<ScoreSimpleOption[]>(() => [
+    { key: '', name: '综合', selectable: true },
+    ...(options.value?.providers || []),
+  ])
   const targetOptions = computed<ScoreTargetOption[]>(() => (options.value?.targets || []).filter(isVisibleTarget))
   const selectedServer = computed(() => serverOptions.value.find(item => item.key === server.value) || null)
   const selectedSeason = computed(() => seasonOptions.value.find(item => item.season === season.value) || null)
@@ -129,13 +132,26 @@ export const useRtaScoreForecast = () => {
   const getHistoryCacheKey = (selection: ScoreSelection): string =>
     `${selection.server}:${selection.season}:${selection.league}:${selection.provider || ''}:${selection.targetKey}`
 
-  const loadHistorySeries = async (selection: ScoreSelection): Promise<ScoreHistory[]> => {
-    const cacheKey = getHistoryCacheKey(selection)
-    const cached = historyCache.get(cacheKey)
-    if (cached) return [cached]
-    const result = await fetchScoreHistory(selection)
-    historyCache.set(cacheKey, result)
-    return [result]
+  const loadHistorySeries = async (selection: ScoreSelection, targetKeys = [selection.targetKey]): Promise<ScoreHistory[]> => {
+    const resultsByKey = new Map<string, ScoreHistory>()
+    const pendingTargetKeys = targetKeys.filter(targetKey => {
+      const cacheKey = getHistoryCacheKey({ ...selection, targetKey })
+      const cached = historyCache.get(cacheKey)
+      if (cached) resultsByKey.set(targetKey, cached)
+      return !cached
+    })
+    const results = await Promise.allSettled(pendingTargetKeys.map(targetKey => fetchScoreHistory({ ...selection, targetKey })))
+    results.forEach((result, index) => {
+      if (result.status !== 'fulfilled') return
+      const targetKey = pendingTargetKeys[index]
+      const cacheKey = getHistoryCacheKey({ ...selection, targetKey })
+      historyCache.set(cacheKey, result.value)
+      resultsByKey.set(targetKey, result.value)
+    })
+    const successful = targetKeys.map(targetKey => resultsByKey.get(targetKey)).filter((item): item is ScoreHistory => Boolean(item))
+    if (successful.length || !results.length) return successful
+    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+    throw failure?.reason || new Error('当前趋势暂不可用')
   }
 
   const loadSeasonHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreSeasonHistory[]> => {
@@ -190,13 +206,13 @@ export const useRtaScoreForecast = () => {
       nextOptions.seasons.find(item => item.season === nextOptions.defaultSeason && item.selectable) || firstSelectable(nextOptions.seasons)
     const defaultTarget =
       visibleTargets.find(item => item.key === nextOptions.defaultTarget && item.selectable) || firstSelectable(visibleTargets)
-    const defaultProvider =
-      nextOptions.providers.find(item => item.key === 'swrt' && item.selectable) || firstSelectable(nextOptions.providers)
-
     server.value = serverCandidate?.key || firstSelectable(nextOptions.servers)?.key || ''
     league.value = leagueCandidate?.key || firstSelectable(nextOptions.leagues)?.key || ''
     season.value = seasonCandidate?.season || defaultSeason?.season || null
-    provider.value = providerCandidate?.key || defaultProvider?.key || ''
+    // An empty provider means the backend's resolved view: SWRT first and
+    // personal/SWRTA.TOP values only fill missing target/phase points. Users
+    // can still select one concrete provider from the filter row.
+    provider.value = providerCandidate?.key || ''
     targetKey.value = targetCandidate?.key || defaultTarget?.key || ''
   }
 
@@ -237,17 +253,32 @@ export const useRtaScoreForecast = () => {
     const chartIsHistorical = isHistoricalSeason.value
     const historyTask =
       !chartIsHistorical && (nextCapabilities?.history || config.value?.researchDisplay.history)
-        ? loadHistorySeries(nextSelection)
+        ? loadHistorySeries(
+            nextSelection,
+            targetOptions.value.map(target => target.key),
+          )
         : Promise.resolve([] as ScoreHistory[])
-    const seasonHistoryTask = chartIsHistorical
-      ? loadSeasonHistorySeries(nextSelection, targetOptions.value)
+    const phaseTargets = targetOptions.value
+    const seasonHistoryTask = nextCapabilities?.historicalSeasonHistory
+      ? loadSeasonHistorySeries(nextSelection, phaseTargets)
       : Promise.resolve([] as ScoreSeasonHistory[])
     const chartTask = Promise.allSettled([historyTask, seasonHistoryTask]).then(([historyResult, seasonHistoryResult]) => {
       if (version !== requestVersion || chartVersion !== chartRequestVersion || chartSelectionKey !== selectionKey()) return
       if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
-      else historyError.value = getScoreErrorMessage(historyResult.reason, '当前趋势暂不可用')
       if (seasonHistoryResult.status === 'fulfilled') seasonHistorySeries.value = seasonHistoryResult.value
-      else historyError.value = getScoreErrorMessage(seasonHistoryResult.reason, '历史赛季趋势暂不可用')
+      const hasDailyHistory = historyResult.status === 'fulfilled' && historyResult.value.some(item => item.points.length > 0)
+      const hasPhaseHistory = seasonHistoryResult.status === 'fulfilled' && seasonHistoryResult.value.some(item => item.points.length > 0)
+      if (chartIsHistorical && seasonHistoryResult.status === 'rejected') {
+        historyError.value = getScoreErrorMessage(seasonHistoryResult.reason, '历史赛季数据暂不可用')
+      } else if (!chartIsHistorical && !hasDailyHistory && !hasPhaseHistory) {
+        const reason =
+          seasonHistoryResult.status === 'rejected'
+            ? seasonHistoryResult.reason
+            : historyResult.status === 'rejected'
+              ? historyResult.reason
+              : undefined
+        historyError.value = getScoreErrorMessage(reason, '当前趋势暂不可用')
+      }
       dataLoading.value = false
     })
     void chartTask
@@ -354,24 +385,46 @@ export const useRtaScoreForecast = () => {
     const selection = getSelection()
     if (!selection) return
     const chartVersion = ++chartRequestVersion
-    const cacheKey = getHistoryCacheKey(selection)
-    const cached = historyCache.get(cacheKey)
-    historySeries.value = cached ? [cached] : []
+    const targetKeys = targetOptions.value.map(target => target.key)
+    const cachedDailySeries = targetKeys
+      .map(target => historyCache.get(getHistoryCacheKey({ ...selection, targetKey: target })))
+      .filter((item): item is ScoreHistory => Boolean(item))
+    const cachedPhaseSeries = targetKeys
+      .map(target => seasonHistoryCache.get(getHistoryCacheKey({ ...selection, targetKey: target })))
+      .filter((item): item is ScoreSeasonHistory => Boolean(item))
+    historySeries.value = cachedDailySeries
+    seasonHistorySeries.value = cachedPhaseSeries
     historyError.value = ''
-    if (cached) {
+    if (cachedDailySeries.length || cachedPhaseSeries.length) {
       dataLoading.value = false
-      return
     }
+    if (cachedDailySeries.length === targetKeys.length && cachedPhaseSeries.length === targetKeys.length) return
     dataLoading.value = true
     try {
-      const result = await fetchScoreHistory(selection)
+      const [dailyResult, phaseResult] = await Promise.allSettled([
+        cachedDailySeries.length === targetKeys.length ? Promise.resolve(cachedDailySeries) : loadHistorySeries(selection, targetKeys),
+        cachedPhaseSeries.length === targetKeys.length
+          ? Promise.resolve(cachedPhaseSeries)
+          : loadSeasonHistorySeries(selection, targetOptions.value),
+      ])
       if (
         chartVersion !== chartRequestVersion ||
         selectionKey() !== `${selection.server}:${selection.season}:${selection.league}:${selection.provider || ''}:${value}`
       )
         return
-      historyCache.set(cacheKey, result)
-      historySeries.value = [result]
+      if (dailyResult.status === 'fulfilled') {
+        historySeries.value = dailyResult.value
+      }
+      if (phaseResult.status === 'fulfilled') {
+        seasonHistorySeries.value = phaseResult.value
+      }
+      const hasDailyHistory = dailyResult.status === 'fulfilled' && dailyResult.value.some(item => item.points.length > 0)
+      const hasPhaseHistory = phaseResult.status === 'fulfilled' && phaseResult.value.some(item => item.points.length > 0)
+      if (!hasDailyHistory && !hasPhaseHistory) {
+        const reason =
+          phaseResult.status === 'rejected' ? phaseResult.reason : dailyResult.status === 'rejected' ? dailyResult.reason : undefined
+        historyError.value = getScoreErrorMessage(reason, '当前趋势暂不可用')
+      }
     } catch (error) {
       if (chartVersion === chartRequestVersion) historyError.value = getScoreErrorMessage(error, '当前趋势暂不可用')
     } finally {

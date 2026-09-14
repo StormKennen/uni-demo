@@ -58,6 +58,7 @@
   interface StageLineSeries {
     key: string
     label: string
+    color?: string
     points: StageLinePoint[]
   }
 
@@ -114,16 +115,19 @@
   }
 
   const chartSeries = computed<ChartSeries[]>(() =>
-    props.series.map((series, seriesIndex) => ({
-      ...series,
-      color: COLORS[seriesIndex % COLORS.length],
-      points: series.points.map(point => ({
-        ...point,
-        x: xForIndex(point.index),
-        y: yForScore(point.score),
-        color: COLORS[seriesIndex % COLORS.length],
-      })),
-    })),
+    props.series.map((series, seriesIndex) => {
+      const color = series.color || COLORS[seriesIndex % COLORS.length]
+      return {
+        ...series,
+        color,
+        points: series.points.map(point => ({
+          ...point,
+          x: xForIndex(point.index),
+          y: yForScore(point.score),
+          color,
+        })),
+      }
+    }),
   )
 
   const segments = computed<ChartSegment[]>(() =>
