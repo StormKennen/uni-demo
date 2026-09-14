@@ -411,6 +411,12 @@
     return match ? Number(match[1]) : -1
   }
 
+  const phaseTrendOrder = (point: PhaseChartPoint): number => {
+    if (point.label === '结算' || point.label.toUpperCase() === 'FINAL') return Number.MAX_SAFE_INTEGER
+    const order = phaseOrder(point)
+    return order > 0 ? order : Number.MAX_SAFE_INTEGER - 1
+  }
+
   const dailyHistoryAsPhaseSeries = computed<ScoreSeasonHistory[]>(() => {
     if (isHistoricalSeason.value || !current.value?.seasonEndsAt || seasonHistorySeries.value.some(item => item.points.length)) return []
     const endOfSeason = dayjs(current.value.seasonEndsAt)
@@ -457,7 +463,7 @@
         if (!previous || phaseOrder({ ...point, label }) > phaseOrder(previous)) pointsByPhase.set(label, { ...point, label })
       })
     })
-    return [...pointsByPhase.values()].sort((left, right) => phaseOrder(right) - phaseOrder(left)).map(point => point.label)
+    return [...pointsByPhase.values()].sort((left, right) => phaseTrendOrder(left) - phaseTrendOrder(right)).map(point => point.label)
   })
 
   const phaseChartSeries = computed<TrendSeries[]>(() =>

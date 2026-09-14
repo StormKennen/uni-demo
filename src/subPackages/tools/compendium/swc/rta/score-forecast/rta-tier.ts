@@ -10,8 +10,8 @@ export interface RtaTierMeta {
 const TIER_COLORS: Readonly<Record<RtaTierGroup, readonly string[]>> = {
   silver: ['#8b96a8', '#8b96a8', '#8b96a8'],
   gold: ['#e0a52f', '#e0a52f', '#e0a52f'],
-  green: ['#9ad7b2', '#4aa875', '#227a50'],
-  red: ['#f2a2ad', '#d45d69', '#a5283e'],
+  green: ['#4aa875', '#4aa875', '#4aa875'],
+  red: ['#d45d69', '#d45d69', '#d45d69'],
 }
 
 const TIER_NAMES: Readonly<Record<RtaTierGroup, string>> = {
