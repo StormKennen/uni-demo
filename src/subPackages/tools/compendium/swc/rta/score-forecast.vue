@@ -173,7 +173,6 @@
                   <view class="phase-table-cell phase-table-phase">阶段</view>
                   <view v-for="target in phaseTableTargets" :key="target.key" class="phase-table-cell phase-table-target">
                     <RtaTierStars :target-key="target.key" :size="20" layout="stacked" />
-                    <text>{{ formatTarget(target.key, target.name) }}</text>
                   </view>
                 </view>
                 <view v-for="row in phaseTableRows" :key="row.phase" class="phase-table-row">
@@ -399,16 +398,16 @@
   const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
 
   const formatPhase = (point: ScoreSeasonHistoryPoint): string => {
-    if (point.daysToFinal === 0 || point.phase.trim().toUpperCase() === 'FINAL') return 'FINAL'
-    if (point.daysToFinal !== null && point.daysToFinal > 0) return `${point.daysToFinal}D`
+    if (point.daysToFinal === 0 || point.phase.trim().toUpperCase() === 'FINAL') return '结算'
+    if (point.daysToFinal !== null && point.daysToFinal > 0) return `剩${point.daysToFinal}天`
     const match = /^(\d+)\s*D$/i.exec(point.phase.trim())
-    return match ? `${Number(match[1])}D` : point.phase.trim().toUpperCase()
+    return match ? `剩${Number(match[1])}天` : point.phase.trim()
   }
 
   const phaseOrder = (point: PhaseChartPoint): number => {
     if (point.daysToFinal !== null) return point.daysToFinal
-    if (point.label === 'FINAL') return 0
-    const match = /^(\d+)D$/.exec(point.label)
+    if (point.label === '结算' || point.label.toUpperCase() === 'FINAL') return 0
+    const match = /^剩(\d+)天$/.exec(point.label) || /^(\d+)D$/.exec(point.label)
     return match ? Number(match[1]) : -1
   }
 
