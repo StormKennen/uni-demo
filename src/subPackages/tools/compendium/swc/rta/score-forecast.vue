@@ -72,21 +72,6 @@
               </view>
             </scroll-view>
           </view>
-          <view v-if="providerOptions.length" class="filter-row">
-            <text class="filter-label">来源</text>
-            <scroll-view class="chip-scroll" scroll-x enable-flex>
-              <view class="chip-list">
-                <view
-                  v-for="option in providerOptions"
-                  :key="option.key"
-                  class="filter-chip"
-                  :class="{ active: provider === option.key, disabled: !option.selectable }"
-                  @click="selectProviderOption(option)">
-                  <text>{{ option.name }}</text>
-                </view>
-              </view>
-            </scroll-view>
-          </view>
         </view>
 
         <!-- <view v-if="scopeUnverified" class="scope-notice">
@@ -252,7 +237,7 @@
               !phaseTableRows.length &&
               !historyError &&
               !isHistoricalSeason &&
-              (config?.capabilities.history || config?.capabilities.historicalSeasonHistory) &&
+              (config?.capabilities.history || config?.capabilities.historicalSeasonHistory || config?.researchDisplay.history) &&
               hasAnyData &&
               dataLoading
             "
@@ -326,15 +311,12 @@
     errorMessage,
     isStale,
     seasonOptions,
-    providerOptions,
-    provider,
     currentError,
     historyError,
     isHistoricalSeason,
     initialize,
     refresh,
     selectSeason,
-    selectProvider,
     retry,
   } = useRtaScoreForecast()
 
@@ -603,10 +585,6 @@
 
   const selectSeasonOption = (option: ScoreSeasonOption) => {
     if (option.selectable) void selectSeason(option.season)
-  }
-
-  const selectProviderOption = (option: { key: string; selectable: boolean }) => {
-    if (option.selectable) void selectProvider(option.key)
   }
 
   onLoad(() => {

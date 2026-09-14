@@ -80,11 +80,7 @@ export const useRtaScoreForecast = () => {
   const selectedProvider = computed(() => providerOptions.value.find(item => item.key === provider.value) || null)
   const selectedTarget = computed(() => targetOptions.value.find(item => item.key === targetKey.value) || null)
   const isStale = computed(() => [options.value?.meta.cacheStatus, config.value?.meta.cacheStatus].includes('stale'))
-  const isHistoricalSeason = computed(() =>
-    Boolean(
-      config.value?.capabilities.historicalSeasonHistory && !config.value.capabilities.current && !config.value.researchDisplay.current,
-    ),
-  )
+  const isHistoricalSeason = computed(() => Boolean(selectedSeason.value && selectedSeason.value.status !== 'current'))
 
   const selectionKey = (): string => `${server.value}:${season.value || ''}:${league.value}:${provider.value}:${targetKey.value}`
 
@@ -259,9 +255,7 @@ export const useRtaScoreForecast = () => {
           )
         : Promise.resolve([] as ScoreHistory[])
     const phaseTargets = targetOptions.value
-    const seasonHistoryTask = nextCapabilities?.historicalSeasonHistory
-      ? loadSeasonHistorySeries(nextSelection, phaseTargets)
-      : Promise.resolve([] as ScoreSeasonHistory[])
+    const seasonHistoryTask = loadSeasonHistorySeries(nextSelection, phaseTargets)
     const chartTask = Promise.allSettled([historyTask, seasonHistoryTask]).then(([historyResult, seasonHistoryResult]) => {
       if (version !== requestVersion || chartVersion !== chartRequestVersion || chartSelectionKey !== selectionKey()) return
       if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
