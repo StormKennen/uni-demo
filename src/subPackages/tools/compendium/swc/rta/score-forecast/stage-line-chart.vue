@@ -6,7 +6,7 @@
       <text>{{ formatScore(chartMin) }}</text>
     </view>
 
-    <scroll-view class="chart-scroll" scroll-x enable-flex>
+    <scroll-view class="chart-scroll" scroll-x enable-flex :scroll-left="scrollLeft">
       <view class="chart-content" :style="{ width }">
         <view class="plot-area">
           <view class="grid-line top" />
@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { formatScoreValue } from './score-normalizers'
 
   interface StageLinePoint {
@@ -108,16 +108,30 @@
     categories: string[]
     series: StageLineSeries[]
     width: string
+    focusEstimated?: boolean
   }>()
 
   const COLORS = ['#2864c7', '#31a36c', '#e08a2e', '#9b5bc7', '#d05264', '#4d849f']
   const selectedSeriesKeys = ref<Set<string> | null>(null)
+  const scrollLeft = ref(0)
   const plotWidth = computed(() => Math.max(300, props.categories.length * 110))
   const plotHeight = 230
   const seriesKeySignature = computed(() => props.series.map(series => series.key).join('|'))
+  const scrollSignature = computed(() => `${props.categories.join('|')}:${props.focusEstimated ? 'estimated' : 'actual'}`)
   watch(seriesKeySignature, () => {
     selectedSeriesKeys.value = null
   })
+  const focusChart = async (): Promise<void> => {
+    const signature = scrollSignature.value
+    // scroll-view 的 scroll-left 单位是 px，图表宽度和点位间距使用 rpx。
+    // 只定位到末尾前约四个点，给小程序留出可见的估算曲线，避免传入过大的
+    // rpx 数值后在部分开发者工具版本中把内容整体滚出可视区域。
+    const targetRpx = props.focusEstimated ? Math.max(0, (props.categories.length - 4) * 110) : 0
+    await nextTick()
+    if (signature !== scrollSignature.value) return
+    scrollLeft.value = uni.upx2px(targetRpx)
+  }
+  watch(scrollSignature, () => void focusChart(), { immediate: true })
   const isSeriesVisible = (key: string): boolean => !selectedSeriesKeys.value || selectedSeriesKeys.value.has(key)
   const toggleSeries = (key: string): void => {
     if (!selectedSeriesKeys.value) {

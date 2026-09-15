@@ -252,7 +252,8 @@
             <StageLineChart
               :categories="trendChartCategories"
               :series="visibleTrendChartSeries"
-              :width="chartWidth(trendChartCategories.length)" />
+              :width="chartWidth(trendChartCategories.length)"
+              :focus-estimated="trendChartMode === 'date' && showTrendEstimate && hasAvailableTrendEstimate" />
             <view class="metadata-row">
               <text v-if="trendChartMode === 'phase'">
                 阶段 {{ trendChartCategories[0] }} - {{ trendChartCategories[trendChartCategories.length - 1] }}

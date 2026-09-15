@@ -488,3 +488,5 @@
 - 2026-08-27 [quick-transfer/v2.2] 新增“我发送的”历史闭环：接入 SentRecord Generated API，增加发送历史列表/详情、分页去重、领取进度轮询、后端 `canRecall` 驱动的召回、历史附件访问与删除记录；召回复用现有 `cancelQuickTransfer`，删除历史与召回严格隔离，微信游客可见、H5 未登录隐藏（Codex）
 - 2026-08-27 [tools/quick-transfer] 完成 V2.3 页面职责拆分：管理页改为操作/我发送的/我收到的三 Tab，新增发送创建页、飞船票据页和独立 Receiver 页面；抽取历史列表组件，拆分工具分享与当前飞船分享路径，增加内存结果上下文并统一 Quick Transfer 按钮视觉（Codex）
 - 2026-09-15 [tools/compendium-swc/rta] 兼容旧版趋势接口：当后端未返回可用未来估算点时，基于历史真实点与赛季结束时间生成前端展示用的趋势估算，确保折线图显示未来日期、虚线和空心点（Codex）
+- 2026-09-15 [tools/compendium-swc/rta] 趋势估算开启时自动定位折线图的最新日期区域，避免未来估算点位于横向滚动区域外而造成“没有估算”的误解（Codex）
+- 2026-09-15 [tools/compendium-swc/rta] 修正微信小程序折线图估算定位：将 scroll-left 的 rpx 位置转换为 px，并等待图表布局完成后再定位，避免估算曲线被滚出可视区域（Codex）
