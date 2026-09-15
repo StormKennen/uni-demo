@@ -407,7 +407,7 @@
     const seasonEndsAt = dayjs(current.value.seasonEndsAt)
     const remainingDays = seasonEndsAt.diff(dayjs(shareNow.value), 'day', true)
     if (!seasonEndsAt.isValid() || remainingDays <= 0) return defaultRtaShareTitle
-    return `RTA分数预测 ｜ 距离赛季结算，还剩${Math.ceil(remainingDays)}天`
+    return `RTA分数预测 ｜ 赛季还剩${Math.ceil(remainingDays)}天`
   })
 
   const formatPhase = (point: ScoreSeasonHistoryPoint): string => {

@@ -285,6 +285,7 @@ describe('useQuickTransfer receiver recovery', () => {
     expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
     expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
     expect(await quickTransfer.previewReceivedFile('image-1')).toBe('/tmp/received-file')
+    expect(mocks.previewLocalImage).not.toHaveBeenCalled()
     expect(await quickTransfer.downloadReceivedFile('image-1')).toBe(true)
     expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(2)
     expect(mocks.accessQuickTransferFile).toHaveBeenNthCalledWith(1, 'transfer-1', 'image-1', 'claim-1', 'preview')
@@ -294,6 +295,63 @@ describe('useQuickTransfer receiver recovery', () => {
       expect.objectContaining({ path: '/tmp/received-file' }),
       expect.objectContaining({ fileName: '产品截图.jpg', mimeType: 'image/jpeg' }),
     )
+  })
+
+  it('keeps inline preview failures local and skips access for expired images', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '图片资料',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      claimToken: 'claim-1',
+      content: {
+        text: '正文',
+        links: [],
+        files: [{ fileId: 'image-1', name: 'photo.jpg', displayName: '产品截图.jpg', size: 1, mimeType: 'image/jpeg' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferFile.mockRejectedValue({ code: 'NETWORK_ERROR' })
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.getReceivedPreviewImage('image-1')).toBeNull()
+    expect(quickTransfer.receiveError.value).toBeNull()
+    expect(mocks.accessQuickTransferFile).toHaveBeenCalledWith('transfer-1', 'image-1', 'claim-1', 'preview')
+
+    const image = quickTransfer.receivedResult.value?.content.files[0]
+    if (image) image.available = false
+    mocks.accessQuickTransferFile.mockClear()
+    expect(await quickTransfer.getReceivedPreviewImage('image-1')).toBeNull()
+    expect(mocks.accessQuickTransferFile).not.toHaveBeenCalled()
+  })
+
+  it('caches inline preview resources and refreshes only when an image is retried', async () => {
+    const result: QuickTransferResolvedResult = {
+      title: '图片缓存',
+      transferId: 'transfer-1',
+      claimId: 'claim-id-1',
+      claimToken: 'claim-1',
+      content: {
+        text: undefined,
+        links: [],
+        files: [{ fileId: 'image-1', name: 'photo.jpg', displayName: '图片.jpg', size: 1, mimeType: 'image/jpeg' }],
+        references: [],
+      },
+    }
+    mocks.resolveQuickTransfer.mockResolvedValue(result)
+    mocks.accessQuickTransferFile.mockResolvedValue({
+      url: 'https://signed.example/image',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    })
+    const quickTransfer = useQuickTransfer()
+
+    expect(await quickTransfer.receive({ code: '123456' })).toBe(true)
+    expect(await quickTransfer.getReceivedPreviewImage('image-1')).toBe('/tmp/received-file')
+    expect(await quickTransfer.getReceivedPreviewImage('image-1')).toBe('/tmp/received-file')
+    expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(1)
+    expect(await quickTransfer.getReceivedPreviewImage('image-1', true)).toBe('/tmp/received-file')
+    expect(mocks.accessQuickTransferFile).toHaveBeenCalledTimes(2)
   })
 
   it('refreshes Receipt file access instead of reusing a cached remote URL', async () => {

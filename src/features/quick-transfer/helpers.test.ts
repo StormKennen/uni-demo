@@ -28,6 +28,7 @@ import {
   getFinalQuickTransferDisplayName,
   hasQuickShipContent,
   hasQuickShipPayload,
+  isQuickTransferImageFile,
   isQuickTransferDownloadValid,
   isValidQuickTransferCode,
   isValidQuickTransferMaxClaims,
@@ -96,6 +97,22 @@ describe('quick transfer V2 helpers', () => {
     expect(draftFile.displayName).toBe(draftFile.defaultDisplayName)
     expect(validateQuickTransferFiles([draftFile])).toBeNull()
     expect(validateQuickTransferFiles(Array.from({ length: MAX_QUICK_TRANSFER_FILE_COUNT + 1 }, () => draftFile))).toContain('最多')
+  })
+
+  it('classifies image MIME types as inline content and keeps other files as attachments', () => {
+    const files = [
+      { mimeType: 'image/jpeg' },
+      { mimeType: 'image/png' },
+      { mimeType: 'application/pdf' },
+      { mimeType: 'video/mp4' },
+      { mimeType: 'application/zip' },
+    ]
+    expect(files.filter(isQuickTransferImageFile)).toHaveLength(2)
+    expect(files.filter(file => !isQuickTransferImageFile(file)).map(file => file.mimeType)).toEqual([
+      'application/pdf',
+      'video/mp4',
+      'application/zip',
+    ])
   })
 
   it('normalizes claim limits and send permissions', () => {

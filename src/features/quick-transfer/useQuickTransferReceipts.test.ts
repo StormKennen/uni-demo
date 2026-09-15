@@ -187,4 +187,25 @@ describe('useQuickTransferReceipts', () => {
     })
     expect(mocks.accessQuickTransferReceiptFile).toHaveBeenCalledTimes(2)
   })
+
+  it('keeps silent preview access failures out of the detail error state', async () => {
+    const receipts = useQuickTransferReceipts()
+    mocks.getQuickTransferReceipt.mockResolvedValue({
+      receiptId: 'receipt-preview',
+      displayTitle: '图片',
+      claimedAt: '2026-08-26T10:00:00.000Z',
+      content: {
+        text: undefined,
+        links: [],
+        references: [],
+        files: [{ fileId: 'image-preview', name: 'photo.jpg', size: 1, mimeType: 'image/jpeg', available: true }],
+      },
+    })
+    mocks.accessQuickTransferReceiptFile.mockRejectedValue(new Error('preview access failed'))
+
+    await receipts.loadReceiptDetail('receipt-preview')
+    await expect(receipts.accessReceiptFile('receipt-preview', 'image-preview', { silent: true })).resolves.toBeNull()
+    expect(receipts.error.value).toBeNull()
+    expect(receipts.isLoading.value).toBe(false)
+  })
 })

@@ -17,6 +17,10 @@ import type {
 
 const DEFAULT_PAGE_SIZE = 20
 
+interface ReceiptFileAccessOptions {
+  silent?: boolean
+}
+
 const initialPagination = (): QuickTransferReceiptPagination => ({
   page: 0,
   pageSize: DEFAULT_PAGE_SIZE,
@@ -127,19 +131,26 @@ export const useQuickTransferReceipts = () => {
     }
   }
 
-  const accessReceiptFile = async (receiptId: string, fileId: string): Promise<QuickTransferFileAccessResult | null> => {
-    if (!receiptId || !fileId || isLoading.value) return null
+  const accessReceiptFile = async (
+    receiptId: string,
+    fileId: string,
+    options: ReceiptFileAccessOptions = {},
+  ): Promise<QuickTransferFileAccessResult | null> => {
+    const silent = options.silent === true
+    if (!receiptId || !fileId || (!silent && isLoading.value)) return null
     const file = detail.value?.receiptId === receiptId ? detail.value.content.files.find(item => item.fileId === fileId) : undefined
     if (file?.available === false) return null
-    isLoading.value = true
-    error.value = null
+    if (!silent) {
+      isLoading.value = true
+      error.value = null
+    }
     try {
       return await accessQuickTransferReceiptFile(receiptId, fileId)
     } catch (cause) {
-      error.value = toQuickTransferErrorInfo(cause, '文件暂时无法访问，请稍后重试')
+      if (!silent) error.value = toQuickTransferErrorInfo(cause, '文件暂时无法访问，请稍后重试')
       return null
     } finally {
-      isLoading.value = false
+      if (!silent) isLoading.value = false
     }
   }
 

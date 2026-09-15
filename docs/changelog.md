@@ -8,6 +8,7 @@
 ## Unreleased
 
 - 2026-09-14 [tools/compendium-swc/rta] 微信分享标题根据当前赛季结束时间动态展示倒计时，格式为“RTA分数预测｜距离赛季结算，还剩XX天”（Codex）
+- 2026-09-14 [tools/quick-transfer/file,ui] 将 `image/*` 从普通文件列表提升为内嵌内容，复用受保护预览链路并支持图片加载队列、失败重试、全屏预览和独立保存；非图片继续归入附件（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 调整阶段明细分数列顺序为“三红、二红、一红、三绿、二绿、一绿”，便于按高段位到低段位查看分界线（Codex）
 - 2026-09-14 [tools/compendium-swc/rta,build/mp-weixin] RTA 分享封面改用已有 OSS 地址，移除主包内本地大图依赖，降低微信小程序主包体积（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 阶段趋势折线图横轴顺序，按剩余天数升序展示“剩1天、剩2天……”，并将“结算”放在末尾（Codex）

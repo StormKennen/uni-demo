@@ -159,4 +159,30 @@ describe('useQuickTransferSentRecords', () => {
     expect(sentRecords.isLoading.value).toBe(false)
     expect(apiMocks.getQuickTransferSentRecord).toHaveBeenCalledTimes(2)
   })
+
+  it('keeps silent preview access failures out of the detail error state', async () => {
+    const sentRecords = useQuickTransferSentRecords()
+    apiMocks.getQuickTransferSentRecord.mockResolvedValue({
+      sentRecordId: 'sent-preview',
+      transferId: 'transfer-preview',
+      displayTitle: '图片',
+      sentAt: '2026-08-27T10:00:00.000Z',
+      status: 'ready',
+      claimCount: 0,
+      maxClaims: 1,
+      canRecall: true,
+      content: {
+        text: undefined,
+        links: [],
+        references: [],
+        files: [{ fileId: 'image-preview', name: 'photo.jpg', size: 1, mimeType: 'image/jpeg', available: true }],
+      },
+    })
+    apiMocks.accessQuickTransferSentRecordFile.mockRejectedValue(new Error('preview access failed'))
+
+    await sentRecords.loadSentRecordDetail('sent-preview')
+    await expect(sentRecords.accessSentRecordFile('sent-preview', 'image-preview', { silent: true })).resolves.toBeNull()
+    expect(sentRecords.error.value).toBeNull()
+    expect(sentRecords.isDownloading.value).toBe(false)
+  })
 })

@@ -679,15 +679,16 @@ export const useQuickTransfer = () => {
       return await accessQuickTransferFile(result.transferId, fileId, claimToken.value, purpose)
     } catch (error) {
       logFileOperationFailure(
-        'FILE_ACCESS_FAILED',
+        purpose === 'preview' ? 'PREVIEW_FAILED' : 'FILE_ACCESS_FAILED',
         { fileId, mimeType: file.mimeType },
         { statusCode: getQuickTransferErrorStatusCode(error), errMsg: getFileErrorMessage(error) },
       )
       const errorCode = getQuickTransferErrorCode(error)
-      if (errorCode === 'CLAIM_TOKEN_INVALID' || errorCode === 'CLAIM_TOKEN_EXPIRED') {
+      if (purpose !== 'preview' && (errorCode === 'CLAIM_TOKEN_INVALID' || errorCode === 'CLAIM_TOKEN_EXPIRED')) {
         receiveError.value = toQuickTransferReceiveErrorInfo(error)
         return null
       }
+      if (purpose === 'preview') return null
       const info = toQuickTransferErrorInfo(error, '文件访问失败，请稍后重试')
       receiveError.value = { ...info, code: info.code || 'FILE_ACCESS_FAILED' }
       return null
@@ -724,9 +725,9 @@ export const useQuickTransfer = () => {
     const request = (async (): Promise<LocalFile | null> => {
       const access = await getReceivedFileAccess(fileId, purpose)
       if (!access || !isQuickTransferDownloadValid(access.expiresAt)) {
-        if (!access && (receiveError.value?.code === 'CLAIM_TOKEN_INVALID' || receiveError.value?.code === 'CLAIM_TOKEN_EXPIRED')) {
+        if (purpose === 'preview') return null
+        if (!access && (receiveError.value?.code === 'CLAIM_TOKEN_INVALID' || receiveError.value?.code === 'CLAIM_TOKEN_EXPIRED'))
           return null
-        }
         receiveError.value = {
           code: 'FILE_ACCESS_FAILED',
           message: access ? '文件访问链接已失效，请重新打开' : '文件访问失败，请稍后重试',
@@ -741,11 +742,11 @@ export const useQuickTransfer = () => {
         receivedLocalFiles.set(cacheKey, localFile)
         return localFile
       } catch (error) {
-        setReceivedFileError(
-          error,
-          purpose === 'preview' ? 'PREVIEW_FAILED' : 'DOWNLOAD_FAILED',
-          purpose === 'preview' ? '图片预览失败，请稍后重试' : '文件下载失败，请稍后重试',
-        )
+        if (purpose === 'preview') {
+          logFileOperationFailure('PREVIEW_FAILED', { fileId, mimeType: file.mimeType }, { errMsg: getFileErrorMessage(error) })
+          return null
+        }
+        setReceivedFileError(error, 'DOWNLOAD_FAILED', '文件下载失败，请稍后重试')
         return null
       }
     })()
@@ -755,6 +756,14 @@ export const useQuickTransfer = () => {
     } finally {
       receivedLocalFilePromises.delete(cacheKey)
     }
+  }
+
+  const getReceivedPreviewImage = async (fileId: string, forceRefresh = false): Promise<string | null> => {
+    const file = receivedResult.value?.content.files.find(item => item.fileId === fileId)
+    if (!file || file.available === false || !file.mimeType.startsWith('image/')) return null
+    if (forceRefresh) receivedLocalFiles.delete(`preview:${fileId}`)
+    const localFile = await ensureReceivedFileLocal(fileId, 'preview')
+    return localFile?.path || null
   }
 
   const previewReceivedFile = async (fileId: string): Promise<string | null> => {
@@ -861,6 +870,7 @@ export const useQuickTransfer = () => {
     clearReceiveError,
     getReceivedFileAccess,
     ensureReceivedFileLocal,
+    getReceivedPreviewImage,
     previewReceivedFile,
     downloadReceivedFile,
     resetSendResult,

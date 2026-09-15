@@ -69,6 +69,8 @@ export const getQuickTransferMimeType = (fileName: string, selectedType?: string
   return /^[^/\s]+\/[^/\s]+$/.test(type) ? type : mime.getType(fileName) || 'application/octet-stream'
 }
 
+export const isQuickTransferImageFile = (file: Pick<QuickTransferFileMetadata, 'mimeType'>): boolean => file.mimeType.startsWith('image/')
+
 export const validateQuickTransferFile = (size: number | undefined): string | null => {
   if (size === undefined || !Number.isFinite(size) || size <= 0) return '文件不能为空，请重新选择'
   return size <= MAX_QUICK_TRANSFER_FILE_SIZE ? null : '文件不能超过 50 MiB'
