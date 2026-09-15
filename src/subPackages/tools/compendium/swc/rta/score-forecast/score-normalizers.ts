@@ -336,22 +336,143 @@ const normalizeTrendEstimate = (source: unknown): ScoreTrendEstimate => {
   }
 }
 
+const TREND_DAY_MS = 24 * 60 * 60 * 1000
+
+const toTrendDate = (value: unknown): Date | null => {
+  const text = toText(value)
+  if (!text) return null
+  const date = new Date(text)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+const startOfTrendUtcDay = (date: Date): Date => {
+  const result = new Date(date.getTime())
+  result.setUTCHours(0, 0, 0, 0)
+  return result
+}
+
+const buildFallbackTrendEstimate = (points: ScoreHistory['points'], seasonEndsAt: string | null): ScoreTrendEstimate => {
+  const dailyPoints = new Map<string, { capturedAt: Date; score: number }>()
+  points.forEach(point => {
+    const capturedAt = toTrendDate(point.capturedAt)
+    if (!capturedAt || !isRenderableTrendScore(point.score)) return
+    const day = startOfTrendUtcDay(capturedAt)
+    const key = day.toISOString()
+    const current = dailyPoints.get(key)
+    if (!current || capturedAt.getTime() > current.capturedAt.getTime()) {
+      dailyPoints.set(key, { capturedAt, score: Math.round(point.score) })
+    }
+  })
+  const orderedPoints = [...dailyPoints.values()].sort((left, right) => left.capturedAt.getTime() - right.capturedAt.getTime())
+  const latest = orderedPoints[orderedPoints.length - 1]
+  const end = toTrendDate(seasonEndsAt)
+  const endDay = end ? startOfTrendUtcDay(end) : null
+  const latestDay = latest ? startOfTrendUtcDay(latest.capturedAt) : null
+  const base: ScoreTrendEstimate = {
+    status: !end ? 'missing-season-end' : 'insufficient-history',
+    model: 'client-fallback-weighted-daily-delta-v1',
+    confidence: 'insufficient',
+    direction: 'unknown',
+    slopePerDay: null,
+    volatilityPerDay: null,
+    sampleDays: orderedPoints.length,
+    sampleSpanDays:
+      latest && orderedPoints[0]
+        ? Math.round((latestDay!.getTime() - startOfTrendUtcDay(orderedPoints[0].capturedAt).getTime()) / TREND_DAY_MS)
+        : 0,
+    latestObservedAt: latest?.capturedAt.toISOString() || null,
+    points: [],
+  }
+  if (!latest || !endDay || !latestDay) return base
+  if (orderedPoints.length < 3) return base
+  if (Date.now() >= end.getTime() || endDay.getTime() <= latestDay.getTime()) return { ...base, status: 'no-future-days' }
+
+  const changes = orderedPoints
+    .slice(-7)
+    .slice(1)
+    .reduce<Array<{ value: number; weight: number }>>((result, point, index) => {
+      const previous = orderedPoints.slice(-7)[index]
+      const elapsedDays = Math.round(
+        (startOfTrendUtcDay(point.capturedAt).getTime() - startOfTrendUtcDay(previous.capturedAt).getTime()) / TREND_DAY_MS,
+      )
+      if (elapsedDays > 0) result.push({ value: (point.score - previous.score) / elapsedDays, weight: index + 1 })
+      return result
+    }, [])
+  if (!changes.length) return base
+
+  const weightTotal = changes.reduce((sum, change) => sum + change.weight, 0)
+  const slopePerDay = changes.reduce((sum, change) => sum + change.value * change.weight, 0) / weightTotal
+  const variance = changes.reduce((sum, change) => sum + (change.value - slopePerDay) ** 2 * change.weight, 0) / weightTotal
+  const direction = slopePerDay > 0.25 ? 'rising' : slopePerDay < -0.25 ? 'falling' : 'flat'
+  const confidence = orderedPoints.length >= 7 && base.sampleSpanDays >= 6 ? 'high' : orderedPoints.length >= 5 ? 'medium' : 'low'
+  const estimatePoints: ScoreTrendEstimate['points'] = []
+  for (
+    let day = new Date(latestDay.getTime() + TREND_DAY_MS);
+    day.getTime() <= endDay.getTime();
+    day = new Date(day.getTime() + TREND_DAY_MS)
+  ) {
+    const daysAhead = Math.round((day.getTime() - latestDay.getTime()) / TREND_DAY_MS)
+    const daysToFinal = Math.max(0, Math.round((endDay.getTime() - day.getTime()) / TREND_DAY_MS))
+    const score = Math.max(0, Math.round(latest.score + slopePerDay * daysAhead))
+    const uncertainty = Math.max(3, Math.round((Math.sqrt(variance) + 1) * Math.sqrt(daysAhead)))
+    estimatePoints.push({
+      capturedAt: day.toISOString(),
+      score,
+      minScore: Math.max(0, score - uncertainty),
+      maxScore: score + uncertainty,
+      daysToFinal,
+      phase: daysToFinal === 0 ? 'FINAL' : `${daysToFinal}D`,
+    })
+  }
+
+  return {
+    ...base,
+    status: estimatePoints.length ? 'available' : 'no-future-days',
+    confidence,
+    direction,
+    slopePerDay: Number(slopePerDay.toFixed(3)),
+    volatilityPerDay: Number(Math.sqrt(variance).toFixed(3)),
+    points: estimatePoints,
+  }
+}
+
+const isRenderableTrendScore = (value: number | null): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 10000 && value !== 1
+
+const normalizeHistoryTrendEstimate = (
+  source: unknown,
+  points: ScoreHistory['points'],
+  seasonEndsAt: string | null,
+): ScoreTrendEstimate => {
+  const fallback = buildFallbackTrendEstimate(points, seasonEndsAt)
+  if (!isRecord(source)) return fallback
+
+  const normalized = normalizeTrendEstimate(source)
+  if (normalized.status === 'available' && normalized.points.length > 0) return normalized
+
+  // 兼容尚未部署趋势估算的后端，或后端只返回状态但没有未来点的过渡响应。
+  // 只要本地能基于真实历史点生成未来点，就优先保证图表可展示。
+  return fallback.status === 'available' && fallback.points.length > 0 ? fallback : normalized
+}
+
 export const normalizeScoreHistory = (response: unknown): ScoreHistory => {
   const data = unwrapBusinessData(response)
   const quality = toRecord(data.dataQuality)
   const range = toRecord(data.range)
   const provider = toText(toRecord(data.meta).provider)
+  const seasonEndsAt = toText(data.seasonEndsAt) || null
+  const points = Array.isArray(data.points)
+    ? data.points.map(normalizeHistoryPoint).sort((left, right) => left.capturedAt.localeCompare(right.capturedAt))
+    : []
   return {
     server: toText(data.server),
     season: toInteger(data.season),
     league: toText(data.league),
     seasonStartsAt: toText(data.seasonStartsAt) || null,
-    seasonEndsAt: toText(data.seasonEndsAt) || null,
+    seasonEndsAt,
     target: normalizeHistoryTarget(data.target),
-    points: Array.isArray(data.points)
-      ? data.points.map(normalizeHistoryPoint).sort((left, right) => left.capturedAt.localeCompare(right.capturedAt))
-      : [],
-    trendEstimate: isRecord(data.trendEstimate) ? normalizeTrendEstimate(data.trendEstimate) : null,
+    points,
+    trendEstimate: normalizeHistoryTrendEstimate(data.trendEstimate, points, seasonEndsAt),
     range: {
       from: toText(range.from) || null,
       to: toText(range.to) || null,
