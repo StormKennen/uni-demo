@@ -21,6 +21,8 @@ import type {
   ScoreSeasonStatus,
   ScoreSimpleOption,
   ScoreTargetOption,
+  ScoreTrendEstimate,
+  ScoreTrendEstimateStatus,
   ScoreTrendDirection,
 } from './score-types'
 
@@ -167,6 +169,18 @@ const normalizeDirection = (value: unknown): ScoreTrendDirection => {
   return 'unknown'
 }
 
+const normalizeTrendEstimateStatus = (value: unknown): ScoreTrendEstimateStatus => {
+  if (
+    value === 'available' ||
+    value === 'insufficient-history' ||
+    value === 'missing-season-end' ||
+    value === 'not-current-season' ||
+    value === 'no-future-days'
+  )
+    return value
+  return 'insufficient-history'
+}
+
 const normalizePoint = (source: unknown): ScorePoint => {
   const record = toRecord(source)
   return {
@@ -290,16 +304,54 @@ const normalizeHistoryTarget = (source: unknown): ScoreCutoff =>
     score: null,
   }
 
+const normalizeTrendEstimate = (source: unknown): ScoreTrendEstimate => {
+  const record = toRecord(source)
+  const points = Array.isArray(record.points)
+    ? record.points
+        .map(point => {
+          const item = toRecord(point)
+          const score = toFiniteNumber(item.score)
+          return {
+            capturedAt: toText(item.capturedAt),
+            score: score ?? 0,
+            minScore: toFiniteNumber(item.minScore) ?? score ?? 0,
+            maxScore: toFiniteNumber(item.maxScore) ?? score ?? 0,
+            daysToFinal: Math.max(0, toInteger(item.daysToFinal) ?? 0),
+            phase: toText(item.phase),
+          }
+        })
+        .filter(point => Boolean(point.capturedAt) && point.phase !== '' && Number.isFinite(point.score))
+    : []
+  return {
+    status: normalizeTrendEstimateStatus(record.status),
+    model: toText(record.model),
+    confidence: normalizeConfidence(record.confidence),
+    direction: normalizeDirection(record.direction),
+    slopePerDay: toFiniteNumber(record.slopePerDay),
+    volatilityPerDay: toFiniteNumber(record.volatilityPerDay),
+    sampleDays: Math.max(0, toInteger(record.sampleDays) ?? 0),
+    sampleSpanDays: Math.max(0, toInteger(record.sampleSpanDays) ?? 0),
+    latestObservedAt: toText(record.latestObservedAt) || null,
+    points,
+  }
+}
+
 export const normalizeScoreHistory = (response: unknown): ScoreHistory => {
   const data = unwrapBusinessData(response)
   const quality = toRecord(data.dataQuality)
   const range = toRecord(data.range)
   const provider = toText(toRecord(data.meta).provider)
   return {
+    server: toText(data.server),
+    season: toInteger(data.season),
+    league: toText(data.league),
+    seasonStartsAt: toText(data.seasonStartsAt) || null,
+    seasonEndsAt: toText(data.seasonEndsAt) || null,
     target: normalizeHistoryTarget(data.target),
     points: Array.isArray(data.points)
       ? data.points.map(normalizeHistoryPoint).sort((left, right) => left.capturedAt.localeCompare(right.capturedAt))
       : [],
+    trendEstimate: isRecord(data.trendEstimate) ? normalizeTrendEstimate(data.trendEstimate) : null,
     range: {
       from: toText(range.from) || null,
       to: toText(range.to) || null,

@@ -186,10 +186,14 @@
           </view>
 
           <view v-if="!isHistoricalSeason && trendChartSeries.length" class="section-card">
-            <view class="section-heading">
+            <view class="section-heading trend-section-heading">
               <view class="heading-copy">
                 <text class="section-title">趋势</text>
-                <text class="section-subtitle">{{ trendChartMode === 'phase' ? '多目标 · 按距结算倒计时展示' : '按采集日期展示' }}</text>
+                <text class="section-subtitle">{{ trendChartMode === 'phase' ? '多目标 · 按距结算倒计时展示' : '按日期展示' }}</text>
+              </view>
+              <view v-if="hasAvailableTrendEstimate" class="trend-estimate-toggle">
+                <text>显示趋势估算</text>
+                <switch :checked="showTrendEstimate" color="var(--theme-brand)" @change="toggleTrendEstimate" />
               </view>
             </view>
             <view v-if="trendTargetFilterOptions.length > 1" class="chart-filter-row">
@@ -220,6 +224,10 @@
                 阶段 {{ trendChartCategories[0] }} - {{ trendChartCategories[trendChartCategories.length - 1] }}
               </text>
               <text v-else>时间范围 {{ formatDate(trendChartRange.from) }} - {{ formatDate(trendChartRange.to) }}</text>
+            </view>
+            <view v-if="trendChartMode === 'date'" class="chart-style-legend">
+              <text class="chart-style-item"><text class="chart-style-line actual" />实际</text>
+              <text v-if="hasAvailableTrendEstimate" class="chart-style-item"><text class="chart-style-line estimated" />趋势估算</text>
             </view>
           </view>
 
@@ -260,7 +268,13 @@
   import RtaTierStars from './score-forecast/RtaTierStars.vue'
   import { getRtaTierColor, getRtaTierMeta } from './score-forecast/rta-tier'
   import { useRtaScoreForecast } from './score-forecast/use-rta-score-forecast'
-  import type { ScoreCutoff, ScoreSeasonHistory, ScoreSeasonHistoryPoint, ScoreSeasonOption } from './score-forecast/score-types'
+  import type {
+    ScoreCutoff,
+    ScoreSeasonHistory,
+    ScoreSeasonHistoryPoint,
+    ScoreSeasonOption,
+    ScoreTrendEstimatePoint,
+  } from './score-forecast/score-types'
   import { formatRankValue, formatScoreValue, formatTargetLabel } from './score-forecast/score-normalizers'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -269,6 +283,7 @@
     label: string
     score: number
     index: number
+    estimated?: boolean
   }
 
   interface TrendSeries {
@@ -542,13 +557,26 @@
 
   const phaseTableWidth = computed(() => `${Math.max(760, 150 + phaseTableTargets.value.length * 150)}rpx`)
 
+  const showTrendEstimate = ref(true)
+  const hasAvailableTrendEstimate = computed(
+    () =>
+      !isHistoricalSeason.value &&
+      historySeries.value.some(item => item.trendEstimate?.status === 'available' && item.trendEstimate.points.length > 0),
+  )
+
   const dateChartCategories = computed(() => {
-    const labels = historySeries.value.flatMap(item =>
+    const labels = new Map<string, number>()
+    historySeries.value.forEach(item => {
       item.points
         .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
-        .map(point => dayjs(point.capturedAt).format('MM-DD')),
-    )
-    return [...new Set(labels)]
+        .forEach(point => labels.set(dayjs(point.capturedAt).format('MM-DD'), dayjs(point.capturedAt).valueOf()))
+      if (showTrendEstimate.value) {
+        item.trendEstimate?.points
+          .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+          .forEach(point => labels.set(dayjs(point.capturedAt).format('MM-DD'), dayjs(point.capturedAt).valueOf()))
+      }
+    })
+    return [...labels.entries()].sort((left, right) => left[1] - right[1]).map(([label]) => label)
   })
 
   const dateChartSeries = computed<TrendSeries[]>(() =>
@@ -556,7 +584,7 @@
       .map((item): TrendSeries | null => {
         const target = options.value?.targets.find(option => option.key === item.target.key)
         if (!target) return null
-        const points = item.points
+        const actualPoints = item.points
           .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
           .map(point => {
             const label = dayjs(point.capturedAt).format('MM-DD')
@@ -565,9 +593,24 @@
               label,
               score: point.score as number,
               index: dateChartCategories.value.indexOf(label),
+              estimated: false,
             }
           })
-          .filter(point => point.index >= 0)
+        const estimatedPoints = showTrendEstimate.value
+          ? (item.trendEstimate?.points || [])
+              .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
+              .map((point: ScoreTrendEstimatePoint) => {
+                const label = dayjs(point.capturedAt).format('MM-DD')
+                return {
+                  key: `${item.target.key}-estimate-${point.capturedAt}`,
+                  label,
+                  score: point.score,
+                  index: dateChartCategories.value.indexOf(label),
+                  estimated: true,
+                }
+              })
+          : []
+        const points = [...actualPoints, ...estimatedPoints].filter(point => point.index >= 0)
         if (!points.length) return null
         return {
           key: `date-${item.target.key}`,
@@ -582,7 +625,9 @@
 
   const orderedDateChartSeries = computed<TrendSeries[]>(() => [...dateChartSeries.value].sort(sortTrendSeries))
 
-  const trendChartMode = computed<'phase' | 'date'>(() => (orderedPhaseChartSeries.value.length ? 'phase' : 'date'))
+  const trendChartMode = computed<'phase' | 'date'>(() =>
+    !isHistoricalSeason.value && orderedDateChartSeries.value.length ? 'date' : orderedPhaseChartSeries.value.length ? 'phase' : 'date',
+  )
   const trendChartCategories = computed(() => (trendChartMode.value === 'phase' ? phaseChartCategories.value : dateChartCategories.value))
   const trendChartSeries = computed<TrendSeries[]>(() =>
     trendChartMode.value === 'phase' ? orderedPhaseChartSeries.value : orderedDateChartSeries.value,
@@ -607,6 +652,10 @@
   })
   const selectTrendTarget = (key: string): void => {
     trendTargetFilter.value = key
+  }
+
+  const toggleTrendEstimate = (event: { detail?: { value?: boolean } }): void => {
+    showTrendEstimate.value = event.detail?.value === true
   }
 
   const trendChartRange = computed(() => {
@@ -811,6 +860,26 @@
   .section-heading {
     align-items: center;
     margin-bottom: 18rpx;
+  }
+
+  .trend-section-heading {
+    align-items: flex-start;
+  }
+
+  .trend-estimate-toggle {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
+    color: var(--theme-text-secondary);
+    font-size: 20rpx;
+    line-height: 1.2;
+  }
+
+  .trend-estimate-toggle switch {
+    transform: scale(0.72);
+    transform-origin: right center;
+    margin-right: -12rpx;
   }
 
   .section-title {
@@ -1030,6 +1099,35 @@
     color: var(--theme-text);
     font-size: 24rpx;
     font-weight: 800;
+  }
+
+  .chart-style-legend {
+    display: flex;
+    align-items: center;
+    gap: 24rpx;
+    margin-top: 14rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 19rpx;
+  }
+
+  .chart-style-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+
+  .chart-style-line {
+    display: inline-block;
+    width: 26rpx;
+    height: 4rpx;
+    border-radius: 999rpx;
+    background: var(--theme-text-tertiary);
+  }
+
+  .chart-style-line.estimated {
+    height: 0;
+    border-top: 4rpx dashed var(--theme-text-tertiary);
+    background: transparent;
   }
 
   .cutoff-group-subtitle {

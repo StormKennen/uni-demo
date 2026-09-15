@@ -120,9 +120,39 @@ export interface ScoreHistoryPoint {
   sourceUpdatedAt: string | null
 }
 
+export type ScoreTrendEstimateStatus = 'available' | 'insufficient-history' | 'missing-season-end' | 'not-current-season' | 'no-future-days'
+
+export interface ScoreTrendEstimatePoint {
+  capturedAt: string
+  score: number
+  minScore: number
+  maxScore: number
+  daysToFinal: number
+  phase: string
+}
+
+export interface ScoreTrendEstimate {
+  status: ScoreTrendEstimateStatus
+  model: string
+  confidence: ScoreForecastConfidence
+  direction: ScoreTrendDirection
+  slopePerDay: number | null
+  volatilityPerDay: number | null
+  sampleDays: number
+  sampleSpanDays: number
+  latestObservedAt: string | null
+  points: ScoreTrendEstimatePoint[]
+}
+
 export interface ScoreHistory {
+  server?: string
+  season?: number | null
+  league?: string
+  seasonStartsAt?: string | null
+  seasonEndsAt?: string | null
   target: ScoreCutoff
   points: ScoreHistoryPoint[]
+  trendEstimate: ScoreTrendEstimate | null
   range: {
     from: string | null
     to: string | null

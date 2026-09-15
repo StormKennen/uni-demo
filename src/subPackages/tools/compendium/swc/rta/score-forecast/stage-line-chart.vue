@@ -17,12 +17,25 @@
             v-for="segment in segments"
             :key="segment.key"
             class="line-segment"
-            :style="{ ...segment.style, backgroundColor: segment.color }" />
+            :class="{ estimated: segment.estimated }"
+            :style="{
+              ...segment.style,
+              backgroundColor: segment.estimated ? 'transparent' : segment.color,
+              borderTopColor: segment.color,
+            }" />
 
           <template v-for="series in chartSeries" :key="series.key">
-            <view v-for="point in series.points" :key="point.key" class="line-point" :style="{ left: `${point.x}%`, top: `${point.y}%` }">
+            <view
+              v-for="point in series.points"
+              :key="point.key"
+              class="line-point"
+              :class="{ estimated: point.estimated }"
+              :style="{ left: `${point.x}%`, top: `${point.y}%` }">
               <text class="point-score" :style="{ color: point.color }">{{ formatScore(point.score) }}</text>
-              <view class="point-dot" :style="{ backgroundColor: point.color }" />
+              <view
+                class="point-dot"
+                :class="{ estimated: point.estimated }"
+                :style="{ backgroundColor: point.estimated ? 'transparent' : point.color, borderColor: point.color }" />
             </view>
           </template>
         </view>
@@ -58,6 +71,7 @@
     label: string
     score: number
     index: number
+    estimated?: boolean
   }
 
   interface StageLineSeries {
@@ -81,6 +95,7 @@
   interface ChartSegment {
     key: string
     color: string
+    estimated: boolean
     style: {
       left: string
       top: string
@@ -180,6 +195,7 @@
           {
             key: `${series.key}-${previous.key}-${point.key}`,
             color: series.color,
+            estimated: Boolean(point.estimated),
             style: {
               left: `${previous.x}%`,
               top: `${previous.y}%`,
@@ -259,6 +275,12 @@
     transform-origin: left center;
   }
 
+  .line-segment.estimated {
+    height: 0;
+    border-top-width: 4rpx;
+    border-top-style: dashed;
+  }
+
   .line-point {
     position: absolute;
     z-index: 1;
@@ -284,6 +306,12 @@
     width: 12rpx;
     height: 12rpx;
     border-radius: 50%;
+    box-sizing: border-box;
+  }
+
+  .point-dot.estimated {
+    border-width: 3rpx;
+    border-style: solid;
   }
 
   .label-list {
