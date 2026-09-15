@@ -143,6 +143,40 @@
             </view>
           </view>
 
+          <view v-if="trendEstimatePanelVisible" class="section-card trend-estimate-card">
+            <view class="section-heading">
+              <view class="heading-copy">
+                <text class="section-title">趋势估算</text>
+                <text class="section-subtitle">根据近期实际变化，估算至赛季结算</text>
+              </view>
+              <text v-if="trendEstimateRows.length" class="section-badge">{{ trendEstimateRows.length }} 个分段</text>
+            </view>
+            <view v-if="trendEstimateRows.length" class="trend-estimate-grid">
+              <view v-for="row in trendEstimateRows" :key="row.key" class="trend-estimate-item">
+                <view class="trend-estimate-target">
+                  <RtaTierStars :target-key="row.key" :size="22" />
+                  <text>{{ row.label }}</text>
+                </view>
+                <view class="trend-estimate-score-row">
+                  <view>
+                    <text class="trend-estimate-caption">预计结算</text>
+                    <text class="trend-estimate-score">{{ formatScore(row.finalScore) }}</text>
+                  </view>
+                  <text class="trend-estimate-delta" :class="`direction-${row.direction}`">
+                    {{ formatSignedScore(row.deltaPerDay) }}/天
+                  </text>
+                </view>
+                <view class="trend-estimate-meta">
+                  <text>区间 {{ formatScore(row.minScore) }} - {{ formatScore(row.maxScore) }}</text>
+                  <text>{{ row.confidenceLabel }} · {{ row.daysToFinal > 0 ? `剩${row.daysToFinal}天` : '结算日' }}</text>
+                </view>
+              </view>
+            </view>
+            <view v-else class="trend-estimate-empty">
+              <text>{{ trendEstimateUnavailableText }}</text>
+            </view>
+          </view>
+
           <!-- <view v-if="historyChartSeries.length" class="section-card">
             <view class="section-heading">
               <view class="heading-copy">
@@ -309,6 +343,18 @@
     scores: Record<string, number | null>
   }
 
+  interface TrendEstimateRow {
+    key: string
+    label: string
+    finalScore: number
+    minScore: number
+    maxScore: number
+    deltaPerDay: number | null
+    direction: 'rising' | 'flat' | 'falling' | 'unknown'
+    confidenceLabel: string
+    daysToFinal: number
+  }
+
   const {
     options,
     config,
@@ -410,6 +456,11 @@
 
   const formatScore = (value: number | null | undefined): string => formatScoreValue(value)
   const formatRank = (value: number | null | undefined): string => formatRankValue(value)
+  const formatSignedScore = (value: number | null | undefined): string => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return '--'
+    const rounded = Math.round(value)
+    return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString('en-US')}`
+  }
   const chartWidth = (count: number): string => `${Math.max(300, count * 110)}rpx`
   const defaultRtaShareTitle = '魔灵召唤 RTA分数预测｜趋势'
   const shareNow = ref(Date.now())
@@ -557,6 +608,61 @@
 
   const phaseTableWidth = computed(() => `${Math.max(760, 150 + phaseTableTargets.value.length * 150)}rpx`)
 
+  const trendEstimatePanelVisible = computed(
+    () => !isHistoricalSeason.value && (historySeries.value.length > 0 || (hasAnyData.value && !dataLoading.value)),
+  )
+  const trendEstimateRows = computed<TrendEstimateRow[]>(() => {
+    const confidenceLabels: Record<string, string> = {
+      high: '高置信度',
+      medium: '中置信度',
+      low: '低置信度',
+      insufficient: '样本不足',
+    }
+    const groupOrder: Record<string, number> = { red: 0, green: 1 }
+    return historySeries.value
+      .map((history): TrendEstimateRow | null => {
+        const target = options.value?.targets.find(item => item.key === history.target.key)
+        const estimate = history.trendEstimate
+        const finalPoint = estimate?.points.find(point => point.daysToFinal === 0) || estimate?.points[estimate.points.length - 1]
+        if (
+          !target ||
+          estimate?.status !== 'available' ||
+          !finalPoint ||
+          !isRenderableScore(finalPoint.score) ||
+          !isRenderableScore(finalPoint.minScore) ||
+          !isRenderableScore(finalPoint.maxScore)
+        )
+          return null
+        return {
+          key: target.key,
+          label: formatTarget(target.key, target.name),
+          finalScore: finalPoint.score,
+          minScore: finalPoint.minScore,
+          maxScore: finalPoint.maxScore,
+          deltaPerDay: estimate.slopePerDay,
+          direction: estimate.direction,
+          confidenceLabel: confidenceLabels[estimate.confidence] || '样本不足',
+          daysToFinal: finalPoint.daysToFinal,
+        }
+      })
+      .filter((row): row is TrendEstimateRow => row !== null)
+      .sort((left, right) => {
+        const leftTarget = options.value?.targets.find(target => target.key === left.key)
+        const rightTarget = options.value?.targets.find(target => target.key === right.key)
+        const groupDiff = (groupOrder[leftTarget?.group || ''] ?? 2) - (groupOrder[rightTarget?.group || ''] ?? 2)
+        if (groupDiff !== 0) return groupDiff
+        return (getRtaTierMeta(right.key)?.count || 0) - (getRtaTierMeta(left.key)?.count || 0)
+      })
+  })
+  const trendEstimateUnavailableText = computed(() => {
+    const trendEstimate = historySeries.value.find(item => item.trendEstimate)?.trendEstimate
+    if (!trendEstimate) return '当前服务尚未返回趋势估算，请先更新后端服务'
+    const status = trendEstimate.status
+    if (status === 'missing-season-end') return '缺少赛季结算时间，暂不生成估算'
+    if (status === 'no-future-days') return '当前已接近结算，暂无可展示的未来估算'
+    return '当前历史样本不足，暂不生成估算'
+  })
+
   const showTrendEstimate = ref(true)
   const hasAvailableTrendEstimate = computed(
     () =>
@@ -660,7 +766,10 @@
 
   const trendChartRange = computed(() => {
     const points = historySeries.value
-      .flatMap(item => item.points)
+      .flatMap(item => [
+        ...item.points,
+        ...(showTrendEstimate.value && item.trendEstimate?.status === 'available' ? item.trendEstimate.points : []),
+      ])
       .filter(point => isRenderableScore(point.score) && dayjs(point.capturedAt).isValid())
       .sort((left, right) => left.capturedAt.localeCompare(right.capturedAt))
     return {
@@ -896,6 +1005,91 @@
     background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
     font-size: 20rpx;
+  }
+
+  .trend-estimate-card {
+    border-color: var(--theme-brand);
+  }
+
+  .trend-estimate-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14rpx;
+  }
+
+  .trend-estimate-item {
+    min-width: 0;
+    padding: 16rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .trend-estimate-target,
+  .trend-estimate-score-row,
+  .trend-estimate-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10rpx;
+  }
+
+  .trend-estimate-target {
+    justify-content: flex-start;
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    font-weight: 700;
+  }
+
+  .trend-estimate-score-row {
+    align-items: flex-end;
+    margin-top: 14rpx;
+  }
+
+  .trend-estimate-caption {
+    display: block;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+  }
+
+  .trend-estimate-score {
+    display: block;
+    margin-top: 4rpx;
+    color: var(--theme-text);
+    font-size: 30rpx;
+    font-weight: 800;
+  }
+
+  .trend-estimate-delta {
+    flex-shrink: 0;
+    font-size: 21rpx;
+    font-weight: 700;
+  }
+
+  .trend-estimate-delta.direction-rising {
+    color: #3b9b66;
+  }
+
+  .trend-estimate-delta.direction-falling {
+    color: #ce566b;
+  }
+
+  .trend-estimate-delta.direction-flat,
+  .trend-estimate-delta.direction-unknown {
+    color: var(--theme-text-secondary);
+  }
+
+  .trend-estimate-meta {
+    margin-top: 8rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+  }
+
+  .trend-estimate-empty {
+    padding: 20rpx 8rpx 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 21rpx;
+    text-align: center;
   }
 
   .stage-bar-grid {
