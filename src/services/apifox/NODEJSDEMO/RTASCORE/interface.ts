@@ -83,7 +83,9 @@ export interface getRtaScoreHistoryQuery {
 
   provider?: string
 
-  targetKey: string
+  targetKey?: string
+
+  targetKeys?: string
 
   interval?: string
 
@@ -141,7 +143,9 @@ export interface getRtaScoreSeasonHistoryQuery {
 
   provider?: string
 
-  targetKey: string
+  targetKey?: string
+
+  targetKeys?: string
 
   league?: string
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+- 2026-09-16 [tools/compendium-swc/rta] 公共 RTA 分数查询跳过游客会话初始化，避免首屏被无关的 guest-session 请求阻塞（Codex）
+- 2026-09-15 [swc-rta] 趋势查询改为批量加载，活动赛季跳过无用的阶段历史请求，并将配置请求移出首屏关键路径，减少页面打开等待时间（Codex）
+
 > Harness 变更日志。每次修改 `src/` 核心代码的提交必须在此追加一条记录（pre-commit 强制校验）。
 
 - 2026-07-31 [common/webview] 增强协议页标题识别逻辑，支持“小程序服务”“协议”“政策”等常见标题，避免微信平台配置的隐私/服务URL打开时显示空白（Codex）
@@ -7,6 +10,12 @@
 
 ## Unreleased
 
+- 2026-09-15 [tools/vote/ui] 简化投票创建页：将必填截止时间移出折叠容器并默认展示，其他参与、隐私和结果设置收纳为可选的“更多设置”（Codex）
+- 2026-09-15 [tools/vote,sharing] 分享标题改为根据创建页投票标题、详情页投票标题及当前状态动态生成，并统一复用到好友和朋友圈分享（Codex）
+- 2026-09-15 [tools/vote,sharing] 统一使用 `vote-share.jpg` 作为投票创建页和详情页的微信好友、朋友圈分享封面（Codex）
+- 2026-09-15 [tools/vote,sharing] 将投票入口与接龙并列归入「记录」工作间，并为创建页、详情页统一补齐微信右上角、好友和朋友圈分享能力（Codex）
+- 2026-09-15 [tools/vote] 新增 Vote V1 前端 Mock 阶段：Domain Contract、Mock Repository、创建/详情/结果/创建者管理 UI、游客登录回跳骨架与 H5/mp-weixin 分享路径；暂不接入真实 Vote API（Codex）
+- 2026-09-15 [tools/vote,services/apifox] 接入已导入的 VOTES Apifox 方法：新增 ApiVoteRepository 与业务响应 Adapter，完成创建、详情、参与者、提交/修改、更新、关闭和公布结果链路；创建页截止时间与后端 endAt 必填契约对齐，移除生产 Mock 演示入口并保留 Mock 单元测试数据源（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 微信分享标题根据当前赛季结束时间动态展示倒计时，格式为“RTA分数预测｜距离赛季结算，还剩XX天”（Codex）
 - 2026-09-14 [tools/quick-transfer/file,ui] 将 `image/*` 从普通文件列表提升为内嵌内容，复用受保护预览链路并支持图片加载队列、失败重试、全屏预览和独立保存；非图片继续归入附件（Codex）
 - 2026-09-14 [tools/compendium-swc/rta] 调整阶段明细分数列顺序为“三红、二红、一红、三绿、二绿、一绿”，便于按高段位到低段位查看分界线（Codex）

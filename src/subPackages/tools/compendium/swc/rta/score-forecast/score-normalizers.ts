@@ -485,6 +485,12 @@ export const normalizeScoreHistory = (response: unknown): ScoreHistory => {
   }
 }
 
+export const normalizeScoreHistoryBatch = (response: unknown): ScoreHistory[] => {
+  const data = unwrapBusinessData(response)
+  if (!Array.isArray(data.items)) return []
+  return data.items.map(normalizeScoreHistory)
+}
+
 export const normalizeScoreSeasonHistory = (response: unknown): ScoreSeasonHistory => {
   const data = unwrapBusinessData(response)
   const target = toRecord(data.target)
@@ -522,6 +528,12 @@ export const normalizeScoreSeasonHistory = (response: unknown): ScoreSeasonHisto
       providers: Array.isArray(quality.providers) ? quality.providers.map(toText).filter(Boolean) : [],
     },
   }
+}
+
+export const normalizeScoreSeasonHistoryBatch = (response: unknown): ScoreSeasonHistory[] => {
+  const data = unwrapBusinessData(response)
+  if (!Array.isArray(data.items)) return []
+  return data.items.map(normalizeScoreSeasonHistory)
 }
 
 const normalizeForecastTarget = (source: unknown): ScoreForecastTarget => {

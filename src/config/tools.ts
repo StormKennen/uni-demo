@@ -311,6 +311,16 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
     isNew: true,
   },
+  vote: {
+    name: '投票',
+    desc: '单选、多选与匿名结果展示',
+    icon: 'checkbox-filled',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+    path: '/subPackages/tools/vote/create',
+    workspace: 'record',
+    isNew: true,
+    requiresAuth: true,
+  },
   'family-tree': {
     name: '族谱',
     desc: '实时数据，支持编辑',

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { fetchScoreConfig, fetchScoreCurrent, fetchScoreHistory, fetchScoreOptions, fetchScoreSeasonHistory } from './score-api'
+import { fetchScoreConfig, fetchScoreCurrent, fetchScoreHistoryBatch, fetchScoreOptions, fetchScoreSeasonHistoryBatch } from './score-api'
 import { getScoreErrorMessage } from './score-normalizers'
 import type {
   ScoreConfig,
@@ -136,18 +136,18 @@ export const useRtaScoreForecast = () => {
       if (cached) resultsByKey.set(targetKey, cached)
       return !cached
     })
-    const results = await Promise.allSettled(pendingTargetKeys.map(targetKey => fetchScoreHistory({ ...selection, targetKey })))
-    results.forEach((result, index) => {
-      if (result.status !== 'fulfilled') return
-      const targetKey = pendingTargetKeys[index]
-      const cacheKey = getHistoryCacheKey({ ...selection, targetKey })
-      historyCache.set(cacheKey, result.value)
-      resultsByKey.set(targetKey, result.value)
-    })
+    if (pendingTargetKeys.length) {
+      const results = await fetchScoreHistoryBatch(selection, pendingTargetKeys)
+      results.forEach(result => {
+        const targetKey = result.target.key
+        const cacheKey = getHistoryCacheKey({ ...selection, targetKey })
+        historyCache.set(cacheKey, result)
+        resultsByKey.set(targetKey, result)
+      })
+    }
     const successful = targetKeys.map(targetKey => resultsByKey.get(targetKey)).filter((item): item is ScoreHistory => Boolean(item))
-    if (successful.length || !results.length) return successful
-    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
-    throw failure?.reason || new Error('当前趋势暂不可用')
+    if (successful.length || !pendingTargetKeys.length) return successful
+    throw new Error('当前趋势暂不可用')
   }
 
   const loadSeasonHistorySeries = async (selection: ScoreSelection, targets: ScoreTargetOption[]): Promise<ScoreSeasonHistory[]> => {
@@ -158,18 +158,21 @@ export const useRtaScoreForecast = () => {
       if (cached) resultsByKey.set(target.key, cached)
       return !cached
     })
-    const results = await Promise.allSettled(pendingTargets.map(target => fetchScoreSeasonHistory({ ...selection, targetKey: target.key })))
-    results.forEach((result, index) => {
-      if (result.status !== 'fulfilled') return
-      const target = pendingTargets[index]
-      const cacheKey = getHistoryCacheKey({ ...selection, targetKey: target.key })
-      seasonHistoryCache.set(cacheKey, result.value)
-      resultsByKey.set(target.key, result.value)
-    })
+    if (pendingTargets.length) {
+      const results = await fetchScoreSeasonHistoryBatch(
+        selection,
+        pendingTargets.map(target => target.key),
+      )
+      results.forEach(result => {
+        const targetKey = result.target.key
+        const cacheKey = getHistoryCacheKey({ ...selection, targetKey })
+        seasonHistoryCache.set(cacheKey, result)
+        resultsByKey.set(targetKey, result)
+      })
+    }
     const successful = targets.map(target => resultsByKey.get(target.key)).filter((item): item is ScoreSeasonHistory => Boolean(item))
-    if (successful.length || !results.length) return successful
-    const failure = results.find((result): result is PromiseRejectedResult => result.status === 'rejected')
-    throw failure?.reason || new Error('历史赛季趋势暂不可用')
+    if (successful.length || !pendingTargets.length) return successful
+    throw new Error('历史赛季趋势暂不可用')
   }
 
   const applyOptions = (nextOptions: ScoreOptions, preserveSelection: boolean) => {
@@ -222,40 +225,49 @@ export const useRtaScoreForecast = () => {
     dataLoading.value = true
     const currentCacheKey = getFilterCacheKey(selection)
     const cachedCurrent = currentCache.get(currentCacheKey)
-    const shouldLoadCurrent = Boolean(cachedCurrent || capabilities?.current || config.value?.researchDisplay.current)
+    // Config is loaded in the background so it never blocks the first useful
+    // response. Until it arrives, the data endpoints are the source of truth.
+    const shouldLoadCurrent = Boolean(cachedCurrent || !capabilities || capabilities.current || config.value?.researchDisplay.current)
     const currentTask = shouldLoadCurrent
       ? cachedCurrent
         ? Promise.resolve(cachedCurrent)
         : fetchScoreCurrent(selection)
       : Promise.resolve(null)
-    const [currentResult] = await Promise.allSettled([currentTask])
-    if (version !== requestVersion) return
-    if (currentResult.status === 'fulfilled') {
-      current.value = currentResult.value
-      if (currentResult.value) {
-        currentCache.set(currentCacheKey, currentResult.value)
-        syncTargetOptions(currentResult.value)
-      }
-    } else currentError.value = getScoreErrorMessage(currentResult.reason, '当前分数线暂不可用')
-
-    const nextSelection = getSelection()
-    if (!nextSelection) {
-      dataLoading.value = false
-      return
-    }
     const chartSelectionKey = selectionKey()
     const chartVersion = ++chartRequestVersion
     const nextCapabilities = config.value?.capabilities
     const chartIsHistorical = isHistoricalSeason.value
     const historyTask =
-      !chartIsHistorical && (nextCapabilities?.history || config.value?.researchDisplay.history)
+      !chartIsHistorical && (!nextCapabilities || nextCapabilities.history || config.value?.researchDisplay.history)
         ? loadHistorySeries(
-            nextSelection,
+            selection,
             targetOptions.value.map(target => target.key),
           )
         : Promise.resolve([] as ScoreHistory[])
     const phaseTargets = targetOptions.value
-    const seasonHistoryTask = loadSeasonHistorySeries(nextSelection, phaseTargets)
+    // Active-season phase rows are derived from the daily observations. The
+    // relative historical endpoint is only needed when the user opens a
+    // historical season, avoiding a second set of identical requests.
+    const seasonHistoryTask = chartIsHistorical
+      ? loadSeasonHistorySeries(selection, phaseTargets)
+      : Promise.resolve([] as ScoreSeasonHistory[])
+
+    // Current data and chart data are independent reads. Start all of them
+    // together so a slow trend aggregation cannot delay the useful cutoff
+    // board, and a slow current read cannot delay the chart response.
+    const currentResult = currentTask.then(
+      result => {
+        if (version !== requestVersion) return
+        current.value = result
+        if (result) {
+          currentCache.set(currentCacheKey, result)
+          syncTargetOptions(result)
+        }
+      },
+      reason => {
+        if (version === requestVersion) currentError.value = getScoreErrorMessage(reason, '当前分数线暂不可用')
+      },
+    )
     const chartTask = Promise.allSettled([historyTask, seasonHistoryTask]).then(([historyResult, seasonHistoryResult]) => {
       if (version !== requestVersion || chartVersion !== chartRequestVersion || chartSelectionKey !== selectionKey()) return
       if (historyResult.status === 'fulfilled') historySeries.value = historyResult.value
@@ -275,7 +287,7 @@ export const useRtaScoreForecast = () => {
       }
       dataLoading.value = false
     })
-    void chartTask
+    await Promise.all([currentResult, chartTask])
   }
 
   const loadSelection = async (reloadOptions: boolean, keepData: boolean): Promise<boolean> => {
@@ -288,17 +300,12 @@ export const useRtaScoreForecast = () => {
     if (!keepData) clearData()
     try {
       const shouldLoadOptions = reloadOptions || !options.value
-      let preloadedConfig: ScoreConfig | undefined
       if (shouldLoadOptions) {
         const requestedSelection = getSelection() || undefined
-        const [scopedOptions, parallelConfig] = await Promise.all([
-          fetchScoreOptions(requestedSelection),
-          fetchScoreConfig(requestedSelection),
-        ])
+        const scopedOptions = await fetchScoreOptions(requestedSelection)
         if (version !== requestVersion) return false
         const nextOptions = options.value ? mergeFilterOptions(options.value, scopedOptions) : scopedOptions
         applyOptions(nextOptions, Boolean(options.value))
-        preloadedConfig = parallelConfig
       }
       if (previousSelectionKey !== selectionKey()) {
         keepData = false
@@ -307,10 +314,23 @@ export const useRtaScoreForecast = () => {
       const selection = getSelection()
       const configCacheKey = selection ? getFilterCacheKey(selection) : ''
       const cachedConfig = configCacheKey ? configCache.get(configCacheKey) : undefined
-      const nextConfig = preloadedConfig || cachedConfig || (await fetchScoreConfig(selection || undefined))
-      if (version !== requestVersion) return false
-      config.value = nextConfig
-      if (configCacheKey && !cachedConfig) configCache.set(configCacheKey, nextConfig)
+      if (cachedConfig) {
+        config.value = cachedConfig
+      } else {
+        config.value = null
+        // Config only controls optional capabilities and labels. Load it after
+        // options so it never competes with the first current/history reads.
+        void fetchScoreConfig(selection || undefined)
+          .then(nextConfig => {
+            if (version !== requestVersion) return
+            config.value = nextConfig
+            if (configCacheKey) configCache.set(configCacheKey, nextConfig)
+          })
+          .catch(() => {
+            // Config is advisory; current/history errors remain visible while
+            // a transient config failure must not blank the score page.
+          })
+      }
       if (!selection) {
         clearData()
         currentError.value = '暂无可用的 RTA 分数筛选项'
@@ -397,7 +417,7 @@ export const useRtaScoreForecast = () => {
     try {
       const [dailyResult, phaseResult] = await Promise.allSettled([
         cachedDailySeries.length === targetKeys.length ? Promise.resolve(cachedDailySeries) : loadHistorySeries(selection, targetKeys),
-        cachedPhaseSeries.length === targetKeys.length
+        !isHistoricalSeason.value || cachedPhaseSeries.length === targetKeys.length
           ? Promise.resolve(cachedPhaseSeries)
           : loadSeasonHistorySeries(selection, targetOptions.value),
       ])

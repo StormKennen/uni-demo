@@ -250,6 +250,21 @@
           }
         },
         {
+          "path": "vote/create",
+          "style": {
+            "navigationBarTitleText": "创建投票",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "vote/detail",
+          "style": {
+            "navigationBarTitleText": "投票详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
           "path": "image-privacy/index",
           "style": {
             "navigationBarTitleText": "图片隐私清理",
