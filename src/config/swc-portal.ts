@@ -32,6 +32,15 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     path: '/subPackages/tools/compendium/swc/rta/index',
   },
   {
+    id: 'tier-ranking',
+    title: 'AI评级榜',
+    desc: '按区域与属性查看魔灵综合评级',
+    icon: 'star',
+    accent: '#0f766e',
+    accentSoft: 'rgba(15, 118, 110, 0.13)',
+    path: '/subPackages/tools/compendium/swc/tier-ranking/index',
+  },
+  {
     id: 'rta-score-forecast',
     title: 'RTA分数预测',
     desc: '查看赛季分数线与结算前趋势',

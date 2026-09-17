@@ -32,6 +32,7 @@ const SWC_LINEUP_RELATIONS_PATH = '/subPackages/tools/compendium/swc/lineup-rela
 const SWC_LINEUP_COUNTER_PATH = '/subPackages/tools/compendium/swc/lineup-counter'
 const SWC_DETAIL_PATH = '/subPackages/tools/compendium/swc/detail'
 const SWC_RTA_PATH = '/subPackages/tools/compendium/swc/rta/index'
+const SWC_TIER_RANKING_PATH = '/subPackages/tools/compendium/swc/tier-ranking/index'
 
 function compactQuery(query: QueryValueMap = {}) {
   return Object.entries(query)
@@ -71,6 +72,10 @@ export function buildSwcListShare(query: QueryValueMap = {}) {
 
 export function buildSwcRtaShare(query: QueryValueMap = {}) {
   return createShare('魔灵召唤 RTA 排行榜：查看赛季人物数据', SWC_RTA_PATH, query)
+}
+
+export function buildSwcTierRankingShare(query: QueryValueMap = {}) {
+  return createShare('魔灵召唤 AI评级榜：查看区域与属性评级', SWC_TIER_RANKING_PATH, query)
 }
 
 export function buildSwcDetailShare(options: {

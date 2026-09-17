@@ -428,6 +428,14 @@
           }
         },
         {
+          "path": "compendium/swc/tier-ranking/index",
+          "style": {
+            "navigationBarTitleText": "AI评级榜",
+            "enablePullDownRefresh": true,
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "compendium/swc/rta/score-forecast",
           "style": {
             "navigationBarTitleText": "RTA分数预测",

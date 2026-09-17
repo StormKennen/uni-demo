@@ -64,6 +64,17 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     isNew: true,
     recentAliasKey: 'compendium-swc',
   },
+  'compendium-swc-tier-ranking': {
+    name: 'AI评级榜',
+    desc: '区域/属性筛选与魔灵综合评级',
+    icon: 'star',
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/compendium/swc/tier-ranking/index',
+    workspace: 'swc',
+    isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
+  },
   'compendium-swc-rta-score-forecast': {
     name: 'RTA分数预测',
     desc: '赛季分数线与结算前趋势',
