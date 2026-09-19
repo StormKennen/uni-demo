@@ -430,7 +430,7 @@
         {
           "path": "compendium/swc/tier-ranking/index",
           "style": {
-            "navigationBarTitleText": "AI评级榜",
+            "navigationBarTitleText": "魔灵强度榜",
             "enablePullDownRefresh": true,
             "navigationStyle": "custom"
           }

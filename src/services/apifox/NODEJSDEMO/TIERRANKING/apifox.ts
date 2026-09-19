@@ -2,6 +2,8 @@
 // @ts-nocheck: 忽略类型错误 系统工具生成
 import http from '@/services/http'
 import type { ParticalUniAppRequestOptions } from '@/services/interface'
+const baseURL = undefined
+type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 import type {
   getCompendiumsTierRankingsConfigQuery,
   getCompendiumsTierRankingsConfigRes,
@@ -12,8 +14,6 @@ import type {
   getCompendiumsTierRankingsReportsQuery,
   getCompendiumsTierRankingsReportsRes,
 } from './interface'
-const baseURL = undefined
-type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
 
 /**
  * @description TierRanking/获取评级榜配置

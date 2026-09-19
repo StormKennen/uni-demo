@@ -46,8 +46,10 @@ export interface getCompendiumsTierRankingsLatestQuery {
   region?: string
 
   provider?: string
-
+  /** 五行属性筛选，多个值用逗号分隔；省略时不限制属性。 */
   elements?: string
+  /** 评级档位筛选，多个值用逗号分隔；省略时不限制档位。 */
+  tiers?: string
 
   locale?: string
 }
@@ -70,8 +72,10 @@ export interface getCompendiumsTierRankingsReportQuery {
   region?: string
 
   provider?: string
-
+  /** 五行属性筛选，多个值用逗号分隔；省略时不限制属性。 */
   elements?: string
+  /** 评级档位筛选，多个值用逗号分隔；省略时不限制档位。 */
+  tiers?: string
 
   locale?: string
 }

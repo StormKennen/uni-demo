@@ -1,24 +1,24 @@
 <template>
   <PageLayout
-    title="AI评级榜"
+    title="魔灵强度榜"
     :nav-back="true"
     back-fallback="/subPackages/tools/compendium/swc/index"
     nav-init-bg-color="var(--theme-surface)"
     nav-divider>
-    <view class="tier-ranking-page">
-      <view class="overview-band">
+    <view class="tier-ranking-page" :class="{ 'is-poster-mode': isPosterMode }">
+      <!-- <view class="overview-band">
         <view class="overview-copy">
           <text class="overview-kicker">SUMMONERS WAR · RTA</text>
-          <text class="overview-title">AI评级榜</text>
+          <text class="overview-title">魔灵强度榜</text>
           <text class="overview-subtitle">结合出场、跨池稳定性、队长率与样本胜率</text>
         </view>
-        <view v-if="report" class="report-stamp">
+        <view v-if="report?.available" class="report-stamp">
           <text class="stamp-provider">{{ providerLabel(report.provider) }}</text>
           <text class="stamp-date">{{ formatReportDate(report.reportDate) }}</text>
         </view>
-      </view>
+      </view> -->
 
-      <view v-if="report" class="report-meta">
+      <!-- <view v-if="report?.available" class="report-meta">
         <view class="meta-item">
           <text class="meta-label">报告</text>
           <text class="meta-value">S{{ report.season }} · {{ report.gameVersion }}</text>
@@ -31,22 +31,21 @@
         <view class="meta-divider" />
         <view class="meta-item">
           <text class="meta-label">收录</text>
-          <text class="meta-value">{{ report.items.length }} 只</text>
+          <text class="meta-value">{{ report.items.length }}</text>
         </view>
-      </view>
+      </view> -->
 
-      <view v-if="config" class="filter-panel">
-        <view class="picker-row">
-          <view class="picker-field">
-            <text class="filter-label">来源</text>
-            <picker mode="selector" :range="sourceLabels" :value="sourceIndex" @change="handleSourceChange">
-              <view class="picker-control">
-                <text>{{ providerLabel(selectedProvider) || '暂无来源' }}</text>
-                <uni-icons type="bottom" size="13" color="var(--theme-text-tertiary)" />
-              </view>
-            </picker>
+      <view v-if="config && !isPosterMode" class="filter-panel">
+        <view class="filter-summary-row" @tap="toggleFilterExpanded">
+          <view class="filter-summary-copy">
+            <text class="filter-summary-label">筛选</text>
+            <text class="filter-summary-value">{{ filterSummary }}</text>
           </view>
-          <view class="picker-field">
+          <uni-icons :type="filterExpanded ? 'top' : 'bottom'" size="16" color="var(--theme-text-tertiary)" />
+        </view>
+
+        <view v-if="filterExpanded" class="filter-details">
+          <view class="filter-line region-filter-line">
             <text class="filter-label">区域</text>
             <picker mode="selector" :range="regionLabels" :value="regionIndex" @change="handleRegionChange">
               <view class="picker-control">
@@ -55,50 +54,147 @@
               </view>
             </picker>
           </view>
-        </view>
 
-        <view class="filter-line">
-          <text class="filter-label">属性</text>
-          <scroll-view class="chip-scroll" scroll-x enable-flex>
-            <view class="chip-list">
-              <view
-                v-for="option in elementOptions"
-                :key="option.key"
-                class="filter-chip"
-                :class="{ active: selectedElement === option.key }"
-                @tap="selectElement(option.key)">
-                <text>{{ option.name }}</text>
+          <view class="filter-line">
+            <text class="filter-label">属性</text>
+            <scroll-view class="chip-scroll" scroll-x enable-flex>
+              <view class="chip-list">
+                <view
+                  v-for="option in elementOptions"
+                  :key="option.key"
+                  class="filter-chip"
+                  :class="{ active: option.key === ALL_VALUE ? !selectedElements.length : selectedElements.includes(option.key) }"
+                  @tap="selectElement(option.key)">
+                  <SwcElementBadge
+                    v-if="option.key !== ALL_VALUE"
+                    :element-key="option.key"
+                    :label="option.name"
+                    :size="24"
+                    :font-size="20"
+                    :gap="4" />
+                  <text v-else>全部</text>
+                </view>
               </view>
-            </view>
-          </scroll-view>
-        </view>
+            </scroll-view>
+          </view>
 
-        <view class="filter-line">
-          <text class="filter-label">评级</text>
-          <scroll-view class="chip-scroll" scroll-x enable-flex>
-            <view class="chip-list">
-              <view
-                v-for="option in tierOptions"
-                :key="option.key"
-                class="filter-chip tier-chip"
-                :class="[`chip-${option.key.toLowerCase()}`, { active: selectedTier === option.key }]"
-                @tap="selectTier(option.key)">
-                <text>{{ option.name }}</text>
+          <view class="filter-line">
+            <text class="filter-label">星级</text>
+            <scroll-view class="chip-scroll" scroll-x enable-flex>
+              <view class="chip-list">
+                <view
+                  v-for="option in starOptions"
+                  :key="option.key"
+                  class="filter-chip"
+                  :class="{ active: option.key === ALL_VALUE ? !selectedStars.length : selectedStars.includes(option.key) }"
+                  @tap="selectStar(option.key)">
+                  <text>{{ option.key === ALL_VALUE ? '全部' : `${option.name}★` }}</text>
+                </view>
               </view>
-            </view>
-          </scroll-view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-line">
+            <text class="filter-label">类型</text>
+            <scroll-view class="chip-scroll" scroll-x enable-flex>
+              <view class="chip-list">
+                <view
+                  v-for="option in archetypeOptions"
+                  :key="option.key"
+                  class="filter-chip"
+                  :class="{ active: option.key === ALL_VALUE ? !selectedArchetypes.length : selectedArchetypes.includes(option.key) }"
+                  @tap="selectArchetype(option.key)">
+                  <SwcSquareIcon v-if="option.key !== ALL_VALUE" kind="archetype" :icon-key="option.key" :size="24" :radius="5" />
+                  <text>{{ option.key === ALL_VALUE ? '全部' : option.name }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <view class="filter-line">
+            <text class="filter-label">评级</text>
+            <scroll-view class="chip-scroll" scroll-x enable-flex>
+              <view class="chip-list">
+                <view
+                  v-for="option in tierOptions"
+                  :key="option.key"
+                  class="filter-chip tier-chip"
+                  :class="[
+                    `chip-${option.key.toLowerCase()}`,
+                    { active: option.key === ALL_VALUE ? !selectedTiers.length : selectedTiers.includes(option.key) },
+                  ]"
+                  @tap="selectTier(option.key)">
+                  <text>{{ option.name }}</text>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+
+          <!-- <view class="search-field">
+            <uni-icons type="search" size="18" color="var(--theme-text-tertiary)" />
+            <input
+              v-model="keyword"
+              class="search-input"
+              type="text"
+              confirm-type="search"
+              placeholder="搜索魔灵名称或编码"
+              placeholder-class="search-placeholder" />
+            <button v-if="keyword" class="clear-button" size="mini" @tap="clearKeyword">×</button>
+          </view> -->
         </view>
 
-        <view class="search-field">
-          <uni-icons type="search" size="18" color="var(--theme-text-tertiary)" />
-          <input
-            v-model="keyword"
-            class="search-input"
-            type="text"
-            confirm-type="search"
-            placeholder="搜索魔灵名称或编码"
-            placeholder-class="search-placeholder" />
-          <button v-if="keyword" class="clear-button" size="mini" @tap="clearKeyword">×</button>
+        <view class="filter-line display-filter-line">
+          <text class="filter-label">显示</text>
+          <view class="chip-list">
+            <view
+              class="display-icon-button"
+              :class="{ active: showTierCount }"
+              :aria-label="showTierCount ? '隐藏品级数量' : '显示品级数量'"
+              :title="showTierCount ? '隐藏品级数量' : '显示品级数量'"
+              @tap="toggleTierCount">
+              <uni-icons :type="showTierCount ? 'bars' : 'list'" size="18" :color="showTierCount ? '#fff' : 'var(--theme-text-tertiary)'" />
+            </view>
+            <view
+              class="display-icon-button"
+              :class="{ active: showAvatarElementBadge }"
+              :aria-label="showAvatarElementBadge ? '隐藏头像属性图标' : '显示头像属性图标'"
+              :title="showAvatarElementBadge ? '隐藏头像属性图标' : '显示头像属性图标'"
+              @tap="toggleAvatarElementBadge">
+              <uni-icons
+                :type="showAvatarElementBadge ? 'color-filled' : 'color'"
+                size="18"
+                :color="showAvatarElementBadge ? '#fff' : 'var(--theme-text-tertiary)'" />
+            </view>
+            <view
+              class="display-icon-button"
+              :class="{ active: showScore }"
+              :aria-label="showScore ? '隐藏评分' : '显示评分'"
+              :title="showScore ? '隐藏评分' : '显示评分'"
+              @tap="toggleScore">
+              <uni-icons :type="showScore ? 'star-filled' : 'star'" size="18" :color="showScore ? '#fff' : 'var(--theme-text-tertiary)'" />
+            </view>
+          </view>
+          <view
+            class="display-icon-button"
+            :class="{ active: viewMode === 'card', disabled: viewModeSwitching }"
+            :aria-label="viewModeSwitching ? '正在切换展示模式' : viewMode === 'card' ? '切换为列表模式' : '切换为卡片聚合模式'"
+            :title="viewModeSwitching ? '正在切换展示模式' : viewMode === 'card' ? '切换为列表模式' : '切换为卡片聚合模式'"
+            @tap="toggleViewMode">
+            <uni-icons
+              :type="viewModeSwitching ? 'loop' : viewMode === 'card' ? 'images' : 'list'"
+              size="18"
+              :class="{ 'is-switching-icon': viewModeSwitching }"
+              :color="viewMode === 'card' ? '#fff' : 'var(--theme-text-tertiary)'" />
+          </view>
+          <view class="display-action-spacer" />
+          <view
+            class="display-icon-button export-button"
+            :class="{ disabled: exportLoading }"
+            aria-label="导出图片"
+            title="导出图片"
+            @tap="exportRankingImage">
+            <uni-icons type="download" size="18" :color="exportLoading ? 'var(--theme-text-tertiary)' : 'var(--theme-brand)'" />
+          </view>
         </view>
       </view>
 
@@ -115,8 +211,13 @@
       </view>
 
       <view v-else-if="errorMessage && !report" class="state-card">
-        <StateBlock text="AI评级榜加载失败" action-text="重新加载" theme="teal" @action="retry" />
-        <text v-if="errorMessage !== 'AI评级榜加载失败'" class="state-detail">{{ errorMessage }}</text>
+        <StateBlock text="魔灵强度榜加载失败" action-text="重新加载" theme="teal" @action="retry" />
+        <text v-if="errorMessage !== '魔灵强度榜加载失败'" class="state-detail">{{ errorMessage }}</text>
+      </view>
+
+      <view v-else-if="initialized && report && !report.available" class="state-card">
+        <StateBlock text="暂无已发布评级数据" />
+        <text class="state-detail">评级数据采集并发布后会显示在这里</text>
       </view>
 
       <view v-else-if="initialized && !visibleItems.length" class="state-card">
@@ -124,43 +225,57 @@
         <text class="state-detail">试试切换区域、属性或评级档位</text>
       </view>
 
-      <view v-else class="ranking-content">
-        <view class="ranking-heading">
-          <view>
-            <text class="ranking-title">评级明细</text>
-            <text class="ranking-subtitle">{{ visibleItems.length }} 只魔灵 · 点击查看图鉴</text>
-          </view>
-          <text v-if="loading" class="refreshing-label">更新中</text>
+      <view v-else class="ranking-content" :id="isPosterMode ? 'tier-ranking-poster' : undefined">
+        <view v-if="isPosterMode" class="poster-heading">
+          <text class="poster-kicker">魔灵强度榜 · 当前筛选</text>
+          <text class="poster-title">{{ exportTitle }}</text>
         </view>
 
-        <view class="tier-groups">
+        <TierRankingAggregate
+          v-if="viewMode === 'card'"
+          :groups="visibleGroups"
+          :show-avatar-element-badge="showAvatarElementBadge"
+          :show-counts="showTierCount"
+          :show-score="showScore"
+          @select="goToDetail" />
+        <view v-else class="tier-groups">
           <view v-for="group in visibleGroups" :key="group.key" class="tier-group">
             <view class="group-heading">
               <view class="group-title-wrap">
                 <text class="group-marker" :class="`marker-${group.key.toLowerCase()}`" />
-                <text class="group-title">{{ group.name }}</text>
-                <text class="group-count">{{ group.items.length }}</text>
+                <text class="group-title" :class="{ 'group-title--other': group.key.toLowerCase() === 'other' }">{{ group.name }}</text>
+                <text v-if="showTierCount" class="group-count">{{ group.items.length }}</text>
               </view>
               <text class="group-caption">综合评级</text>
             </view>
             <view class="group-list">
-              <TierRankingCard v-for="item in group.items" :key="item.id" :item="item" @select="goToDetail" />
+              <TierRankingRow
+                v-for="item in group.items"
+                :key="item.id"
+                :item="item"
+                :show-avatar-element-badge="showAvatarElementBadge"
+                :show-score="showScore"
+                @select="goToDetail" />
             </view>
           </view>
         </view>
+        <view v-if="isPosterMode" id="tier-ranking-poster-ready" class="poster-ready" />
       </view>
     </view>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, nextTick, ref } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import StateBlock from '../components/state-block.vue'
+  import SwcElementBadge from '../components/swc-element-badge.vue'
+  import SwcSquareIcon from '../components/swc-square-icon.vue'
   import { buildSwcTierRankingShare } from '../share'
-  import TierRankingCard from './components/tier-ranking-card.vue'
+  import TierRankingRow from './components/tier-ranking-card.vue'
+  import TierRankingAggregate from './components/tier-ranking-list.vue'
   import { fetchTierRankingConfig, fetchTierRankingReport } from './api'
-  import { formatReportDate, getTierRankingErrorMessage } from './normalizers'
+  import { getTierRankingErrorMessage } from './normalizers'
   import {
     TIER_RANKING_LOCALE,
     type TierRankingConfig,
@@ -169,6 +284,7 @@
     type TierRankingReport,
     type TierRankingShareQuery,
   } from './types'
+  import { useDeployedH5PosterExport } from '@/hooks/use-deployed-h5-poster-export'
   import { reportToolVisit } from '@/utils/tracker'
 
   interface PickerChangeEvent {
@@ -203,25 +319,39 @@
   const report = ref<TierRankingReport | null>(null)
   const selectedProvider = ref('')
   const selectedRegion = ref('')
-  const selectedElement = ref(ALL_VALUE)
-  const selectedTier = ref(ALL_VALUE)
+  const selectedElements = ref<string[]>([])
+  const selectedTiers = ref<string[]>([])
+  const selectedStars = ref<string[]>([])
+  const selectedArchetypes = ref<string[]>([])
   const keyword = ref('')
   const loading = ref(false)
   const initialized = ref(false)
   const errorMessage = ref('')
   const shareOptions = ref<TierRankingShareQuery>({})
-  let requestVersion = 0
+  const viewMode = ref<'list' | 'card'>('card')
+  const showTierCount = ref(false)
+  const showAvatarElementBadge = ref(false)
+  const showScore = ref(false)
+  const viewModeSwitching = ref(false)
+  const filterExpanded = ref(false)
+  let canPreloadPoster = false
 
-  const providerLabel = (provider: string): string => {
-    if (provider === 'rta-ai') return '本项目 AI'
-    if (provider === 'swrt') return 'SWRT'
-    return provider
-  }
+  // #ifdef H5
+  canPreloadPoster = true
+  // #endif
+
+  const isPosterMode = ref(false)
+  const {
+    exporting: exportLoading,
+    exportPoster,
+    preloadPoster,
+    cancelPreload: cancelPosterPreload,
+    getErrorMessage: getPosterExportErrorMessage,
+  } = useDeployedH5PosterExport()
+  let requestVersion = 0
 
   const regionLabel = (region: string): string => REGION_LABELS[region] || region
 
-  const sourceOptions = computed(() => config.value?.providers || [])
-  const sourceLabels = computed(() => sourceOptions.value.map(providerLabel))
   const regionOptions = computed(() => config.value?.regions || [])
   const regionLabels = computed(() => regionOptions.value.map(regionLabel))
   const elementOptions = computed<TierRankingOption[]>(() => [
@@ -232,13 +362,47 @@
     })),
   ])
   const tierOptions = computed<TierRankingOption[]>(() => [{ key: ALL_VALUE, name: '全部' }, ...(config.value?.tiers || [])])
-  const sourceIndex = computed(() => Math.max(0, sourceOptions.value.indexOf(selectedProvider.value)))
+  const starOptions = computed<TierRankingOption[]>(() => [
+    { key: ALL_VALUE, name: '全部' },
+    ...(config.value?.stars || [
+      { key: '6', name: '6' },
+      { key: '5', name: '5' },
+      { key: '4', name: '4' },
+      { key: '3', name: '3' },
+      { key: '2', name: '2' },
+      { key: '1', name: '1' },
+    ]),
+  ])
+  const archetypeOptions = computed<TierRankingOption[]>(() => [
+    { key: ALL_VALUE, name: '全部' },
+    ...(config.value?.archetypes || [
+      { key: 'attack', name: '攻击型' },
+      { key: 'defense', name: '防御型' },
+      { key: 'hp', name: '体力型' },
+      { key: 'support', name: '辅助型' },
+    ]),
+  ])
   const regionIndex = computed(() => Math.max(0, regionOptions.value.indexOf(selectedRegion.value)))
+  const filterSummary = computed(() => {
+    const parts = [regionLabel(selectedRegion.value) || '全部区域']
+    const elements = selectedElements.value.map(key => elementOptions.value.find(option => option.key === key)?.name).filter(Boolean)
+    const tiers = selectedTiers.value.map(key => tierOptions.value.find(option => option.key === key)?.name).filter(Boolean)
+    const stars = selectedStars.value.map(key => `${key}星`)
+    const archetypes = selectedArchetypes.value.map(key => archetypeOptions.value.find(option => option.key === key)?.name).filter(Boolean)
+    if (elements.length) parts.push(elements.join('、'))
+    if (tiers.length) parts.push(tiers.join('、'))
+    if (stars.length) parts.push(stars.join('、'))
+    if (archetypes.length) parts.push(archetypes.join('、'))
+    return parts.join(' · ')
+  })
 
   const visibleItems = computed(() => {
     const normalizedKeyword = keyword.value.trim().toLowerCase()
     return (report.value?.items || []).filter(item => {
-      if (selectedTier.value !== ALL_VALUE && item.tier.key !== selectedTier.value) return false
+      if (selectedTiers.value.length && !selectedTiers.value.includes(item.tier.key)) return false
+      if (selectedElements.value.length && !selectedElements.value.includes(item.character?.element?.key || '')) return false
+      if (selectedStars.value.length && !selectedStars.value.includes(String(item.character?.stars ?? ''))) return false
+      if (selectedArchetypes.value.length && !selectedArchetypes.value.includes(item.character?.archetype || '')) return false
       if (!normalizedKeyword) return true
       const name = item.character?.name || item.source.name
       const code = item.character?.code || item.source.externalKey
@@ -269,6 +433,122 @@
     return groups
   })
 
+  const exportTitle = computed(() => {
+    const parts: string[] = []
+    const region = regionLabel(selectedRegion.value)
+    if (region) parts.push(region)
+    const elements = selectedElements.value
+      .map(key => elementOptions.value.find(option => option.key === key))
+      .filter((option): option is TierRankingOption => Boolean(option))
+      .map(option => option.name)
+    if (elements.length) parts.push(`${elements.join('、')}属性`)
+    const tiers = selectedTiers.value
+      .map(key => tierOptions.value.find(option => option.key === key))
+      .filter((option): option is TierRankingOption => Boolean(option))
+      .map(option => option.name)
+    if (tiers.length) parts.push(`${tiers.join('、')}评级`)
+    const stars = selectedStars.value.map(key => `${key}星`)
+    const archetypes = selectedArchetypes.value
+      .map(key => archetypeOptions.value.find(option => option.key === key))
+      .filter((option): option is TierRankingOption => Boolean(option))
+      .map(option => option.name)
+    if (stars.length) parts.push(stars.join('、'))
+    if (archetypes.length) parts.push(`${archetypes.join('、')}类型`)
+    if (keyword.value.trim()) parts.push(keyword.value.trim())
+    return parts.join(' ') || '魔灵强度榜'
+  })
+
+  const buildPosterTargetUrl = (): string => {
+    const baseUrl = String(import.meta.env.VITE_PUBLIC_THIS_H5_URL || '').replace(/['"]/g, '')
+    if (!baseUrl) throw new Error('H5 地址未配置，部署 H5 后再试')
+    const query = {
+      ...buildShareQuery(),
+      poster: '1',
+    }
+    const queryString = Object.entries(query)
+      .filter(([, value]) => Boolean(value))
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')
+    return `${baseUrl}/subPackages/tools/compendium/swc/tier-ranking/index?${queryString}`
+  }
+
+  const hashPosterSeed = (value: string): string => {
+    let hash = 2166136261
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index)
+      hash = Math.imul(hash, 16777619)
+    }
+    return (hash >>> 0).toString(36)
+  }
+
+  const buildPosterOptions = () => {
+    const targetUrl = buildPosterTargetUrl()
+    const reportKey = report.value?.id || `revision-${report.value?.revision || 'latest'}`
+    const posterId = `swc-tier-ranking-${hashPosterSeed(`${reportKey}|${targetUrl}`)}`
+    return {
+      fileName: `魔灵强度榜-${exportTitle.value.replace(/\s+/g, '-')}-${Date.now()}.png`,
+      posterId,
+      targetUrl,
+      selector: '#tier-ranking-poster',
+      readySelector: '#tier-ranking-poster-ready',
+      width: 375,
+      deviceScaleFactor: 2,
+      timeout: 120000,
+      extraWaitTime: 1500,
+    }
+  }
+
+  const schedulePosterPreload = () => {
+    // 只在 H5 页面预热。小程序端无需额外建立游客会话或抢占导出服务资源。
+    if (!canPreloadPoster || isPosterMode.value || !initialized.value || !visibleGroups.value.length) return
+    void nextTick(() => {
+      if (isPosterMode.value || !visibleGroups.value.length) return
+      preloadPoster(buildPosterOptions())
+    })
+  }
+
+  const exportRankingImage = async () => {
+    if (exportLoading.value) return
+    if (!visibleGroups.value.length) {
+      uni.showToast({ title: '当前没有可导出的评级', icon: 'none' })
+      return
+    }
+
+    uni.showLoading({ title: '正在生成图片...', mask: true })
+    try {
+      await exportPoster(buildPosterOptions())
+      uni.showToast({ title: '图片已导出', icon: 'success' })
+    } catch (error: unknown) {
+      const detail = getPosterExportErrorMessage(error)
+      if (detail.includes('auth deny') || detail.includes('authorize')) {
+        uni.showModal({
+          title: '需要授权',
+          content: '请授权保存图片到相册',
+          confirmText: '去设置',
+          success: result => {
+            if (result.confirm) uni.openSetting()
+          },
+        })
+      } else {
+        uni.showToast({ title: detail || '导出失败，请重试', icon: 'none' })
+      }
+    } finally {
+      uni.hideLoading()
+    }
+  }
+
+  const parseFilterValues = (value: string | undefined): string[] => [
+    ...new Set(
+      String(value || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean),
+    ),
+  ]
+
+  const filterConfiguredValues = (values: string[], options: TierRankingOption[]): string[] =>
+    values.filter(value => options.some(option => option.key === value))
+
   const applyShareOptions = (options: TierRankingShareQuery, nextConfig: TierRankingConfig, initialReport: TierRankingReport) => {
     const preferredProvider = nextConfig.providers.includes('rta-ai')
       ? 'rta-ai'
@@ -280,16 +560,20 @@
         : nextConfig.regions.includes(initialReport.region.key)
           ? initialReport.region.key
           : nextConfig.regions[0] || initialReport.region.key
-    selectedElement.value =
-      options.element && nextConfig.elements.some(option => option.key === options.element) ? options.element : ALL_VALUE
-    selectedTier.value = options.tier && nextConfig.tiers.some(option => option.key === options.tier) ? options.tier : ALL_VALUE
+    selectedElements.value = filterConfiguredValues(parseFilterValues(options.elements || options.element), nextConfig.elements)
+    selectedTiers.value = filterConfiguredValues(parseFilterValues(options.tiers || options.tier), nextConfig.tiers)
+    selectedStars.value = filterConfiguredValues(parseFilterValues(options.stars), nextConfig.stars || [])
+    selectedArchetypes.value = filterConfiguredValues(parseFilterValues(options.archetypes), nextConfig.archetypes || [])
     keyword.value = options.keyword || ''
   }
 
   const buildQuery = () => ({
     provider: selectedProvider.value || undefined,
     region: selectedRegion.value || undefined,
-    elements: selectedElement.value !== ALL_VALUE ? selectedElement.value : undefined,
+    elements: selectedElements.value.length ? selectedElements.value.join(',') : undefined,
+    tiers: selectedTiers.value.length ? selectedTiers.value.join(',') : undefined,
+    stars: selectedStars.value.length ? selectedStars.value.join(',') : undefined,
+    archetypes: selectedArchetypes.value.length ? selectedArchetypes.value.join(',') : undefined,
     locale: TIER_RANKING_LOCALE,
   })
 
@@ -306,21 +590,26 @@
       if (
         nextReport.provider !== selectedProvider.value ||
         nextReport.region.key !== selectedRegion.value ||
-        selectedElement.value !== ALL_VALUE
+        selectedElements.value.length > 0 ||
+        selectedTiers.value.length > 0 ||
+        selectedStars.value.length > 0 ||
+        selectedArchetypes.value.length > 0
       ) {
         nextReport = await fetchTierRankingReport(buildQuery())
       }
       if (version !== requestVersion) return
       report.value = nextReport
       initialized.value = true
+      schedulePosterPreload()
     } catch (error) {
-      if (version === requestVersion) errorMessage.value = getTierRankingErrorMessage(error, 'AI评级榜加载失败')
+      if (version === requestVersion) errorMessage.value = getTierRankingErrorMessage(error, '魔灵强度榜加载失败')
     } finally {
       if (version === requestVersion) loading.value = false
     }
   }
 
   const loadReport = async () => {
+    cancelPosterPreload()
     const version = ++requestVersion
     loading.value = true
     errorMessage.value = ''
@@ -330,14 +619,16 @@
       if (version !== requestVersion) return
       report.value = nextReport
       initialized.value = true
+      schedulePosterPreload()
     } catch (error) {
-      if (version === requestVersion) errorMessage.value = getTierRankingErrorMessage(error, 'AI评级榜加载失败')
+      if (version === requestVersion) errorMessage.value = getTierRankingErrorMessage(error, '魔灵强度榜加载失败')
     } finally {
       if (version === requestVersion) loading.value = false
     }
   }
 
   const refresh = async () => {
+    cancelPosterPreload()
     const previousReport = report.value
     const version = ++requestVersion
     loading.value = true
@@ -350,23 +641,21 @@
         selectedProvider.value = nextConfig.provider || nextConfig.providers[0] || ''
       }
       if (!nextConfig.regions.includes(selectedRegion.value)) selectedRegion.value = nextConfig.regions[0] || ''
+      selectedElements.value = filterConfiguredValues(selectedElements.value, nextConfig.elements)
+      selectedTiers.value = filterConfiguredValues(selectedTiers.value, nextConfig.tiers)
+      selectedStars.value = filterConfiguredValues(selectedStars.value, nextConfig.stars || [])
+      selectedArchetypes.value = filterConfiguredValues(selectedArchetypes.value, nextConfig.archetypes || [])
       const nextReport = await fetchTierRankingReport(buildQuery())
       if (version !== requestVersion) return
       report.value = nextReport
+      schedulePosterPreload()
     } catch (error) {
       if (version !== requestVersion) return
       report.value = previousReport
-      errorMessage.value = getTierRankingErrorMessage(error, 'AI评级榜刷新失败')
+      errorMessage.value = getTierRankingErrorMessage(error, '魔灵强度榜刷新失败')
     } finally {
       if (version === requestVersion) loading.value = false
     }
-  }
-
-  const handleSourceChange = (event: PickerChangeEvent) => {
-    const next = sourceOptions.value[Number(event.detail.value)]
-    if (!next || next === selectedProvider.value) return
-    selectedProvider.value = next
-    void loadReport()
   }
 
   const handleRegionChange = (event: PickerChangeEvent) => {
@@ -376,18 +665,59 @@
     void loadReport()
   }
 
+  const toggleFilterValue = (current: string[], value: string): string[] => {
+    if (value === ALL_VALUE) return []
+    return current.includes(value) ? current.filter(item => item !== value) : [...current, value]
+  }
+
   const selectElement = (value: string) => {
-    if (value === selectedElement.value) return
-    selectedElement.value = value
+    selectedElements.value = toggleFilterValue(selectedElements.value, value)
     void loadReport()
   }
 
   const selectTier = (value: string) => {
-    selectedTier.value = value
+    selectedTiers.value = toggleFilterValue(selectedTiers.value, value)
+    void loadReport()
   }
 
-  const clearKeyword = () => {
-    keyword.value = ''
+  const selectStar = (value: string) => {
+    selectedStars.value = toggleFilterValue(selectedStars.value, value)
+    void loadReport()
+  }
+
+  const selectArchetype = (value: string) => {
+    selectedArchetypes.value = toggleFilterValue(selectedArchetypes.value, value)
+    void loadReport()
+  }
+
+  const toggleTierCount = () => {
+    showTierCount.value = !showTierCount.value
+    schedulePosterPreload()
+  }
+
+  const toggleAvatarElementBadge = () => {
+    showAvatarElementBadge.value = !showAvatarElementBadge.value
+    schedulePosterPreload()
+  }
+
+  const toggleScore = () => {
+    showScore.value = !showScore.value
+    schedulePosterPreload()
+  }
+
+  const toggleViewMode = async () => {
+    if (viewModeSwitching.value) return
+    viewModeSwitching.value = true
+    viewMode.value = viewMode.value === 'card' ? 'list' : 'card'
+    await nextTick()
+    schedulePosterPreload()
+    setTimeout(() => {
+      viewModeSwitching.value = false
+    }, 220)
+  }
+
+  const toggleFilterExpanded = () => {
+    filterExpanded.value = !filterExpanded.value
   }
 
   const retry = async () => {
@@ -410,18 +740,35 @@
   const buildShareQuery = (): TierRankingShareQuery => ({
     provider: selectedProvider.value || undefined,
     region: selectedRegion.value || undefined,
-    element: selectedElement.value !== ALL_VALUE ? selectedElement.value : undefined,
-    tier: selectedTier.value !== ALL_VALUE ? selectedTier.value : undefined,
+    elements: selectedElements.value.length ? selectedElements.value.join(',') : undefined,
+    tiers: selectedTiers.value.length ? selectedTiers.value.join(',') : undefined,
+    stars: selectedStars.value.length ? selectedStars.value.join(',') : undefined,
+    archetypes: selectedArchetypes.value.length ? selectedArchetypes.value.join(',') : undefined,
     keyword: keyword.value.trim() || undefined,
+    viewMode: viewMode.value,
+    showTierCount: showTierCount.value ? '1' : '0',
+    showAvatarElementBadge: showAvatarElementBadge.value ? '1' : '0',
+    showScore: showScore.value ? '1' : '0',
   })
 
   onLoad((options: Record<string, string | undefined>) => {
+    isPosterMode.value = options.poster === '1'
+    viewMode.value = options.viewMode === 'list' ? 'list' : 'card'
+    showTierCount.value = options.showTierCount === '1'
+    showAvatarElementBadge.value = options.showAvatarElementBadge === '1'
+    showScore.value = options.showScore === '1'
     shareOptions.value = {
       provider: options.provider,
       region: options.region,
-      element: options.element,
-      tier: options.tier,
+      elements: options.elements || options.element,
+      tiers: options.tiers || options.tier,
+      stars: options.stars,
+      archetypes: options.archetypes,
       keyword: options.keyword,
+      viewMode: options.viewMode,
+      showTierCount: options.showTierCount,
+      showAvatarElementBadge: options.showAvatarElementBadge,
+      showScore: options.showScore,
     }
     void loadInitial()
   })
@@ -449,6 +796,59 @@
     padding: 28rpx 24rpx 72rpx;
     background: var(--theme-bg);
     color: var(--theme-text);
+  }
+
+  .is-poster-mode {
+    min-height: 0;
+    padding: 24rpx;
+    background: #f4f6fa;
+  }
+
+  .is-poster-mode .ranking-content {
+    margin-top: 0;
+  }
+
+  .is-poster-mode .tier-list {
+    box-shadow: none;
+  }
+
+  .poster-heading {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 10rpx;
+    margin-bottom: 18rpx;
+    padding: 18rpx 22rpx 20rpx;
+    border: 1rpx solid #d9e4f2;
+    border-radius: 20rpx;
+    background: linear-gradient(135deg, #ffffff 0%, #edf5ff 100%);
+    box-shadow: 0 8rpx 20rpx rgba(37, 99, 235, 0.08);
+    text-align: center;
+  }
+
+  .poster-kicker {
+    color: #3972b8;
+    font-size: 19rpx;
+    font-weight: 800;
+    letter-spacing: 2rpx;
+    line-height: 1.2;
+  }
+
+  .poster-title {
+    max-width: 100%;
+    color: #172033;
+    font-size: 34rpx;
+    font-weight: 900;
+    line-height: 1.35;
+    word-break: break-word;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .poster-ready {
+    width: 1rpx;
+    height: 1rpx;
+    opacity: 0;
   }
 
   .overview-band {
@@ -553,14 +953,36 @@
     box-shadow: 0 6rpx 18rpx var(--theme-shadow-xs);
   }
 
-  .picker-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14rpx;
+  .filter-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+    min-width: 0;
+    min-height: 42rpx;
   }
 
-  .picker-field {
+  .filter-summary-copy {
+    display: flex;
+    align-items: baseline;
     min-width: 0;
+    gap: 12rpx;
+  }
+
+  .filter-summary-label {
+    flex: none;
+    color: var(--theme-text-tertiary);
+    font-size: 19rpx;
+  }
+
+  .filter-summary-value {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .filter-label {
@@ -604,6 +1026,16 @@
     margin: 0;
   }
 
+  .region-filter-line picker {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .region-filter-line .picker-control {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
   .chip-scroll {
     min-width: 0;
     flex: 1;
@@ -619,8 +1051,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    height: 52rpx;
     min-width: 68rpx;
-    padding: 10rpx 16rpx;
+    padding: 0 16rpx;
     box-sizing: border-box;
     border: 1rpx solid var(--theme-border);
     border-radius: 999rpx;
@@ -635,6 +1068,47 @@
     background: var(--theme-brand);
     color: #fff;
     font-weight: 700;
+  }
+
+  .display-filter-line {
+    margin-top: 18rpx;
+  }
+
+  .display-icon-button {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 52rpx;
+    height: 52rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 10rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .display-icon-button.active {
+    border-color: var(--theme-brand);
+    background: var(--theme-brand);
+  }
+
+  .display-icon-button.disabled {
+    pointer-events: none;
+    opacity: 0.65;
+  }
+
+  .is-switching-icon {
+    animation: view-mode-switching 560ms linear infinite;
+  }
+
+  @keyframes view-mode-switching {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .display-action-spacer {
+    flex: 1;
+    min-width: 0;
   }
 
   .tier-chip:not(.active) {
@@ -706,35 +1180,16 @@
     margin-top: 26rpx;
   }
 
-  .ranking-heading {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16rpx;
-    margin-bottom: 14rpx;
+  .export-button {
+    background: var(--theme-surface);
   }
 
-  .ranking-heading > view {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 5rpx;
+  .export-button:active {
+    background: var(--theme-surface-2);
   }
 
-  .ranking-title {
-    color: var(--theme-text);
-    font-size: 30rpx;
-    font-weight: 800;
-  }
-
-  .ranking-subtitle,
-  .refreshing-label {
-    color: var(--theme-text-tertiary);
-    font-size: 19rpx;
-  }
-
-  .refreshing-label {
-    color: var(--theme-brand);
+  .export-button.disabled {
+    opacity: 0.55;
   }
 
   .tier-groups {
@@ -797,6 +1252,10 @@
     color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 800;
+  }
+
+  .group-title--other {
+    font-size: 22rpx;
   }
 
   .group-count {

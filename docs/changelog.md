@@ -1,5 +1,30 @@
 # Changelog
 
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 优化列表模式人物信息：名称下方由五行属性改为体力型/防御型/攻击型/辅助型展示，复用人物类型图标；评分保留数值但移除“AI评分”说明文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking,sharing] 新增默认关闭的统一评分显示开关：卡片聚合模式在头像左上角展示低调评分角标，列表模式按开关展示评分并在关闭时收缩评级徽标；数量展示去掉“只”，分享与导出海报同步评分状态（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 保留导出海报中的 Other 评级英文文案，并确保该标签单行完整展示；顶部筛选摘要继续使用居中卡片样式（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 将卡片聚合头像五行图标再向头像底边贴近；H5 页面在空闲时后台预热当前海报，导出复用预热结果且不阻塞页面交互（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 头像右下角五行图标取消背景和内边距，直接贴齐右下边缘；卡片聚合单行分段移除最小高度，与多行分段共用网格上下内边距（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 将显示区的数量、头像属性、模式和导出统一为图标按钮；属性角标改为直接使用五行图标并提升可见层级；列表/卡片模式切换增加短暂加载与禁用状态，防止连续点击触发重复渲染（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 统一“显示”行的 Tab 与模式切换按钮高度；两种模式的五行信息均使用既有图标组件且列表不显示属性中文文案；海报渲染保留当前展示模式并携带全部筛选、数量和头像属性图标状态，实现所见即所得导出（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking,services/apifox] 通过 AAG 从 Apifox 重新生成 TierRanking 契约，正式补齐 `tiers` 多档位查询字段；评级榜请求适配层会省略空的属性/品级参数，避免产生 `elements=undefined`、`tiers=undefined`（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 修复卡片聚合模式单行头像在被品级标签最小高度撑开的分段内靠上显示的问题，统一沿竖轴居中（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 清理导出海报中已注释说明行对应的无效状态与样式代码（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 精简评级榜导出海报，仅保留筛选标题和评级内容，隐藏包含“本项目 AI”、日期、赛季与版本的说明行（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 精简评级榜筛选区：默认折叠并展示当前筛选摘要，展开后区域改为单行选择；搜索输入暂时隐藏，数量默认关闭；模式切换与导出收进“显示”行，导出在两种展示模式下均可触发卡片聚合海报（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking,sharing] 将品级数量与头像属性图标改为筛选栏标签控制；头像右下角的五行图标默认关闭且仅显示图标，列表正文复用同一图标组件；分享和 H5 海报同步筛选与显示状态，海报标题仅展示简化筛选条件（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 新增通用 `useDeployedH5PosterExport` Hook；评级榜导出改用已部署 H5 页面的专用海报渲染态，经 Painter 服务截图后下载或保存；小程序不再本地 Canvas 绘制，部署最新 H5 成为导出前置条件（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 卡片聚合模式调整为首段上圆角、末段下圆角、中间分段无圆角，并新增按当前区域/属性筛选导出全部评级分段长图的功能（H5 下载、微信小程序保存到相册）（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 修正列表与卡片模式语义：头像聚合网格归为卡片聚合模式并取消评级组间距，单人物列表恢复星级、名称和编码信息并保留评级组间距（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 排行榜卡片模式收窄人物展示，仅保留头像与属性角标，移除人物名称和编码文本（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking,sharing] 将功能名称统一为“魔灵强度榜”，微信好友与朋友圈分享统一使用通用 OSS 封面 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 取消排行榜卡片模式不同评级分组之间的纵向间距，使各级别连续衔接展示（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 新增 AI评级榜列表展示模式，按评级分组展示人物头像网格，并保留排行榜卡片模式可切换（Codex）
+- 2026-09-17 [tools/vote] 暂时屏蔽投票功能入口，保留投票路由以兼容已有分享链接（Codex）
+- 2026-09-17 [tools/compendium-swc/rta,sharing] RTA分数预测页微信分享封面改用 `swc-rta.jpg`，与 RTA排行榜保持一致，AI评级榜继续使用 `swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/rta,sharing] 区分 RTA排行榜与 AI评级榜微信分享封面：分别使用 `swc-rta.jpg` 和 `swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking,sharing] 为魔灵召唤 AI评级榜接入微信好友与朋友圈分享封面，先复用 RTA排行榜的 OSS 图片地址并保留当前筛选参数（Codex）
+- 2026-09-16 [tools/family-tree] 修复 H5 构建因 Apifox 生成层移除关系接口导出而失败的问题，将已有父子关系请求接入族谱手写适配层并保留新增成员后的关系建立流程（Codex）
 - 2026-09-16 [tools/compendium-swc/rta] 公共 RTA 分数查询跳过游客会话初始化，避免首屏被无关的 guest-session 请求阻塞（Codex）
 - 2026-09-15 [swc-rta] 趋势查询改为批量加载，活动赛季跳过无用的阶段历史请求，并将配置请求移出首屏关键路径，减少页面打开等待时间（Codex）
 
@@ -500,3 +525,5 @@
 - 2026-09-15 [tools/compendium-swc/rta] 趋势估算开启时自动定位折线图的最新日期区域，避免未来估算点位于横向滚动区域外而造成“没有估算”的误解（Codex）
 - 2026-09-15 [tools/compendium-swc/rta] 修正微信小程序折线图估算定位：将 scroll-left 的 rpx 位置转换为 px，并等待图表布局完成后再定位，避免估算曲线被滚出可视区域（Codex）
 - 2026-09-17 [swc-tier-ranking] 在魔灵召唤统一入口增加 AI评级榜页面，接入已发布评级榜 API，支持来源/区域/属性/评级/关键词筛选、人物详情跳转和分享恢复筛选（Codex）
+- 2026-09-18 [swc-tier-ranking] 评级榜支持多属性/多品级筛选，“全部”清空对应条件；将品级数量显示和列表/卡片聚合模式开关整合进筛选栏，并同步分享参数（Codex）
+- 2026-09-19 [swc-tier-ranking] 新增星级与攻击型/防御型/体力型/辅助型多选筛选；筛选栏属性改用五行图标组件，列表 Other 标题缩小，补充后端 SSS 空数据来源说明与筛选回归测试（Codex）

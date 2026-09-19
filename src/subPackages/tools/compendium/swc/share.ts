@@ -1,5 +1,5 @@
 import { SWC_GAME_COUPON_CONFIG } from '../../game-coupons/config'
-import { SWC_RTA_SCORE_SHARE_IMAGE_URL } from '@/config/tool-assets'
+import { SWC_AI_TIER_RANKING_SHARE_IMAGE_URL, SWC_RTA_RANKING_SHARE_IMAGE_URL, SWC_RTA_SCORE_SHARE_IMAGE_URL } from '@/config/tool-assets'
 import type { ShareConfig } from '@/utils/share'
 
 export interface TimelineShareConfig {
@@ -20,6 +20,8 @@ interface QueryValueMap {
 const SWC_SHARE_IMAGE = '/static/logo.png'
 // RTA 分享封面使用 OSS 资源，避免将大图打入微信小程序主包。
 export const SWC_RTA_SCORE_SHARE_IMAGE = SWC_RTA_SCORE_SHARE_IMAGE_URL
+const SWC_RTA_RANKING_SHARE_IMAGE = SWC_RTA_RANKING_SHARE_IMAGE_URL
+const SWC_AI_TIER_RANKING_SHARE_IMAGE = SWC_AI_TIER_RANKING_SHARE_IMAGE_URL
 const SWC_COUPONS_SHARE_IMAGE = SWC_GAME_COUPON_CONFIG.managementHeroImage
 const SWC_HOME_PATH = '/subPackages/tools/compendium/swc/index'
 const SWC_LIST_PATH = '/subPackages/tools/compendium/swc/list'
@@ -71,11 +73,11 @@ export function buildSwcListShare(query: QueryValueMap = {}) {
 }
 
 export function buildSwcRtaShare(query: QueryValueMap = {}) {
-  return createShare('魔灵召唤 RTA 排行榜：查看赛季人物数据', SWC_RTA_PATH, query)
+  return createShare('魔灵召唤 RTA 排行榜：查看赛季人物数据', SWC_RTA_PATH, query, SWC_RTA_RANKING_SHARE_IMAGE)
 }
 
 export function buildSwcTierRankingShare(query: QueryValueMap = {}) {
-  return createShare('魔灵召唤 AI评级榜：查看区域与属性评级', SWC_TIER_RANKING_PATH, query)
+  return createShare('魔灵强度榜：查看区域与属性评级', SWC_TIER_RANKING_PATH, query, SWC_AI_TIER_RANKING_SHARE_IMAGE)
 }
 
 export function buildSwcDetailShare(options: {

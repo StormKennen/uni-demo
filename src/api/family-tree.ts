@@ -25,8 +25,16 @@ export interface UpdateFamilyMemberInput {
   surname?: string
 }
 
+export interface LinkFamilyRelationshipInput {
+  childId: string
+  parentIds: string[]
+}
+
 export const getFamilyMemberDetail = (memberId: string): Promise<FamilyMember> =>
   http.get(`/families/members/${encodeURIComponent(memberId)}`) as Promise<FamilyMember>
 
 export const updateFamilyMember = (memberId: string, data: UpdateFamilyMemberInput): Promise<FamilyMember> =>
   http.patch(`/families/members/${encodeURIComponent(memberId)}`, data) as Promise<FamilyMember>
+
+export const linkFamilyRelationship = (data: LinkFamilyRelationshipInput): Promise<unknown> =>
+  http.post('/families/relationships/link', data) as Promise<unknown>

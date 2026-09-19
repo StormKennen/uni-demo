@@ -131,9 +131,9 @@
 <script setup>
   import { ref, computed } from 'vue'
   import MemberDetail from './member-detail.vue'
-  import { updateFamilyMember } from '@/api/family-tree'
+  import { linkFamilyRelationship, updateFamilyMember } from '@/api/family-tree'
   import { getToken } from '@/utils/storage'
-  import { getFamiliesMembers, postFamiliesMembers, postFamiliesRelationshipsLink } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
+  import { getFamiliesMembers, postFamiliesMembers } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
 
   const loading = ref(false)
   // 默认姓氏
@@ -339,7 +339,7 @@
             childId: memberResponse.id,
           }
 
-          await postFamiliesRelationshipsLink(relationshipData)
+          await linkFamilyRelationship(relationshipData)
           uni.showToast({
             title: '建立父子关系成功',
             icon: 'none',

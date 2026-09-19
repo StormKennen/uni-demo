@@ -7,13 +7,8 @@
 
     <view class="avatar-wrap">
       <SwcAvatarFrame :src="item.character?.avatar || ''" :name="displayName" :size="92" shape="square">
-        <view v-if="item.character?.element" class="element-badge">
-          <SwcElementBadge
-            :element-key="item.character.element.key"
-            :label="item.character.element.name"
-            :size="24"
-            :font-size="18"
-            :gap="4" />
+        <view v-if="props.showAvatarElementBadge && item.character?.element" class="element-badge">
+          <SwcSquareIcon kind="element" :icon-key="item.character.element.key" :size="28" :radius="0" />
         </view>
       </SwcAvatarFrame>
     </view>
@@ -23,22 +18,17 @@
         <text class="character-name">{{ displayName }}</text>
         <text v-if="item.character?.stars" class="stars">{{ item.character.stars }}★</text>
       </view>
-      <SwcElementBadge
-        v-if="item.character?.element"
-        class="identity-element"
-        :element-key="item.character.element.key"
-        :label="item.character.element.name"
-        :size="22"
-        :font-size="20"
-        :gap="5" />
+      <view v-if="archetype" class="identity-archetype">
+        <SwcSquareIcon kind="archetype" :icon-key="archetype.key" :size="24" :radius="5" />
+        <text>{{ archetype.label }}</text>
+      </view>
       <text v-if="!item.character" class="unmapped">图鉴暂未收录</text>
       <text v-else-if="item.character.code" class="character-code">{{ item.character.code }}</text>
     </view>
 
-    <view class="tier-badge">
+    <view class="tier-badge" :class="{ 'tier-badge--score-hidden': !hasScore }">
       <text class="tier-key">{{ item.tier.name }}</text>
-      <text v-if="item.score !== null" class="tier-score">{{ item.score.toFixed(2) }}</text>
-      <text class="tier-caption">AI评分</text>
+      <text v-if="hasScore" class="tier-score">{{ item.score?.toFixed(2) }}</text>
     </view>
 
     <uni-icons v-if="item.character" type="right" size="16" color="var(--theme-text-tertiary)" />
@@ -48,11 +38,14 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import SwcAvatarFrame from '../../components/swc-avatar-frame.vue'
-  import SwcElementBadge from '../../components/swc-element-badge.vue'
+  import SwcSquareIcon from '../../components/swc-square-icon.vue'
+  import { SWC_ARCHETYPE_LABEL_MAP, normalizeSwcArchetype } from '../../icon-assets'
   import type { TierRankingItem } from '../types'
 
   const props = defineProps<{
     item: TierRankingItem
+    showAvatarElementBadge: boolean
+    showScore: boolean
   }>()
 
   const emit = defineEmits<{
@@ -61,6 +54,16 @@
 
   const displayName = computed(() => props.item.character?.name || props.item.source.name || '未知魔灵')
   const tierClass = computed(() => props.item.tier.key.toLowerCase().replace(/[^a-z0-9]+/g, '-'))
+  const hasScore = computed(() => props.showScore && props.item.score !== null)
+  const archetype = computed(() => {
+    const rawValue = props.item.character?.archetype || ''
+    const key = normalizeSwcArchetype(rawValue)
+    if (!key) return null
+    return {
+      key,
+      label: SWC_ARCHETYPE_LABEL_MAP[key] || rawValue,
+    }
+  })
 
   const handleTap = () => {
     if (props.item.character) emit('select', props.item)
@@ -136,6 +139,7 @@
   }
 
   .avatar-wrap {
+    flex: none;
     width: 92rpx;
     height: 92rpx;
     overflow: hidden;
@@ -145,13 +149,15 @@
 
   .element-badge {
     position: absolute;
+    z-index: 3;
     right: 0;
     bottom: 0;
     display: flex;
     align-items: center;
-    padding: 3rpx 5rpx;
-    color: #fff;
-    background: rgba(15, 23, 42, 0.78);
+    justify-content: center;
+    width: 28rpx;
+    height: 28rpx;
+    background: transparent;
   }
 
   .identity {
@@ -188,8 +194,14 @@
     line-height: 1.2;
   }
 
-  .identity-element {
+  .identity-archetype {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    min-height: 24rpx;
     color: var(--theme-text-secondary);
+    font-size: 18rpx;
+    line-height: 1.2;
   }
 
   .character-code,
@@ -217,18 +229,17 @@
     background: var(--theme-surface-2);
   }
 
+  .tier-badge--score-hidden {
+    width: 64rpx;
+    min-height: 58rpx;
+    padding: 4rpx;
+  }
+
   .tier-key {
     color: var(--tier-color);
     font-size: 30rpx;
     font-weight: 900;
     line-height: 1.05;
-  }
-
-  .tier-caption {
-    margin-top: 5rpx;
-    color: var(--theme-text-tertiary);
-    font-size: 16rpx;
-    line-height: 1.1;
   }
 
   .tier-score {
@@ -237,5 +248,9 @@
     font-size: 19rpx;
     font-weight: 750;
     line-height: 1.1;
+  }
+
+  .tier-badge--score-hidden .tier-key {
+    font-size: 27rpx;
   }
 </style>

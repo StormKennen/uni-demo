@@ -1,3 +1,4 @@
+import { normalizeSwcArchetype } from '../icon-assets'
 import type { TierRankingCharacter, TierRankingConfig, TierRankingItem, TierRankingOption, TierRankingReport } from './types'
 
 type UnknownRecord = Record<string, unknown>
@@ -29,12 +30,37 @@ const unwrapBusinessData = (response: unknown): UnknownRecord => {
 const normalizeOption = (source: unknown, fallbackKey = ''): TierRankingOption => {
   const record = toRecord(source)
   const key = toText(record.key ?? record.value) || fallbackKey
+  const name = toText(record.name ?? record.label) || key
   const sortOrder = toNumber(record.sortOrder)
   return {
     key,
-    name: toText(record.name ?? record.label) || key,
+    name,
     ...(sortOrder === null ? {} : { sortOrder }),
   }
+}
+
+const DEFAULT_STAR_OPTIONS: TierRankingOption[] = ['6', '5', '4', '3', '2', '1'].map(key => ({ key, name: key }))
+const DEFAULT_ARCHETYPE_OPTIONS: TierRankingOption[] = [
+  { key: 'attack', name: '攻击型' },
+  { key: 'defense', name: '防御型' },
+  { key: 'hp', name: '体力型' },
+  { key: 'support', name: '辅助型' },
+]
+
+const normalizeValueKey = (source: unknown): string => {
+  const text = toText(source)
+  if (text) return text
+  return normalizeOption(source).key
+}
+
+const findCategoryValue = (categories: unknown, key: string): string => {
+  if (!Array.isArray(categories)) return ''
+  const category = categories.find(item => {
+    const record = toRecord(item)
+    return toText(record.key) === key
+  })
+  const record = toRecord(category)
+  return normalizeValueKey(record.valueKey) || normalizeValueKey(record.value) || normalizeValueKey(record.name)
 }
 
 const normalizeCharacter = (source: unknown): TierRankingCharacter | null => {
@@ -42,6 +68,11 @@ const normalizeCharacter = (source: unknown): TierRankingCharacter | null => {
   const id = toText(record.id ?? record._id ?? record.characterId)
   if (!id) return null
   const stars = toNumber(record.stars)
+  const archetype =
+    normalizeValueKey(record.archetype) ||
+    normalizeValueKey(record.archetypeKey) ||
+    normalizeValueKey(record.speciesType) ||
+    findCategoryValue(record.categories, 'archetype')
   return {
     id,
     code: toText(record.code),
@@ -49,6 +80,7 @@ const normalizeCharacter = (source: unknown): TierRankingCharacter | null => {
     avatar: toText(record.avatar),
     stars,
     element: record.element ? normalizeOption(record.element) : null,
+    archetype: normalizeSwcArchetype(archetype),
   }
 }
 
@@ -76,6 +108,8 @@ export const normalizeTierRankingConfig = (response: unknown): TierRankingConfig
   const rawRegions = Array.isArray(data.regions) ? data.regions : []
   const rawTiers = Array.isArray(data.tiers) ? data.tiers : []
   const rawElements = Array.isArray(data.elements) ? data.elements : []
+  const rawStars = Array.isArray(data.stars) ? data.stars : []
+  const rawArchetypes = Array.isArray(data.archetypes) ? data.archetypes : []
   const capabilities = toRecord(data.capabilities)
   return {
     provider: toText(data.provider),
@@ -83,6 +117,10 @@ export const normalizeTierRankingConfig = (response: unknown): TierRankingConfig
     regions: rawRegions.map(toText).filter(Boolean),
     tiers: rawTiers.map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
     elements: rawElements.map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
+    stars: (rawStars.length ? rawStars : DEFAULT_STAR_OPTIONS).map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
+    archetypes: (rawArchetypes.length ? rawArchetypes : DEFAULT_ARCHETYPE_OPTIONS)
+      .map(item => normalizeOption(item))
+      .filter(item => Boolean(item.key)),
     capabilities: {
       tierRanking: capabilities.tierRanking === true,
       mapping: capabilities.mapping === true,
@@ -98,9 +136,12 @@ export const normalizeTierRankingReport = (response: unknown): TierRankingReport
   const rawItems = Array.isArray(data.items) ? data.items : []
   const region = normalizeOption(data.region)
   return {
+    available: data.available !== false,
+    status: toText(data.status) === 'empty' ? 'empty' : 'published',
+    reason: data.reason === null || data.reason === undefined ? null : toText(data.reason),
     id: toText(data.id),
-    reportDate: toText(data.reportDate),
-    season: Math.floor(toNumber(data.season) ?? 0),
+    reportDate: data.reportDate === null ? null : toText(data.reportDate),
+    season: data.season === null ? null : Math.floor(toNumber(data.season) ?? 0),
     gameVersion: toText(data.gameVersion),
     region,
     provider: toText(data.provider),
@@ -115,7 +156,7 @@ export const getTierRankingErrorMessage = (error: unknown, fallback: string): st
   return fallback
 }
 
-export const formatReportDate = (value: string): string => {
+export const formatReportDate = (value: string | null): string => {
   if (!value) return '--'
   const date = value.slice(0, 10)
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : value

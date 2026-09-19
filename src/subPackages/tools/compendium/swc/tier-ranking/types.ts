@@ -15,6 +15,8 @@ export interface TierRankingConfig {
   tiers: TierRankingOption[]
   regions: string[]
   elements: TierRankingOption[]
+  stars: TierRankingOption[]
+  archetypes: TierRankingOption[]
   capabilities: {
     tierRanking: boolean
     mapping: boolean
@@ -31,6 +33,7 @@ export interface TierRankingCharacter {
   avatar: string
   stars: number | null
   element: TierRankingOption | null
+  archetype: string
 }
 
 export interface TierRankingItem {
@@ -47,9 +50,12 @@ export interface TierRankingItem {
 }
 
 export interface TierRankingReport {
+  available: boolean
+  status: 'published' | 'empty'
+  reason: string | null
   id: string
-  reportDate: string
-  season: number
+  reportDate: string | null
+  season: number | null
   gameVersion: string
   region: TierRankingOption
   provider: string
@@ -61,6 +67,9 @@ export interface TierRankingQuery {
   provider?: string
   region?: string
   elements?: string
+  tiers?: string
+  stars?: string
+  archetypes?: string
   locale?: string
 }
 
@@ -70,5 +79,13 @@ export interface TierRankingShareQuery {
   region?: string
   element?: string
   tier?: string
+  elements?: string
+  tiers?: string
+  stars?: string
+  archetypes?: string
   keyword?: string
+  viewMode?: 'list' | 'card' | string
+  showTierCount?: string
+  showAvatarElementBadge?: string
+  showScore?: string
 }

@@ -65,8 +65,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     recentAliasKey: 'compendium-swc',
   },
   'compendium-swc-tier-ranking': {
-    name: 'AI评级榜',
-    desc: '区域/属性筛选与魔灵综合评级',
+    name: '魔灵强度榜',
+    desc: '区域/属性筛选与魔灵强度评级',
     icon: 'star',
     gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
     path: '/subPackages/tools/compendium/swc/tier-ranking/index',
@@ -331,6 +331,8 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
     isNew: true,
     requiresAuth: true,
+    // 投票功能暂时下线，保留路由以兼容已有分享链接
+    hiddenInDirectory: true,
   },
   'family-tree': {
     name: '族谱',
