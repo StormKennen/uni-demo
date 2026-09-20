@@ -66,7 +66,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   },
   'compendium-swc-tier-ranking': {
     name: '魔灵强度榜',
-    desc: '区域/属性筛选与魔灵强度评级',
+    desc: '魔灵强度评级',
     icon: 'star',
     gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
     path: '/subPackages/tools/compendium/swc/tier-ranking/index',

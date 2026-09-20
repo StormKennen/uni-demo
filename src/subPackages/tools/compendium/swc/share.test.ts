@@ -4,6 +4,7 @@ import {
   buildSwcDetailShare,
   buildSwcRtaShare,
   buildSwcTierRankingShare,
+  getSwcTierRankingShareTitle,
   SWC_RTA_SCORE_SHARE_IMAGE,
 } from './share'
 
@@ -39,7 +40,7 @@ describe('buildSwcTierRankingShare', () => {
       showScore: '1',
     })
 
-    expect(result.app.title).toBe('魔灵强度榜：查看区域与属性评级')
+    expect(result.app.title).toBe('魔灵强度榜')
     expect(result.timeline.title).toBe(result.app.title)
     expect(result.app.imageUrl).toBe('https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/swc.jpg')
     expect(result.timeline.imageUrl).toBe(result.app.imageUrl)
@@ -53,6 +54,28 @@ describe('buildSwcTierRankingShare', () => {
     expect(result.app.path).toContain('showAvatarElementBadge=1')
     expect(result.app.path).toContain('showScore=1')
     expect(result.timeline.query).toContain('keyword=%E5%A5%A5%E5%88%A9%E5%BC%97')
+  })
+
+  it('uses title-bait copy for hidden EX and Ω selections', () => {
+    expect(getSwcTierRankingShareTitle({ phantomCharacterIds: 'character-1' })).toBe('这就是幻神｜EX级魔灵出炉')
+    expect(getSwcTierRankingShareTitle({ godCharacterIds: 'character-2' })).toBe('真神出炉｜Ω级魔灵现世')
+    expect(getSwcTierRankingShareTitle({ phantomCharacterIds: 'character-1', godCharacterIds: 'character-2' })).toBe(
+      '幻神真神齐现｜这波评级封神了',
+    )
+  })
+
+  it('carries hidden character payloads into both share targets', () => {
+    const result = buildSwcTierRankingShare({
+      phantomCharacterIds: 'character-1',
+      godCharacterIds: 'character-2',
+      phantomCharacters: '[{"characterId":"character-1","avatar":"avatar-1"}]',
+      godCharacters: '[{"characterId":"character-2","avatar":"avatar-2"}]',
+    })
+
+    expect(result.app.path).toContain('phantomCharacterIds=character-1')
+    expect(result.app.path).toContain('godCharacterIds=character-2')
+    expect(result.timeline.query).toContain('phantomCharacters=')
+    expect(result.timeline.query).toContain('godCharacters=')
   })
 })
 

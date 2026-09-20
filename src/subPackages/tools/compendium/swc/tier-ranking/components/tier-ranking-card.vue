@@ -53,7 +53,11 @@
   }>()
 
   const displayName = computed(() => props.item.character?.name || props.item.source.name || '未知魔灵')
-  const tierClass = computed(() => props.item.tier.key.toLowerCase().replace(/[^a-z0-9]+/g, '-'))
+  const tierClass = computed(() => {
+    if (props.item.tier.key === 'Ω') return 'omega'
+    if (props.item.tier.key.toLowerCase() === 'other') return 'f'
+    return props.item.tier.key.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  })
   const hasScore = computed(() => props.showScore && props.item.score !== null)
   const archetype = computed(() => {
     const rawValue = props.item.character?.archetype || ''
@@ -94,6 +98,14 @@
     --tier-color: #b45309;
   }
 
+  .tier-ex {
+    --tier-color: #d97706;
+  }
+
+  .tier-omega {
+    --tier-color: #db2777;
+  }
+
   .tier-ss {
     --tier-color: #c2410c;
   }
@@ -114,7 +126,11 @@
     --tier-color: #64748b;
   }
 
-  .tier-other {
+  .tier-d {
+    --tier-color: #475569;
+  }
+
+  .tier-f {
     --tier-color: #94a3b8;
   }
 

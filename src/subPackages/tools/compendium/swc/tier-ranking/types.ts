@@ -1,5 +1,7 @@
 export const TIER_RANKING_COMPENDIUM_ID = 'swc'
 export const TIER_RANKING_LOCALE = 'zh-CN'
+export const TIER_RANKING_EXPECTED_TIERS = ['F', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'EX', 'Ω'] as const
+export const TIER_RANKING_HIDDEN_TIERS = ['EX', 'Ω'] as const
 
 export type TierRankingElementKey = 'fire' | 'water' | 'wind' | 'light' | 'dark'
 
@@ -31,6 +33,16 @@ export interface TierRankingCharacter {
   code: string
   name: string
   avatar: string
+  stars: number | null
+  element: TierRankingOption | null
+  archetype: string
+}
+
+export interface TierRankingMockCharacter {
+  id: string
+  name: string
+  avatar: string
+  code: string
   stars: number | null
   element: TierRankingOption | null
   archetype: string
@@ -70,6 +82,7 @@ export interface TierRankingQuery {
   tiers?: string
   stars?: string
   archetypes?: string
+  characterIds?: string
   locale?: string
 }
 
@@ -83,9 +96,14 @@ export interface TierRankingShareQuery {
   tiers?: string
   stars?: string
   archetypes?: string
+  characterIds?: string
   keyword?: string
   viewMode?: 'list' | 'card' | string
   showTierCount?: string
   showAvatarElementBadge?: string
   showScore?: string
+  phantomCharacterIds?: string
+  godCharacterIds?: string
+  phantomCharacters?: string
+  godCharacters?: string
 }

@@ -51,7 +51,11 @@
   }>()
 
   const displayName = (item: TierRankingItem): string => item.character?.name || item.source.name || '未知魔灵'
-  const tierClass = (key: string): string => key.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  const tierClass = (key: string): string => {
+    if (key === 'Ω') return 'omega'
+    if (key.toLowerCase() === 'other') return 'f'
+    return key.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  }
 
   const handleTap = (item: TierRankingItem) => {
     if (item.character) emit('select', item)
@@ -193,7 +197,7 @@
     white-space: nowrap;
   }
 
-  .tier-section-other .tier-label-name {
+  .tier-section-f .tier-label-name {
     overflow: visible;
     font-size: 24rpx;
     text-overflow: clip;
@@ -202,6 +206,14 @@
 
   .tier-section-sss {
     --tier-background: #f7787f;
+  }
+
+  .tier-section-ex {
+    --tier-background: #f6b74f;
+  }
+
+  .tier-section-omega {
+    --tier-background: #e879a8;
   }
 
   .tier-section-ss {
@@ -224,7 +236,11 @@
     --tier-background: #49e4e8;
   }
 
-  .tier-section-other {
+  .tier-section-d {
+    --tier-background: #94a3b8;
+  }
+
+  .tier-section-f {
     --tier-background: #cbd5e1;
   }
 

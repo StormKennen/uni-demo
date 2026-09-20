@@ -64,6 +64,21 @@ function createShare(title: string, path: string, query: QueryValueMap = {}, ima
   }
 }
 
+const hasShareValue = (query: QueryValueMap, key: string): boolean => {
+  const value = query[key]
+  return value !== undefined && value !== null && String(value).trim() !== '' && String(value) !== '[]'
+}
+
+export function getSwcTierRankingShareTitle(query: QueryValueMap = {}) {
+  const hasPhantomCharacters = hasShareValue(query, 'phantomCharacters') || hasShareValue(query, 'phantomCharacterIds')
+  const hasGodCharacters = hasShareValue(query, 'godCharacters') || hasShareValue(query, 'godCharacterIds')
+
+  if (hasPhantomCharacters && hasGodCharacters) return '幻神真神齐现｜这波评级封神了'
+  if (hasGodCharacters) return '真神出炉｜Ω级魔灵现世'
+  if (hasPhantomCharacters) return '这就是幻神｜EX级魔灵出炉'
+  return '魔灵强度榜'
+}
+
 export function buildSwcHomeShare() {
   return createShare('魔灵召唤工具箱：图鉴、兑换券、阵容管理', SWC_HOME_PATH)
 }
@@ -77,7 +92,7 @@ export function buildSwcRtaShare(query: QueryValueMap = {}) {
 }
 
 export function buildSwcTierRankingShare(query: QueryValueMap = {}) {
-  return createShare('魔灵强度榜：查看区域与属性评级', SWC_TIER_RANKING_PATH, query, SWC_AI_TIER_RANKING_SHARE_IMAGE)
+  return createShare(getSwcTierRankingShareTitle(query), SWC_TIER_RANKING_PATH, query, SWC_AI_TIER_RANKING_SHARE_IMAGE)
 }
 
 export function buildSwcDetailShare(options: {

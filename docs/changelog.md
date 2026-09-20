@@ -1,5 +1,12 @@
 # Changelog
 
+- 2026-09-20 [tools/compendium-swc/tier-ranking,sharing] 新增纯前端幻神 EX 与神级 Ω 隐藏分段：支持两组有序多选人物、删除、分享恢复和海报导出，并将历史 Other 兜底档位统一显示为 F；微信分享标题按隐藏分段动态使用“这就是幻神/真神出炉”等标题党文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 将筛选区“显示”控制改为文字按钮，明确标识数量、属性、评分、卡片/列表模式与导出操作（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 修复属性筛选组件默认显示元素文案的问题，强制使用仅图标模式（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 强度榜筛选区的五行属性与人物类型改为仅展示图标，“全部”选项保留文字（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 精简魔灵强度榜入口描述为“魔灵强度评级”，统一魔灵召唤入口与工具目录文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking,sharing] 修复魔灵强度榜被 PageLayout 默认分享回调覆盖的问题，显式传入 OSS 封面并统一好友/朋友圈分享标题为“魔灵强度榜”（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 评级榜前端复用精准人物选择器，支持多人物组合筛选并同步请求、分享和导出参数；移除海报“魔灵强度榜 · 当前筛选”行，单个品级标题简化为 `SS`，多品级标题使用 `金区 SS/S` 形式（Codex）
 - 2026-09-19 [tools/compendium-swc/tier-ranking] 优化列表模式人物信息：名称下方由五行属性改为体力型/防御型/攻击型/辅助型展示，复用人物类型图标；评分保留数值但移除“AI评分”说明文案（Codex）
 - 2026-09-19 [tools/compendium-swc/tier-ranking,sharing] 新增默认关闭的统一评分显示开关：卡片聚合模式在头像左上角展示低调评分角标，列表模式按开关展示评分并在关闭时收缩评级徽标；数量展示去掉“只”，分享与导出海报同步评分状态（Codex）
 - 2026-09-19 [tools/compendium-swc/tier-ranking] 保留导出海报中的 Other 评级英文文案，并确保该标签单行完整展示；顶部筛选摘要继续使用居中卡片样式（Codex）

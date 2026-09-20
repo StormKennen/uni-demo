@@ -40,4 +40,20 @@ describe('tier ranking character normalizers', () => {
     expect(config.archetypes.map(option => option.key)).toEqual(['attack', 'defense', 'hp', 'support'])
     expect(report.items[0]?.character).toMatchObject({ stars: 6, archetype: 'attack' })
   })
+
+  it('renames the legacy Other tier to F and removes duplicate F options', () => {
+    const config = normalizeTierRankingConfig({
+      tiers: [
+        { key: 'SSS', name: 'SSS' },
+        { key: 'F', name: 'F' },
+        { key: 'Other', name: 'Other' },
+      ],
+    })
+    const report = normalizeTierRankingReport({
+      items: [{ tier: { key: 'Other', name: 'Other' }, source: { name: '兜底魔灵' } }],
+    })
+
+    expect(config.tiers.map(option => option.key)).toEqual(['SSS', 'F'])
+    expect(report.items[0]?.tier).toMatchObject({ key: 'F', name: 'F' })
+  })
 })

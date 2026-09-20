@@ -29,14 +29,26 @@ const unwrapBusinessData = (response: unknown): UnknownRecord => {
 
 const normalizeOption = (source: unknown, fallbackKey = ''): TierRankingOption => {
   const record = toRecord(source)
-  const key = toText(record.key ?? record.value) || fallbackKey
-  const name = toText(record.name ?? record.label) || key
+  const rawKey = toText(record.key ?? record.value) || fallbackKey
+  const rawName = toText(record.name ?? record.label) || rawKey
+  const isLegacyOther = rawKey.toLowerCase() === 'other' || rawName.toLowerCase() === 'other'
+  const key = isLegacyOther ? 'F' : rawKey
+  const name = isLegacyOther ? 'F' : rawName
   const sortOrder = toNumber(record.sortOrder)
   return {
     key,
     name,
     ...(sortOrder === null ? {} : { sortOrder }),
   }
+}
+
+const dedupeOptions = (options: TierRankingOption[]): TierRankingOption[] => {
+  const seen = new Set<string>()
+  return options.filter(option => {
+    if (!option.key || seen.has(option.key)) return false
+    seen.add(option.key)
+    return true
+  })
 }
 
 const DEFAULT_STAR_OPTIONS: TierRankingOption[] = ['6', '5', '4', '3', '2', '1'].map(key => ({ key, name: key }))
@@ -115,7 +127,7 @@ export const normalizeTierRankingConfig = (response: unknown): TierRankingConfig
     provider: toText(data.provider),
     providers: rawProviders.map(toText).filter(Boolean),
     regions: rawRegions.map(toText).filter(Boolean),
-    tiers: rawTiers.map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
+    tiers: dedupeOptions(rawTiers.map(item => normalizeOption(item)).filter(item => Boolean(item.key))),
     elements: rawElements.map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
     stars: (rawStars.length ? rawStars : DEFAULT_STAR_OPTIONS).map(item => normalizeOption(item)).filter(item => Boolean(item.key)),
     archetypes: (rawArchetypes.length ? rawArchetypes : DEFAULT_ARCHETYPE_OPTIONS)

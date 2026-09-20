@@ -1,6 +1,11 @@
 <template>
   <PageLayout
     title="魔灵强度榜"
+    :share-title="shareTitle"
+    :share-timeline-title="shareTitle"
+    :share-path="sharePath"
+    :share-timeline-query="shareQueryString"
+    :share-image-url="SWC_AI_TIER_RANKING_SHARE_IMAGE_URL"
     :nav-back="true"
     back-fallback="/subPackages/tools/compendium/swc/index"
     nav-init-bg-color="var(--theme-surface)"
@@ -55,6 +60,19 @@
             </picker>
           </view>
 
+          <view class="filter-line character-filter-line">
+            <text class="filter-label">人物</text>
+            <view class="character-filter-content">
+              <SwcCharacterPickerSlots
+                class="character-picker-slots"
+                :characters="selectedCharacterViews"
+                :max-count="0"
+                :size="72"
+                @add="openCharacterPicker"
+                @remove="handleRemoveCharacterFilter" />
+            </view>
+          </view>
+
           <view class="filter-line">
             <text class="filter-label">属性</text>
             <scroll-view class="chip-scroll" scroll-x enable-flex>
@@ -63,12 +81,15 @@
                   v-for="option in elementOptions"
                   :key="option.key"
                   class="filter-chip"
-                  :class="{ active: option.key === ALL_VALUE ? !selectedElements.length : selectedElements.includes(option.key) }"
+                  :class="{
+                    active: option.key === ALL_VALUE ? !selectedElements.length : selectedElements.includes(option.key),
+                    'icon-only-filter-chip': option.key !== ALL_VALUE,
+                  }"
                   @tap="selectElement(option.key)">
                   <SwcElementBadge
                     v-if="option.key !== ALL_VALUE"
                     :element-key="option.key"
-                    :label="option.name"
+                    icon-only
                     :size="24"
                     :font-size="20"
                     :gap="4" />
@@ -102,10 +123,13 @@
                   v-for="option in archetypeOptions"
                   :key="option.key"
                   class="filter-chip"
-                  :class="{ active: option.key === ALL_VALUE ? !selectedArchetypes.length : selectedArchetypes.includes(option.key) }"
+                  :class="{
+                    active: option.key === ALL_VALUE ? !selectedArchetypes.length : selectedArchetypes.includes(option.key),
+                    'icon-only-filter-chip': option.key !== ALL_VALUE,
+                  }"
                   @tap="selectArchetype(option.key)">
                   <SwcSquareIcon v-if="option.key !== ALL_VALUE" kind="archetype" :icon-key="option.key" :size="24" :radius="5" />
-                  <text>{{ option.key === ALL_VALUE ? '全部' : option.name }}</text>
+                  <text v-if="option.key === ALL_VALUE">全部</text>
                 </view>
               </view>
             </scroll-view>
@@ -147,53 +171,73 @@
           <text class="filter-label">显示</text>
           <view class="chip-list">
             <view
-              class="display-icon-button"
+              class="display-text-button"
               :class="{ active: showTierCount }"
               :aria-label="showTierCount ? '隐藏品级数量' : '显示品级数量'"
               :title="showTierCount ? '隐藏品级数量' : '显示品级数量'"
               @tap="toggleTierCount">
-              <uni-icons :type="showTierCount ? 'bars' : 'list'" size="18" :color="showTierCount ? '#fff' : 'var(--theme-text-tertiary)'" />
+              <text>数量</text>
             </view>
             <view
-              class="display-icon-button"
+              class="display-text-button"
               :class="{ active: showAvatarElementBadge }"
               :aria-label="showAvatarElementBadge ? '隐藏头像属性图标' : '显示头像属性图标'"
               :title="showAvatarElementBadge ? '隐藏头像属性图标' : '显示头像属性图标'"
               @tap="toggleAvatarElementBadge">
-              <uni-icons
-                :type="showAvatarElementBadge ? 'color-filled' : 'color'"
-                size="18"
-                :color="showAvatarElementBadge ? '#fff' : 'var(--theme-text-tertiary)'" />
+              <text>属性</text>
             </view>
             <view
-              class="display-icon-button"
+              class="display-text-button"
               :class="{ active: showScore }"
               :aria-label="showScore ? '隐藏评分' : '显示评分'"
               :title="showScore ? '隐藏评分' : '显示评分'"
               @tap="toggleScore">
-              <uni-icons :type="showScore ? 'star-filled' : 'star'" size="18" :color="showScore ? '#fff' : 'var(--theme-text-tertiary)'" />
+              <text>评分</text>
             </view>
           </view>
+
           <view
-            class="display-icon-button"
+            class="display-text-button"
             :class="{ active: viewMode === 'card', disabled: viewModeSwitching }"
             :aria-label="viewModeSwitching ? '正在切换展示模式' : viewMode === 'card' ? '切换为列表模式' : '切换为卡片聚合模式'"
             :title="viewModeSwitching ? '正在切换展示模式' : viewMode === 'card' ? '切换为列表模式' : '切换为卡片聚合模式'"
             @tap="toggleViewMode">
-            <uni-icons
-              :type="viewModeSwitching ? 'loop' : viewMode === 'card' ? 'images' : 'list'"
-              size="18"
-              :class="{ 'is-switching-icon': viewModeSwitching }"
-              :color="viewMode === 'card' ? '#fff' : 'var(--theme-text-tertiary)'" />
+            <text>{{ viewModeSwitching ? '切换中' : viewMode === 'card' ? '卡片' : '列表' }}</text>
           </view>
           <view class="display-action-spacer" />
           <view
-            class="display-icon-button export-button"
+            class="display-text-button export-button"
             :class="{ disabled: exportLoading }"
             aria-label="导出图片"
             title="导出图片"
             @tap="exportRankingImage">
-            <uni-icons type="download" size="18" :color="exportLoading ? 'var(--theme-text-tertiary)' : 'var(--theme-brand)'" />
+            <text>{{ exportLoading ? '导出中' : '导出' }}</text>
+          </view>
+        </view>
+
+        <view class="filter-line hidden-character-filter-line">
+          <text class="filter-label hidden-filter-label">幻神人物</text>
+          <view class="character-filter-content">
+            <SwcCharacterPickerSlots
+              class="character-picker-slots"
+              :characters="selectedPhantomCharacterViews"
+              :max-count="0"
+              :size="72"
+              @add="() => openHiddenCharacterPicker('phantom')"
+              @remove="character => handleRemoveHiddenCharacter('phantom', character.characterId)" />
+          </view>
+        </view>
+
+        <view class="filter-line hidden-character-filter-line">
+          <text class="filter-label hidden-filter-label">神级人物</text>
+          <view class="character-filter-content">
+            <SwcCharacterPickerSlots
+              class="character-picker-slots"
+              :characters="selectedGodCharacterViews"
+              :max-count="0"
+              :size="72"
+              @add="() => openHiddenCharacterPicker('god')"
+              @remove="character => handleRemoveHiddenCharacter('god', character.characterId)" />
           </view>
         </view>
       </view>
@@ -215,19 +259,18 @@
         <text v-if="errorMessage !== '魔灵强度榜加载失败'" class="state-detail">{{ errorMessage }}</text>
       </view>
 
-      <view v-else-if="initialized && report && !report.available" class="state-card">
+      <view v-else-if="initialized && report && !report.available && !hasHiddenCharacters" class="state-card">
         <StateBlock text="暂无已发布评级数据" />
         <text class="state-detail">评级数据采集并发布后会显示在这里</text>
       </view>
 
-      <view v-else-if="initialized && !visibleItems.length" class="state-card">
+      <view v-else-if="initialized && !visibleGroups.length" class="state-card">
         <StateBlock text="当前筛选暂无评级数据" />
         <text class="state-detail">试试切换区域、属性或评级档位</text>
       </view>
 
       <view v-else class="ranking-content" :id="isPosterMode ? 'tier-ranking-poster' : undefined">
         <view v-if="isPosterMode" class="poster-heading">
-          <text class="poster-kicker">魔灵强度榜 · 当前筛选</text>
           <text class="poster-title">{{ exportTitle }}</text>
         </view>
 
@@ -242,8 +285,8 @@
           <view v-for="group in visibleGroups" :key="group.key" class="tier-group">
             <view class="group-heading">
               <view class="group-title-wrap">
-                <text class="group-marker" :class="`marker-${group.key.toLowerCase()}`" />
-                <text class="group-title" :class="{ 'group-title--other': group.key.toLowerCase() === 'other' }">{{ group.name }}</text>
+                <text class="group-marker" :class="`marker-${tierClass(group.key)}`" />
+                <text class="group-title">{{ group.name }}</text>
                 <text v-if="showTierCount" class="group-count">{{ group.items.length }}</text>
               </view>
               <text class="group-caption">综合评级</text>
@@ -268,23 +311,31 @@
 <script setup lang="ts">
   import { computed, nextTick, ref } from 'vue'
   import { onLoad, onPullDownRefresh, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+  import type { CharacterOption } from '../lineup-types'
+  import { toSwcCharacterView, type SwcCharacterView } from '../utils'
   import StateBlock from '../components/state-block.vue'
+  import SwcCharacterPickerSlots from '../components/swc-character-picker-slots.vue'
   import SwcElementBadge from '../components/swc-element-badge.vue'
   import SwcSquareIcon from '../components/swc-square-icon.vue'
-  import { buildSwcTierRankingShare } from '../share'
+  import { buildSwcTierRankingShare, getSwcTierRankingShareTitle } from '../share'
   import TierRankingRow from './components/tier-ranking-card.vue'
   import TierRankingAggregate from './components/tier-ranking-list.vue'
   import { fetchTierRankingConfig, fetchTierRankingReport } from './api'
   import { getTierRankingErrorMessage } from './normalizers'
   import {
+    TIER_RANKING_EXPECTED_TIERS,
+    TIER_RANKING_HIDDEN_TIERS,
     TIER_RANKING_LOCALE,
     type TierRankingConfig,
     type TierRankingItem,
+    type TierRankingMockCharacter,
     type TierRankingOption,
     type TierRankingReport,
     type TierRankingShareQuery,
   } from './types'
   import { useDeployedH5PosterExport } from '@/hooks/use-deployed-h5-poster-export'
+  import { SWC_AI_TIER_RANKING_SHARE_IMAGE_URL } from '@/config/tool-assets'
+  import { getStorageSync, removeStorageSync, setStorageSync } from '@/utils/storage'
   import { reportToolVisit } from '@/utils/tracker'
 
   interface PickerChangeEvent {
@@ -299,7 +350,30 @@
     items: TierRankingItem[]
   }
 
+  type HiddenCharacterKind = 'phantom' | 'god'
+
+  interface CharacterPickerConfig {
+    cacheKey: string
+    resultKey: string
+  }
+
   const ALL_VALUE = 'all'
+  const CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:tier-ranking:character-picker:draft'
+  const CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:tier-ranking:character-picker:result'
+  const PHANTOM_CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:tier-ranking:phantom-character-picker:draft'
+  const PHANTOM_CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:tier-ranking:phantom-character-picker:result'
+  const GOD_CHARACTER_PICKER_CACHE_KEY = 'compendium:swc:tier-ranking:god-character-picker:draft'
+  const GOD_CHARACTER_PICKER_RESULT_KEY = 'compendium:swc:tier-ranking:god-character-picker:result'
+  const HIDDEN_CHARACTER_PICKER_CONFIG: Record<HiddenCharacterKind, CharacterPickerConfig> = {
+    phantom: {
+      cacheKey: PHANTOM_CHARACTER_PICKER_CACHE_KEY,
+      resultKey: PHANTOM_CHARACTER_PICKER_RESULT_KEY,
+    },
+    god: {
+      cacheKey: GOD_CHARACTER_PICKER_CACHE_KEY,
+      resultKey: GOD_CHARACTER_PICKER_RESULT_KEY,
+    },
+  }
   const REGION_LABELS: Record<string, string> = {
     c1: '金区',
     red: '红区',
@@ -323,6 +397,9 @@
   const selectedTiers = ref<string[]>([])
   const selectedStars = ref<string[]>([])
   const selectedArchetypes = ref<string[]>([])
+  const selectedCharacterFilters = ref<CharacterOption[]>([])
+  const selectedPhantomCharacters = ref<CharacterOption[]>([])
+  const selectedGodCharacters = ref<CharacterOption[]>([])
   const keyword = ref('')
   const loading = ref(false)
   const initialized = ref(false)
@@ -383,6 +460,22 @@
     ]),
   ])
   const regionIndex = computed(() => Math.max(0, regionOptions.value.indexOf(selectedRegion.value)))
+  const selectedCharacterViews = computed<SwcCharacterView[]>(() => selectedCharacterFilters.value.map(item => toSwcCharacterView(item)))
+  const selectedCharacterIds = computed(() => selectedCharacterFilters.value.map(item => item.characterId).filter(Boolean))
+  const selectedPhantomCharacterViews = computed<SwcCharacterView[]>(() =>
+    selectedPhantomCharacters.value.map(item => toSwcCharacterView(item)),
+  )
+  const selectedGodCharacterViews = computed<SwcCharacterView[]>(() => selectedGodCharacters.value.map(item => toSwcCharacterView(item)))
+  const selectedPhantomCharacterIds = computed(() => selectedPhantomCharacters.value.map(item => item.characterId).filter(Boolean))
+  const selectedGodCharacterIds = computed(() => selectedGodCharacters.value.map(item => item.characterId).filter(Boolean))
+  const hasPhantomCharacters = computed(() => selectedPhantomCharacters.value.length > 0)
+  const hasGodCharacters = computed(() => selectedGodCharacters.value.length > 0)
+  const hasHiddenCharacters = computed(() => hasPhantomCharacters.value || hasGodCharacters.value)
+  const tierClass = (key: string): string => {
+    if (key === 'Ω') return 'omega'
+    if (key.toLowerCase() === 'other') return 'f'
+    return key.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  }
   const filterSummary = computed(() => {
     const parts = [regionLabel(selectedRegion.value) || '全部区域']
     const elements = selectedElements.value.map(key => elementOptions.value.find(option => option.key === key)?.name).filter(Boolean)
@@ -393,8 +486,54 @@
     if (tiers.length) parts.push(tiers.join('、'))
     if (stars.length) parts.push(stars.join('、'))
     if (archetypes.length) parts.push(archetypes.join('、'))
+    if (selectedCharacterFilters.value.length) parts.push(`人物${selectedCharacterFilters.value.length}个`)
+    if (hasPhantomCharacters.value) parts.push(`幻神${selectedPhantomCharacters.value.length}个`)
+    if (hasGodCharacters.value) parts.push(`神级${selectedGodCharacters.value.length}个`)
     return parts.join(' · ')
   })
+
+  const toMockCharacter = (source: CharacterOption): TierRankingMockCharacter => {
+    const id = source.characterId || source.id
+    const parsedStars = Number.parseInt(source.stars || '', 10)
+    return {
+      id,
+      code: source.id || id,
+      name: source.name || source.label || id,
+      avatar: source.avatar || '',
+      stars: Number.isFinite(parsedStars) ? parsedStars : null,
+      element: source.elementKey
+        ? {
+            key: source.elementKey,
+            name: source.elementName || ELEMENT_LABELS[source.elementKey] || source.elementKey,
+          }
+        : null,
+      archetype: source.archetype || '',
+    }
+  }
+
+  const buildHiddenTierItems = (characters: CharacterOption[], tierKey: 'EX' | 'Ω'): TierRankingItem[] =>
+    characters.map((source, index) => {
+      const character = toMockCharacter(source)
+      return {
+        id: `mock-${tierKey}-${character.id}`,
+        rank: index + 1,
+        character,
+        tier: { key: tierKey, name: tierKey, sortOrder: tierKey === 'Ω' ? 110 : 100 },
+        sortOrder: index + 1,
+        score: null,
+        source: {
+          externalKey: character.code,
+          name: character.name,
+        },
+      }
+    })
+
+  const getHiddenTierDisplayTitle = (): string => {
+    if (hasGodCharacters.value && hasPhantomCharacters.value) return '幻神真神齐现'
+    if (hasGodCharacters.value) return '真神出炉'
+    if (hasPhantomCharacters.value) return '这就是幻神'
+    return ''
+  }
 
   const visibleItems = computed(() => {
     const normalizedKeyword = keyword.value.trim().toLowerCase()
@@ -417,45 +556,70 @@
       current.push(item)
       itemMap.set(item.tier.key, current)
     })
-    const configured = (config.value?.tiers || []).slice().sort((left, right) => (right.sortOrder || 0) - (left.sortOrder || 0))
+    const tierOrder = new Map<string, number>(
+      TIER_RANKING_EXPECTED_TIERS.slice()
+        .reverse()
+        .map((key, index) => [key, index]),
+    )
+    const configured = (config.value?.tiers || []).slice().sort((left, right) => {
+      const leftOrder = tierOrder.get(left.key) ?? 100
+      const rightOrder = tierOrder.get(right.key) ?? 100
+      return leftOrder - rightOrder || (right.sortOrder || 0) - (left.sortOrder || 0)
+    })
     const seen = new Set<string>()
     const groups: TierRankingGroup[] = []
+    if (hasGodCharacters.value) groups.push({ key: 'Ω', name: 'Ω', items: buildHiddenTierItems(selectedGodCharacters.value, 'Ω') })
+    if (hasPhantomCharacters.value)
+      groups.push({ key: 'EX', name: 'EX', items: buildHiddenTierItems(selectedPhantomCharacters.value, 'EX') })
     configured.forEach(option => {
+      if (TIER_RANKING_HIDDEN_TIERS.includes(option.key as (typeof TIER_RANKING_HIDDEN_TIERS)[number])) return
       const items = itemMap.get(option.key)
       if (!items?.length) return
       seen.add(option.key)
       groups.push({ key: option.key, name: option.name || option.key, items })
     })
-    itemMap.forEach((items, key) => {
-      if (seen.has(key)) return
-      groups.push({ key, name: items[0]?.tier.name || key, items })
-    })
+    Array.from(itemMap.entries())
+      .filter(([key]) => !seen.has(key))
+      .sort(([leftKey], [rightKey]) => (tierOrder.get(leftKey) ?? 100) - (tierOrder.get(rightKey) ?? 100))
+      .forEach(([key, items]) => groups.push({ key, name: items[0]?.tier.name || key, items }))
     return groups
   })
 
   const exportTitle = computed(() => {
-    const parts: string[] = []
-    const region = regionLabel(selectedRegion.value)
-    if (region) parts.push(region)
     const elements = selectedElements.value
       .map(key => elementOptions.value.find(option => option.key === key))
       .filter((option): option is TierRankingOption => Boolean(option))
       .map(option => option.name)
-    if (elements.length) parts.push(`${elements.join('、')}属性`)
     const tiers = selectedTiers.value
       .map(key => tierOptions.value.find(option => option.key === key))
       .filter((option): option is TierRankingOption => Boolean(option))
       .map(option => option.name)
-    if (tiers.length) parts.push(`${tiers.join('、')}评级`)
     const stars = selectedStars.value.map(key => `${key}星`)
     const archetypes = selectedArchetypes.value
       .map(key => archetypeOptions.value.find(option => option.key === key))
       .filter((option): option is TierRankingOption => Boolean(option))
       .map(option => option.name)
-    if (stars.length) parts.push(stars.join('、'))
-    if (archetypes.length) parts.push(`${archetypes.join('、')}类型`)
+    const hasExtraFilters =
+      elements.length ||
+      stars.length ||
+      archetypes.length ||
+      selectedCharacterIds.value.length ||
+      keyword.value.trim() ||
+      hasPhantomCharacters.value ||
+      hasGodCharacters.value
+    if (tiers.length === 1 && !hasExtraFilters) return tiers[0]
+
+    const parts: string[] = []
+    const region = regionLabel(selectedRegion.value)
+    if (region) parts.push(region)
+    if (tiers.length) parts.push(tiers.join('/'))
+    if (elements.length) parts.push(elements.join('/'))
+    if (stars.length) parts.push(stars.join('/'))
+    if (archetypes.length) parts.push(archetypes.join('/'))
+    if (selectedCharacterIds.value.length) parts.push(`人物${selectedCharacterIds.value.length}个`)
     if (keyword.value.trim()) parts.push(keyword.value.trim())
-    return parts.join(' ') || '魔灵强度榜'
+    const hiddenTitle = getHiddenTierDisplayTitle()
+    return parts.length ? `${hiddenTitle ? `${hiddenTitle} · ` : ''}${parts.join(' ')}` : hiddenTitle || region || '当前筛选'
   })
 
   const buildPosterTargetUrl = (): string => {
@@ -549,6 +713,80 @@
   const filterConfiguredValues = (values: string[], options: TierRankingOption[]): string[] =>
     values.filter(value => options.some(option => option.key === value))
 
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value)
+
+  const textValue = (value: unknown): string => {
+    if (typeof value === 'string') return value
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+    return ''
+  }
+
+  const createCharacterFilter = (characterId: string, source: Record<string, unknown> = {}): CharacterOption => ({
+    id: textValue(source.id) || characterId,
+    characterId: textValue(source.characterId) || characterId,
+    name: textValue(source.name) || textValue(source.label) || characterId,
+    label: textValue(source.label) || textValue(source.name) || characterId,
+    avatar: textValue(source.avatar),
+    element: textValue(source.element) || textValue(source.elementKey),
+    elementKey: textValue(source.elementKey) || textValue(source.element),
+    elementName: textValue(source.elementName),
+    archetype: textValue(source.archetype),
+    familyKey: textValue(source.familyKey),
+    familyName: textValue(source.familyName),
+    awaken: textValue(source.awaken),
+    awakenName: textValue(source.awakenName),
+    stars: textValue(source.stars),
+    status: textValue(source.status) || 'enabled',
+  })
+
+  const parseCharacterPayload = (value: string | undefined): CharacterOption[] => {
+    if (!value) return []
+    const candidates = [value]
+    try {
+      const decoded = decodeURIComponent(value)
+      if (decoded !== value) candidates.push(decoded)
+    } catch {
+      // 兼容已经解码过的分享参数。
+    }
+    for (const candidate of candidates) {
+      try {
+        const parsed: unknown = JSON.parse(candidate)
+        if (!Array.isArray(parsed)) continue
+        return parsed
+          .filter(isRecord)
+          .map(item => createCharacterFilter(textValue(item.characterId) || textValue(item.id), item))
+          .filter(item => Boolean(item.characterId))
+      } catch {
+        // 尝试下一个候选编码。
+      }
+    }
+    return []
+  }
+
+  const parseCharacterSelections = (payload: string | undefined, ids: string | undefined): CharacterOption[] => {
+    const fromPayload = parseCharacterPayload(payload)
+    if (fromPayload.length) return fromPayload
+    return parseFilterValues(ids).map(item => createCharacterFilter(item))
+  }
+
+  const serializeCharacterFilters = (characters: CharacterOption[]): string | undefined => {
+    if (!characters.length) return undefined
+    return JSON.stringify(
+      characters.map(item => ({
+        id: item.id,
+        characterId: item.characterId,
+        name: item.name,
+        label: item.label,
+        avatar: item.avatar,
+        elementKey: item.elementKey,
+        elementName: item.elementName,
+        archetype: item.archetype,
+        stars: item.stars,
+      })),
+    )
+  }
+
   const applyShareOptions = (options: TierRankingShareQuery, nextConfig: TierRankingConfig, initialReport: TierRankingReport) => {
     const preferredProvider = nextConfig.providers.includes('rta-ai')
       ? 'rta-ai'
@@ -564,6 +802,9 @@
     selectedTiers.value = filterConfiguredValues(parseFilterValues(options.tiers || options.tier), nextConfig.tiers)
     selectedStars.value = filterConfiguredValues(parseFilterValues(options.stars), nextConfig.stars || [])
     selectedArchetypes.value = filterConfiguredValues(parseFilterValues(options.archetypes), nextConfig.archetypes || [])
+    selectedCharacterFilters.value = parseFilterValues(options.characterIds).map(item => createCharacterFilter(item))
+    selectedPhantomCharacters.value = parseCharacterSelections(options.phantomCharacters, options.phantomCharacterIds)
+    selectedGodCharacters.value = parseCharacterSelections(options.godCharacters, options.godCharacterIds)
     keyword.value = options.keyword || ''
   }
 
@@ -574,6 +815,7 @@
     tiers: selectedTiers.value.length ? selectedTiers.value.join(',') : undefined,
     stars: selectedStars.value.length ? selectedStars.value.join(',') : undefined,
     archetypes: selectedArchetypes.value.length ? selectedArchetypes.value.join(',') : undefined,
+    characterIds: selectedCharacterIds.value.length ? selectedCharacterIds.value.join(',') : undefined,
     locale: TIER_RANKING_LOCALE,
   })
 
@@ -593,7 +835,8 @@
         selectedElements.value.length > 0 ||
         selectedTiers.value.length > 0 ||
         selectedStars.value.length > 0 ||
-        selectedArchetypes.value.length > 0
+        selectedArchetypes.value.length > 0 ||
+        selectedCharacterIds.value.length > 0
       ) {
         nextReport = await fetchTierRankingReport(buildQuery())
       }
@@ -690,6 +933,85 @@
     void loadReport()
   }
 
+  const openCharacterPicker = () => {
+    setStorageSync(
+      CHARACTER_PICKER_CACHE_KEY,
+      selectedCharacterFilters.value.map(item => ({ ...item })),
+    )
+    removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
+    uni.navigateTo({
+      url:
+        '/subPackages/tools/compendium/swc/character-picker?compendiumId=swc' +
+        `&locale=${encodeURIComponent(TIER_RANKING_LOCALE)}` +
+        `&cacheKey=${encodeURIComponent(CHARACTER_PICKER_CACHE_KEY)}` +
+        `&resultKey=${encodeURIComponent(CHARACTER_PICKER_RESULT_KEY)}` +
+        `&selectedCharacterIds=${encodeURIComponent(selectedCharacterIds.value.join(','))}` +
+        '&maxCount=0',
+    })
+  }
+
+  const getHiddenCharacters = (kind: HiddenCharacterKind): CharacterOption[] =>
+    kind === 'phantom' ? selectedPhantomCharacters.value : selectedGodCharacters.value
+
+  const setHiddenCharacters = (kind: HiddenCharacterKind, characters: CharacterOption[]) => {
+    if (kind === 'phantom') selectedPhantomCharacters.value = characters
+    else selectedGodCharacters.value = characters
+  }
+
+  const openHiddenCharacterPicker = (kind: HiddenCharacterKind) => {
+    const picker = HIDDEN_CHARACTER_PICKER_CONFIG[kind]
+    const selected = getHiddenCharacters(kind)
+    setStorageSync(
+      picker.cacheKey,
+      selected.map(item => ({ ...item })),
+    )
+    removeStorageSync(picker.resultKey)
+    uni.navigateTo({
+      url:
+        '/subPackages/tools/compendium/swc/character-picker?compendiumId=swc' +
+        `&locale=${encodeURIComponent(TIER_RANKING_LOCALE)}` +
+        `&cacheKey=${encodeURIComponent(picker.cacheKey)}` +
+        `&resultKey=${encodeURIComponent(picker.resultKey)}` +
+        `&selectedCharacterIds=${encodeURIComponent(selected.map(item => item.characterId).join(','))}` +
+        '&maxCount=0',
+    })
+  }
+
+  const handleRemoveCharacterFilter = (character: { characterId: string }) => {
+    selectedCharacterFilters.value = selectedCharacterFilters.value.filter(item => item.characterId !== character.characterId)
+    void loadReport()
+  }
+
+  const handleRemoveHiddenCharacter = (kind: HiddenCharacterKind, characterId: string) => {
+    setHiddenCharacters(
+      kind,
+      getHiddenCharacters(kind).filter(item => item.characterId !== characterId),
+    )
+    schedulePosterPreload()
+  }
+
+  const consumeCharacterPickerResult = (kind: HiddenCharacterKind | 'regular'): boolean => {
+    const picker = kind === 'regular' ? { resultKey: CHARACTER_PICKER_RESULT_KEY } : HIDDEN_CHARACTER_PICKER_CONFIG[kind]
+    const result = getStorageSync(picker.resultKey)
+    if (!Array.isArray(result)) return false
+    const characters = result
+      .filter(isRecord)
+      .map(item => createCharacterFilter(textValue(item.characterId) || textValue(item.id), item))
+      .filter(item => Boolean(item.characterId))
+    if (kind === 'regular') selectedCharacterFilters.value = characters
+    else setHiddenCharacters(kind, characters)
+    removeStorageSync(picker.resultKey)
+    return true
+  }
+
+  const checkCharacterPickerResult = () => {
+    const regularChanged = consumeCharacterPickerResult('regular')
+    const phantomChanged = consumeCharacterPickerResult('phantom')
+    const godChanged = consumeCharacterPickerResult('god')
+    if (regularChanged) void loadReport()
+    if (phantomChanged || godChanged) schedulePosterPreload()
+  }
+
   const toggleTierCount = () => {
     showTierCount.value = !showTierCount.value
     schedulePosterPreload()
@@ -744,11 +1066,28 @@
     tiers: selectedTiers.value.length ? selectedTiers.value.join(',') : undefined,
     stars: selectedStars.value.length ? selectedStars.value.join(',') : undefined,
     archetypes: selectedArchetypes.value.length ? selectedArchetypes.value.join(',') : undefined,
+    characterIds: selectedCharacterIds.value.length ? selectedCharacterIds.value.join(',') : undefined,
+    phantomCharacterIds: selectedPhantomCharacterIds.value.length ? selectedPhantomCharacterIds.value.join(',') : undefined,
+    godCharacterIds: selectedGodCharacterIds.value.length ? selectedGodCharacterIds.value.join(',') : undefined,
+    phantomCharacters: serializeCharacterFilters(selectedPhantomCharacters.value),
+    godCharacters: serializeCharacterFilters(selectedGodCharacters.value),
     keyword: keyword.value.trim() || undefined,
     viewMode: viewMode.value,
     showTierCount: showTierCount.value ? '1' : '0',
     showAvatarElementBadge: showAvatarElementBadge.value ? '1' : '0',
     showScore: showScore.value ? '1' : '0',
+  })
+
+  const shareQueryString = computed(() =>
+    Object.entries(buildShareQuery())
+      .filter(([, value]) => Boolean(value))
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
+      .join('&'),
+  )
+  const shareTitle = computed(() => getSwcTierRankingShareTitle(buildShareQuery()))
+  const sharePath = computed(() => {
+    const query = shareQueryString.value
+    return `/subPackages/tools/compendium/swc/tier-ranking/index${query ? `?${query}` : ''}`
   })
 
   onLoad((options: Record<string, string | undefined>) => {
@@ -764,6 +1103,11 @@
       tiers: options.tiers || options.tier,
       stars: options.stars,
       archetypes: options.archetypes,
+      characterIds: options.characterIds,
+      phantomCharacterIds: options.phantomCharacterIds,
+      godCharacterIds: options.godCharacterIds,
+      phantomCharacters: options.phantomCharacters,
+      godCharacters: options.godCharacters,
       keyword: options.keyword,
       viewMode: options.viewMode,
       showTierCount: options.showTierCount,
@@ -774,6 +1118,7 @@
   })
 
   onShow(() => {
+    checkCharacterPickerResult()
     reportToolVisit('compendium-swc-tier-ranking')
   })
 
@@ -824,14 +1169,6 @@
     background: linear-gradient(135deg, #ffffff 0%, #edf5ff 100%);
     box-shadow: 0 8rpx 20rpx rgba(37, 99, 235, 0.08);
     text-align: center;
-  }
-
-  .poster-kicker {
-    color: #3972b8;
-    font-size: 19rpx;
-    font-weight: 800;
-    letter-spacing: 2rpx;
-    line-height: 1.2;
   }
 
   .poster-title {
@@ -1036,6 +1373,30 @@
     box-sizing: border-box;
   }
 
+  .character-filter-content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .hidden-character-filter-line {
+    align-items: flex-start;
+  }
+
+  .hidden-filter-label {
+    width: 92rpx !important;
+    padding-top: 22rpx;
+    color: var(--theme-text-secondary);
+    font-weight: 700;
+  }
+
+  .character-picker-slots {
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 8rpx;
+  }
+
   .chip-scroll {
     min-width: 0;
     flex: 1;
@@ -1063,6 +1424,12 @@
     line-height: 1.2;
   }
 
+  .icon-only-filter-chip {
+    width: 52rpx;
+    min-width: 52rpx;
+    padding: 0;
+  }
+
   .filter-chip.active {
     border-color: var(--theme-brand);
     background: var(--theme-brand);
@@ -1074,36 +1441,33 @@
     margin-top: 18rpx;
   }
 
-  .display-icon-button {
+  .display-text-button {
     display: flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 52rpx;
+    min-width: 76rpx;
     height: 52rpx;
+    padding: 0 14rpx;
     border: 1rpx solid var(--theme-border);
     border-radius: 10rpx;
     background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    line-height: 1.2;
+    box-sizing: border-box;
   }
 
-  .display-icon-button.active {
+  .display-text-button.active {
     border-color: var(--theme-brand);
     background: var(--theme-brand);
+    color: #fff;
+    font-weight: 700;
   }
 
-  .display-icon-button.disabled {
+  .display-text-button.disabled {
     pointer-events: none;
     opacity: 0.65;
-  }
-
-  .is-switching-icon {
-    animation: view-mode-switching 560ms linear infinite;
-  }
-
-  @keyframes view-mode-switching {
-    to {
-      transform: rotate(360deg);
-    }
   }
 
   .display-action-spacer {
@@ -1136,8 +1500,17 @@
   }
 
   .chip-c,
-  .chip-other {
+  .chip-d,
+  .chip-f {
     --tier-color: #64748b;
+  }
+
+  .chip-ex {
+    --tier-color: #d97706;
+  }
+
+  .chip-ω {
+    --tier-color: #db2777;
   }
 
   .search-field {
@@ -1227,6 +1600,14 @@
     --tier-color: #b45309;
   }
 
+  .marker-ex {
+    --tier-color: #d97706;
+  }
+
+  .marker-omega {
+    --tier-color: #db2777;
+  }
+
   .marker-ss {
     --tier-color: #c2410c;
   }
@@ -1244,7 +1625,8 @@
   }
 
   .marker-c,
-  .marker-other {
+  .marker-d,
+  .marker-f {
     --tier-color: #64748b;
   }
 
@@ -1252,10 +1634,6 @@
     color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 800;
-  }
-
-  .group-title--other {
-    font-size: 22rpx;
   }
 
   .group-count {

@@ -34,7 +34,7 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
   {
     id: 'tier-ranking',
     title: '魔灵强度榜',
-    desc: '按区域与属性查看魔灵强度',
+    desc: '魔灵强度评级',
     icon: 'star',
     accent: '#0f766e',
     accentSoft: 'rgba(15, 118, 110, 0.13)',
