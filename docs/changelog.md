@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 评级榜公开接口跳过游客会话初始化，修复微信开发者工具因 guest-session 不可用导致强度榜首屏报错的问题（Codex）
 - 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 统一分享链接与导出海报的所见状态参数编码，补齐筛选面板展开状态，确保筛选条件、展示模式和数量/属性/评分开关在分享与导出中保持一致（Codex）
 - 2026-09-20 [tools/compendium-swc/tier-ranking,sharing] 新增纯前端幻神 EX 与神级 Ω 隐藏分段：支持两组有序多选人物、删除、分享恢复和海报导出，并将历史 Other 兜底档位统一显示为 F；微信分享标题按隐藏分段动态使用“这就是幻神/真神出炉”等标题党文案（Codex）
 - 2026-09-19 [tools/compendium-swc/tier-ranking] 将筛选区“显示”控制改为文字按钮，明确标识数量、属性、评分、卡片/列表模式与导出操作（Codex）

@@ -11,8 +11,14 @@ import type {
   getCompendiumsTierRankingsConfigQuery,
   getCompendiumsTierRankingsLatestQuery,
 } from '@/services/apifox/NODEJSDEMO/TIERRANKING/interface'
+import type { ParticalUniAppRequestOptions } from '@/services/interface'
 
 const hasQueryValue = (value: string | undefined): value is string => typeof value === 'string' && Boolean(value.trim())
+
+// 评级榜是公开读取接口，不应因游客会话初始化失败而阻塞微信端首屏。
+const TIER_RANKING_PUBLIC_REQUEST_CONFIG = { _skipGuestSession: true } as ParticalUniAppRequestOptions & {
+  _skipGuestSession: true
+}
 
 const normalizeTierFilterForApi = (value: string): string =>
   value
@@ -27,7 +33,7 @@ export const fetchTierRankingConfig = async (): Promise<TierRankingConfig> => {
     compendiumId: TIER_RANKING_COMPENDIUM_ID,
     locale: TIER_RANKING_LOCALE,
   }
-  return normalizeTierRankingConfig(await getCompendiumsTierRankingsConfig(query))
+  return normalizeTierRankingConfig(await getCompendiumsTierRankingsConfig(query, TIER_RANKING_PUBLIC_REQUEST_CONFIG))
 }
 
 export const fetchTierRankingReport = async (query: TierRankingQuery = {}): Promise<TierRankingReport> => {
@@ -44,5 +50,5 @@ export const fetchTierRankingReport = async (query: TierRankingQuery = {}): Prom
   if (hasQueryValue(query.archetypes)) apiQuery.archetypes = query.archetypes
   if (hasQueryValue(query.characterIds)) apiQuery.characterIds = query.characterIds
 
-  return normalizeTierRankingReport(await getCompendiumsTierRankingsLatest(apiQuery))
+  return normalizeTierRankingReport(await getCompendiumsTierRankingsLatest(apiQuery, TIER_RANKING_PUBLIC_REQUEST_CONFIG))
 }
