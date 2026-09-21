@@ -625,14 +625,7 @@
   const buildPosterTargetUrl = (): string => {
     const baseUrl = String(import.meta.env.VITE_PUBLIC_THIS_H5_URL || '').replace(/['"]/g, '')
     if (!baseUrl) throw new Error('H5 地址未配置，部署 H5 后再试')
-    const query = {
-      ...buildShareQuery(),
-      poster: '1',
-    }
-    const queryString = Object.entries(query)
-      .filter(([, value]) => Boolean(value))
-      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-      .join('&')
+    const queryString = stringifyTierRankingQuery({ ...buildShareQuery(), poster: '1' })
     return `${baseUrl}/subPackages/tools/compendium/swc/tier-ranking/index?${queryString}`
   }
 
@@ -1073,17 +1066,19 @@
     godCharacters: serializeCharacterFilters(selectedGodCharacters.value),
     keyword: keyword.value.trim() || undefined,
     viewMode: viewMode.value,
+    filterExpanded: filterExpanded.value ? '1' : '0',
     showTierCount: showTierCount.value ? '1' : '0',
     showAvatarElementBadge: showAvatarElementBadge.value ? '1' : '0',
     showScore: showScore.value ? '1' : '0',
   })
 
-  const shareQueryString = computed(() =>
-    Object.entries(buildShareQuery())
+  const stringifyTierRankingQuery = (query: TierRankingShareQuery): string =>
+    Object.entries(query)
       .filter(([, value]) => Boolean(value))
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value || '')}`)
-      .join('&'),
-  )
+      .join('&')
+
+  const shareQueryString = computed(() => stringifyTierRankingQuery(buildShareQuery()))
   const shareTitle = computed(() => getSwcTierRankingShareTitle(buildShareQuery()))
   const sharePath = computed(() => {
     const query = shareQueryString.value
@@ -1093,6 +1088,7 @@
   onLoad((options: Record<string, string | undefined>) => {
     isPosterMode.value = options.poster === '1'
     viewMode.value = options.viewMode === 'list' ? 'list' : 'card'
+    filterExpanded.value = options.filterExpanded === '1'
     showTierCount.value = options.showTierCount === '1'
     showAvatarElementBadge.value = options.showAvatarElementBadge === '1'
     showScore.value = options.showScore === '1'
@@ -1110,6 +1106,7 @@
       godCharacters: options.godCharacters,
       keyword: options.keyword,
       viewMode: options.viewMode,
+      filterExpanded: options.filterExpanded,
       showTierCount: options.showTierCount,
       showAvatarElementBadge: options.showAvatarElementBadge,
       showScore: options.showScore,

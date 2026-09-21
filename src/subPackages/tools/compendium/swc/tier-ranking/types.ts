@@ -99,6 +99,7 @@ export interface TierRankingShareQuery {
   characterIds?: string
   keyword?: string
   viewMode?: 'list' | 'card' | string
+  filterExpanded?: string
   showTierCount?: string
   showAvatarElementBadge?: string
   showScore?: string

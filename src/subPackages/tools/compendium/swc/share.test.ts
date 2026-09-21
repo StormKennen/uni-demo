@@ -35,6 +35,7 @@ describe('buildSwcTierRankingShare', () => {
       archetypes: 'attack,hp',
       keyword: '奥利弗',
       viewMode: 'list',
+      filterExpanded: '1',
       showTierCount: '0',
       showAvatarElementBadge: '1',
       showScore: '1',
@@ -50,6 +51,7 @@ describe('buildSwcTierRankingShare', () => {
     expect(result.app.path).toContain('stars=6%2C5')
     expect(result.app.path).toContain('archetypes=attack%2Chp')
     expect(result.app.path).toContain('viewMode=list')
+    expect(result.app.path).toContain('filterExpanded=1')
     expect(result.app.path).toContain('showTierCount=0')
     expect(result.app.path).toContain('showAvatarElementBadge=1')
     expect(result.app.path).toContain('showScore=1')
