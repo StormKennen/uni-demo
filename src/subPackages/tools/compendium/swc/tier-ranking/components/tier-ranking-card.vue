@@ -102,6 +102,10 @@
     --tier-color: #d97706;
   }
 
+  .tier-la {
+    --tier-color: #0f766e;
+  }
+
   .tier-omega {
     --tier-color: #db2777;
   }

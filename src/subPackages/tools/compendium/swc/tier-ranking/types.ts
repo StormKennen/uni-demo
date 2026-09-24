@@ -1,7 +1,7 @@
 export const TIER_RANKING_COMPENDIUM_ID = 'swc'
 export const TIER_RANKING_LOCALE = 'zh-CN'
-export const TIER_RANKING_EXPECTED_TIERS = ['F', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'EX', 'Ω'] as const
-export const TIER_RANKING_HIDDEN_TIERS = ['EX', 'Ω'] as const
+export const TIER_RANKING_EXPECTED_TIERS = ['LA', 'F', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'EX', 'Ω'] as const
+export const TIER_RANKING_HIDDEN_TIERS = ['LA', 'EX', 'Ω'] as const
 
 export type TierRankingElementKey = 'fire' | 'water' | 'wind' | 'light' | 'dark'
 
@@ -104,7 +104,11 @@ export interface TierRankingShareQuery {
   showAvatarElementBadge?: string
   showScore?: string
   phantomCharacterIds?: string
+  phantomTierTitle?: string
   godCharacterIds?: string
+  laCharacterIds?: string
+  laTierTitle?: string
   phantomCharacters?: string
   godCharacters?: string
+  laCharacters?: string
 }

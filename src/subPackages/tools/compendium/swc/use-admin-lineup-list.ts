@@ -1,8 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
-import type { CharacterOption, LineupScope, PaginationState, UserLineupListResult } from '../lineup-types'
-import { normalizeUserLineupListResult } from '../lineup-normalizers'
-import { buildAnonymousRequestConfig } from '../request-options'
-import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
+import type { CharacterOption, LineupScope, PaginationState, UserLineupListResult } from './lineup-types'
+import { normalizeUserLineupListResult } from './lineup-normalizers'
+import { buildAnonymousRequestConfig } from './request-options'
+import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from './lineup-meta'
 import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
 import type { getCompendiumsLineupsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
 

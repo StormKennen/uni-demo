@@ -1,6 +1,12 @@
 <template>
   <PageLayout
     title="魔灵召唤阵容"
+    :share-title="shareResult.app.title"
+    :share-path="shareResult.app.path"
+    :share-image-url="shareResult.app.imageUrl"
+    :share-timeline-title="shareResult.timeline.title"
+    :share-timeline-query="shareResult.timeline.query"
+    :share-timeline-image-url="shareResult.timeline.imageUrl"
     back-fallback="/subPackages/tools/compendium/swc/index"
     nav-init-bg-color="var(--theme-surface)"
     nav-divider>
@@ -229,7 +235,7 @@
     LINEUP_FILTER_STATUS_OPTIONS,
     LINEUP_TYPE_PRESET_OPTIONS,
   } from './lineup-meta'
-  import { useAdminLineupList } from './composables/use-admin-lineup-list'
+  import { useAdminLineupList } from './use-admin-lineup-list'
   import { toSwcCharacterView } from './utils'
   import { buildSwcLineupsShare } from './share'
   import { canManageLineup, ensureLoginAccess, ensureLineupFeatureAccess, isAdminUser } from '@/utils/admin'
@@ -454,6 +460,8 @@
       : undefined,
   })
 
+  const shareResult = computed(() => buildSwcLineupsShare(buildShareQuery()))
+
   type GeneratedReactionBody = Parameters<typeof postLineupsLineupIdReaction>[1]
 
   const toGeneratedReactionBody = (body: LineupReactionRequest): GeneratedReactionBody => body as unknown as GeneratedReactionBody
@@ -556,8 +564,8 @@
   })
 
   // #ifdef MP-WEIXIN
-  onShareAppMessage(() => buildSwcLineupsShare(buildShareQuery()).app)
-  onShareTimeline(() => buildSwcLineupsShare(buildShareQuery()).timeline)
+  onShareAppMessage(() => shareResult.value.app)
+  onShareTimeline(() => shareResult.value.timeline)
   // #endif
 </script>
 

@@ -1,5 +1,24 @@
 # Changelog
 
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 新增 LA 人物自定义筛选：复用幻神人物选择器交互生成前端 mock 的 LA 分段，固定展示在 F 分段下方；LA 不进入筛选摘要标题，但会随分享恢复并纳入导出海报（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 为 LA 人物筛选行增加自定义分段标题输入框，默认标题为 LA；标题随分享参数恢复并用于榜单/海报分段标题，但不影响筛选摘要和导出文件标题（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 幻神筛选同步支持自定义分段标题；幻神与 LA 选择的人物会从接口其他评级分段中过滤，幻神固定置顶、LA 固定置底，避免同一人物重复展示（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 将幻神自定义分段标题的默认展示值调整为 `SSS`，输入框仍保持空值以显示 placeholder（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 将筛选面板中的“幻神人物”行统一命名为“SSS人物”，明确其为 SSS mock 分段交互；SSS/LA 仍不进入筛选摘要和导出标题，但会进入分享参数及导出内容（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 更新微信好友消息卡片动态分享：SSS人物优先使用“魔灵｜${标题}居然是TA”及 SSS 首个魔灵头像，未选择 SSS 时再使用 LA 标题和头像；未选择 mock 分组时恢复普通魔灵强度榜标题与默认封面（Codex）
+- 2026-09-23 [tools/compendium-swc/lineups,sharing] 修复阵容页微信分享未稳定携带人物筛选参数的问题：将带筛选 query 的分享路径、标题和封面同步传入 PageLayout，并让页面级分享回调复用同一份分享结果，接收方可按人物筛选直接加载阵容（Codex）
+- 2026-09-23 [tools/compendium-swc/lineup-counter,sharing] 修复阵容克制页微信分享可能被 PageLayout 默认路径覆盖的问题：同步传递带模式和人物筛选参数的分享路径，接收方可恢复当前克制查询条件（Codex）
+- 2026-09-23 [tools/compendium-swc/build/mp-weixin] 修复魔灵阵容与阵容克制页面在微信小程序中因分包内 composable 模块未注册而报 `use-admin-lineup-list.js is not defined`：将页面专用查询 composable 放到页面同级目录并更新引用，避免运行时解析 `./composables/*.js`（Codex）
+- 2026-09-21 [components/PageLayout,tools/compendium-swc/tier-ranking,sharing] 修复微信好友消息卡片动态封面未生效的问题：将幻神或 SSS 首个魔灵头像显式传入 PageLayout，朋友圈继续使用默认强度榜封面（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 为幻神筛选或可见 SSS 分段定制微信好友消息卡片：标题显示“幻神居然是TA”，封面优先使用幻神首个魔灵或 SSS 分段首个魔灵头像；朋友圈与其他状态保持原逻辑（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 分享标题按当前可见状态生成：出现 SSS 分段或选择幻神筛选时显示“这是幻神”，否则显示“魔灵强度榜”；导出图片标题直接复用筛选容器标题且不包含幻神 mock 筛选文案（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 将幻神/神级人物筛选视为前端 mock 分段，移除“这就是幻神”“真神出炉”等特殊标题，分享与导出统一使用当前榜单内容和普通标题（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 修复幻神筛选导出复用旧海报缓存的问题，海报模式不再使用“这就是幻神”等特殊标题，并提升海报渲染版本确保导出与当前页面所见状态一致（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 导出图片完成后先关闭生成 loading，再显示“导出成功”提示，确保成功反馈可见（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 暂时注释神级人物筛选；幻神筛选结果在当前不存在 SSS 分段时将展示容器标签调整为 `SSS`（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 移除“真神出炉”“这就是幻神”等隐藏人物文案在筛选摘要和导出标题中的展示，保留隐藏分段内容与分享标题逻辑（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 将“幻神人物”和“神级人物”筛选收进筛选面板折叠内容，收起时仅保留顶部筛选摘要（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,build/mp-weixin] 修复 Ω 评级筛选项生成 Unicode CSS 类名导致微信开发者工具 WXSS 报 `unexpected '\\'`：统一复用 ASCII 品级类名 `chip-omega`，确保小程序样式可编译（Codex）
 - 2026-09-21 [tools/compendium-swc/tier-ranking] 评级榜公开接口跳过游客会话初始化，修复微信开发者工具因 guest-session 不可用导致强度榜首屏报错的问题（Codex）
 - 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 统一分享链接与导出海报的所见状态参数编码，补齐筛选面板展开状态，确保筛选条件、展示模式和数量/属性/评分开关在分享与导出中保持一致（Codex）
 - 2026-09-20 [tools/compendium-swc/tier-ranking,sharing] 新增纯前端幻神 EX 与神级 Ω 隐藏分段：支持两组有序多选人物、删除、分享恢复和海报导出，并将历史 Other 兜底档位统一显示为 F；微信分享标题按隐藏分段动态使用“这就是幻神/真神出炉”等标题党文案（Codex）

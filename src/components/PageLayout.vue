@@ -21,6 +21,8 @@
     shareTimelineQuery?: string
     /** 自定义朋友圈分享标题；不传时复用分享标题 */
     shareTimelineTitle?: string
+    /** 自定义朋友圈分享图片；不传时复用好友消息卡片图片 */
+    shareTimelineImageUrl?: string
     /** 是否显示自定义导航栏 */
     showNav?: boolean
     /** 导航栏是否覆盖在页面内容上方；开启后不占用页面内容高度 */
@@ -85,7 +87,7 @@
 
   onShareTimeline(() => {
     const shareTitle = props.shareTimelineTitle || props.shareTitle || `${props.title} · 凉白开工具箱`
-    return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareImageUrl }
+    return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareTimelineImageUrl || props.shareImageUrl }
   })
   // #endif
 

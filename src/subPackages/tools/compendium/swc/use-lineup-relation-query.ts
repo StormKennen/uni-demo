@@ -9,9 +9,9 @@ import type {
   ReactionValue,
   RelatedLineupItem,
   UserLineupSummary,
-} from '../lineup-types'
-import { normalizePublicLineupRelations, normalizeReactionResult } from '../lineup-normalizers'
-import { buildAnonymousRequestConfig, sanitizeQuery } from '../request-options'
+} from './lineup-types'
+import { normalizePublicLineupRelations, normalizeReactionResult } from './lineup-normalizers'
+import { buildAnonymousRequestConfig, sanitizeQuery } from './request-options'
 import { getCompendiumsLineupRelations, postLineupsLineupIdReaction } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
 import type { getCompendiumsLineupRelationsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
 import { getAnonymousId } from '@/utils/anonymous-id'

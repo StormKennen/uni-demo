@@ -212,6 +212,10 @@
     --tier-background: #f6b74f;
   }
 
+  .tier-section-la {
+    --tier-background: #7dd3c7;
+  }
+
   .tier-section-omega {
     --tier-background: #e879a8;
   }
