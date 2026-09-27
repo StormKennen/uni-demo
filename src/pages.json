@@ -356,6 +356,13 @@
           }
         },
         {
+          "path": "altitude/index",
+          "style": {
+            "navigationBarTitleText": "当前海拔",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "video-compress/index",
           "style": {
             "navigationBarTitleText": "视频压缩神器",

@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-09-27 [tools/altitude] 新增 H5/微信小程序当前海拔工具的页面规格，支持定位查询和失败重试（Codex）
+
 - 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 新增 LA 人物自定义筛选：复用幻神人物选择器交互生成前端 mock 的 LA 分段，固定展示在 F 分段下方；LA 不进入筛选摘要标题，但会随分享恢复并纳入导出海报（Codex）
 - 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 为 LA 人物筛选行增加自定义分段标题输入框，默认标题为 LA；标题随分享参数恢复并用于榜单/海报分段标题，但不影响筛选摘要和导出文件标题（Codex）
 - 2026-09-23 [tools/compendium-swc/tier-ranking] 幻神筛选同步支持自定义分段标题；幻神与 LA 选择的人物会从接口其他评级分段中过滤，幻神固定置顶、LA 固定置底，避免同一人物重复展示（Codex）
