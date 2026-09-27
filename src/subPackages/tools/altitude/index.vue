@@ -12,7 +12,16 @@
       </view>
 
       <view class="result-card" :class="{ 'result-card-loading': loading }">
-        <view v-if="loading" class="state-box">
+        <view v-if="showLocationPrompt" class="state-box location-consent-box">
+          <view class="location-consent-icon">
+            <uni-icons type="location" size="32" color="var(--theme-brand)" />
+          </view>
+          <text class="state-title">需要使用位置信息</text>
+          <text class="state-description">仅用于查询并展示当前位置海拔，不保存位置历史。你可以在微信设置中随时关闭定位权限。</text>
+          <button class="consent-button" :disabled="loading" @click="requestLocationAndQuery">允许定位并查询</button>
+        </view>
+
+        <view v-else-if="loading" class="state-box">
           <uni-icons type="spinner-cycle" size="32" color="var(--theme-brand)" />
           <text class="state-title">正在定位并查询海拔…</text>
           <text class="state-description">首次查询可能需要几秒钟</text>
@@ -24,6 +33,7 @@
           </view>
           <text class="state-title">暂时无法获取海拔</text>
           <text class="state-description">{{ errorMessage }}</text>
+          <button v-if="permissionDenied" class="settings-button" @click="openLocationSettings">去开启定位权限</button>
         </view>
 
         <view v-else-if="result" class="success-box">
@@ -57,7 +67,7 @@
         </view>
       </view>
 
-      <button class="locate-button" :disabled="loading" @click="queryCurrentAltitude">
+      <button v-if="!showLocationPrompt" class="locate-button" :disabled="loading" @click="queryCurrentAltitude">
         {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '获取当前位置海拔' }}
       </button>
 
@@ -86,8 +96,19 @@
     queriedAt: string
   }
 
+  class LocationAuthorizationError extends Error {
+    readonly code = 'LOCATION_AUTHORIZATION_DENIED'
+
+    constructor() {
+      super('定位权限未开启')
+      this.name = 'LocationAuthorizationError'
+    }
+  }
+
   const loading = ref(false)
   const errorMessage = ref('')
+  const permissionDenied = ref(false)
+  const showLocationPrompt = ref(true)
   const result = ref<CurrentAltitudeViewModel | null>(null)
 
   const normalizeAltitudeResult = (payload: getAltitudeCurrentRes): CurrentAltitudeViewModel => {
@@ -115,6 +136,37 @@
     return result.value.queriedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
   })
 
+  const ensureLocationAuthorization = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      // #ifdef MP-WEIXIN
+      uni.getSetting({
+        success: setting => {
+          const authorization = setting.authSetting?.['scope.userLocation']
+          if (authorization === true) {
+            resolve()
+            return
+          }
+
+          if (authorization === false) {
+            reject(new LocationAuthorizationError())
+            return
+          }
+
+          uni.authorize({
+            scope: 'scope.userLocation',
+            success: () => resolve(),
+            fail: () => reject(new LocationAuthorizationError()),
+          })
+        },
+        fail: () => reject(new LocationAuthorizationError()),
+      })
+      // #endif
+
+      // #ifndef MP-WEIXIN
+      resolve()
+      // #endif
+    })
+
   const getCurrentLocation = (): Promise<LocationCoordinate> =>
     new Promise((resolve, reject) => {
       uni.getLocation({
@@ -124,19 +176,44 @@
       })
     })
 
+  const requestLocationAndQuery = async () => {
+    showLocationPrompt.value = false
+    await queryCurrentAltitude()
+  }
+
+  const openLocationSettings = () => {
+    // #ifdef MP-WEIXIN
+    uni.openSetting({
+      success: setting => {
+        if (setting.authSetting?.['scope.userLocation']) {
+          showLocationPrompt.value = false
+          queryCurrentAltitude()
+        }
+      },
+    })
+    // #endif
+  }
+
   const queryCurrentAltitude = async () => {
     if (loading.value) return
 
     loading.value = true
     errorMessage.value = ''
+    permissionDenied.value = false
 
     try {
+      await ensureLocationAuthorization()
       const location = await getCurrentLocation()
       result.value = normalizeAltitudeResult(await getAltitudeCurrent(location))
     } catch (error) {
       result.value = null
-      const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
-      errorMessage.value = message.includes('定位') ? message : '请检查定位权限和网络连接后重试'
+      if (error instanceof LocationAuthorizationError) {
+        permissionDenied.value = true
+        errorMessage.value = '请在微信设置中开启位置信息权限后重试'
+      } else {
+        const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
+        errorMessage.value = message.includes('定位') ? message : '请检查定位权限和网络连接后重试'
+      }
     } finally {
       loading.value = false
     }
@@ -144,7 +221,6 @@
 
   onMounted(() => {
     reportToolVisit('current-altitude')
-    queryCurrentAltitude()
   })
 </script>
 
@@ -243,6 +319,47 @@
     margin-top: 12rpx;
     font-size: 24rpx;
     line-height: 1.6;
+  }
+
+  .location-consent-box {
+    width: 100%;
+  }
+
+  .location-consent-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 50%;
+    background: var(--theme-surface-2);
+  }
+
+  .consent-button,
+  .settings-button {
+    width: 100%;
+    margin-top: 28rpx;
+    border: 0;
+    border-radius: 18rpx;
+    background: var(--theme-brand);
+    color: var(--theme-surface);
+    font-size: 28rpx;
+    line-height: 82rpx;
+  }
+
+  .consent-button::after,
+  .settings-button::after {
+    border: 0;
+  }
+
+  .consent-button[disabled] {
+    opacity: 0.55;
+  }
+
+  .settings-button {
+    width: auto;
+    min-width: 280rpx;
+    padding: 0 32rpx;
   }
 
   .error-icon {
