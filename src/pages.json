@@ -358,7 +358,7 @@
         {
           "path": "altitude/index",
           "style": {
-            "navigationBarTitleText": "当前海拔",
+            "navigationBarTitleText": "查询海拔",
             "navigationStyle": "custom"
           }
         },

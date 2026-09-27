@@ -1,12 +1,17 @@
 <template>
-  <PageLayout title="当前海拔" back-fallback="/pages/tools/index">
+  <PageLayout
+    title="查询海拔"
+    share-title="查询海拔｜查询当前位置海拔"
+    share-path="/subPackages/tools/altitude/index"
+    share-timeline-title="查询海拔"
+    back-fallback="/pages/tools/index">
     <view class="altitude-page">
       <view class="intro-card">
         <view class="intro-icon">
           <uni-icons type="location" size="30" color="var(--theme-brand)" />
         </view>
         <view class="intro-copy">
-          <text class="intro-title">当前位置海拔</text>
+          <text class="intro-title">查询当前位置海拔</text>
           <text class="intro-description">允许定位后，查询你所在位置的海拔高度</text>
         </view>
       </view>
@@ -37,7 +42,7 @@
         </view>
 
         <view v-else-if="result" class="success-box">
-          <text class="result-label">当前海拔</text>
+          <text class="result-label">海拔高度</text>
           <view class="altitude-value-row">
             <text class="altitude-value">{{ result.altitudeMeters.toFixed(1) }}</text>
             <text class="altitude-unit">米</text>
@@ -68,7 +73,7 @@
       </view>
 
       <button v-if="!showLocationPrompt" class="locate-button" :disabled="loading" @click="queryCurrentAltitude">
-        {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '获取当前位置海拔' }}
+        {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '查询当前位置海拔' }}
       </button>
 
       <text class="source-note">海拔数据由高程服务提供，仅供参考</text>

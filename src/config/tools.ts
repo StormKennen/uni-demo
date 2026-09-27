@@ -288,7 +288,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
   },
   'current-altitude': {
-    name: '当前海拔',
+    name: '查询海拔',
     desc: '定位查询当前位置海拔',
     icon: 'location',
     gradient: 'linear-gradient(135deg, #2563eb 0%, #38bdf8 100%)',

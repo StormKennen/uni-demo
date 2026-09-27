@@ -1,5 +1,7 @@
 # Changelog
 
+- 2026-09-27 [tools/altitude,sharing] 为“查询海拔”补充微信好友和朋友圈分享标题及固定入口路径，不分享用户坐标和查询结果（Codex）
+- 2026-09-27 [tools/altitude] 将前端工具名称从“当前海拔”统一调整为“查询海拔”，保留内部路由、工具 key 和 API 契约不变（Codex）
 - 2026-09-27 [tools/altitude,privacy] 补充当前海拔位置信息使用说明、微信定位授权前提示及拒绝后的设置恢复入口；隐私政策明确经纬度仅用于查询海拔且不保存位置历史（Codex）
 - 2026-09-27 [tools/altitude] 切换当前海拔页面使用 Apifox 生成的 `getAltitudeCurrent` 接口，删除临时请求模块并保留页面层响应归一化（Codex）
 - 2026-09-27 [tools/altitude] 新增 H5/微信小程序当前海拔工具的页面规格，支持定位查询和失败重试（Codex）

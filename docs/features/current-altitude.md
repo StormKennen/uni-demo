@@ -1,10 +1,10 @@
-# 当前海拔查询
+# 查询海拔
 
 ## 0. 元信息
 
 | 项       | 内容                            |
 | -------- | ------------------------------- |
-| 功能名称 | 当前海拔查询                    |
+| 功能名称 | 查询海拔                        |
 | 所属域   | `subPackages/tools`             |
 | 发布端   | H5 + mp-weixin                  |
 | 状态     | 开发中                          |
@@ -16,10 +16,10 @@
 
 | 页面     | 路由路径                           | 跳转方式         | 来源入口                     |
 | -------- | ---------------------------------- | ---------------- | ---------------------------- |
-| 当前海拔 | `subPackages/tools/altitude/index` | `uni.navigateTo` | `src/config/tools.ts` 工具卡 |
+| 查询海拔 | `subPackages/tools/altitude/index` | `uni.navigateTo` | `src/config/tools.ts` 工具卡 |
 
 - 需要在 `src/pages.json` 中新增的路由：`subPackages/tools/altitude/index`，自定义导航栏。
-- 工具入口：名称“当前海拔”，图标 `location`，路径 `/subPackages/tools/altitude/index`，无需登录。
+- 工具入口：名称“查询海拔”，图标 `location`，路径 `/subPackages/tools/altitude/index`，无需登录。
 - 返回兜底：返回工具目录 `/pages/tools/index`。
 
 ## 2. 前后端 API 契约
@@ -28,7 +28,7 @@
 
 | 功能     | 方法与路径                                      | 鉴权     | 调用封装                                |
 | -------- | ----------------------------------------------- | -------- | --------------------------------------- |
-| 查询海拔 | `GET /v1/altitude/current?latitude=&longitude=` | 无需登录 | `src/subPackages/tools/altitude/api.ts` |
+| 查询海拔 | `GET /v1/altitude/current?latitude=&longitude=` | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts` |
 
 ### 2.2 TypeScript 契约
 
@@ -61,6 +61,7 @@ interface CurrentAltitudeResult {
 - 成功态展示海拔、经纬度和查询时间。
 - 定位被拒绝时提供“去开启定位权限”入口，网络错误提供重新定位按钮。
 - 页面颜色走 `--theme-*` token，兼容白天/夜间主题。
+- 微信好友和朋友圈分享进入 `/subPackages/tools/altitude/index`，不携带用户坐标或查询结果。
 
 ## 4. 条件编译与跨端兼容说明
 
