@@ -68,7 +68,8 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { getCurrentAltitude, type CurrentAltitudeResult } from './api'
+  import { getAltitudeCurrent } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
+  import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
   import { reportToolVisit } from '@/utils/tracker'
 
   interface LocationCoordinate {
@@ -76,9 +77,38 @@
     longitude: number
   }
 
+  interface CurrentAltitudeViewModel {
+    latitude: number
+    longitude: number
+    altitudeMeters: number
+    unit: 'm'
+    source: string
+    queriedAt: string
+  }
+
   const loading = ref(false)
   const errorMessage = ref('')
-  const result = ref<CurrentAltitudeResult | null>(null)
+  const result = ref<CurrentAltitudeViewModel | null>(null)
+
+  const normalizeAltitudeResult = (payload: getAltitudeCurrentRes): CurrentAltitudeViewModel => {
+    if (
+      typeof payload.latitude !== 'number' ||
+      typeof payload.longitude !== 'number' ||
+      typeof payload.altitudeMeters !== 'number' ||
+      typeof payload.queriedAt !== 'string'
+    ) {
+      throw new Error('海拔数据格式异常')
+    }
+
+    return {
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      altitudeMeters: payload.altitudeMeters,
+      unit: 'm',
+      source: payload.source || 'open-meteo',
+      queriedAt: payload.queriedAt,
+    }
+  }
 
   const formattedQueryTime = computed(() => {
     if (!result.value) return ''
@@ -102,7 +132,7 @@
 
     try {
       const location = await getCurrentLocation()
-      result.value = await getCurrentAltitude(location)
+      result.value = normalizeAltitudeResult(await getAltitudeCurrent(location))
     } catch (error) {
       result.value = null
       const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''

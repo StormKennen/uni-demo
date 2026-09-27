@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-09-27 [tools/altitude] 切换当前海拔页面使用 Apifox 生成的 `getAltitudeCurrent` 接口，删除临时请求模块并保留页面层响应归一化（Codex）
 - 2026-09-27 [tools/altitude] 新增 H5/微信小程序当前海拔工具的页面规格，支持定位查询和失败重试（Codex）
 
 - 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 新增 LA 人物自定义筛选：复用幻神人物选择器交互生成前端 mock 的 LA 分段，固定展示在 F 分段下方；LA 不进入筛选摘要标题，但会随分享恢复并纳入导出海报（Codex）
