@@ -16,7 +16,9 @@
         </view>
       </view>
 
-      <view class="result-card" :class="{ 'result-card-loading': loading, 'result-card-reading': result }">
+      <view
+        class="result-card"
+        :class="[result ? `result-card--${altitudeLevel}` : '', { 'result-card-loading': loading, 'result-card-reading': result }]">
         <view v-if="showLocationPrompt" class="state-box location-consent-box">
           <view class="location-consent-icon">
             <uni-icons type="location" size="32" color="var(--theme-brand)" />
@@ -46,7 +48,7 @@
             <text class="result-label">海拔高度</text>
             <view class="located-badge">
               <view class="located-dot" />
-              <text>已定位</text>
+              <text>{{ altitudeStatus.label }}</text>
             </view>
           </view>
 
@@ -69,6 +71,7 @@
                 <text class="altitude-unit">米</text>
               </view>
               <text class="result-hint">相对于平均海平面高度</text>
+              <text class="status-note">{{ altitudeStatus.notice }}</text>
             </view>
           </view>
 
@@ -129,6 +132,8 @@
     queriedAt: string
   }
 
+  type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
+
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
 
@@ -162,6 +167,27 @@
     const { min, max } = gaugeScale.value
     const percent = ((result.value.altitudeMeters - min) / (max - min)) * 100
     return Math.min(100, Math.max(0, percent))
+  })
+
+  const altitudeLevel = computed<AltitudeLevel>(() => {
+    const altitude = result.value?.altitudeMeters ?? 0
+    if (altitude >= 3500) return 'very-high'
+    if (altitude >= 2500) return 'high'
+    if (altitude >= 1500) return 'attention'
+    return 'normal'
+  })
+
+  const altitudeStatus = computed(() => {
+    switch (altitudeLevel.value) {
+      case 'very-high':
+        return { label: '高海拔警示', notice: '海拔较高，请充分适应并关注身体状况' }
+      case 'high':
+        return { label: '高海拔提示', notice: '未适应人群请注意逐步适应' }
+      case 'attention':
+        return { label: '高度提醒', notice: '海拔升高，建议注意适应节奏' }
+      default:
+        return { label: '常规海拔', notice: '当前读数处于常规提示范围' }
+    }
   })
 
   const normalizeAltitudeResult = (payload: getAltitudeCurrentRes): CurrentAltitudeViewModel => {
@@ -354,6 +380,26 @@
     opacity: 0.86;
   }
 
+  .result-card--normal {
+    --meter-color: var(--theme-brand);
+    --meter-color-deep: var(--theme-brand);
+  }
+
+  .result-card--attention {
+    --meter-color: var(--theme-warning);
+    --meter-color-deep: var(--theme-warning);
+  }
+
+  .result-card--high {
+    --meter-color: var(--theme-warning);
+    --meter-color-deep: var(--theme-danger);
+  }
+
+  .result-card--very-high {
+    --meter-color: var(--theme-danger);
+    --meter-color-deep: var(--theme-danger);
+  }
+
   .state-box,
   .reading-box {
     display: flex;
@@ -456,7 +502,7 @@
     height: 12rpx;
     margin-right: 8rpx;
     border-radius: 50%;
-    background: var(--theme-brand);
+    background: var(--meter-color, var(--theme-brand));
   }
 
   .meter-reading {
@@ -517,7 +563,7 @@
     bottom: 0;
     left: 0;
     border-radius: 18rpx;
-    background: linear-gradient(180deg, var(--theme-danger) 0%, var(--theme-brand) 72%);
+    background: linear-gradient(180deg, var(--meter-color-deep, var(--theme-danger)) 0%, var(--meter-color, var(--theme-brand)) 72%);
     transition: height 300ms ease;
   }
 
@@ -529,7 +575,7 @@
     height: 82rpx;
     border: 6rpx solid var(--theme-surface-2);
     border-radius: 50%;
-    background: var(--theme-brand);
+    background: var(--meter-color, var(--theme-brand));
     box-shadow: 0 8rpx 20rpx var(--theme-shadow-sm);
   }
 
@@ -562,6 +608,13 @@
   .result-hint {
     margin-top: 14rpx;
     font-size: 24rpx;
+  }
+
+  .status-note {
+    margin-top: 10rpx;
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 22rpx;
+    line-height: 1.5;
   }
 
   .reading-footer {
