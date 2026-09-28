@@ -159,8 +159,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { searchAltitudePlaces, type PrecollectedAltitudePlace } from './places-api'
-  import { getAltitudeCurrent } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
+  import { getAltitudeCurrent, getAltitudePlaces } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -176,6 +175,24 @@
     unit: 'm'
     source: string
     queriedAt: string
+  }
+
+  type PrecollectedPlaceLevel = 'province' | 'city' | 'county' | 'scenic_point'
+
+  interface PrecollectedAltitudePlace {
+    id: string
+    level: PrecollectedPlaceLevel
+    name: string
+    fullName: string
+    referenceType: string
+    latitude: number
+    longitude: number
+    altitudeMeters: number
+    collectedAt?: string
+  }
+
+  interface SearchAltitudePlacesResult {
+    items?: PrecollectedAltitudePlace[]
   }
 
   type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
@@ -293,7 +310,7 @@
     manualLoading.value = true
     manualError.value = ''
     try {
-      const response = await searchAltitudePlaces({ keyword, page: 1, pageSize: 30 })
+      const response = (await getAltitudePlaces({ keyword, page: 1, pageSize: 30 })) as unknown as SearchAltitudePlacesResult
       placeResults.value = response.items || []
       if (!placeResults.value.length) manualError.value = '没有找到匹配地点，请换个关键词试试'
     } catch {

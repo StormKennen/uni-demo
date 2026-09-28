@@ -26,10 +26,10 @@
 
 ### 2.1 接口清单
 
-| 功能         | 方法与路径                                      | 鉴权     | 调用封装                                                          |
-| ------------ | ----------------------------------------------- | -------- | ----------------------------------------------------------------- |
-| 自动定位查询 | `GET /v1/altitude/current?latitude=&longitude=` | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts`               |
-| 手动地点查询 | `GET /v1/altitude/places?keyword=`              | 无需登录 | `src/subPackages/tools/altitude/places-api.ts`（待替换为 Apifox） |
+| 功能         | 方法与路径                                      | 鉴权     | 调用封装                                                                   |
+| ------------ | ----------------------------------------------- | -------- | -------------------------------------------------------------------------- |
+| 自动定位查询 | `GET /v1/altitude/current?latitude=&longitude=` | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts`                        |
+| 手动地点查询 | `GET /v1/altitude/places?keyword=`              | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts` 的 `getAltitudePlaces` |
 
 ### 2.2 TypeScript 契约
 

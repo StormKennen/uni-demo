@@ -1,6 +1,7 @@
 # Changelog
 
-- 2026-09-28 [tools/altitude/manual] 新增手动地点搜索与预采集参考海拔展示，定位失败或电脑微信场景可选择四川省行政区/景点查询（Apifox 方法待导入）（Codex）
+- 2026-09-28 [tools/altitude/apifox] 手动地点查询切换为 Apifox 生成的 `getAltitudePlaces`，删除临时接口模块并保留页面 ViewModel 归一化（Codex）
+- 2026-09-28 [tools/altitude/manual] 新增手动地点搜索与预采集参考海拔展示，定位失败或电脑微信场景可选择四川省行政区/景点查询（Codex）
 - 2026-09-28 [tools/altitude/ui] 为温度计式海拔仪表增加按海拔分段的蓝/黄/橙/红提示色和对应说明（Codex）
 - 2026-09-28 [tools/altitude/ui] 将查询海拔结果改为简易温度计式纵向仪表，大号显示海拔数值并收起坐标/时间信息（Codex）
 - 2026-09-27 [tools/altitude,sharing] 为“查询海拔”补充微信好友和朋友圈分享标题及固定入口路径，不分享用户坐标和查询结果（Codex）

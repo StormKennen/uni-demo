@@ -5,6 +5,8 @@ import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   getAltitudeCurrentQuery,
   getAltitudeCurrentRes,
+  getAltitudePlacesQuery,
+  getAltitudePlacesRes,
 } from './interface'
 const baseURL = undefined
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
@@ -20,4 +22,17 @@ export const getAltitudeCurrent = async (
 ): Promise<Expand<getAltitudeCurrentRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/altitude/current`, params, _config)
+}
+
+/**
+ * @description Altitude/搜索预采集地点海拔
+ * @url GET /altitude/places
+ * @host https://app.apifox.com/link/project/7048425/apis/api-520509022
+ */
+export const getAltitudePlaces = async (
+  params: Expand<getAltitudePlacesQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getAltitudePlacesRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/altitude/places`, params, _config)
 }
