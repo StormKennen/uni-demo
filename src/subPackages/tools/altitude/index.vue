@@ -16,7 +16,7 @@
         </view>
       </view>
 
-      <view class="result-card" :class="{ 'result-card-loading': loading }">
+      <view class="result-card" :class="{ 'result-card-loading': loading, 'result-card-reading': result }">
         <view v-if="showLocationPrompt" class="state-box location-consent-box">
           <view class="location-consent-icon">
             <uni-icons type="location" size="32" color="var(--theme-brand)" />
@@ -41,13 +41,41 @@
           <button v-if="permissionDenied" class="settings-button" @click="openLocationSettings">去开启定位权限</button>
         </view>
 
-        <view v-else-if="result" class="success-box">
-          <text class="result-label">海拔高度</text>
-          <view class="altitude-value-row">
-            <text class="altitude-value">{{ result.altitudeMeters.toFixed(1) }}</text>
-            <text class="altitude-unit">米</text>
+        <view v-else-if="result" class="reading-box">
+          <view class="reading-header">
+            <text class="result-label">海拔高度</text>
+            <view class="located-badge">
+              <view class="located-dot" />
+              <text>已定位</text>
+            </view>
           </view>
-          <text class="result-hint">相对于平均海平面高度</text>
+
+          <view class="meter-reading">
+            <view class="meter-scale">
+              <view v-for="tick in gaugeTicks" :key="tick" class="scale-row">
+                <view class="scale-line" />
+                <text>{{ tick }}m</text>
+              </view>
+            </view>
+            <view class="thermometer">
+              <view class="thermometer-track">
+                <view class="thermometer-fill" :style="{ height: `${gaugePercent}%` }" />
+              </view>
+              <view class="thermometer-bulb" />
+            </view>
+            <view class="reading-number">
+              <view class="altitude-value-row">
+                <text class="altitude-value">{{ result.altitudeMeters.toFixed(1) }}</text>
+                <text class="altitude-unit">米</text>
+              </view>
+              <text class="result-hint">相对于平均海平面高度</text>
+            </view>
+          </view>
+
+          <view class="reading-footer">
+            <text>{{ result.latitude.toFixed(4) }}°N · {{ result.longitude.toFixed(4) }}°E</text>
+            <text>{{ formattedQueryTime }}</text>
+          </view>
         </view>
 
         <view v-else class="state-box">
@@ -115,6 +143,26 @@
   const permissionDenied = ref(false)
   const showLocationPrompt = ref(true)
   const result = ref<CurrentAltitudeViewModel | null>(null)
+
+  const gaugeScale = computed(() => {
+    const altitude = result.value?.altitudeMeters ?? 0
+    const interval = altitude > 2000 ? 500 : altitude > 800 ? 200 : 100
+    const min = Math.min(0, Math.floor((altitude - interval) / interval) * interval)
+    const max = Math.max(interval * 5, Math.ceil((altitude + interval) / interval) * interval)
+    const step = (max - min) / 4
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round(max - step * index))
+
+    return { min, max, ticks }
+  })
+
+  const gaugeTicks = computed(() => gaugeScale.value.ticks)
+
+  const gaugePercent = computed(() => {
+    if (!result.value) return 0
+    const { min, max } = gaugeScale.value
+    const percent = ((result.value.altitudeMeters - min) / (max - min)) * 100
+    return Math.min(100, Math.max(0, percent))
+  })
 
   const normalizeAltitudeResult = (payload: getAltitudeCurrentRes): CurrentAltitudeViewModel => {
     if (
@@ -307,11 +355,16 @@
   }
 
   .state-box,
-  .success-box {
+  .reading-box {
     display: flex;
     align-items: center;
     flex-direction: column;
     text-align: center;
+  }
+
+  .reading-box {
+    width: 100%;
+    text-align: left;
   }
 
   .state-title {
@@ -381,6 +434,112 @@
     font-size: 26rpx;
   }
 
+  .reading-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .located-badge {
+    display: flex;
+    align-items: center;
+    padding: 8rpx 14rpx;
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+  }
+
+  .located-dot {
+    width: 12rpx;
+    height: 12rpx;
+    margin-right: 8rpx;
+    border-radius: 50%;
+    background: var(--theme-brand);
+  }
+
+  .meter-reading {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 18rpx;
+  }
+
+  .meter-scale {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    width: 76rpx;
+    height: 330rpx;
+    padding: 10rpx 0 18rpx;
+    box-sizing: border-box;
+  }
+
+  .scale-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+
+  .scale-line {
+    width: 20rpx;
+    height: 1rpx;
+    margin-right: 8rpx;
+    background: var(--theme-border);
+  }
+
+  .thermometer {
+    position: relative;
+    width: 82rpx;
+    height: 360rpx;
+    margin: 0 28rpx 0 12rpx;
+  }
+
+  .thermometer-track {
+    position: absolute;
+    right: 27rpx;
+    bottom: 40rpx;
+    width: 28rpx;
+    height: 292rpx;
+    overflow: hidden;
+    border: 6rpx solid var(--theme-surface-2);
+    border-radius: 24rpx;
+    background: var(--theme-bg);
+    box-shadow: inset 0 0 0 1rpx var(--theme-border);
+  }
+
+  .thermometer-fill {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 18rpx;
+    background: linear-gradient(180deg, var(--theme-danger) 0%, var(--theme-brand) 72%);
+    transition: height 300ms ease;
+  }
+
+  .thermometer-bulb {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 82rpx;
+    height: 82rpx;
+    border: 6rpx solid var(--theme-surface-2);
+    border-radius: 50%;
+    background: var(--theme-brand);
+    box-shadow: 0 8rpx 20rpx var(--theme-shadow-sm);
+  }
+
+  .reading-number {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .altitude-value-row {
     display: flex;
     align-items: baseline;
@@ -403,6 +562,17 @@
   .result-hint {
     margin-top: 14rpx;
     font-size: 24rpx;
+  }
+
+  .reading-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-top: 18rpx;
+    border-top: 1rpx solid var(--theme-border);
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
   }
 
   .detail-card {
