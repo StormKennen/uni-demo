@@ -16,7 +16,45 @@
         </view>
       </view>
 
+      <view class="mode-tabs">
+        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="switchMode('location')">自动定位</view>
+        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">手动选地点</view>
+      </view>
+
+      <view v-if="queryMode === 'manual'" class="manual-search-card">
+        <view class="search-row">
+          <input
+            v-model="manualKeyword"
+            class="search-input"
+            confirm-type="search"
+            :maxlength="80"
+            placeholder="输入省、市、区县或景区"
+            @confirm="searchPlaces" />
+          <button class="search-button" :disabled="manualLoading" @click="searchPlaces">
+            {{ manualLoading ? '搜索中' : '搜索' }}
+          </button>
+        </view>
+        <text class="manual-hint">支持四川省行政区及已采集景点，选择具体地点后显示参考海拔。</text>
+        <view v-if="manualError" class="manual-state manual-error">{{ manualError }}</view>
+        <view v-else-if="manualLoading" class="manual-state">正在匹配地点…</view>
+        <view v-else-if="placeResults.length" class="place-results">
+          <view v-for="place in placeResults" :key="place.id" class="place-item" @click="selectPlace(place)">
+            <view class="place-copy">
+              <text class="place-name">{{ place.name }}</text>
+              <text class="place-path">{{ place.fullName }}</text>
+              <text class="place-type">{{ placeLevelLabel(place.level) }}</text>
+            </view>
+            <view class="place-altitude">
+              <text class="place-altitude-value">{{ place.altitudeMeters.toFixed(1) }}</text>
+              <text class="place-altitude-unit">米</text>
+            </view>
+          </view>
+        </view>
+        <view v-else class="manual-state">输入地点名称开始搜索，例如“木格措”“康定市”。</view>
+      </view>
+
       <view
+        v-else
         class="result-card"
         :class="[result ? `result-card--${altitudeLevel}` : '', { 'result-card-loading': loading, 'result-card-reading': result }]">
         <view v-if="showLocationPrompt" class="state-box location-consent-box">
@@ -103,17 +141,25 @@
         </view>
       </view>
 
-      <button v-if="!showLocationPrompt" class="locate-button" :disabled="loading" @click="queryCurrentAltitude">
+      <button
+        v-if="queryMode === 'location' && !showLocationPrompt"
+        class="locate-button"
+        :disabled="loading"
+        @click="queryCurrentAltitude">
         {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '查询当前位置海拔' }}
       </button>
 
-      <text class="source-note">海拔数据由高程服务提供，仅供参考</text>
+      <text v-if="queryMode === 'location' && result?.source === 'precollected-sichuan'" class="source-note">
+        四川预采集参考海拔，仅供参考
+      </text>
+      <text v-else-if="queryMode === 'location'" class="source-note">海拔数据由高程服务提供，仅供参考</text>
     </view>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
+  import { searchAltitudePlaces, type PrecollectedAltitudePlace } from './places-api'
   import { getAltitudeCurrent } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
   import { reportToolVisit } from '@/utils/tracker'
@@ -133,6 +179,7 @@
   }
 
   type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
+  type QueryMode = 'location' | 'manual'
 
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
@@ -148,6 +195,11 @@
   const permissionDenied = ref(false)
   const showLocationPrompt = ref(true)
   const result = ref<CurrentAltitudeViewModel | null>(null)
+  const queryMode = ref<QueryMode>('location')
+  const manualKeyword = ref('')
+  const manualLoading = ref(false)
+  const manualError = ref('')
+  const placeResults = ref<PrecollectedAltitudePlace[]>([])
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -214,6 +266,57 @@
     if (!result.value) return ''
     return result.value.queriedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
   })
+
+  const placeLevelLabel = (level: PrecollectedAltitudePlace['level']) => {
+    if (level === 'province') return '省级参考点'
+    if (level === 'city') return '市/州级参考点'
+    if (level === 'county') return '区县级参考点'
+    return '景点参考点'
+  }
+
+  const switchMode = (mode: QueryMode) => {
+    queryMode.value = mode
+    manualError.value = ''
+    placeResults.value = []
+    if (mode === 'manual') {
+      result.value = null
+      showLocationPrompt.value = false
+      return
+    }
+    showLocationPrompt.value = !result.value
+  }
+
+  const searchPlaces = async () => {
+    const keyword = manualKeyword.value.trim()
+    if (!keyword || manualLoading.value) return
+
+    manualLoading.value = true
+    manualError.value = ''
+    try {
+      const response = await searchAltitudePlaces({ keyword, page: 1, pageSize: 30 })
+      placeResults.value = response.items || []
+      if (!placeResults.value.length) manualError.value = '没有找到匹配地点，请换个关键词试试'
+    } catch {
+      placeResults.value = []
+      manualError.value = '地点搜索失败，请稍后重试'
+    } finally {
+      manualLoading.value = false
+    }
+  }
+
+  const selectPlace = (place: PrecollectedAltitudePlace) => {
+    result.value = {
+      latitude: place.latitude,
+      longitude: place.longitude,
+      altitudeMeters: place.altitudeMeters,
+      unit: 'm',
+      source: 'precollected-sichuan',
+      queriedAt: place.collectedAt || new Date().toISOString(),
+    }
+    queryMode.value = 'location'
+    showLocationPrompt.value = false
+    manualError.value = ''
+  }
 
   const ensureLocationAuthorization = (): Promise<void> =>
     new Promise((resolve, reject) => {
@@ -340,6 +443,156 @@
     display: flex;
     flex: 1;
     flex-direction: column;
+  }
+
+  .mode-tabs {
+    display: flex;
+    margin-top: 24rpx;
+    padding: 6rpx;
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 18rpx 0;
+    border-radius: 14rpx;
+    color: var(--theme-text-secondary);
+    font-size: 26rpx;
+    text-align: center;
+  }
+
+  .mode-tab.active {
+    background: var(--theme-surface);
+    color: var(--theme-brand);
+    font-weight: 700;
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow-xs);
+  }
+
+  .manual-search-card {
+    margin-top: 24rpx;
+    padding: 28rpx;
+    border-radius: 24rpx;
+    background: var(--theme-surface);
+    box-shadow: 0 12rpx 36rpx var(--theme-shadow-xs);
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input {
+    flex: 1;
+    height: 82rpx;
+    padding: 0 22rpx;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-text);
+    font-size: 26rpx;
+  }
+
+  .search-button {
+    width: 132rpx;
+    height: 82rpx;
+    margin-left: 16rpx;
+    padding: 0;
+    border: 0;
+    border-radius: 16rpx;
+    background: var(--theme-brand);
+    color: var(--theme-surface);
+    font-size: 26rpx;
+    line-height: 82rpx;
+  }
+
+  .search-button::after {
+    border: 0;
+  }
+
+  .search-button[disabled] {
+    opacity: 0.55;
+  }
+
+  .manual-hint,
+  .manual-state {
+    display: block;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
+    line-height: 1.6;
+  }
+
+  .manual-hint {
+    margin-top: 18rpx;
+  }
+
+  .manual-state {
+    padding: 32rpx 0 8rpx;
+    text-align: center;
+  }
+
+  .manual-error {
+    color: var(--theme-danger);
+  }
+
+  .place-results {
+    margin-top: 18rpx;
+  }
+
+  .place-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20rpx 0;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .place-copy {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+    flex-direction: column;
+    min-width: 0;
+    margin-right: 18rpx;
+  }
+
+  .place-name {
+    color: var(--theme-text);
+    font-size: 28rpx;
+    font-weight: 700;
+  }
+
+  .place-path {
+    overflow: hidden;
+    width: 100%;
+    margin-top: 6rpx;
+    color: var(--theme-text-secondary);
+    font-size: 22rpx;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .place-type {
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+
+  .place-altitude {
+    display: flex;
+    align-items: baseline;
+    flex-shrink: 0;
+  }
+
+  .place-altitude-value {
+    color: var(--theme-brand);
+    font-size: 32rpx;
+    font-weight: 700;
+  }
+
+  .place-altitude-unit {
+    margin-left: 4rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
   }
 
   .intro-title,
