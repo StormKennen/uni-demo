@@ -22,6 +22,16 @@
       </view>
 
       <view v-if="queryMode === 'manual'" class="manual-search-card">
+        <view class="region-picker-block">
+          <text class="region-picker-title">按省市区/景点选择</text>
+          <uni-data-picker
+            :localdata="regionOptions"
+            placeholder="请选择地点"
+            popup-title="选择地点"
+            :disabled="regionLoading"
+            @change="handleRegionChange" />
+          <text v-if="regionError" class="manual-error">{{ regionError }}</text>
+        </view>
         <view class="search-row">
           <input
             v-model="manualKeyword"
@@ -159,6 +169,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
+  import { getAltitudePlaceOptions, type AltitudeRegionNode } from './region-api'
   import { getAltitudeCurrent, getAltitudePlaces } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
   import { reportToolVisit } from '@/utils/tracker'
@@ -217,6 +228,11 @@
   const manualLoading = ref(false)
   const manualError = ref('')
   const placeResults = ref<PrecollectedAltitudePlace[]>([])
+  const regionOptions = ref<AltitudeRegionNode[]>([])
+  const regionPlaceMap = ref<Record<string, PrecollectedAltitudePlace>>({})
+  const regionLoading = ref(false)
+  const regionError = ref('')
+  const regionLoaded = ref(false)
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -298,9 +314,39 @@
     if (mode === 'manual') {
       result.value = null
       showLocationPrompt.value = false
+      loadRegionOptions()
       return
     }
     showLocationPrompt.value = !result.value
+  }
+
+  const loadRegionOptions = async () => {
+    if (regionLoaded.value || regionLoading.value) return
+    regionLoading.value = true
+    regionError.value = ''
+    try {
+      const response = await getAltitudePlaceOptions()
+      regionOptions.value = response.items || []
+      regionPlaceMap.value = Object.fromEntries((response.places || []).map(place => [place.id, place]))
+      regionLoaded.value = true
+    } catch {
+      regionError.value = '地点选择器加载失败，可直接输入关键词搜索'
+    } finally {
+      regionLoading.value = false
+    }
+  }
+
+  interface RegionChangeEvent {
+    detail?: {
+      value?: Array<{ value?: string }>
+    }
+  }
+
+  const handleRegionChange = (event: RegionChangeEvent) => {
+    const values = event.detail?.value || []
+    const lastValue = values[values.length - 1]?.value
+    const place = lastValue ? regionPlaceMap.value[lastValue] : undefined
+    if (place) selectPlace(place)
   }
 
   const searchPlaces = async () => {
@@ -492,6 +538,20 @@
     border-radius: 24rpx;
     background: var(--theme-surface);
     box-shadow: 0 12rpx 36rpx var(--theme-shadow-xs);
+  }
+
+  .region-picker-block {
+    padding-bottom: 24rpx;
+    margin-bottom: 24rpx;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
+
+  .region-picker-title {
+    display: block;
+    margin-bottom: 14rpx;
+    color: var(--theme-text);
+    font-size: 26rpx;
+    font-weight: 700;
   }
 
   .search-row {
