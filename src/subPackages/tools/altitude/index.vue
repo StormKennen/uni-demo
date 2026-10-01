@@ -47,6 +47,20 @@
           </button>
         </view>
         <text class="manual-hint">支持四川省行政区及已采集景点，选择具体地点后显示参考海拔。</text>
+        <view v-if="selectedScenicArea" class="scenic-points-card">
+          <text class="region-picker-title">{{ selectedScenicArea.name }} · 请选择具体景点</text>
+          <view v-for="point in scenicPointResults" :key="point.id" class="place-item" @click="selectPlace(point)">
+            <view class="place-copy">
+              <text class="place-name">{{ point.name }}</text>
+              <text class="place-path">{{ point.fullName }}</text>
+            </view>
+            <view class="place-altitude">
+              <text v-if="point.altitudeMeters !== null" class="place-altitude-value">{{ point.altitudeMeters.toFixed(1) }}</text>
+              <text v-else class="place-altitude-unit">待查询</text>
+              <text v-if="point.altitudeMeters !== null" class="place-altitude-unit">米</text>
+            </view>
+          </view>
+        </view>
         <view v-if="manualError" class="manual-state manual-error">{{ manualError }}</view>
         <view v-else-if="manualLoading" class="manual-state">正在匹配地点…</view>
         <view v-else-if="placeResults.length" class="place-results">
@@ -57,8 +71,9 @@
               <text class="place-type">{{ placeLevelLabel(place.level) }}</text>
             </view>
             <view class="place-altitude">
-              <text class="place-altitude-value">{{ place.altitudeMeters.toFixed(1) }}</text>
-              <text class="place-altitude-unit">米</text>
+              <text v-if="place.altitudeMeters !== null" class="place-altitude-value">{{ place.altitudeMeters.toFixed(1) }}</text>
+              <text v-else class="place-altitude-unit">待查询</text>
+              <text v-if="place.altitudeMeters !== null" class="place-altitude-unit">米</text>
             </view>
           </view>
         </view>
@@ -161,9 +176,8 @@
         {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '查询当前位置海拔' }}
       </button>
 
-      <text v-if="queryMode === 'location' && result?.source === 'precollected-sichuan'" class="source-note">
-        四川预采集参考海拔，仅供参考
-      </text>
+      <text v-if="queryMode === 'location' && result?.source === 'database'" class="source-note"> 数据库预采集参考海拔，仅供参考 </text>
+      <text v-else-if="queryMode === 'location' && result?.source === 'live'" class="source-note"> 坐标高程实时查询结果，仅供参考 </text>
       <text v-else-if="queryMode === 'location'" class="source-note">海拔数据由高程服务提供，仅供参考</text>
     </view>
   </PageLayout>
@@ -171,6 +185,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
+  import { getAltitudePlaceElevation } from './place-elevation-api'
   import { getAltitudePlaceOptions, type AltitudeRegionNode } from './region-api'
   import { getAltitudeCurrent, getAltitudePlaces } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
@@ -190,7 +205,7 @@
     queriedAt: string
   }
 
-  type PrecollectedPlaceLevel = 'province' | 'city' | 'county' | 'scenic_point'
+  type PrecollectedPlaceLevel = 'province' | 'city' | 'county' | 'scenic_area' | 'scenic_point'
 
   interface PrecollectedAltitudePlace {
     id: string
@@ -200,7 +215,8 @@
     referenceType: string
     latitude: number
     longitude: number
-    altitudeMeters: number
+    altitudeMeters: number | null
+    scenicArea?: string
     collectedAt?: string
   }
 
@@ -237,6 +253,9 @@
   const regionLoaded = ref(false)
   const regionSelection = ref('')
   const pendingRegionPlaceId = ref('')
+  const selectedScenicArea = ref<PrecollectedAltitudePlace | null>(null)
+  const scenicPointResults = ref<PrecollectedAltitudePlace[]>([])
+  const placeLoading = ref(false)
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -308,6 +327,7 @@
     if (level === 'province') return '省级参考点'
     if (level === 'city') return '市/州级参考点'
     if (level === 'county') return '区县级参考点'
+    if (level === 'scenic_area') return '景区默认参考点'
     return '景点参考点'
   }
 
@@ -317,6 +337,8 @@
     placeResults.value = []
     if (mode === 'manual') {
       result.value = null
+      selectedScenicArea.value = null
+      scenicPointResults.value = []
       showLocationPrompt.value = false
       regionSelection.value = ''
       pendingRegionPlaceId.value = ''
@@ -382,18 +404,43 @@
   }
 
   const selectPlace = (place: PrecollectedAltitudePlace) => {
-    result.value = {
-      latitude: place.latitude,
-      longitude: place.longitude,
-      altitudeMeters: place.altitudeMeters,
-      unit: 'm',
-      source: 'precollected-sichuan',
-      queriedAt: place.collectedAt || new Date().toISOString(),
+    if (place.level === 'scenic_area') {
+      const points = Object.values(regionPlaceMap.value).filter(
+        item => item.level === 'scenic_point' && (item.scenicArea === place.name || item.fullName.includes(place.name)),
+      )
+      if (points.length) {
+        selectedScenicArea.value = place
+        scenicPointResults.value = points
+        manualError.value = ''
+        return
+      }
     }
-    queryMode.value = 'location'
-    showLocationPrompt.value = false
+
+    resolvePlaceElevation(place)
+  }
+
+  const resolvePlaceElevation = async (place: PrecollectedAltitudePlace) => {
+    placeLoading.value = true
     manualError.value = ''
-    pendingRegionPlaceId.value = ''
+    try {
+      const elevation = await getAltitudePlaceElevation(place.id)
+      result.value = {
+        latitude: elevation.latitude,
+        longitude: elevation.longitude,
+        altitudeMeters: elevation.altitudeMeters,
+        unit: 'm',
+        source: elevation.source,
+        queriedAt: elevation.queriedAt,
+      }
+      queryMode.value = 'location'
+      showLocationPrompt.value = false
+      selectedScenicArea.value = null
+      scenicPointResults.value = []
+    } catch {
+      manualError.value = '该地点暂时没有可用海拔，请稍后重试'
+    } finally {
+      placeLoading.value = false
+    }
   }
 
   const ensureLocationAuthorization = (): Promise<void> =>
@@ -644,6 +691,12 @@
 
   .place-results {
     margin-top: 18rpx;
+  }
+
+  .scenic-points-card {
+    margin-top: 24rpx;
+    padding-top: 22rpx;
+    border-top: 1rpx solid var(--theme-border);
   }
 
   .place-item {

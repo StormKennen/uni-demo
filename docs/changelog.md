@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-01 [tools/altitude/manual] 景区节点支持默认参考点和多景点列表，具体景点查询切换为后端地点级数据库优先/实时兜底接口（Codex）
 - 2026-10-01 [tools/altitude/manual] 修正手动选择器省市名称重复，增加路径回填和“确认选择”按钮（Codex）
 - 2026-09-28 [tools/altitude/apifox] 手动地点查询切换为 Apifox 生成的 `getAltitudePlaces`，删除临时接口模块并保留页面 ViewModel 归一化（Codex）
 - 2026-09-28 [tools/altitude/manual] 新增手动地点搜索与预采集参考海拔展示，定位失败或电脑微信场景可选择四川省行政区/景点查询（Codex）
