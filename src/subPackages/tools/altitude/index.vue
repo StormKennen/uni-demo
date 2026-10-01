@@ -186,9 +186,6 @@
       <text v-if="queryMode === 'location' && result?.source === 'database'" class="source-note"> 数据库预采集参考海拔，仅供参考 </text>
       <text v-else-if="queryMode === 'location' && result?.source === 'live'" class="source-note"> 坐标高程实时查询结果，仅供参考 </text>
       <text v-else-if="queryMode === 'location'" class="source-note">海拔数据由高程服务提供，仅供参考</text>
-      <!-- #ifdef MP-WEIXIN -->
-      <button v-if="queryMode === 'location' && result" class="share-button" open-type="share">分享查询海拔</button>
-      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
@@ -1221,20 +1218,6 @@
     border-top: 1rpx solid var(--theme-border);
     color: var(--theme-text-tertiary);
     font-size: 20rpx;
-  }
-
-  .share-button {
-    margin-top: 22rpx;
-    border: 0;
-    border-radius: 16rpx;
-    background: var(--theme-surface-2);
-    color: var(--theme-brand);
-    font-size: 26rpx;
-    line-height: 78rpx;
-  }
-
-  .share-button::after {
-    border: 0;
   }
 
   .detail-card {

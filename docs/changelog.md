@@ -1,6 +1,6 @@
 # Changelog
 
-- 2026-10-01 [tools/altitude/ui,sharing] 重做自动定位海拔仪表盘，增加分段动态色带、读数动画、来源摘要和页面内微信分享入口（Codex）
+- 2026-10-01 [tools/altitude/ui,sharing] 重做自动定位海拔仪表盘，增加分段动态色带、读数动画、来源摘要，并保留微信右上角原生分享入口（Codex）
 - 2026-10-01 [tools/altitude/apifox] 地点枚举树和地点级海拔回退切换为最新 Apifox 生成方法，删除临时 API 模块（Codex）
 - 2026-10-01 [tools/altitude/manual] 景区节点支持默认参考点和多景点列表，具体景点查询切换为后端地点级数据库优先/实时兜底接口（Codex）
 - 2026-10-01 [tools/altitude/manual] 修正手动选择器省市名称重复，增加路径回填和“确认选择”按钮（Codex）
