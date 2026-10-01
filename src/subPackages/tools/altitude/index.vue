@@ -1,9 +1,10 @@
 <template>
   <PageLayout
     title="查询海拔"
-    share-title="查询海拔｜查询当前位置海拔"
-    share-path="/subPackages/tools/altitude/index"
-    share-timeline-title="查询海拔"
+    :share-title="shareTitle"
+    :share-path="sharePath"
+    :share-timeline-query="shareTimelineQuery"
+    :share-timeline-title="shareTitle"
     back-fallback="/pages/tools/index">
     <view class="altitude-page">
       <view class="intro-card">
@@ -17,11 +18,12 @@
       </view>
 
       <view class="mode-tabs">
-        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="switchMode('location')">自动定位</view>
-        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">手动选地点</view>
+        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="switchMode('location')">当前定位</view>
+        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">选择地点</view>
+        <view class="mode-tab" :class="{ active: queryMode === 'map' }" @click="switchMode('map')">地图选点</view>
       </view>
 
-      <view v-if="queryMode === 'manual'" class="manual-search-card">
+      <view v-if="queryMode === 'manual' && !result" class="manual-search-card">
         <view class="region-picker-block">
           <text class="region-picker-title">按省市区/景点选择</text>
           <uni-data-picker
@@ -78,6 +80,16 @@
           </view>
         </view>
         <view v-else class="manual-state">输入地点名称开始搜索，例如“木格措”“康定市”。</view>
+      </view>
+
+      <view v-else-if="queryMode === 'map' && !result" class="map-select-card">
+        <uni-icons type="map" size="42" color="var(--theme-brand)" />
+        <text class="state-title">从地图选择位置</text>
+        <text class="state-description">地图选点返回 GCJ-02 坐标，后端会统一转换后查询海拔。</text>
+        <button class="map-select-button" :disabled="mapLoading" @click="chooseMapLocation">
+          {{ mapLoading ? '打开地图中…' : '打开地图选点' }}
+        </button>
+        <text v-if="mapError" class="manual-error">{{ mapError }}</text>
       </view>
 
       <view
@@ -192,19 +204,11 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import {
-    getAltitudeCurrent,
-    getAltitudePlaces,
-    getAltitudePlacesOptions,
-    getPlacesPlaceIdElevation,
-  } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
-  import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
+  import { onLoad } from '@dcloudio/uni-app'
+  import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
+  import { buildAltitudeShare, parseAltitudeShare } from './share'
+  import { getAltitudePlaces, getAltitudePlacesOptions } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import { reportToolVisit } from '@/utils/tracker'
-
-  interface LocationCoordinate {
-    latitude: number
-    longitude: number
-  }
 
   interface CurrentAltitudeViewModel {
     latitude: number
@@ -212,6 +216,9 @@
     altitudeMeters: number
     unit: 'm'
     source: string
+    sourceMode: AltitudeSourceMode
+    placeId?: string
+    name?: string
     queriedAt: string
   }
 
@@ -247,16 +254,8 @@
     places?: PrecollectedAltitudePlace[]
   }
 
-  interface PlaceElevationResult {
-    latitude: number
-    longitude: number
-    altitudeMeters: number
-    source: 'database' | 'live'
-    queriedAt: string
-  }
-
   type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
-  type QueryMode = 'location' | 'manual'
+  type QueryMode = 'location' | 'manual' | 'map'
 
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
@@ -287,6 +286,13 @@
   const selectedScenicArea = ref<PrecollectedAltitudePlace | null>(null)
   const scenicPointResults = ref<PrecollectedAltitudePlace[]>([])
   const placeLoading = ref(false)
+  const sourceMode = ref<AltitudeSourceMode>('location')
+  const shareTitle = ref('查询海拔｜查询当前位置海拔')
+  const sharePath = ref('/subPackages/tools/altitude/index?mode=location')
+  const shareTimelineQuery = ref('mode=location')
+  const mapLoading = ref(false)
+  const mapError = ref('')
+  const mapPoint = ref<AltitudePoint | null>(null)
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -329,26 +335,6 @@
     }
   })
 
-  const normalizeAltitudeResult = (payload: getAltitudeCurrentRes): CurrentAltitudeViewModel => {
-    if (
-      typeof payload.latitude !== 'number' ||
-      typeof payload.longitude !== 'number' ||
-      typeof payload.altitudeMeters !== 'number' ||
-      typeof payload.queriedAt !== 'string'
-    ) {
-      throw new Error('海拔数据格式异常')
-    }
-
-    return {
-      latitude: payload.latitude,
-      longitude: payload.longitude,
-      altitudeMeters: payload.altitudeMeters,
-      unit: 'm',
-      source: payload.source || 'open-meteo',
-      queriedAt: payload.queriedAt,
-    }
-  }
-
   const formattedQueryTime = computed(() => {
     if (!result.value) return ''
     return result.value.queriedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
@@ -376,7 +362,17 @@
       loadRegionOptions()
       return
     }
+    if (mode === 'map') {
+      result.value = null
+      mapPoint.value = null
+      mapError.value = ''
+      showLocationPrompt.value = false
+      syncShareState()
+      return
+    }
+    sourceMode.value = 'location'
     showLocationPrompt.value = !result.value
+    syncShareState()
   }
 
   const loadRegionOptions = async () => {
@@ -414,6 +410,18 @@
       return
     }
     selectPlace(place)
+  }
+
+  const syncShareState = () => {
+    const share = buildAltitudeShare({
+      mode: sourceMode.value,
+      placeId: result.value?.placeId,
+      keyword: manualKeyword.value,
+      point: mapPoint.value || undefined,
+    })
+    shareTitle.value = share.title
+    sharePath.value = share.path
+    shareTimelineQuery.value = share.timelineQuery
   }
 
   const searchPlaces = async () => {
@@ -454,16 +462,18 @@
     placeLoading.value = true
     manualError.value = ''
     try {
-      const elevation = (await getPlacesPlaceIdElevation(place.id)) as unknown as PlaceElevationResult
+      const elevation = await queryAltitude({
+        latitude: place.latitude,
+        longitude: place.longitude,
+        coordinateSystem: 'wgs84',
+        source: 'place',
+        placeId: place.id,
+        name: place.name,
+      })
       result.value = {
-        latitude: elevation.latitude,
-        longitude: elevation.longitude,
-        altitudeMeters: elevation.altitudeMeters,
-        unit: 'm',
-        source: elevation.source,
-        queriedAt: elevation.queriedAt,
+        ...elevation,
       }
-      queryMode.value = 'location'
+      queryMode.value = 'manual'
       showLocationPrompt.value = false
       selectedScenicArea.value = null
       scenicPointResults.value = []
@@ -471,6 +481,36 @@
       manualError.value = '该地点暂时没有可用海拔，请稍后重试'
     } finally {
       placeLoading.value = false
+    }
+  }
+
+  const queryAltitude = async (point: AltitudePoint) => {
+    loading.value = true
+    errorMessage.value = ''
+    permissionDenied.value = false
+    try {
+      const payload = await getElevation(point)
+      sourceMode.value = point.source
+      result.value = {
+        latitude: payload.latitude,
+        longitude: payload.longitude,
+        altitudeMeters: payload.altitudeMeters,
+        unit: payload.unit,
+        source: payload.source,
+        sourceMode: point.source,
+        placeId: point.placeId,
+        name: point.name,
+        queriedAt: payload.queriedAt,
+      }
+      syncShareState()
+      return result.value
+    } catch (error) {
+      result.value = null
+      const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
+      errorMessage.value = message || '海拔查询失败，请稍后重试'
+      throw error
+    } finally {
+      loading.value = false
     }
   }
 
@@ -505,17 +545,60 @@
       // #endif
     })
 
-  const getCurrentLocation = (): Promise<LocationCoordinate> =>
+  const getCurrentLocation = (): Promise<AltitudePoint> =>
     new Promise((resolve, reject) => {
       uni.getLocation({
         // 高程服务要求 WGS84；GCJ02 只用于国内地图/导航坐标。
         type: 'wgs84',
         isHighAccuracy: true,
         highAccuracyExpireTime: 5000,
-        success: location => resolve({ latitude: location.latitude, longitude: location.longitude }),
+        success: location =>
+          resolve({
+            latitude: location.latitude,
+            longitude: location.longitude,
+            coordinateSystem: 'wgs84',
+            source: 'location',
+          }),
         fail: reject,
       })
     })
+
+  const chooseMapLocation = () => {
+    mapLoading.value = true
+    mapError.value = ''
+
+    // #ifdef MP-WEIXIN
+    uni.chooseLocation({
+      success: async location => {
+        const point: AltitudePoint = {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          coordinateSystem: 'gcj02',
+          source: 'map',
+          name: location.name || location.address || '地图选点',
+        }
+        mapPoint.value = point
+        queryMode.value = 'map'
+        try {
+          await queryAltitude(point)
+        } catch {
+          mapError.value = '地图选点的海拔查询失败，请稍后重试'
+        } finally {
+          mapLoading.value = false
+        }
+      },
+      fail: error => {
+        mapLoading.value = false
+        mapError.value = error.errMsg?.includes('cancel') ? '已取消地图选点' : '地图选点暂不可用'
+      },
+    })
+    // #endif
+
+    // #ifndef MP-WEIXIN
+    mapLoading.value = false
+    mapError.value = '当前环境暂无法打开地图选点，请使用当前定位或手动选择地点'
+    // #endif
+  }
 
   const requestLocationAndQuery = async () => {
     showLocationPrompt.value = false
@@ -538,14 +621,15 @@
   const queryCurrentAltitude = async () => {
     if (loading.value) return
 
-    loading.value = true
     errorMessage.value = ''
     permissionDenied.value = false
 
     try {
       await ensureLocationAuthorization()
       const location = await getCurrentLocation()
-      result.value = normalizeAltitudeResult(await getAltitudeCurrent(location))
+      queryMode.value = 'location'
+      mapPoint.value = null
+      await queryAltitude(location)
     } catch (error) {
       result.value = null
       if (error instanceof LocationAuthorizationError) {
@@ -555,10 +639,32 @@
         const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
         errorMessage.value = message.includes('定位') ? message : '请检查定位权限和网络连接后重试'
       }
-    } finally {
-      loading.value = false
     }
   }
+
+  onLoad(async options => {
+    const state = parseAltitudeShare((options || {}) as Record<string, string | undefined>)
+    if (state.mode === 'place') {
+      queryMode.value = 'manual'
+      sourceMode.value = 'place'
+      manualKeyword.value = state.keyword || ''
+      await loadRegionOptions()
+      const place = state.placeId ? regionPlaceMap.value[state.placeId] : undefined
+      if (place) selectPlace(place)
+      else syncShareState()
+    } else if (state.mode === 'map' && state.point) {
+      queryMode.value = 'map'
+      mapPoint.value = state.point
+      showLocationPrompt.value = false
+      await queryAltitude(state.point).catch(() => {
+        mapError.value = '分享的地图点暂时无法查询海拔'
+      })
+    } else {
+      sourceMode.value = 'location'
+      queryMode.value = 'location'
+      syncShareState()
+    }
+  })
 
   onMounted(() => {
     reportToolVisit('current-altitude')
@@ -634,6 +740,33 @@
     border-radius: 24rpx;
     background: var(--theme-surface);
     box-shadow: 0 12rpx 36rpx var(--theme-shadow-xs);
+  }
+
+  .map-select-card {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 24rpx;
+    padding: 48rpx 32rpx;
+    border-radius: 24rpx;
+    background: var(--theme-surface);
+    box-shadow: 0 12rpx 36rpx var(--theme-shadow-xs);
+    text-align: center;
+  }
+
+  .map-select-button {
+    width: 100%;
+    margin-top: 26rpx;
+    border: 0;
+    border-radius: 16rpx;
+    background: var(--theme-brand);
+    color: var(--theme-surface);
+    font-size: 28rpx;
+    line-height: 86rpx;
+  }
+
+  .map-select-button::after {
+    border: 0;
   }
 
   .region-picker-block {

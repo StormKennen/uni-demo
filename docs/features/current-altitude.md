@@ -2,13 +2,13 @@
 
 ## 0. 元信息
 
-| 项       | 内容                                                       |
-| -------- | ---------------------------------------------------------- |
-| 功能名称 | 查询海拔                                                   |
-| 所属域   | `subPackages/tools`                                        |
-| 发布端   | H5 + mp-weixin                                             |
-| 状态     | 开发中                                                     |
-| 关联接口 | 后端 `GET /v1/altitude/current`、`GET /v1/altitude/places` |
+| 项       | 内容                                                                                            |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| 功能名称 | 查询海拔                                                                                        |
+| 所属域   | `subPackages/tools`                                                                             |
+| 发布端   | H5 + mp-weixin                                                                                  |
+| 状态     | 开发中                                                                                          |
+| 关联接口 | 后端 `GET /v1/altitude/elevation`、`GET /v1/altitude/places`、`GET /v1/altitude/places/options` |
 
 ## 1. 业务上下文与页面流
 
@@ -30,6 +30,7 @@
 | ------------ | ----------------------------------------------- | -------- | -------------------------------------------------------------------------- |
 | 自动定位查询 | `GET /v1/altitude/current?latitude=&longitude=` | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts`                        |
 | 手动地点查询 | `GET /v1/altitude/places?keyword=`              | 无需登录 | `src/services/apifox/NODEJSDEMO/ALTITUDE/apifox.ts` 的 `getAltitudePlaces` |
+| 统一坐标查询 | `GET /v1/altitude/elevation`                    | 无需登录 | `src/subPackages/tools/altitude/altitude-api.ts`（待切换生成方法）         |
 
 ### 2.2 TypeScript 契约
 
@@ -44,7 +45,7 @@ interface CurrentAltitudeResult {
   longitude: number
   altitudeMeters: number
   unit: 'm'
-  source: 'open-meteo'
+  source: string
   queriedAt: string
 }
 
@@ -78,6 +79,7 @@ interface PrecollectedAltitudePlace {
 - 手动查询通过地点关键词匹配四川省预采集 JSON，选择结果后展示参考海拔，不请求实时高程服务。
 - 选择树绑定当前路径并提供“确认选择”按钮，未选到具体地点/景点时不会回填海拔结果。
 - 景区选择若存在多个具体景点，会在同页展开景点列表；选择具体景点后由后端按数据库海拔优先、实时高程兜底查询。
+- 自动定位、选择地点、地图选点最终统一进入坐标海拔查询 Adapter，分别携带 `wgs84`、`wgs84`、`gcj02`。
 - 页面颜色走 `--theme-*` token，兼容白天/夜间主题。
 - 微信好友和朋友圈分享进入 `/subPackages/tools/altitude/index`，不携带用户坐标或查询结果。
 
