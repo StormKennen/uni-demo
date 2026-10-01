@@ -25,11 +25,13 @@
         <view class="region-picker-block">
           <text class="region-picker-title">按省市区/景点选择</text>
           <uni-data-picker
+            v-model="regionSelection"
             :localdata="regionOptions"
             placeholder="请选择地点"
             popup-title="选择地点"
             :disabled="regionLoading"
             @change="handleRegionChange" />
+          <button class="region-confirm-button" :disabled="regionLoading" @click="confirmRegionPlace">确认选择</button>
           <text v-if="regionError" class="manual-error">{{ regionError }}</text>
         </view>
         <view class="search-row">
@@ -233,6 +235,8 @@
   const regionLoading = ref(false)
   const regionError = ref('')
   const regionLoaded = ref(false)
+  const regionSelection = ref('')
+  const pendingRegionPlaceId = ref('')
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -314,6 +318,8 @@
     if (mode === 'manual') {
       result.value = null
       showLocationPrompt.value = false
+      regionSelection.value = ''
+      pendingRegionPlaceId.value = ''
       loadRegionOptions()
       return
     }
@@ -345,8 +351,16 @@
   const handleRegionChange = (event: RegionChangeEvent) => {
     const values = event.detail?.value || []
     const lastValue = values[values.length - 1]?.value
-    const place = lastValue ? regionPlaceMap.value[lastValue] : undefined
-    if (place) selectPlace(place)
+    pendingRegionPlaceId.value = lastValue ? regionPlaceMap.value[lastValue]?.id || '' : ''
+  }
+
+  const confirmRegionPlace = () => {
+    const place = pendingRegionPlaceId.value ? regionPlaceMap.value[pendingRegionPlaceId.value] : undefined
+    if (!place) {
+      uni.showToast({ title: '请选择具体地点或景点', icon: 'none' })
+      return
+    }
+    selectPlace(place)
   }
 
   const searchPlaces = async () => {
@@ -379,6 +393,7 @@
     queryMode.value = 'location'
     showLocationPrompt.value = false
     manualError.value = ''
+    pendingRegionPlaceId.value = ''
   }
 
   const ensureLocationAuthorization = (): Promise<void> =>
@@ -552,6 +567,22 @@
     color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 700;
+  }
+
+  .region-confirm-button {
+    height: 72rpx;
+    margin-top: 18rpx;
+    padding: 0 28rpx;
+    border: 0;
+    border-radius: 14rpx;
+    background: var(--theme-brand);
+    color: var(--theme-surface);
+    font-size: 25rpx;
+    line-height: 72rpx;
+  }
+
+  .region-confirm-button::after {
+    border: 0;
   }
 
   .search-row {
