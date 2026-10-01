@@ -508,7 +508,10 @@
   const getCurrentLocation = (): Promise<LocationCoordinate> =>
     new Promise((resolve, reject) => {
       uni.getLocation({
-        type: 'gcj02',
+        // 高程服务要求 WGS84；GCJ02 只用于国内地图/导航坐标。
+        type: 'wgs84',
+        isHighAccuracy: true,
+        highAccuracyExpireTime: 5000,
         success: location => resolve({ latitude: location.latitude, longitude: location.longitude }),
         fail: reject,
       })

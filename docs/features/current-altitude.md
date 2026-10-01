@@ -84,6 +84,7 @@ interface PrecollectedAltitudePlace {
 ## 4. 条件编译与跨端兼容说明
 
 - H5 和微信小程序统一使用 `uni.getLocation`，不直接访问浏览器 API。
+- 自动海拔查询使用 `wgs84` GPS 坐标请求高程服务；`gcj02` 仅用于地图/导航场景，避免坐标系偏移造成海拔差异。
 - 微信小程序定位权限由系统弹窗处理；用户拒绝时保留页面并提供重试。
 - 微信小程序已拒绝定位时，引导用户打开小程序设置重新开启 `scope.userLocation`。
 - 所有 HTTP 调用经业务目录 API 模块复用 `src/services/http.ts`，不使用裸 `uni.request`。
