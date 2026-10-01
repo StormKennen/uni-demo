@@ -185,9 +185,12 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { getAltitudePlaceElevation } from './place-elevation-api'
-  import { getAltitudePlaceOptions, type AltitudeRegionNode } from './region-api'
-  import { getAltitudeCurrent, getAltitudePlaces } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
+  import {
+    getAltitudeCurrent,
+    getAltitudePlaces,
+    getAltitudePlacesOptions,
+    getPlacesPlaceIdElevation,
+  } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
   import type { getAltitudeCurrentRes } from '@/services/apifox/NODEJSDEMO/ALTITUDE/interface'
   import { reportToolVisit } from '@/utils/tracker'
 
@@ -222,6 +225,27 @@
 
   interface SearchAltitudePlacesResult {
     items?: PrecollectedAltitudePlace[]
+  }
+
+  interface AltitudeRegionNode {
+    value: string
+    text: string
+    level: 'province' | 'city' | 'county' | 'scenic_area' | 'scenic_point'
+    placeId?: string
+    children?: AltitudeRegionNode[]
+  }
+
+  interface AltitudePlaceOptionsResult {
+    items?: AltitudeRegionNode[]
+    places?: PrecollectedAltitudePlace[]
+  }
+
+  interface PlaceElevationResult {
+    latitude: number
+    longitude: number
+    altitudeMeters: number
+    source: 'database' | 'live'
+    queriedAt: string
   }
 
   type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
@@ -353,7 +377,7 @@
     regionLoading.value = true
     regionError.value = ''
     try {
-      const response = await getAltitudePlaceOptions()
+      const response = (await getAltitudePlacesOptions()) as unknown as AltitudePlaceOptionsResult
       regionOptions.value = response.items || []
       regionPlaceMap.value = Object.fromEntries((response.places || []).map(place => [place.id, place]))
       regionLoaded.value = true
@@ -423,7 +447,7 @@
     placeLoading.value = true
     manualError.value = ''
     try {
-      const elevation = await getAltitudePlaceElevation(place.id)
+      const elevation = (await getPlacesPlaceIdElevation(place.id)) as unknown as PlaceElevationResult
       result.value = {
         latitude: elevation.latitude,
         longitude: elevation.longitude,
