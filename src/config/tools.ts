@@ -296,6 +296,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
     isNew: true,
   },
+  weather: {
+    name: '天气',
+    desc: '当前位置与景区实时天气',
+    icon: 'cloud-upload',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/weather/index',
+    workspace: 'record',
+    isNew: true,
+  },
   chat: {
     name: '笔记收藏',
     desc: '个人笔记随手记',

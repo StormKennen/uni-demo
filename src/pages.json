@@ -363,6 +363,13 @@
           }
         },
         {
+          "path": "weather/index",
+          "style": {
+            "navigationBarTitleText": "天气",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "video-compress/index",
           "style": {
             "navigationBarTitleText": "视频压缩神器",
