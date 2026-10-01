@@ -117,32 +117,39 @@
             </view>
           </view>
 
-          <view class="meter-reading">
-            <view class="meter-scale">
-              <view v-for="tick in gaugeTicks" :key="tick" class="scale-row">
-                <view class="scale-line" />
-                <text>{{ tick }}m</text>
-              </view>
+          <view class="dashboard-gauge">
+            <view class="dashboard-readout">
+              <text class="dashboard-value">{{ result.altitudeMeters.toFixed(1) }}</text>
+              <text class="dashboard-unit">m</text>
             </view>
-            <view class="thermometer">
-              <view class="thermometer-track">
-                <view class="thermometer-fill" :style="{ height: `${gaugePercent}%` }" />
-              </view>
-              <view class="thermometer-bulb" />
-            </view>
-            <view class="reading-number">
-              <view class="altitude-value-row">
-                <text class="altitude-value">{{ result.altitudeMeters.toFixed(1) }}</text>
-                <text class="altitude-unit">米</text>
-              </view>
-              <text class="result-hint">相对于平均海平面高度</text>
-              <text class="status-note">{{ altitudeStatus.notice }}</text>
-            </view>
-          </view>
+            <text class="dashboard-caption">{{ altitudeStatus.notice }}</text>
 
-          <view class="reading-footer">
-            <text>{{ result.latitude.toFixed(4) }}°N · {{ result.longitude.toFixed(4) }}°E</text>
-            <text>{{ formattedQueryTime }}</text>
+            <view class="dashboard-scale">
+              <view class="scale-track">
+                <view class="scale-zone scale-zone-normal" />
+                <view class="scale-zone scale-zone-attention" />
+                <view class="scale-zone scale-zone-high" />
+                <view class="scale-zone scale-zone-danger" />
+                <view class="scale-progress" :style="{ width: `${gaugePercent}%` }" />
+                <view class="scale-marker" :style="{ left: `${gaugePercent}%` }" />
+              </view>
+              <view class="scale-labels">
+                <text v-for="tick in gaugeTicks" :key="tick">{{ tick }}m</text>
+              </view>
+            </view>
+
+            <view class="dashboard-meta">
+              <view class="dashboard-meta-item">
+                <text class="dashboard-meta-label">位置</text>
+                <text class="dashboard-meta-value">{{ result.latitude.toFixed(4) }}°N · {{ result.longitude.toFixed(4) }}°E</text>
+              </view>
+              <view class="dashboard-meta-item">
+                <text class="dashboard-meta-label">来源</text>
+                <text class="dashboard-meta-value">{{
+                  result.source === 'database' ? '预采集数据' : result.source === 'live' ? '实时高程' : '定位查询'
+                }}</text>
+              </view>
+            </view>
           </view>
         </view>
 
@@ -179,6 +186,9 @@
       <text v-if="queryMode === 'location' && result?.source === 'database'" class="source-note"> 数据库预采集参考海拔，仅供参考 </text>
       <text v-else-if="queryMode === 'location' && result?.source === 'live'" class="source-note"> 坐标高程实时查询结果，仅供参考 </text>
       <text v-else-if="queryMode === 'location'" class="source-note">海拔数据由高程服务提供，仅供参考</text>
+      <!-- #ifdef MP-WEIXIN -->
+      <button v-if="queryMode === 'location' && result" class="share-button" open-type="share">分享查询海拔</button>
+      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
@@ -925,6 +935,153 @@
     width: 100%;
   }
 
+  .dashboard-gauge {
+    width: 100%;
+    padding: 28rpx 24rpx 22rpx;
+    margin-top: 22rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 28rpx;
+    background: var(--theme-surface-2);
+    box-sizing: border-box;
+  }
+
+  .dashboard-readout {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .dashboard-value {
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 112rpx;
+    font-weight: 800;
+    letter-spacing: -3rpx;
+    line-height: 1;
+  }
+
+  .dashboard-unit {
+    margin-left: 12rpx;
+    color: var(--theme-text-secondary);
+    font-size: 30rpx;
+    font-weight: 700;
+  }
+
+  .dashboard-caption {
+    display: block;
+    margin-top: 14rpx;
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 24rpx;
+    line-height: 1.5;
+  }
+
+  .dashboard-scale {
+    margin-top: 30rpx;
+  }
+
+  .scale-track {
+    position: relative;
+    display: flex;
+    height: 24rpx;
+    overflow: visible;
+    border-radius: 999rpx;
+    background: var(--theme-border);
+  }
+
+  .scale-zone {
+    flex: 1;
+    height: 100%;
+  }
+
+  .scale-zone:first-child {
+    border-radius: 999rpx 0 0 999rpx;
+  }
+
+  .scale-zone:last-of-type {
+    border-radius: 0 999rpx 999rpx 0;
+  }
+
+  .scale-zone-normal {
+    background: var(--theme-brand);
+  }
+
+  .scale-zone-attention {
+    background: var(--theme-warning);
+  }
+
+  .scale-zone-high {
+    background: var(--theme-danger);
+    opacity: 0.78;
+  }
+
+  .scale-zone-danger {
+    background: var(--theme-danger);
+  }
+
+  .scale-progress {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 999rpx;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow-sm);
+    transition: width 450ms ease;
+  }
+
+  .scale-marker {
+    position: absolute;
+    top: 50%;
+    width: 34rpx;
+    height: 34rpx;
+    border: 6rpx solid var(--theme-surface);
+    border-radius: 50%;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow-sm);
+    transform: translate(-50%, -50%);
+    transition: left 450ms ease;
+  }
+
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 14rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+
+  .dashboard-meta {
+    display: flex;
+    margin-top: 26rpx;
+    padding-top: 20rpx;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .dashboard-meta-item {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-meta-item + .dashboard-meta-item {
+    padding-left: 20rpx;
+    border-left: 1rpx solid var(--theme-border);
+  }
+
+  .dashboard-meta-label {
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+
+  .dashboard-meta-value {
+    max-width: 100%;
+    margin-top: 6rpx;
+    overflow: hidden;
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .located-badge {
     display: flex;
     align-items: center;
@@ -1064,6 +1221,20 @@
     border-top: 1rpx solid var(--theme-border);
     color: var(--theme-text-tertiary);
     font-size: 20rpx;
+  }
+
+  .share-button {
+    margin-top: 22rpx;
+    border: 0;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+    color: var(--theme-brand);
+    font-size: 26rpx;
+    line-height: 78rpx;
+  }
+
+  .share-button::after {
+    border: 0;
   }
 
   .detail-card {
