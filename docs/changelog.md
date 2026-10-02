@@ -1,5 +1,6 @@
 # Changelog
 
+- 2026-10-02 [weather] 接入 Apifox 天气接口并完善定位、地点、地图选点、响应归一化与竞品风格天气展示（Codex）
 - 2026-10-01 [weather] 新增天气工具前端页面，归入记录分类，支持当前定位/地点/地图选点和动态天气分享（Codex）
 - 2026-10-01 [tools/altitude/v2] 接入统一坐标海拔 Adapter，准备收口当前定位、地点选择和地图选点三种入口（Codex）
 - 2026-10-01 [tools/altitude/accuracy] 自动海拔定位改用 WGS84 高精度坐标，修正 GCJ02 坐标直接请求 WGS84 高程模型造成的结果偏差（Codex）
