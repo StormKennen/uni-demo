@@ -359,7 +359,18 @@
           "path": "altitude/index",
           "style": {
             "navigationBarTitleText": "查询海拔",
-            "navigationStyle": "custom"
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "altitude/scenic-detail",
+          "style": {
+            "navigationBarTitleText": "景区海拔",
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
           }
         },
         {

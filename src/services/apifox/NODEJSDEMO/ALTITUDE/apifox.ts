@@ -5,6 +5,8 @@ import type { ParticalUniAppRequestOptions } from '@/services/interface'
 import type {
   getAltitudeCurrentQuery,
   getAltitudeCurrentRes,
+  getAltitudeElevationQuery,
+  getAltitudeElevationRes,
   getAltitudePlacesOptionsRes,
   getAltitudePlacesQuery,
   getAltitudePlacesRes,
@@ -77,4 +79,17 @@ export const getPlacesPlaceIdElevation = async (
 ): Promise<Expand<getPlacesPlaceIdElevationRes>> => {
   const _config = baseURL ? { baseURL, ...config } : config
   return http.get(`/altitude/places/${placeId}/elevation`, {}, _config)
+}
+
+/**
+ * @description Altitude/按坐标查询海拔
+ * @url GET /altitude/elevation
+ * @host https://app.apifox.com/link/project/7048425/apis/api-521294942
+ */
+export const getAltitudeElevation = async (
+  params: Expand<getAltitudeElevationQuery>,
+  config?: Expand<ParticalUniAppRequestOptions>,
+): Promise<Expand<getAltitudeElevationRes>> => {
+  const _config = baseURL ? { baseURL, ...config } : config
+  return http.get(`/altitude/elevation`, params, _config)
 }

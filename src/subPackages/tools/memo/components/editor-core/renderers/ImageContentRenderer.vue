@@ -1,7 +1,12 @@
 <template>
   <view class="icr-root" :style="rootStyle">
     <view v-if="layoutType === 'grid'" class="icr-grid" :style="gridStyle">
-      <view v-for="(item, index) in block.children" :key="index" class="icr-grid-cell" @click.stop="activate(item)">
+      <view
+        v-for="(item, index) in block.children"
+        :key="index"
+        class="icr-grid-cell"
+        :style="gridCellStyle(item)"
+        @click.stop="activate(item)">
         <image v-if="item.url" class="icr-image" :src="item.url" :style="imageStyle(item)" :mode="imageMode(item)" />
       </view>
     </view>
@@ -9,28 +14,33 @@
     <swiper v-else-if="layoutType === 'carousel'" class="icr-carousel" indicator-dots circular :autoplay="false">
       <swiper-item v-for="(item, index) in block.children" :key="index">
         <view class="icr-carousel-item" @click.stop="activate(item)">
-          <image v-if="item.url" class="icr-image" :src="item.url" mode="aspectFill" />
+          <image v-if="item.url" class="icr-image" :src="item.url" :style="imageStyle(item)" :mode="imageMode(item)" />
         </view>
       </swiper-item>
     </swiper>
 
     <scroll-view v-else-if="layoutType === 'horizontal'" class="icr-horizontal" scroll-x>
       <view class="icr-horizontal-track" :style="{ gap: `${gap}rpx` }">
-        <view v-for="(item, index) in block.children" :key="index" class="icr-horizontal-item" @click.stop="activate(item)">
-          <image v-if="item.url" class="icr-image" :src="item.url" mode="aspectFill" />
+        <view
+          v-for="(item, index) in block.children"
+          :key="index"
+          class="icr-horizontal-item"
+          :style="itemContainerStyle(item)"
+          @click.stop="activate(item)">
+          <image v-if="item.url" class="icr-image" :src="item.url" :style="imageStyle(item)" :mode="imageMode(item)" />
         </view>
       </view>
     </scroll-view>
 
     <view v-else-if="layoutType === 'feature'" class="icr-feature" :style="{ gap: `${gap}rpx` }">
       <view v-for="(item, index) in block.children.slice(0, 3)" :key="index" class="icr-feature-item" @click.stop="activate(item)">
-        <image v-if="item.url" class="icr-image" :src="item.url" mode="aspectFill" />
+        <image v-if="item.url" class="icr-image" :src="item.url" :style="imageStyle(item)" :mode="imageMode(item)" />
       </view>
     </view>
 
     <view v-else class="icr-single">
       <view v-for="(item, index) in block.children" :key="index" class="icr-single-item" @click.stop="activate(item)">
-        <image v-if="item.url" class="icr-single-image" :src="item.url" :style="imageStyle(item)" mode="widthFix" />
+        <image v-if="item.url" class="icr-single-image" :src="item.url" :style="imageStyle(item)" :mode="imageMode(item)" />
       </view>
     </view>
   </view>
@@ -50,12 +60,35 @@
   const rootStyle = computed(() => (props.block.style?.backgroundColor ? { backgroundColor: props.block.style.backgroundColor } : {}))
   const gridStyle = computed(() => ({ gridTemplateColumns: `repeat(${columns.value}, minmax(0, 1fr))`, gap: `${gap.value}rpx` }))
 
+  const toNumber = (value: number | string | undefined, fallback: number): number => {
+    const parsed = typeof value === 'number' ? value : Number(value)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+
+  const getSizeMode = (item: ImageItem): NonNullable<ImageItem['style']>['sizeMode'] => item.style?.sizeMode || 'auto'
+
   const imageStyle = (item: ImageItem): Record<string, string> => {
     const style = item.style || {}
     const result: Record<string, string> = {}
-    if (style.sizeMode === 'fixedWidth' && style.width) result.width = `${style.width}rpx`
-    if (style.sizeMode === 'fixedHeight' && style.height) result.height = `${style.height}rpx`
-    if (style.sizeMode === 'percentWidth' && style.widthPercent) result.width = `${style.widthPercent}%`
+    const sizeMode = getSizeMode(item)
+
+    if (sizeMode === 'auto') {
+      result.width = '100%'
+    } else if (sizeMode === 'fixedWidth') {
+      result.width = `${toNumber(style.width, 300)}rpx`
+      result.maxWidth = '100%'
+    } else if (sizeMode === 'fixedHeight') {
+      // fixedHeight 必须同时设置宽高，不能继续使用 widthFix 覆盖高度。
+      result.width = '100%'
+      result.height = `${toNumber(style.height, 300)}rpx`
+    } else if (sizeMode === 'percentWidth') {
+      result.width = `${Math.min(100, Math.max(1, toNumber(style.widthPercent, 100)))}%`
+      result.maxWidth = '100%'
+    } else if (sizeMode === 'percentHeight') {
+      result.width = '100%'
+      result.height = `${Math.min(100, Math.max(1, toNumber(style.heightPercent, 100)))}%`
+    }
+
     const transforms: string[] = []
     if (style.rotateX) transforms.push(`rotateX(${style.rotateX}deg)`)
     if (style.rotateY) transforms.push(`rotateY(${style.rotateY}deg)`)
@@ -65,9 +98,27 @@
   }
 
   const imageMode = (item: ImageItem): 'aspectFill' | 'heightFix' | 'widthFix' => {
-    if (item.style?.sizeMode === 'fixedHeight' || item.style?.sizeMode === 'percentHeight') return 'heightFix'
-    if (item.style?.sizeMode === 'fixedWidth' || item.style?.sizeMode === 'percentWidth') return 'widthFix'
-    return 'aspectFill'
+    const sizeMode = getSizeMode(item)
+    if (sizeMode === 'fixedHeight' || sizeMode === 'percentHeight') return 'aspectFill'
+    if (sizeMode === 'fixedWidth' || sizeMode === 'percentWidth') return 'widthFix'
+    return layoutType.value === 'single' ? 'widthFix' : 'aspectFill'
+  }
+
+  const gridCellStyle = (item: ImageItem): Record<string, string> => {
+    const style = item.style || {}
+    if (getSizeMode(item) === 'fixedHeight') {
+      return {
+        aspectRatio: 'auto',
+        height: `${toNumber(style.height, 300)}rpx`,
+      }
+    }
+    return {}
+  }
+
+  const itemContainerStyle = (item: ImageItem): Record<string, string> => {
+    const style = item.style || {}
+    if (getSizeMode(item) === 'fixedHeight') return { height: `${toNumber(style.height, 300)}rpx` }
+    return {}
   }
 
   const activate = (item: ImageItem) => {

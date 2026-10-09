@@ -16,10 +16,6 @@
           <uni-icons type="map-pin" size="17" :color="mode === 'place' ? 'var(--theme-brand)' : 'var(--theme-text-tertiary)'" />
           <text>选择地点</text>
         </view>
-        <view class="mode-tab" :class="{ active: mode === 'map' }" @click="switchMode('map')">
-          <uni-icons type="map" size="17" :color="mode === 'map' ? 'var(--theme-brand)' : 'var(--theme-text-tertiary)'" />
-          <text>地图选点</text>
-        </view>
       </view>
 
       <view v-if="mode === 'place' && !weather" class="action-card">
@@ -71,22 +67,12 @@
         </view>
       </view>
 
-      <view v-else-if="mode === 'map' && !weather" class="action-card empty-action-card">
-        <view class="empty-icon empty-icon--teal"><uni-icons type="map" size="38" color="var(--theme-brand)" /></view>
-        <text class="panel-title">从地图选择位置</text>
-        <text class="panel-description">选择后会按该坐标查询实时天气，不保存天气历史。</text>
-        <button class="primary-button" :disabled="mapLoading" @click="chooseMapLocation">
-          {{ mapLoading ? '打开地图中…' : '打开地图选点' }}
-        </button>
-        <text v-if="errorMessage" class="error-text">{{ errorMessage }}</text>
-      </view>
-
       <view v-else-if="mode === 'location' && !weather" class="action-card empty-action-card">
         <view class="empty-icon empty-icon--blue"><uni-icons type="location" size="38" color="var(--theme-brand)" /></view>
         <text class="panel-title">查询当前位置天气</text>
         <text class="panel-description">仅用于本次查询，不保存你的定位信息。</text>
         <button class="primary-button" :disabled="loading" @click="queryCurrentWeather">
-          {{ loading ? '正在定位…' : '允许定位并查询' }}
+          {{ loading ? '正在定位…' : '定位并查询' }}
         </button>
         <button v-if="permissionDenied" class="secondary-button" @click="openLocationSettings">去开启定位权限</button>
         <text v-if="errorMessage" class="error-text">{{ errorMessage }}</text>

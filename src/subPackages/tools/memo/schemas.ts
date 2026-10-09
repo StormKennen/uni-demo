@@ -267,7 +267,7 @@ const imageItemSchema: SchemaField[] = [
   },
   {
     key: 'style.width',
-    label: '宽度 (px)',
+    label: '宽度 (rpx)',
     type: 'slider',
     group: 'layout',
     default: 300,
@@ -278,7 +278,7 @@ const imageItemSchema: SchemaField[] = [
   },
   {
     key: 'style.height',
-    label: '高度 (px)',
+    label: '高度 (rpx)',
     type: 'slider',
     group: 'layout',
     default: 300,

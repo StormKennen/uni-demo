@@ -1,4 +1,5 @@
 import type { ContentAction } from './content-model'
+import { buildMemoDetailPath } from './navigation'
 import { openExternalLink, openMapNavigation } from '@/utils/map'
 
 export interface ContentActionContext {
@@ -58,7 +59,7 @@ export const executeContentAction = (action: ContentAction | undefined, context:
   }
 
   if (action.type === 'memo') {
-    if (action.memoId) uni.navigateTo({ url: `/subPackages/tools/memo/detail?id=${encodeURIComponent(action.memoId)}` })
+    if (action.memoId) uni.navigateTo({ url: buildMemoDetailPath({ id: action.memoId }) })
     else uni.showToast({ title: '备忘录 ID 为空', icon: 'none' })
     return
   }

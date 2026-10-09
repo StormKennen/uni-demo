@@ -104,13 +104,14 @@ export class Request {
   // 请求拦截 主要是合并url，合并接口特定配置，可以根据自己情况进行扩展
   requestInterceptor(url: string, data: object, config: InternalRequestConfig, method: Methods, guestToken = '') {
     const { baseURL } = this.config
+    const { params, ...requestConfig } = config
     // 拼接Url
-    url = config.baseURL ? config.baseURL + url : baseURL + url
+    url = requestConfig.baseURL ? requestConfig.baseURL + url : baseURL + url
 
     // 深拷贝 header 避免引用问题
     const _config = {
       ...this.config,
-      ...config,
+      ...requestConfig,
       header: {
         ...this.config.header,
         ...(config.header || {}),
@@ -145,7 +146,7 @@ export class Request {
     const configs = {
       ..._config,
       url,
-      data,
+      data: method === 'GET' && params ? { ...params, ...data } : data,
       method,
       // 添加标记，用于在响应拦截器中识别登录相关接口
       _isAuthRequest: this.isAuthRequest(url),

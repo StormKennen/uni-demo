@@ -73,3 +73,21 @@ export type postAltitudePlacesImportRes = object
  * @url GET /altitude/places/{placeId}/elevation
  */
 export type getPlacesPlaceIdElevationRes = object
+
+/**
+ * @description Altitude/按坐标查询海拔--接口请求Query参数
+ * @url GET /altitude/elevation
+ */
+export interface getAltitudeElevationQuery {
+  latitude: number
+
+  longitude: number
+
+  coordinateSystem?: string
+}
+
+/**
+ * @description Altitude/按坐标查询海拔--接口返回值
+ * @url GET /altitude/elevation
+ */
+export type getAltitudeElevationRes = object

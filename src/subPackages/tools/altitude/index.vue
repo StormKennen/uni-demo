@@ -13,96 +13,31 @@
         </view>
         <view class="intro-copy">
           <text class="intro-title">查询当前位置海拔</text>
-          <text class="intro-description">允许定位后，查询你所在位置的海拔高度</text>
+          <text class="intro-description">定位是可选的，也可以直接选择景区、景点或地图位置</text>
         </view>
       </view>
 
       <view class="mode-tabs">
         <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="switchMode('location')">当前定位</view>
         <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">选择地点</view>
-        <view class="mode-tab" :class="{ active: queryMode === 'map' }" @click="switchMode('map')">地图选点</view>
       </view>
 
       <view v-if="queryMode === 'manual' && !result" class="manual-search-card">
-        <view class="region-picker-block">
-          <text class="region-picker-title">按省市区/景点选择</text>
-          <uni-data-picker
-            v-model="regionSelection"
-            :localdata="regionOptions"
-            placeholder="请选择地点"
-            popup-title="选择地点"
-            :disabled="regionLoading"
-            @change="handleRegionChange" />
-          <button class="region-confirm-button" :disabled="regionLoading" @click="confirmRegionPlace">确认选择</button>
-          <text v-if="regionError" class="manual-error">{{ regionError }}</text>
-        </view>
-        <view class="search-row">
-          <input
-            v-model="manualKeyword"
-            class="search-input"
-            confirm-type="search"
-            :maxlength="80"
-            placeholder="输入省、市、区县或景区"
-            @confirm="searchPlaces" />
-          <button class="search-button" :disabled="manualLoading" @click="searchPlaces">
-            {{ manualLoading ? '搜索中' : '搜索' }}
-          </button>
-        </view>
-        <text class="manual-hint">支持四川省行政区及已采集景点，选择具体地点后显示参考海拔。</text>
-        <view v-if="selectedScenicArea" class="scenic-points-card">
-          <text class="region-picker-title">{{ selectedScenicArea.name }} · 请选择具体景点</text>
-          <view v-for="point in scenicPointResults" :key="point.id" class="place-item" @click="selectPlace(point)">
-            <view class="place-copy">
-              <text class="place-name">{{ point.name }}</text>
-              <text class="place-path">{{ point.fullName }}</text>
-            </view>
-            <view class="place-altitude">
-              <text v-if="point.altitudeMeters !== null" class="place-altitude-value">{{ point.altitudeMeters.toFixed(1) }}</text>
-              <text v-else class="place-altitude-unit">待查询</text>
-              <text v-if="point.altitudeMeters !== null" class="place-altitude-unit">米</text>
-            </view>
-          </view>
-        </view>
-        <view v-if="manualError" class="manual-state manual-error">{{ manualError }}</view>
-        <view v-else-if="manualLoading" class="manual-state">正在匹配地点…</view>
-        <view v-else-if="placeResults.length" class="place-results">
-          <view v-for="place in placeResults" :key="place.id" class="place-item" @click="selectPlace(place)">
-            <view class="place-copy">
-              <text class="place-name">{{ place.name }}</text>
-              <text class="place-path">{{ place.fullName }}</text>
-              <text class="place-type">{{ placeLevelLabel(place.level) }}</text>
-            </view>
-            <view class="place-altitude">
-              <text v-if="place.altitudeMeters !== null" class="place-altitude-value">{{ place.altitudeMeters.toFixed(1) }}</text>
-              <text v-else class="place-altitude-unit">待查询</text>
-              <text v-if="place.altitudeMeters !== null" class="place-altitude-unit">米</text>
-            </view>
-          </view>
-        </view>
-        <view v-else class="manual-state">输入地点名称开始搜索，例如“木格措”“康定市”。</view>
-      </view>
-
-      <view v-else-if="queryMode === 'map' && !result" class="map-select-card">
-        <uni-icons type="map" size="42" color="var(--theme-brand)" />
-        <text class="state-title">从地图选择位置</text>
-        <text class="state-description">地图选点返回 GCJ-02 坐标，后端会统一转换后查询海拔。</text>
-        <button class="map-select-button" :disabled="mapLoading" @click="chooseMapLocation">
-          {{ mapLoading ? '打开地图中…' : '打开地图选点' }}
-        </button>
-        <text v-if="mapError" class="manual-error">{{ mapError }}</text>
+        <ScenicSelector :initial-filters="scenicFilters" @filter-change="onScenicFilterChange" />
       </view>
 
       <view
         v-else
         class="result-card"
-        :class="[result ? `result-card--${altitudeLevel}` : '', { 'result-card-loading': loading, 'result-card-reading': result }]">
+        :class="[result ? `result-card--${altitudeLevel}` : '', { 'result-card-loading': loading, 'result-card-reading': result }]"
+        :style="altitudeStyle">
         <view v-if="showLocationPrompt" class="state-box location-consent-box">
           <view class="location-consent-icon">
             <uni-icons type="location" size="32" color="var(--theme-brand)" />
           </view>
           <text class="state-title">需要使用位置信息</text>
           <text class="state-description">仅用于查询并展示当前位置海拔，不保存位置历史。你可以在微信设置中随时关闭定位权限。</text>
-          <button class="consent-button" :disabled="loading" @click="requestLocationAndQuery">允许定位并查询</button>
+          <button class="consent-button" :disabled="loading" @click="requestLocationAndQuery">定位并查询</button>
         </view>
 
         <view v-else-if="loading" class="state-box">
@@ -204,10 +139,17 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { onLoad } from '@dcloudio/uni-app'
+  import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
-  import { buildAltitudeShare, parseAltitudeShare } from './share'
-  import { getAltitudePlaces, getAltitudePlacesOptions } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
+  import { getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
+  import {
+    buildScenicSelectorShare,
+    normalizeScenicSelectorShareFilters,
+    parseScenicSelectorShare,
+    type ScenicSelectorShareFilters,
+  } from './scenic-share'
+  import { buildAltitudeShare } from './share'
+  import ScenicSelector from './scenic-selector.vue'
   import { reportToolVisit } from '@/utils/tracker'
 
   interface CurrentAltitudeViewModel {
@@ -222,40 +164,7 @@
     queriedAt: string
   }
 
-  type PrecollectedPlaceLevel = 'province' | 'city' | 'county' | 'scenic_area' | 'scenic_point'
-
-  interface PrecollectedAltitudePlace {
-    id: string
-    level: PrecollectedPlaceLevel
-    name: string
-    fullName: string
-    referenceType: string
-    latitude: number
-    longitude: number
-    altitudeMeters: number | null
-    scenicArea?: string
-    collectedAt?: string
-  }
-
-  interface SearchAltitudePlacesResult {
-    items?: PrecollectedAltitudePlace[]
-  }
-
-  interface AltitudeRegionNode {
-    value: string
-    text: string
-    level: 'province' | 'city' | 'county' | 'scenic_area' | 'scenic_point'
-    placeId?: string
-    children?: AltitudeRegionNode[]
-  }
-
-  interface AltitudePlaceOptionsResult {
-    items?: AltitudeRegionNode[]
-    places?: PrecollectedAltitudePlace[]
-  }
-
-  type AltitudeLevel = 'normal' | 'attention' | 'high' | 'very-high'
-  type QueryMode = 'location' | 'manual' | 'map'
+  type QueryMode = 'location' | 'manual'
 
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
@@ -269,30 +178,14 @@
   const loading = ref(false)
   const errorMessage = ref('')
   const permissionDenied = ref(false)
-  const showLocationPrompt = ref(true)
+  const showLocationPrompt = ref(false)
   const result = ref<CurrentAltitudeViewModel | null>(null)
   const queryMode = ref<QueryMode>('location')
-  const manualKeyword = ref('')
-  const manualLoading = ref(false)
-  const manualError = ref('')
-  const placeResults = ref<PrecollectedAltitudePlace[]>([])
-  const regionOptions = ref<AltitudeRegionNode[]>([])
-  const regionPlaceMap = ref<Record<string, PrecollectedAltitudePlace>>({})
-  const regionLoading = ref(false)
-  const regionError = ref('')
-  const regionLoaded = ref(false)
-  const regionSelection = ref('')
-  const pendingRegionPlaceId = ref('')
-  const selectedScenicArea = ref<PrecollectedAltitudePlace | null>(null)
-  const scenicPointResults = ref<PrecollectedAltitudePlace[]>([])
-  const placeLoading = ref(false)
   const sourceMode = ref<AltitudeSourceMode>('location')
   const shareTitle = ref('查询海拔｜查询当前位置海拔')
   const sharePath = ref('/subPackages/tools/altitude/index?mode=location')
   const shareTimelineQuery = ref('mode=location')
-  const mapLoading = ref(false)
-  const mapError = ref('')
-  const mapPoint = ref<AltitudePoint | null>(null)
+  const scenicFilters = ref<ScenicSelectorShareFilters>({})
 
   const gaugeScale = computed(() => {
     const altitude = result.value?.altitudeMeters ?? 0
@@ -314,175 +207,67 @@
     return Math.min(100, Math.max(0, percent))
   })
 
-  const altitudeLevel = computed<AltitudeLevel>(() => {
-    const altitude = result.value?.altitudeMeters ?? 0
-    if (altitude >= 3500) return 'very-high'
-    if (altitude >= 2500) return 'high'
-    if (altitude >= 1500) return 'attention'
-    return 'normal'
-  })
+  const altitudeWarning = computed(() => getAltitudeWarningConfig(result.value?.altitudeMeters))
+  const altitudeLevel = computed<AltitudeWarningLevel>(() => altitudeWarning.value.key)
+  const altitudeStyle = computed<Record<string, string>>(() => ({
+    '--meter-color': altitudeWarning.value.color,
+    '--meter-color-deep': altitudeWarning.value.colorDeep,
+  }))
 
-  const altitudeStatus = computed(() => {
-    switch (altitudeLevel.value) {
-      case 'very-high':
-        return { label: '高海拔警示', notice: '海拔较高，请充分适应并关注身体状况' }
-      case 'high':
-        return { label: '高海拔提示', notice: '未适应人群请注意逐步适应' }
-      case 'attention':
-        return { label: '高度提醒', notice: '海拔升高，建议注意适应节奏' }
-      default:
-        return { label: '常规海拔', notice: '当前读数处于常规提示范围' }
-    }
-  })
+  const altitudeStatus = computed(() => ({
+    label: altitudeWarning.value.label,
+    notice: altitudeWarning.value.notice,
+  }))
 
   const formattedQueryTime = computed(() => {
     if (!result.value) return ''
     return result.value.queriedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
   })
 
-  const placeLevelLabel = (level: PrecollectedAltitudePlace['level']) => {
-    if (level === 'province') return '省级参考点'
-    if (level === 'city') return '市/州级参考点'
-    if (level === 'county') return '区县级参考点'
-    if (level === 'scenic_area') return '景区默认参考点'
-    return '景点参考点'
-  }
-
   const switchMode = (mode: QueryMode) => {
     queryMode.value = mode
-    manualError.value = ''
-    placeResults.value = []
     if (mode === 'manual') {
       result.value = null
-      selectedScenicArea.value = null
-      scenicPointResults.value = []
-      showLocationPrompt.value = false
-      regionSelection.value = ''
-      pendingRegionPlaceId.value = ''
-      loadRegionOptions()
-      return
-    }
-    if (mode === 'map') {
-      result.value = null
-      mapPoint.value = null
-      mapError.value = ''
+      sourceMode.value = 'place'
       showLocationPrompt.value = false
       syncShareState()
       return
     }
     sourceMode.value = 'location'
-    showLocationPrompt.value = !result.value
+    showLocationPrompt.value = false
     syncShareState()
   }
 
-  const loadRegionOptions = async () => {
-    if (regionLoaded.value || regionLoading.value) return
-    regionLoading.value = true
-    regionError.value = ''
-    try {
-      const response = (await getAltitudePlacesOptions()) as unknown as AltitudePlaceOptionsResult
-      regionOptions.value = response.items || []
-      regionPlaceMap.value = Object.fromEntries((response.places || []).map(place => [place.id, place]))
-      regionLoaded.value = true
-    } catch {
-      regionError.value = '地点选择器加载失败，可直接输入关键词搜索'
-    } finally {
-      regionLoading.value = false
-    }
-  }
-
-  interface RegionChangeEvent {
-    detail?: {
-      value?: Array<{ value?: string }>
-    }
-  }
-
-  const handleRegionChange = (event: RegionChangeEvent) => {
-    const values = event.detail?.value || []
-    const lastValue = values[values.length - 1]?.value
-    pendingRegionPlaceId.value = lastValue ? regionPlaceMap.value[lastValue]?.id || '' : ''
-  }
-
-  const confirmRegionPlace = () => {
-    const place = pendingRegionPlaceId.value ? regionPlaceMap.value[pendingRegionPlaceId.value] : undefined
-    if (!place) {
-      uni.showToast({ title: '请选择具体地点或景点', icon: 'none' })
+  const syncShareState = () => {
+    if (queryMode.value === 'manual' && !result.value) {
+      const share = buildScenicSelectorShare(scenicFilters.value)
+      shareTitle.value = share.title
+      sharePath.value = share.path
+      shareTimelineQuery.value = share.timelineQuery
       return
     }
-    selectPlace(place)
-  }
-
-  const syncShareState = () => {
     const share = buildAltitudeShare({
       mode: sourceMode.value,
-      placeId: result.value?.placeId,
-      keyword: manualKeyword.value,
-      point: mapPoint.value || undefined,
     })
     shareTitle.value = share.title
     sharePath.value = share.path
     shareTimelineQuery.value = share.timelineQuery
   }
 
-  const searchPlaces = async () => {
-    const keyword = manualKeyword.value.trim()
-    if (!keyword || manualLoading.value) return
-
-    manualLoading.value = true
-    manualError.value = ''
-    try {
-      const response = (await getAltitudePlaces({ keyword, page: 1, pageSize: 30 })) as unknown as SearchAltitudePlacesResult
-      placeResults.value = response.items || []
-      if (!placeResults.value.length) manualError.value = '没有找到匹配地点，请换个关键词试试'
-    } catch {
-      placeResults.value = []
-      manualError.value = '地点搜索失败，请稍后重试'
-    } finally {
-      manualLoading.value = false
-    }
+  const onScenicFilterChange = (filters: ScenicSelectorShareFilters) => {
+    scenicFilters.value = normalizeScenicSelectorShareFilters(filters)
+    if (queryMode.value === 'manual' && !result.value) syncShareState()
   }
 
-  const selectPlace = (place: PrecollectedAltitudePlace) => {
-    if (place.level === 'scenic_area') {
-      const points = Object.values(regionPlaceMap.value).filter(
-        item => item.level === 'scenic_point' && (item.scenicArea === place.name || item.fullName.includes(place.name)),
-      )
-      if (points.length) {
-        selectedScenicArea.value = place
-        scenicPointResults.value = points
-        manualError.value = ''
-        return
-      }
-    }
+  onShareAppMessage(() => ({
+    title: shareTitle.value,
+    path: sharePath.value,
+  }))
 
-    resolvePlaceElevation(place)
-  }
-
-  const resolvePlaceElevation = async (place: PrecollectedAltitudePlace) => {
-    placeLoading.value = true
-    manualError.value = ''
-    try {
-      const elevation = await queryAltitude({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        coordinateSystem: 'wgs84',
-        source: 'place',
-        placeId: place.id,
-        name: place.name,
-      })
-      result.value = {
-        ...elevation,
-      }
-      queryMode.value = 'manual'
-      showLocationPrompt.value = false
-      selectedScenicArea.value = null
-      scenicPointResults.value = []
-    } catch {
-      manualError.value = '该地点暂时没有可用海拔，请稍后重试'
-    } finally {
-      placeLoading.value = false
-    }
-  }
+  onShareTimeline(() => ({
+    title: shareTitle.value,
+    query: shareTimelineQuery.value,
+  }))
 
   const queryAltitude = async (point: AltitudePoint) => {
     loading.value = true
@@ -563,43 +348,6 @@
       })
     })
 
-  const chooseMapLocation = () => {
-    mapLoading.value = true
-    mapError.value = ''
-
-    // #ifdef MP-WEIXIN
-    uni.chooseLocation({
-      success: async location => {
-        const point: AltitudePoint = {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          coordinateSystem: 'gcj02',
-          source: 'map',
-          name: location.name || location.address || '地图选点',
-        }
-        mapPoint.value = point
-        queryMode.value = 'map'
-        try {
-          await queryAltitude(point)
-        } catch {
-          mapError.value = '地图选点的海拔查询失败，请稍后重试'
-        } finally {
-          mapLoading.value = false
-        }
-      },
-      fail: error => {
-        mapLoading.value = false
-        mapError.value = error.errMsg?.includes('cancel') ? '已取消地图选点' : '地图选点暂不可用'
-      },
-    })
-    // #endif
-
-    // #ifndef MP-WEIXIN
-    mapLoading.value = false
-    mapError.value = '当前环境暂无法打开地图选点，请使用当前定位或手动选择地点'
-    // #endif
-  }
-
   const requestLocationAndQuery = async () => {
     showLocationPrompt.value = false
     await queryCurrentAltitude()
@@ -628,7 +376,6 @@
       await ensureLocationAuthorization()
       const location = await getCurrentLocation()
       queryMode.value = 'location'
-      mapPoint.value = null
       await queryAltitude(location)
     } catch (error) {
       result.value = null
@@ -643,22 +390,12 @@
   }
 
   onLoad(async options => {
-    const state = parseAltitudeShare((options || {}) as Record<string, string | undefined>)
-    if (state.mode === 'place') {
+    scenicFilters.value = parseScenicSelectorShare((options || {}) as Record<string, string | undefined>)
+    if (options?.mode === 'manual') {
       queryMode.value = 'manual'
       sourceMode.value = 'place'
-      manualKeyword.value = state.keyword || ''
-      await loadRegionOptions()
-      const place = state.placeId ? regionPlaceMap.value[state.placeId] : undefined
-      if (place) selectPlace(place)
-      else syncShareState()
-    } else if (state.mode === 'map' && state.point) {
-      queryMode.value = 'map'
-      mapPoint.value = state.point
       showLocationPrompt.value = false
-      await queryAltitude(state.point).catch(() => {
-        mapError.value = '分享的地图点暂时无法查询海拔'
-      })
+      syncShareState()
     } else {
       sourceMode.value = 'location'
       queryMode.value = 'location'

@@ -393,6 +393,7 @@
   import BlockHost from './components/editor-core/renderers/BlockHost.vue'
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'
+  import { buildMemoDetailPath } from './navigation'
   import { getAllBlockSchemas, getBlockSchema } from './schemas'
   import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings, parseRouteNodes } from './normalizers'
   import { uploadWithOssSignature } from '@/hooks/use-oss-upload'
@@ -1017,7 +1018,7 @@
           uni.showToast({ title: '该备忘录为只读，仅可查看', icon: 'none' })
           const mode = memo.accessRole === 'admin' ? 'admin' : 'private'
           setTimeout(() => {
-            uni.redirectTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}&mode=${mode}&readonly=1` })
+            uni.redirectTo({ url: buildMemoDetailPath({ id: memoId.value, mode, readonly: true }) })
           }, 800)
           return
         }
@@ -1083,7 +1084,7 @@
   const saveAndGoToDetail = async () => {
     const saved = await saveData()
     if (saved && memoId.value) {
-      uni.navigateTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}` })
+      uni.navigateTo({ url: buildMemoDetailPath({ id: memoId.value }) })
     }
   }
 
