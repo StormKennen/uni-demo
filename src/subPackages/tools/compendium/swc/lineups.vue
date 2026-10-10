@@ -96,9 +96,9 @@
             </view>
           </view>
 
-          <view class="action-row counter-entry-row">
+          <!-- <view class="action-row counter-entry-row">
             <button class="toolbar-btn primary" :disabled="!selectedCharacterFilters.length" @click="goLineupCounter">查看阵容克制</button>
-          </view>
+          </view> -->
         </view>
 
         <StateBlock v-if="loading && !lineups.length" class="state-card" text="加载阵容中..." />

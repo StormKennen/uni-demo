@@ -9,12 +9,16 @@
 
     <view class="filter-card">
       <view class="region-field" @click="openRegionPicker">
+        <view class="region-field-icon">
+          <uni-icons type="map-filled" size="26" color="var(--theme-brand)" />
+        </view>
         <view class="region-field-copy">
           <text class="picker-label">地区</text>
           <text class="region-field-value">{{ filterSummary }}</text>
         </view>
         <view class="region-field-action">
           <text v-if="adminLoading" class="region-loading-label">行政区加载中</text>
+          <text v-else class="region-picker-action-label">{{ hasRegionSelection ? '更换' : '请选择' }}</text>
           <uni-icons type="right" size="16" color="var(--theme-text-tertiary)" />
         </view>
       </view>
@@ -41,7 +45,7 @@
           </view>
         </view>
 
-        <view v-if="adminLoading && regionPickerLevel !== 'province' && !regionPickerOptions.length" class="region-picker-state">
+        <view v-if="adminLoading && regionPickerLevel !== 'province' && !regionPickerChildren.length" class="region-picker-state">
           正在加载城市/区县数据…
         </view>
         <view v-else class="region-picker-options-wrap">
@@ -69,7 +73,7 @@
           </scroll-view>
         </view>
 
-        <button class="region-picker-done" @click="closeRegionPicker">完成</button>
+        <button class="region-picker-done" @click="confirmRegionPicker">完成</button>
       </view>
     </view>
 
@@ -195,8 +199,11 @@
   const provinceText = computed(() => draftProvince.value?.text || '全部省份')
   const cityText = computed(() => draftCity.value?.text || '全部城市/州')
   const countyText = computed(() => draftCity.value?.children?.find(item => item.value === draftCountyCode.value)?.text || '全部区县')
+  const hasRegionSelection = computed(() => Boolean(draftProvinceCode.value || draftCityCode.value || draftCountyCode.value))
   const filterSummary = computed(
-    () => [provinceText.value, cityText.value, countyText.value].filter(value => !value.startsWith('全部')).join(' · ') || '未选择行政区',
+    () =>
+      [provinceText.value, cityText.value, countyText.value].filter(value => !value.startsWith('全部')).join(' · ') ||
+      '点击选择省、市/州或区县',
   )
   const regionPath = computed(() => [
     { level: 'province' as const, label: provinceText.value },
@@ -207,6 +214,11 @@
     if (regionPickerLevel.value === 'province') return provinceOptions.value
     if (regionPickerLevel.value === 'city') return cityOptions.value
     return countyOptions.value
+  })
+  const regionPickerChildren = computed(() => {
+    if (regionPickerLevel.value === 'city') return draftProvince.value?.children || []
+    if (regionPickerLevel.value === 'county') return draftCity.value?.children || []
+    return adminOptions.value
   })
   const formatAltitude = (value: number | null | undefined) => (typeof value === 'number' ? `${Math.round(value)}m` : '待采集')
   const unwrap = <T,>(value: unknown) => unwrapApiData<T>(value)
@@ -300,6 +312,10 @@
   const closeRegionPicker = () => {
     regionPickerVisible.value = false
   }
+  const confirmRegionPicker = () => {
+    applyQuery()
+    closeRegionPicker()
+  }
   const isRegionOptionSelected = (option: RegionPickerOption) => {
     if (option.level === 'province') return option.value === draftProvinceCode.value
     if (option.level === 'city') return option.value === draftCityCode.value
@@ -315,9 +331,8 @@
       draftProvinceCode.value = option.value
       draftCityCode.value = ''
       draftCountyCode.value = ''
-      applyQuery()
       if (!option.value) {
-        closeRegionPicker()
+        confirmRegionPicker()
       } else {
         regionPickerLevel.value = 'city'
       }
@@ -326,17 +341,15 @@
     if (regionPickerLevel.value === 'city') {
       draftCityCode.value = option.value
       draftCountyCode.value = ''
-      applyQuery()
       if (!option.value) {
-        closeRegionPicker()
+        confirmRegionPicker()
       } else {
         regionPickerLevel.value = 'county'
       }
       return
     }
     draftCountyCode.value = option.value
-    applyQuery()
-    closeRegionPicker()
+    if (!option.value) confirmRegionPicker()
   }
   const loadMore = () => {
     if (hasNext.value && !loading.value) {
@@ -413,10 +426,28 @@
   .region-field {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 16rpx;
-    min-height: 76rpx;
-    padding: 4rpx 6rpx;
+    min-height: 116rpx;
+    padding: 14rpx 16rpx;
+    border: 2rpx solid var(--theme-border-light);
+    border-radius: 18rpx;
+    background: var(--theme-surface);
+  }
+
+  .region-field:active {
+    border-color: var(--theme-brand);
+    background: var(--theme-brand-soft);
+  }
+
+  .region-field-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 68rpx;
+    height: 68rpx;
+    flex-shrink: 0;
+    border-radius: 20rpx;
+    background: var(--theme-brand-soft);
   }
 
   .region-field-copy {
@@ -430,7 +461,7 @@
   .region-field-value {
     overflow: hidden;
     color: var(--theme-text-primary);
-    font-size: 25rpx;
+    font-size: 24rpx;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -440,13 +471,20 @@
     display: flex;
     align-items: center;
     gap: 8rpx;
+    margin-left: auto;
     flex-shrink: 0;
   }
 
   .region-loading-label,
-  .region-picker-hint {
+  .region-picker-hint,
+  .region-picker-action-label {
     color: var(--theme-text-tertiary);
     font-size: 20rpx;
+  }
+
+  .region-picker-action-label {
+    color: var(--theme-brand);
+    font-weight: 600;
   }
 
   .region-picker-mask {
@@ -463,11 +501,13 @@
 
   .region-picker-sheet {
     width: 100%;
-    max-height: 82vh;
-    padding: 28rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+    height: 88vh;
+    max-height: 92vh;
+    padding: 32rpx 24rpx calc(28rpx + env(safe-area-inset-bottom));
     border-radius: 28rpx 28rpx 0 0;
     background: var(--theme-surface);
     box-sizing: border-box;
+    overflow: hidden;
   }
 
   .region-picker-header,
@@ -501,28 +541,37 @@
   }
 
   .region-path {
-    gap: 8rpx;
-    margin-top: 24rpx;
-    padding-bottom: 14rpx;
+    gap: 10rpx;
+    margin-top: 28rpx;
+    padding-bottom: 18rpx;
     border-bottom: 1rpx solid var(--theme-border-light);
   }
 
   .region-path-item {
-    padding: 10rpx 14rpx;
+    display: flex;
+    min-width: 0;
+    min-height: 64rpx;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 10rpx 8rpx;
     border-radius: 12rpx;
+    border: 1rpx solid var(--theme-border-light);
     color: var(--theme-text-tertiary);
     background: var(--theme-surface-muted);
-    font-size: 21rpx;
+    font-size: 22rpx;
+    text-align: center;
   }
 
   .region-path-item.active {
     color: var(--theme-brand);
     background: var(--theme-brand-soft);
+    border-color: var(--theme-brand);
     font-weight: 700;
   }
 
   .region-picker-options-wrap {
-    min-height: 360rpx;
+    min-height: 500rpx;
   }
 
   .region-picker-hint {
@@ -534,21 +583,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 360rpx;
+    min-height: 500rpx;
     color: var(--theme-text-tertiary);
     font-size: 23rpx;
   }
 
   .region-option-list {
-    height: 420rpx;
-    margin-top: 10rpx;
+    height: 600rpx;
+    margin-top: 16rpx;
   }
 
   .region-option {
     justify-content: space-between;
     gap: 16rpx;
-    padding: 20rpx 12rpx;
+    min-height: 76rpx;
+    margin: 4rpx 0;
+    padding: 18rpx 16rpx;
+    border-radius: 14rpx;
     border-bottom: 1rpx solid var(--theme-border-light);
+  }
+
+  .region-option.selected {
+    border-bottom-color: transparent;
+    background: var(--theme-brand-soft);
   }
 
   .region-option-copy {

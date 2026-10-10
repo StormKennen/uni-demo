@@ -23,16 +23,12 @@
 
     <view v-if="points.length" class="chart-shell">
       <view class="chart-axis">
-        <text>{{ formatAltitude(chartMax) }}</text>
-        <text>{{ formatAltitude(chartMid) }}</text>
-        <text>{{ formatAltitude(chartMin) }}</text>
+        <text v-for="tick in chartTicks" :key="tick">{{ formatAltitude(tick) }}</text>
       </view>
       <scroll-view scroll-x class="chart-scroll" :show-scrollbar="false">
         <view class="chart-content" :style="{ width: `${chartWidth}rpx` }">
           <view class="bar-plot-area">
-            <view class="grid-line grid-line--top" />
-            <view class="grid-line grid-line--middle" />
-            <view class="grid-line grid-line--bottom" />
+            <view v-for="tick in chartTicks" :key="`grid-${tick}`" class="grid-line" :style="{ bottom: `${(tick / chartMax) * 90}%` }" />
             <view v-for="(point, index) in chartPoints" :key="point.pointId" class="bar-column" :style="{ left: `${xForIndex(index)}%` }">
               <view class="bar-value" :style="{ color: altitudeColor(point.altitudeMeters) }">{{
                 formatAltitude(point.altitudeMeters)
@@ -85,19 +81,16 @@
 
   const chartWidth = computed(() => Math.max(680, props.points.length * 128))
   const warningLegend = ALTITUDE_WARNING_CONFIGS
-  const chartMin = 0
   const chartMax = computed(() => {
-    const maximum = props.values.length ? Math.max(...props.values, 0) : 0
+    const maximum = Math.max(...props.values, ...props.points.map(point => point.altitudeMeters), 0)
     return Math.max(500, Math.ceil(maximum / 500) * 500)
   })
-  const chartMid = computed(() => {
-    return Math.round(chartMax.value / 2)
-  })
+  const chartTicks = computed(() => Array.from({ length: chartMax.value / 500 + 1 }, (_, index) => index * 500).reverse())
 
   const xForIndex = (index: number) => (props.points.length <= 1 ? 50 : 8 + (index / (props.points.length - 1)) * 84)
 
   const barHeight = (value: number) => {
-    return Math.max(4, (Math.max(0, value) / chartMax.value) * 88)
+    return Math.max(4, (Math.max(0, value) / chartMax.value) * 90)
   }
 
   const altitudeColor = (value: number) => getAltitudeWarningConfig(value).color
@@ -182,11 +175,11 @@
 
   .chart-axis {
     width: 64rpx;
-    height: 260rpx;
+    height: 360rpx;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 8rpx 0 20rpx;
+    padding: 8rpx 0;
     color: var(--theme-text-tertiary);
     font-size: 20rpx;
     text-align: right;
@@ -199,30 +192,26 @@
 
   .chart-content {
     position: relative;
-    height: 340rpx;
+    height: 450rpx;
     padding: 0 24rpx;
     box-sizing: border-box;
   }
 
-  .plot-area {
-    position: relative;
-    height: 260rpx;
-    margin: 0 0 42rpx;
-  }
-
   .bar-plot-area {
     position: relative;
-    height: 260rpx;
-    margin-bottom: 42rpx;
+    height: 360rpx;
+    margin-bottom: 50rpx;
   }
 
   .bar-column {
     position: absolute;
-    bottom: 34rpx;
+    bottom: 0;
     width: 54rpx;
+    height: 360rpx;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     transform: translateX(-50%);
   }
 
@@ -242,7 +231,7 @@
 
   .bar-label {
     position: absolute;
-    top: 280rpx;
+    top: 378rpx;
     width: 120rpx;
     overflow: hidden;
     color: var(--theme-text-secondary);
@@ -258,18 +247,6 @@
     right: 0;
     height: 1rpx;
     background: var(--theme-border-light);
-  }
-
-  .grid-line--top {
-    top: 12%;
-  }
-
-  .grid-line--middle {
-    top: 50%;
-  }
-
-  .grid-line--bottom {
-    top: 88%;
   }
 
   .line-segment {
@@ -309,7 +286,7 @@
     left: 24rpx;
     right: 24rpx;
     bottom: 0;
-    height: 38rpx;
+    height: 44rpx;
   }
 
   .label-item {

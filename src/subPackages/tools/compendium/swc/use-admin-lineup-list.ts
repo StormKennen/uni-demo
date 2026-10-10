@@ -204,12 +204,26 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     refreshList()
   }
 
+  const decodeRouteValue = (value: string | undefined): string => {
+    if (!value) return ''
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+
   const applyRouteQuery = (options: Record<string, string | undefined>) => {
-    keyword.value = options.keyword || ''
-    selectedType.value = options.type || ALL_VALUE
-    selectedStatus.value = options.status || ALL_VALUE
-    selectedScope.value = options.scope === 'mine' || options.scope === 'favorites' ? options.scope : 'all'
-    selectedCharacterFilters.value = (options.characterIds || '')
+    const keywordValue = decodeRouteValue(options.keyword)
+    const typeValue = decodeRouteValue(options.type)
+    const statusValue = decodeRouteValue(options.status)
+    const scopeValue = decodeRouteValue(options.scope)
+    const characterIdsValue = decodeRouteValue(options.characterIds)
+    keyword.value = keywordValue
+    selectedType.value = typeValue || ALL_VALUE
+    selectedStatus.value = statusValue || ALL_VALUE
+    selectedScope.value = scopeValue === 'mine' || scopeValue === 'favorites' ? scopeValue : 'all'
+    selectedCharacterFilters.value = characterIdsValue
       .split(',')
       .map(item => item.trim())
       .filter(Boolean)

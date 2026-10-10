@@ -6,11 +6,12 @@
     :share-timeline-query="sharePayload.timelineQuery"
     :share-timeline-title="sharePayload.title"
     back-fallback="/subPackages/tools/altitude/index?mode=manual"
-    nav-bg-color="var(--theme-surface)"
-    nav-init-bg-color="var(--theme-surface)"
+    nav-bg-color="#fff"
+    nav-init-bg-color="#fff"
+    nav-title-color="#111827"
     nav-divider>
     <view class="detail-page">
-      <view v-if="loading" class="state-card">正在加载景区海拔快照…</view>
+      <view v-if="loading" class="state-card">正在加载景区海拔…</view>
       <view v-else-if="errorMessage" class="state-card error-state">
         <text>{{ errorMessage }}</text>
         <button class="retry-button" @click="loadProfile">重试</button>
@@ -22,10 +23,10 @@
             <text class="hero-title">{{ profile.area.name || areaName || '景区海拔' }}</text>
             <text class="hero-location">{{ areaLocation }}</text>
           </view>
-          <view class="snapshot-badge">
+          <!-- <view class="snapshot-badge">
             <uni-icons type="bars" size="22" color="var(--theme-brand)" />
-            <text>海拔快照</text>
-          </view>
+            <text>海拔</text>
+          </view> -->
         </view>
 
         <view class="summary-card">
@@ -43,22 +44,22 @@
           </view>
         </view>
 
-        <view class="notice-card">
+        <!-- <view class="notice-card">
           <uni-icons type="info" size="18" color="var(--theme-brand)" />
-          <text>本页展示景区海拔快照数据，仅供参考；分享后可直接打开本景区页面。</text>
-        </view>
+          <text>本页展示景区海拔数据，仅供参考；分享后可直接打开本景区页面。</text>
+        </view> -->
 
         <view class="mode-tabs">
           <view class="mode-tab" :class="{ active: detailMode === 'points' }" @click="detailMode = 'points'">数据列表</view>
           <view class="mode-tab" :class="{ active: detailMode === 'chart' }" @click="detailMode = 'chart'">海拔图表</view>
         </view>
 
-        <view v-if="!profile.points.length" class="state-card">该景区暂无可展示的景点海拔快照</view>
+        <view v-if="!profile.points.length" class="state-card">该景区暂无可展示的景点海拔</view>
         <view v-else-if="detailMode === 'points'" class="points-card">
           <view v-for="point in profile.points" :key="point.pointId" class="point-row">
             <view class="point-copy">
               <text class="point-name">{{ point.name }}</text>
-              <text class="point-caption">景区景点 · 快照数据</text>
+              <text class="point-caption">景区景点</text>
             </view>
             <text class="point-altitude">{{ formatAltitude(point.altitudeMeters) }}</text>
           </view>
@@ -93,8 +94,8 @@
   const pageTitle = computed(() => profile.value?.area.name || areaName.value || '景区海拔')
   const areaLocation = computed(() => {
     const area = profile.value?.area
-    if (!area) return '景区海拔快照数据'
-    return [area.province, area.city, area.county].filter(Boolean).join(' · ') || '景区海拔快照数据'
+    if (!area) return '景区海拔数据'
+    return [area.province, area.city, area.county].filter(Boolean).join(' · ') || '景区海拔数据'
   })
   const sharePayload = computed(() =>
     buildScenicDetailShare({
@@ -124,7 +125,7 @@
       profile.value = unwrapApiData<ScenicElevationProfileResponse>(response)
     } catch {
       profile.value = null
-      errorMessage.value = '景区海拔快照加载失败，请稍后重试'
+      errorMessage.value = '景区海拔加载失败，请稍后重试'
     } finally {
       loading.value = false
     }

@@ -5,21 +5,45 @@
     :share-path="sharePath"
     :share-timeline-query="shareTimelineQuery"
     :share-timeline-title="shareTitle"
-    back-fallback="/pages/tools/index">
+    back-fallback="/pages/tools/index"
+    nav-bg-color="#fff"
+    nav-init-bg-color="#fff"
+    nav-title-color="#111827"
+    nav-divider>
     <view class="altitude-page">
       <view class="intro-card">
         <view class="intro-icon">
           <uni-icons type="location" size="30" color="var(--theme-brand)" />
         </view>
         <view class="intro-copy">
-          <text class="intro-title">查询当前位置海拔</text>
-          <text class="intro-description">定位是可选的，也可以直接选择景区、景点或地图位置</text>
+          <text class="intro-title">海拔查询</text>
         </view>
       </view>
 
-      <view class="mode-tabs">
-        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="switchMode('location')">当前定位</view>
-        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">选择地点</view>
+      <view class="mode-actions">
+        <view
+          class="mode-action-card mode-action-card--primary"
+          :class="{ active: queryMode === 'location' }"
+          @click="handleLocationAction">
+          <view class="mode-action-icon">
+            <uni-icons type="location-filled" size="28" color="var(--theme-brand)" />
+          </view>
+          <view class="mode-action-copy">
+            <text class="mode-action-title">{{ result ? '重新获取海拔' : '获取当前海拔' }}</text>
+            <text class="mode-action-description">使用当前位置快速查询</text>
+          </view>
+          <uni-icons type="right" size="18" color="var(--theme-text-tertiary)" />
+        </view>
+        <view class="mode-action-card" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">
+          <view class="mode-action-icon mode-action-icon--scenic">
+            <uni-icons type="map-filled" size="28" color="var(--theme-brand)" />
+          </view>
+          <view class="mode-action-copy">
+            <text class="mode-action-title">景区海拔</text>
+            <!-- <text class="mode-action-description">按地区查看景区海拔</text> -->
+          </view>
+          <uni-icons type="right" size="18" color="var(--theme-text-tertiary)" />
+        </view>
       </view>
 
       <view v-if="queryMode === 'manual' && !result" class="manual-search-card">
@@ -36,14 +60,12 @@
             <uni-icons type="location" size="32" color="var(--theme-brand)" />
           </view>
           <text class="state-title">需要使用位置信息</text>
-          <text class="state-description">仅用于查询并展示当前位置海拔，不保存位置历史。你可以在微信设置中随时关闭定位权限。</text>
           <button class="consent-button" :disabled="loading" @click="requestLocationAndQuery">定位并查询</button>
         </view>
 
         <view v-else-if="loading" class="state-box">
           <uni-icons type="spinner-cycle" size="32" color="var(--theme-brand)" />
-          <text class="state-title">正在定位并查询海拔…</text>
-          <text class="state-description">首次查询可能需要几秒钟</text>
+          <text class="state-title">正在获取当前海拔…</text>
         </view>
 
         <view v-else-if="errorMessage" class="state-box">
@@ -57,82 +79,53 @@
 
         <view v-else-if="result" class="reading-box">
           <view class="reading-header">
-            <text class="result-label">海拔高度</text>
+            <text class="result-label">当前海拔</text>
             <view class="located-badge">
               <view class="located-dot" />
               <text>{{ altitudeStatus.label }}</text>
             </view>
           </view>
 
-          <view class="dashboard-gauge">
-            <view class="dashboard-readout">
-              <text class="dashboard-value">{{ result.altitudeMeters.toFixed(1) }}</text>
-              <text class="dashboard-unit">m</text>
-            </view>
-            <text class="dashboard-caption">{{ altitudeStatus.notice }}</text>
-
-            <view class="dashboard-scale">
-              <view class="scale-track">
-                <view class="scale-zone scale-zone-normal" />
-                <view class="scale-zone scale-zone-attention" />
-                <view class="scale-zone scale-zone-high" />
-                <view class="scale-zone scale-zone-danger" />
-                <view class="scale-progress" :style="{ width: `${gaugePercent}%` }" />
-                <view class="scale-marker" :style="{ left: `${gaugePercent}%` }" />
+          <view class="mountain-gauge">
+            <view class="mountain-art">
+              <view class="mountain-line mountain-line--one" />
+              <view class="mountain-line mountain-line--two" />
+              <view class="mountain-line mountain-line--three" />
+              <view class="mountain-line mountain-line--four" />
+              <view class="mountain-line mountain-line--five" />
+              <view class="mountain-base-line" />
+              <view class="mountain-marker" :style="{ bottom: `${gaugePercent}%` }">
+                <view class="mountain-marker-dot" />
+                <text class="mountain-marker-value">{{ result.altitudeMeters.toFixed(1) }}m</text>
               </view>
-              <view class="scale-labels">
+            </view>
+
+            <view class="vertical-scale">
+              <view class="vertical-ticks">
                 <text v-for="tick in gaugeTicks" :key="tick">{{ tick }}m</text>
               </view>
-            </view>
-
-            <view class="dashboard-meta">
-              <view class="dashboard-meta-item">
-                <text class="dashboard-meta-label">位置</text>
-                <text class="dashboard-meta-value">{{ result.latitude.toFixed(4) }}°N · {{ result.longitude.toFixed(4) }}°E</text>
-              </view>
-              <view class="dashboard-meta-item">
-                <text class="dashboard-meta-label">来源</text>
-                <text class="dashboard-meta-value">{{
-                  result.source === 'database' ? '预采集数据' : result.source === 'live' ? '实时高程' : '定位查询'
-                }}</text>
+              <view class="vertical-track">
+                <view class="vertical-zone vertical-zone-normal" :style="gaugeZones.normal" />
+                <view class="vertical-zone vertical-zone-attention" :style="gaugeZones.attention" />
+                <view class="vertical-zone vertical-zone-high" :style="gaugeZones.high" />
+                <view class="vertical-zone vertical-zone-danger" :style="gaugeZones.danger" />
+                <view class="vertical-progress" :style="{ height: `${gaugePercent}%` }" />
+                <view class="vertical-marker" :style="{ bottom: `${gaugePercent}%` }" />
               </view>
             </view>
+            <text class="mountain-caption">{{ altitudeStatus.notice }}</text>
           </view>
         </view>
 
         <view v-else class="state-box">
           <uni-icons type="location" size="32" color="var(--theme-brand)" />
           <text class="state-title">准备查询当前位置</text>
-          <text class="state-description">点击下方按钮开始定位</text>
+          <text class="state-description">点击上方按钮开始定位</text>
         </view>
       </view>
-
-      <view v-if="result" class="detail-card">
-        <view class="detail-row">
-          <text class="detail-label">纬度</text>
-          <text class="detail-value">{{ result.latitude.toFixed(6) }}</text>
-        </view>
-        <view class="detail-row">
-          <text class="detail-label">经度</text>
-          <text class="detail-value">{{ result.longitude.toFixed(6) }}</text>
-        </view>
-        <view class="detail-row">
-          <text class="detail-label">查询时间</text>
-          <text class="detail-value">{{ formattedQueryTime }}</text>
-        </view>
-      </view>
-
-      <button
-        v-if="queryMode === 'location' && !showLocationPrompt"
-        class="locate-button"
-        :disabled="loading"
-        @click="queryCurrentAltitude">
-        {{ loading ? '查询中…' : result || errorMessage ? '重新定位' : '查询当前位置海拔' }}
+      <button v-if="queryMode === 'location' && result && !loading" class="refresh-text-button" @click="queryCurrentAltitude">
+        重新获取当前海拔
       </button>
-
-      <text v-if="queryMode === 'location' && result?.source === 'database'" class="source-note"> 数据库预采集参考海拔，仅供参考 </text>
-      <text v-else-if="queryMode === 'location' && result?.source === 'live'" class="source-note"> 坐标高程实时查询结果，仅供参考 </text>
-      <text v-else-if="queryMode === 'location'" class="source-note">海拔数据由高程服务提供，仅供参考</text>
     </view>
   </PageLayout>
 </template>
@@ -188,23 +181,35 @@
   const scenicFilters = ref<ScenicSelectorShareFilters>({})
 
   const gaugeScale = computed(() => {
-    const altitude = result.value?.altitudeMeters ?? 0
-    const interval = altitude > 2000 ? 500 : altitude > 800 ? 200 : 100
-    const min = Math.min(0, Math.floor((altitude - interval) / interval) * interval)
-    const max = Math.max(interval * 5, Math.ceil((altitude + interval) / interval) * interval)
-    const step = (max - min) / 4
+    const altitude = Math.max(0, result.value?.altitudeMeters ?? 0)
+    const max = Math.max(4000, Math.ceil((altitude + 500) / 500) * 500)
+    const step = max / 4
     const ticks = Array.from({ length: 5 }, (_, index) => Math.round(max - step * index))
 
-    return { min, max, ticks }
+    return { max, ticks }
   })
 
   const gaugeTicks = computed(() => gaugeScale.value.ticks)
 
   const gaugePercent = computed(() => {
     if (!result.value) return 0
-    const { min, max } = gaugeScale.value
-    const percent = ((result.value.altitudeMeters - min) / (max - min)) * 100
+    const percent = (Math.max(0, result.value.altitudeMeters) / gaugeScale.value.max) * 100
     return Math.min(100, Math.max(0, percent))
+  })
+
+  const gaugeZones = computed(() => {
+    const max = gaugeScale.value.max
+    const zoneStyle = (start: number, end: number) => ({
+      bottom: `${(start / max) * 100}%`,
+      height: `${((end - start) / max) * 100}%`,
+    })
+
+    return {
+      normal: zoneStyle(0, 1500),
+      attention: zoneStyle(1500, 2500),
+      high: zoneStyle(2500, 3500),
+      danger: zoneStyle(3500, max),
+    }
   })
 
   const altitudeWarning = computed(() => getAltitudeWarningConfig(result.value?.altitudeMeters))
@@ -219,11 +224,6 @@
     notice: altitudeWarning.value.notice,
   }))
 
-  const formattedQueryTime = computed(() => {
-    if (!result.value) return ''
-    return result.value.queriedAt.replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')
-  })
-
   const switchMode = (mode: QueryMode) => {
     queryMode.value = mode
     if (mode === 'manual') {
@@ -236,6 +236,11 @@
     sourceMode.value = 'location'
     showLocationPrompt.value = false
     syncShareState()
+  }
+
+  const handleLocationAction = () => {
+    if (queryMode.value !== 'location') switchMode('location')
+    if (!loading.value) void queryCurrentAltitude()
   }
 
   const syncShareState = () => {
@@ -270,7 +275,6 @@
   }))
 
   const queryAltitude = async (point: AltitudePoint) => {
-    loading.value = true
     errorMessage.value = ''
     permissionDenied.value = false
     try {
@@ -294,8 +298,6 @@
       const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
       errorMessage.value = message || '海拔查询失败，请稍后重试'
       throw error
-    } finally {
-      loading.value = false
     }
   }
 
@@ -369,6 +371,7 @@
   const queryCurrentAltitude = async () => {
     if (loading.value) return
 
+    loading.value = true
     errorMessage.value = ''
     permissionDenied.value = false
 
@@ -386,6 +389,8 @@
         const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
         errorMessage.value = message.includes('定位') ? message : '请检查定位权限和网络连接后重试'
       }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -400,6 +405,7 @@
       sourceMode.value = 'location'
       queryMode.value = 'location'
       syncShareState()
+      void queryCurrentAltitude()
     }
   })
 
@@ -447,28 +453,67 @@
     flex-direction: column;
   }
 
-  .mode-tabs {
+  .mode-actions {
     display: flex;
+    flex-direction: column;
+    gap: 16rpx;
     margin-top: 24rpx;
-    padding: 6rpx;
-    border-radius: 18rpx;
+  }
+
+  .mode-action-card {
+    display: flex;
+    align-items: center;
+    gap: 18rpx;
+    min-height: 126rpx;
+    padding: 22rpx 24rpx;
+    border: 1rpx solid var(--theme-border-light);
+    border-radius: 24rpx;
+    background: var(--theme-surface);
+    box-shadow: 0 10rpx 28rpx var(--theme-shadow-xs);
+    box-sizing: border-box;
+  }
+
+  .mode-action-card.active {
+    border-color: var(--theme-brand);
+    background: var(--theme-brand-soft);
+  }
+
+  .mode-action-card--primary {
+    border-color: var(--theme-brand);
+  }
+
+  .mode-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72rpx;
+    height: 72rpx;
+    flex-shrink: 0;
+    border-radius: 22rpx;
+    background: var(--theme-brand-soft);
+  }
+
+  .mode-action-icon--scenic {
     background: var(--theme-surface-2);
   }
 
-  .mode-tab {
+  .mode-action-copy {
+    min-width: 0;
+    display: flex;
     flex: 1;
-    padding: 18rpx 0;
-    border-radius: 14rpx;
-    color: var(--theme-text-secondary);
-    font-size: 26rpx;
-    text-align: center;
+    flex-direction: column;
+    gap: 8rpx;
   }
 
-  .mode-tab.active {
-    background: var(--theme-surface);
-    color: var(--theme-brand);
+  .mode-action-title {
+    color: var(--theme-text-primary);
+    font-size: 30rpx;
     font-weight: 700;
-    box-shadow: 0 4rpx 12rpx var(--theme-shadow-xs);
+  }
+
+  .mode-action-description {
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
   }
 
   .manual-search-card {
@@ -1121,22 +1166,199 @@
     font-weight: 600;
   }
 
-  .locate-button {
-    margin-top: 28rpx;
-    border: 0;
-    border-radius: 18rpx;
+  .mountain-gauge {
+    width: 100%;
+    margin-top: 18rpx;
+    padding: 20rpx 18rpx 18rpx;
+    border: 1rpx solid var(--theme-border);
+    border-radius: 28rpx;
+    background: var(--theme-surface-2);
+    box-sizing: border-box;
+  }
+
+  .mountain-art {
+    position: relative;
+    height: 300rpx;
+    overflow: hidden;
+    border-bottom: 1rpx solid var(--theme-border);
+  }
+
+  .mountain-line,
+  .mountain-base-line {
+    position: absolute;
+    height: 5rpx;
+    border-radius: 999rpx;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 0 10rpx var(--meter-color, var(--theme-brand));
+    transform-origin: left center;
+  }
+
+  .mountain-line--one {
+    bottom: 24%;
+    left: 6%;
+    width: 25%;
+    transform: rotate(-46deg);
+  }
+
+  .mountain-line--two {
+    bottom: 42%;
+    left: 24%;
+    width: 22%;
+    transform: rotate(42deg);
+  }
+
+  .mountain-line--three {
+    bottom: 25%;
+    left: 41%;
+    width: 27%;
+    transform: rotate(-43deg);
+  }
+
+  .mountain-line--four {
+    bottom: 49%;
+    left: 62%;
+    width: 19%;
+    transform: rotate(43deg);
+  }
+
+  .mountain-line--five {
+    bottom: 35%;
+    left: 77%;
+    width: 18%;
+    transform: rotate(-18deg);
+  }
+
+  .mountain-base-line {
+    right: 4%;
+    bottom: 22%;
+    left: 4%;
+    height: 3rpx;
+    opacity: 0.35;
+    box-shadow: none;
+  }
+
+  .mountain-marker {
+    position: absolute;
+    right: 8%;
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+    transform: translateY(50%);
+    transition: bottom 350ms ease;
+  }
+
+  .mountain-marker-dot {
+    width: 18rpx;
+    height: 18rpx;
+    border: 5rpx solid var(--theme-surface-2);
+    border-radius: 50%;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 0 0 3rpx var(--meter-color, var(--theme-brand));
+  }
+
+  .mountain-marker-value {
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 23rpx;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .vertical-scale {
+    display: flex;
+    align-items: stretch;
+    height: 420rpx;
+    margin-top: 18rpx;
+  }
+
+  .vertical-ticks {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    width: 92rpx;
+    padding: 4rpx 16rpx 4rpx 0;
+    color: var(--theme-text-tertiary);
+    font-size: 19rpx;
+    text-align: right;
+  }
+
+  .vertical-track {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    border: 6rpx solid var(--theme-surface);
+    border-radius: 28rpx;
+    background: var(--theme-bg);
+    box-shadow: inset 0 0 0 1rpx var(--theme-border);
+  }
+
+  .vertical-zone,
+  .vertical-progress {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  .vertical-zone-normal {
     background: var(--theme-brand);
-    color: var(--theme-surface);
-    font-size: 30rpx;
-    line-height: 96rpx;
   }
 
-  .locate-button::after {
+  .vertical-zone-attention {
+    background: var(--theme-warning);
+  }
+
+  .vertical-zone-high {
+    background: var(--theme-danger);
+    opacity: 0.78;
+  }
+
+  .vertical-zone-danger {
+    background: var(--theme-danger);
+  }
+
+  .vertical-progress {
+    border-radius: 22rpx;
+    background: linear-gradient(180deg, var(--meter-color-deep, var(--theme-danger)), var(--meter-color, var(--theme-brand)));
+    box-shadow: 0 0 18rpx var(--meter-color, var(--theme-brand));
+    opacity: 0.9;
+    transition: height 350ms ease;
+  }
+
+  .vertical-marker {
+    position: absolute;
+    right: 0;
+    left: 0;
+    width: auto;
+    height: 8rpx;
+    border-radius: 999rpx;
+    background: var(--theme-surface);
+    box-shadow: 0 0 0 4rpx var(--meter-color, var(--theme-brand));
+    transform: translateY(50%);
+    transition: bottom 350ms ease;
+  }
+
+  .mountain-caption {
+    display: block;
+    margin-top: 16rpx;
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 23rpx;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .refresh-text-button {
+    display: block;
+    margin: 16rpx auto 0;
+    padding: 0 16rpx;
     border: 0;
+    color: var(--theme-brand);
+    background: transparent;
+    font-size: 24rpx;
+    line-height: 64rpx;
   }
 
-  .locate-button[disabled] {
-    opacity: 0.55;
+  .refresh-text-button::after {
+    border: 0;
   }
 
   .source-note {

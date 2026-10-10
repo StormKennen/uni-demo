@@ -61,7 +61,7 @@ export const buildScenicDetailShare = (options: { areaId: string; areaName?: str
     areaId: options.areaId.trim(),
     name: options.areaName?.trim(),
   }
-  const title = options.areaName?.trim() ? `查询海拔｜${options.areaName.trim()}` : '查询海拔｜景区海拔快照'
+  const title = options.areaName?.trim() ? `查询海拔｜${options.areaName.trim()}` : '查询海拔'
   const queryString = compactQuery(query)
 
   return {
