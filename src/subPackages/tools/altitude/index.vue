@@ -11,38 +11,21 @@
     nav-title-color="#111827"
     nav-divider>
     <view class="altitude-page">
-      <view class="intro-card">
+      <!-- <view class="intro-card">
         <view class="intro-icon">
           <uni-icons type="location" size="30" color="var(--theme-brand)" />
         </view>
         <view class="intro-copy">
           <text class="intro-title">海拔查询</text>
         </view>
-      </view>
+      </view> -->
 
-      <view class="mode-actions">
-        <view
-          class="mode-action-card mode-action-card--primary"
-          :class="{ active: queryMode === 'location' }"
-          @click="handleLocationAction">
-          <view class="mode-action-icon">
-            <uni-icons type="location-filled" size="28" color="var(--theme-brand)" />
-          </view>
-          <view class="mode-action-copy">
-            <text class="mode-action-title">{{ result ? '重新获取海拔' : '获取当前海拔' }}</text>
-            <text class="mode-action-description">使用当前位置快速查询</text>
-          </view>
-          <uni-icons type="right" size="18" color="var(--theme-text-tertiary)" />
+      <view class="mode-tabs">
+        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="handleLocationAction">
+          <text class="mode-tab-label">获取当前海拔</text>
         </view>
-        <view class="mode-action-card" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">
-          <view class="mode-action-icon mode-action-icon--scenic">
-            <uni-icons type="map-filled" size="28" color="var(--theme-brand)" />
-          </view>
-          <view class="mode-action-copy">
-            <text class="mode-action-title">景区海拔</text>
-            <!-- <text class="mode-action-description">按地区查看景区海拔</text> -->
-          </view>
-          <uni-icons type="right" size="18" color="var(--theme-text-tertiary)" />
+        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">
+          <text class="mode-tab-label">景区海拔</text>
         </view>
       </view>
 
@@ -80,40 +63,50 @@
         <view v-else-if="result" class="reading-box">
           <view class="reading-header">
             <text class="result-label">当前海拔</text>
-            <view class="located-badge">
-              <view class="located-dot" />
-              <text>{{ altitudeStatus.label }}</text>
-            </view>
           </view>
 
-          <view class="mountain-gauge">
-            <view class="mountain-art">
-              <view class="mountain-line mountain-line--one" />
-              <view class="mountain-line mountain-line--two" />
-              <view class="mountain-line mountain-line--three" />
-              <view class="mountain-line mountain-line--four" />
-              <view class="mountain-line mountain-line--five" />
-              <view class="mountain-base-line" />
-              <view class="mountain-marker" :style="{ bottom: `${gaugePercent}%` }">
-                <view class="mountain-marker-dot" />
-                <text class="mountain-marker-value">{{ result.altitudeMeters.toFixed(1) }}m</text>
+          <view class="elevation-dashboard">
+            <view class="dashboard-overline">
+              <view class="dashboard-status">
+                <view class="dashboard-live-dot" />
+                <text class="dashboard-status-label">{{ altitudeStatus.label }}</text>
+              </view>
+              <text class="dashboard-range">MAX {{ gaugeScale.max }}m</text>
+            </view>
+
+            <view class="dial-wrap">
+              <view class="dial-bezel" />
+              <view class="dial-inner-ring" />
+              <view v-for="segment in gaugeSegments" :key="segment.index" class="dial-segment" :style="segment.style" />
+              <view class="dial-scan" />
+              <view class="dial-needle" :style="{ transform: `translateX(-50%) rotate(${gaugeNeedleAngle}deg)` }" />
+              <view class="dial-hub">
+                <view class="dial-hub-dot" />
+              </view>
+              <view class="dial-readout">
+                <text class="dial-readout-caption">当前海拔</text>
+                <view class="dial-value-row">
+                  <text class="dial-value">{{ result.altitudeMeters.toFixed(1) }}</text>
+                  <text class="dial-unit">m</text>
+                </view>
+              </view>
+              <view v-for="marker in gaugeMarkers" :key="marker.value" class="dial-marker" :style="marker.style">
+                <view class="dial-marker-tick" :style="{ backgroundColor: marker.color }" />
+                <text class="dial-marker-label" :style="{ color: marker.color }">{{ marker.label }}</text>
               </view>
             </view>
 
-            <view class="vertical-scale">
-              <view class="vertical-ticks">
-                <text v-for="tick in gaugeTicks" :key="tick">{{ tick }}m</text>
-              </view>
-              <view class="vertical-track">
-                <view class="vertical-zone vertical-zone-normal" :style="gaugeZones.normal" />
-                <view class="vertical-zone vertical-zone-attention" :style="gaugeZones.attention" />
-                <view class="vertical-zone vertical-zone-high" :style="gaugeZones.high" />
-                <view class="vertical-zone vertical-zone-danger" :style="gaugeZones.danger" />
-                <view class="vertical-progress" :style="{ height: `${gaugePercent}%` }" />
-                <view class="vertical-marker" :style="{ bottom: `${gaugePercent}%` }" />
+            <view class="dashboard-notice">
+              <text class="dashboard-notice-label">高度状态</text>
+              <text class="dashboard-notice-text">{{ altitudeStatus.notice }}</text>
+            </view>
+
+            <view class="dashboard-legend">
+              <view v-for="warning in altitudeWarningConfigs" :key="warning.key" class="dashboard-legend-item">
+                <view class="dashboard-legend-dot" :style="{ backgroundColor: warning.color }" />
+                <text>{{ warning.legendLabel }}</text>
               </view>
             </view>
-            <text class="mountain-caption">{{ altitudeStatus.notice }}</text>
           </view>
         </view>
 
@@ -134,7 +127,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
-  import { getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
+  import { ALTITUDE_WARNING_CONFIGS, getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
   import {
     buildScenicSelectorShare,
     normalizeScenicSelectorShareFilters,
@@ -158,6 +151,7 @@
   }
 
   type QueryMode = 'location' | 'manual'
+  const GAUGE_MAX_ALTITUDE = 10000
 
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
@@ -179,37 +173,61 @@
   const sharePath = ref('/subPackages/tools/altitude/index?mode=location')
   const shareTimelineQuery = ref('mode=location')
   const scenicFilters = ref<ScenicSelectorShareFilters>({})
-
-  const gaugeScale = computed(() => {
-    const altitude = Math.max(0, result.value?.altitudeMeters ?? 0)
-    const max = Math.max(4000, Math.ceil((altitude + 500) / 500) * 500)
-    const step = max / 4
-    const ticks = Array.from({ length: 5 }, (_, index) => Math.round(max - step * index))
-
-    return { max, ticks }
-  })
-
-  const gaugeTicks = computed(() => gaugeScale.value.ticks)
+  const altitudeWarningConfigs = ALTITUDE_WARNING_CONFIGS
+  const gaugeScale = { max: GAUGE_MAX_ALTITUDE }
 
   const gaugePercent = computed(() => {
     if (!result.value) return 0
-    const percent = (Math.max(0, result.value.altitudeMeters) / gaugeScale.value.max) * 100
+    const percent = (Math.max(0, result.value.altitudeMeters) / gaugeScale.max) * 100
     return Math.min(100, Math.max(0, percent))
   })
 
-  const gaugeZones = computed(() => {
-    const max = gaugeScale.value.max
-    const zoneStyle = (start: number, end: number) => ({
-      bottom: `${(start / max) * 100}%`,
-      height: `${((end - start) / max) * 100}%`,
-    })
+  const gaugeNeedleAngle = computed(() => 225 + (gaugePercent.value / 100) * 270)
 
-    return {
-      normal: zoneStyle(0, 1500),
-      attention: zoneStyle(1500, 2500),
-      high: zoneStyle(2500, 3500),
-      danger: zoneStyle(3500, max),
-    }
+  const gaugeSegments = computed(() => {
+    const segmentCount = 32
+    const progress = gaugePercent.value / 100
+    const max = gaugeScale.max
+
+    return Array.from({ length: segmentCount }, (_, index) => {
+      const ratio = index / (segmentCount - 1)
+      const angle = 135 + ratio * 270
+      const radians = (angle * Math.PI) / 180
+      const warning = getAltitudeWarningConfig(ratio * max)
+
+      return {
+        index,
+        style: {
+          left: `${50 + Math.cos(radians) * 42}%`,
+          top: `${54 + Math.sin(radians) * 42}%`,
+          transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
+          backgroundColor: warning.color,
+          boxShadow: ratio <= progress ? `0 0 10rpx ${warning.color}` : `0 0 4rpx ${warning.color}`,
+          opacity: ratio <= progress ? '1' : '0.46',
+        },
+      }
+    })
+  })
+
+  const gaugeMarkers = computed(() => {
+    const markerValues = [0, 1500, 2500, 3500, 5000, GAUGE_MAX_ALTITUDE]
+
+    return markerValues.map(value => {
+      const ratio = value / gaugeScale.max
+      const angle = 135 + ratio * 270
+      const radians = (angle * Math.PI) / 180
+      const warning = getAltitudeWarningConfig(value)
+
+      return {
+        value,
+        label: `${value}m`,
+        color: warning.color,
+        style: {
+          left: `${50 + Math.cos(radians) * 48}%`,
+          top: `${54 + Math.sin(radians) * 48}%`,
+        },
+      }
+    })
   })
 
   const altitudeWarning = computed(() => getAltitudeWarningConfig(result.value?.altitudeMeters))
@@ -423,7 +441,6 @@
   }
 
   .intro-card,
-  .result-card,
   .detail-card {
     border-radius: 24rpx;
     background: var(--theme-surface);
@@ -453,67 +470,47 @@
     flex-direction: column;
   }
 
-  .mode-actions {
+  .mode-tabs {
     display: flex;
-    flex-direction: column;
-    gap: 16rpx;
+    border-bottom: 1rpx solid var(--theme-border);
     margin-top: 24rpx;
   }
 
-  .mode-action-card {
-    display: flex;
-    align-items: center;
-    gap: 18rpx;
-    min-height: 126rpx;
-    padding: 22rpx 24rpx;
-    border: 1rpx solid var(--theme-border-light);
-    border-radius: 24rpx;
-    background: var(--theme-surface);
-    box-shadow: 0 10rpx 28rpx var(--theme-shadow-xs);
-    box-sizing: border-box;
-  }
-
-  .mode-action-card.active {
-    border-color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-  }
-
-  .mode-action-card--primary {
-    border-color: var(--theme-brand);
-  }
-
-  .mode-action-icon {
+  .mode-tab {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 72rpx;
-    height: 72rpx;
-    flex-shrink: 0;
-    border-radius: 22rpx;
-    background: var(--theme-brand-soft);
-  }
-
-  .mode-action-icon--scenic {
-    background: var(--theme-surface-2);
-  }
-
-  .mode-action-copy {
-    min-width: 0;
-    display: flex;
+    min-height: 72rpx;
     flex: 1;
-    flex-direction: column;
-    gap: 8rpx;
+    padding: 0 12rpx;
   }
 
-  .mode-action-title {
-    color: var(--theme-text-primary);
-    font-size: 30rpx;
+  .mode-tab.active {
+    background: transparent;
+  }
+
+  .mode-tab.active::after {
+    position: absolute;
+    right: 34rpx;
+    bottom: -1rpx;
+    left: 34rpx;
+    height: 5rpx;
+    border-radius: 999rpx;
+    background: var(--theme-brand);
+    content: '';
+  }
+
+  .mode-tab-label {
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .mode-tab.active .mode-tab-label {
+    color: var(--theme-brand);
     font-weight: 700;
-  }
-
-  .mode-action-description {
-    color: var(--theme-text-tertiary);
-    font-size: 22rpx;
   }
 
   .manual-search-card {
@@ -735,7 +732,7 @@
     justify-content: center;
     min-height: 390rpx;
     margin-top: 28rpx;
-    padding: 36rpx;
+    padding: 0;
     box-sizing: border-box;
   }
 
@@ -850,292 +847,290 @@
     width: 100%;
   }
 
-  .dashboard-gauge {
+  .elevation-dashboard {
     width: 100%;
-    padding: 28rpx 24rpx 22rpx;
     margin-top: 22rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 28rpx;
-    background: var(--theme-surface-2);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
-  .dashboard-readout {
+  .dashboard-overline {
     display: flex;
-    align-items: baseline;
-  }
-
-  .dashboard-value {
-    color: var(--meter-color, var(--theme-brand));
-    font-size: 112rpx;
-    font-weight: 800;
-    letter-spacing: -3rpx;
-    line-height: 1;
-  }
-
-  .dashboard-unit {
-    margin-left: 12rpx;
+    align-items: center;
     color: var(--theme-text-secondary);
-    font-size: 30rpx;
+    font-size: 20rpx;
+  }
+
+  .dashboard-status {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+
+  .dashboard-status-label {
+    color: var(--meter-color, var(--theme-brand));
     font-weight: 700;
   }
 
-  .dashboard-caption {
-    display: block;
-    margin-top: 14rpx;
-    color: var(--meter-color, var(--theme-brand));
-    font-size: 24rpx;
-    line-height: 1.5;
-  }
-
-  .dashboard-scale {
-    margin-top: 30rpx;
-  }
-
-  .scale-track {
-    position: relative;
-    display: flex;
-    height: 24rpx;
-    overflow: visible;
-    border-radius: 999rpx;
-    background: var(--theme-border);
-  }
-
-  .scale-zone {
-    flex: 1;
-    height: 100%;
-  }
-
-  .scale-zone:first-child {
-    border-radius: 999rpx 0 0 999rpx;
-  }
-
-  .scale-zone:last-of-type {
-    border-radius: 0 999rpx 999rpx 0;
-  }
-
-  .scale-zone-normal {
-    background: var(--theme-brand);
-  }
-
-  .scale-zone-attention {
-    background: var(--theme-warning);
-  }
-
-  .scale-zone-high {
-    background: var(--theme-danger);
-    opacity: 0.78;
-  }
-
-  .scale-zone-danger {
-    background: var(--theme-danger);
-  }
-
-  .scale-progress {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    border-radius: 999rpx;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 4rpx 12rpx var(--theme-shadow-sm);
-    transition: width 450ms ease;
-  }
-
-  .scale-marker {
-    position: absolute;
-    top: 50%;
-    width: 34rpx;
-    height: 34rpx;
-    border: 6rpx solid var(--theme-surface);
-    border-radius: 50%;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 4rpx 12rpx var(--theme-shadow-sm);
-    transform: translate(-50%, -50%);
-    transition: left 450ms ease;
-  }
-
-  .scale-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 14rpx;
-    color: var(--theme-text-tertiary);
-    font-size: 20rpx;
-  }
-
-  .dashboard-meta {
-    display: flex;
-    margin-top: 26rpx;
-    padding-top: 20rpx;
-    border-top: 1rpx solid var(--theme-border);
-  }
-
-  .dashboard-meta-item {
-    display: flex;
-    flex: 1;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .dashboard-meta-item + .dashboard-meta-item {
-    padding-left: 20rpx;
-    border-left: 1rpx solid var(--theme-border);
-  }
-
-  .dashboard-meta-label {
-    color: var(--theme-text-tertiary);
-    font-size: 20rpx;
-  }
-
-  .dashboard-meta-value {
-    max-width: 100%;
-    margin-top: 6rpx;
-    overflow: hidden;
-    color: var(--theme-text-secondary);
-    font-size: 21rpx;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .located-badge {
-    display: flex;
-    align-items: center;
-    padding: 8rpx 14rpx;
-    border-radius: 999rpx;
-    background: var(--theme-surface-2);
-    color: var(--theme-text-secondary);
-    font-size: 22rpx;
-  }
-
-  .located-dot {
+  .dashboard-live-dot {
     width: 12rpx;
     height: 12rpx;
     margin-right: 8rpx;
     border-radius: 50%;
     background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 0 0 6rpx var(--theme-border);
+    animation: altitude-live-pulse 1.8s ease-in-out infinite;
   }
 
-  .meter-reading {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    margin-top: 18rpx;
-  }
-
-  .meter-scale {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-    width: 76rpx;
-    height: 330rpx;
-    padding: 10rpx 0 18rpx;
-    box-sizing: border-box;
-  }
-
-  .scale-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
+  .dashboard-range {
+    margin-left: auto;
     color: var(--theme-text-tertiary);
-    font-size: 20rpx;
+    font-size: 19rpx;
+    font-weight: 700;
+    letter-spacing: 1rpx;
   }
 
-  .scale-line {
-    width: 20rpx;
-    height: 1rpx;
-    margin-right: 8rpx;
-    background: var(--theme-border);
-  }
-
-  .thermometer {
+  .dial-wrap {
     position: relative;
-    width: 82rpx;
-    height: 360rpx;
-    margin: 0 28rpx 0 12rpx;
+    width: 100%;
+    max-width: 520rpx;
+    height: 440rpx;
+    margin: 12rpx auto 0;
   }
 
-  .thermometer-track {
+  .dial-bezel,
+  .dial-inner-ring {
     position: absolute;
-    right: 27rpx;
-    bottom: 40rpx;
-    width: 28rpx;
-    height: 292rpx;
-    overflow: hidden;
-    border: 6rpx solid var(--theme-surface-2);
-    border-radius: 24rpx;
-    background: var(--theme-bg);
-    box-shadow: inset 0 0 0 1rpx var(--theme-border);
+    top: 54%;
+    left: 50%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
   }
 
-  .thermometer-fill {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    border-radius: 18rpx;
-    background: linear-gradient(180deg, var(--meter-color-deep, var(--theme-danger)) 0%, var(--meter-color, var(--theme-brand)) 72%);
-    transition: height 300ms ease;
+  .dial-bezel {
+    width: 420rpx;
+    height: 420rpx;
+    border: 2rpx solid var(--theme-border);
+    background: radial-gradient(circle, var(--theme-surface-2) 0%, var(--theme-surface) 62%, var(--theme-bg) 100%);
+    box-shadow:
+      inset 0 0 0 12rpx var(--theme-shadow-xs),
+      inset 0 0 34rpx var(--theme-shadow-sm),
+      0 10rpx 24rpx var(--theme-shadow-sm);
   }
 
-  .thermometer-bulb {
+  .dial-inner-ring {
+    width: 318rpx;
+    height: 318rpx;
+    border: 1rpx solid var(--theme-border);
+    box-shadow: inset 0 0 18rpx var(--theme-shadow-xs);
+  }
+
+  .dial-segment {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 82rpx;
-    height: 82rpx;
-    border: 6rpx solid var(--theme-surface-2);
+    width: 12rpx;
+    height: 42rpx;
+    border-radius: 999rpx;
+    transition:
+      opacity 550ms ease,
+      background-color 550ms ease,
+      box-shadow 550ms ease;
+  }
+
+  .dial-scan,
+  .dial-needle {
+    position: absolute;
+    bottom: 46%;
+    left: 50%;
+    width: 4rpx;
+    height: 174rpx;
+    border-radius: 999rpx;
+    transform-origin: 50% 100%;
+    transform: translateX(-50%);
+  }
+
+  .dial-scan {
+    background: linear-gradient(180deg, transparent, var(--meter-color, var(--theme-brand)) 75%, transparent);
+    opacity: 0.3;
+    animation: altitude-dial-scan 4.2s ease-in-out infinite;
+  }
+
+  .dial-needle {
+    width: 6rpx;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 0 16rpx var(--meter-color, var(--theme-brand));
+    transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .dial-hub {
+    position: absolute;
+    top: 54%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48rpx;
+    height: 48rpx;
+    border: 6rpx solid var(--theme-surface);
     border-radius: 50%;
     background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 8rpx 20rpx var(--theme-shadow-sm);
+    box-shadow:
+      0 0 0 3rpx var(--meter-color, var(--theme-brand)),
+      0 8rpx 18rpx var(--theme-shadow-md);
+    transform: translate(-50%, -50%);
+    z-index: 2;
   }
 
-  .reading-number {
-    display: flex;
-    flex: 1;
-    align-items: flex-start;
-    flex-direction: column;
+  .dial-hub-dot {
+    width: 14rpx;
+    height: 14rpx;
+    border-radius: 50%;
+    background: var(--theme-text);
+    animation: altitude-hub-pulse 1.8s ease-in-out infinite;
   }
 
-  .altitude-value-row {
-    display: flex;
-    align-items: baseline;
-    margin-top: 14rpx;
-  }
-
-  .altitude-value {
-    color: var(--theme-brand);
-    font-size: 108rpx;
-    font-weight: 800;
-    line-height: 1.1;
-  }
-
-  .altitude-unit {
-    margin-left: 12rpx;
-    color: var(--theme-text-secondary);
-    font-size: 30rpx;
-  }
-
-  .result-hint {
-    margin-top: 14rpx;
-    font-size: 24rpx;
-  }
-
-  .status-note {
-    margin-top: 10rpx;
-    color: var(--meter-color, var(--theme-brand));
-    font-size: 22rpx;
-    line-height: 1.5;
-  }
-
-  .reading-footer {
+  .dial-readout {
+    position: absolute;
+    top: 64%;
+    left: 50%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding-top: 18rpx;
-    border-top: 1rpx solid var(--theme-border);
+    flex-direction: column;
+    transform: translateX(-50%);
+    z-index: 3;
+  }
+
+  .dial-readout-caption {
     color: var(--theme-text-tertiary);
+    font-size: 21rpx;
+    letter-spacing: 2rpx;
+  }
+
+  .dial-value-row {
+    display: flex;
+    align-items: baseline;
+    margin-top: 8rpx;
+  }
+
+  .dial-value {
+    color: var(--theme-text);
+    font-size: 88rpx;
+    font-weight: 800;
+    letter-spacing: -2rpx;
+    line-height: 1;
+  }
+
+  .dial-unit {
+    margin-left: 8rpx;
+    color: var(--theme-text-secondary);
+    font-size: 27rpx;
+    font-weight: 700;
+  }
+
+  .dial-marker {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 4rpx;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+
+  .dial-marker-tick {
+    width: 18rpx;
+    height: 4rpx;
+    border-radius: 999rpx;
+  }
+
+  .dial-marker-label {
+    font-size: 18rpx;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .dashboard-notice {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    padding: 14rpx 16rpx;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+  }
+
+  .dashboard-notice-label {
+    flex-shrink: 0;
+    color: var(--meter-color, var(--theme-brand));
+    font-size: 21rpx;
+    font-weight: 700;
+  }
+
+  .dashboard-notice-text {
+    overflow: hidden;
+    color: var(--theme-text-secondary);
     font-size: 20rpx;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dashboard-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10rpx 16rpx;
+    margin-top: 18rpx;
+    padding-top: 16rpx;
+    border-top: 1rpx solid var(--theme-border);
+  }
+
+  .dashboard-legend-item {
+    display: flex;
+    align-items: center;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+  }
+
+  .dashboard-legend-dot {
+    width: 10rpx;
+    height: 10rpx;
+    margin-right: 6rpx;
+    border-radius: 50%;
+  }
+
+  @keyframes altitude-live-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(0.88);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+  }
+
+  @keyframes altitude-hub-pulse {
+    0%,
+    100% {
+      opacity: 0.72;
+      transform: scale(0.82);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+  }
+
+  @keyframes altitude-dial-scan {
+    0%,
+    100% {
+      transform: translateX(-50%) rotate(225deg);
+    }
+    50% {
+      transform: translateX(-50%) rotate(495deg);
+    }
   }
 
   .detail-card {
@@ -1164,186 +1159,6 @@
     color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 600;
-  }
-
-  .mountain-gauge {
-    width: 100%;
-    margin-top: 18rpx;
-    padding: 20rpx 18rpx 18rpx;
-    border: 1rpx solid var(--theme-border);
-    border-radius: 28rpx;
-    background: var(--theme-surface-2);
-    box-sizing: border-box;
-  }
-
-  .mountain-art {
-    position: relative;
-    height: 300rpx;
-    overflow: hidden;
-    border-bottom: 1rpx solid var(--theme-border);
-  }
-
-  .mountain-line,
-  .mountain-base-line {
-    position: absolute;
-    height: 5rpx;
-    border-radius: 999rpx;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 0 10rpx var(--meter-color, var(--theme-brand));
-    transform-origin: left center;
-  }
-
-  .mountain-line--one {
-    bottom: 24%;
-    left: 6%;
-    width: 25%;
-    transform: rotate(-46deg);
-  }
-
-  .mountain-line--two {
-    bottom: 42%;
-    left: 24%;
-    width: 22%;
-    transform: rotate(42deg);
-  }
-
-  .mountain-line--three {
-    bottom: 25%;
-    left: 41%;
-    width: 27%;
-    transform: rotate(-43deg);
-  }
-
-  .mountain-line--four {
-    bottom: 49%;
-    left: 62%;
-    width: 19%;
-    transform: rotate(43deg);
-  }
-
-  .mountain-line--five {
-    bottom: 35%;
-    left: 77%;
-    width: 18%;
-    transform: rotate(-18deg);
-  }
-
-  .mountain-base-line {
-    right: 4%;
-    bottom: 22%;
-    left: 4%;
-    height: 3rpx;
-    opacity: 0.35;
-    box-shadow: none;
-  }
-
-  .mountain-marker {
-    position: absolute;
-    right: 8%;
-    display: flex;
-    align-items: center;
-    gap: 10rpx;
-    transform: translateY(50%);
-    transition: bottom 350ms ease;
-  }
-
-  .mountain-marker-dot {
-    width: 18rpx;
-    height: 18rpx;
-    border: 5rpx solid var(--theme-surface-2);
-    border-radius: 50%;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 0 0 3rpx var(--meter-color, var(--theme-brand));
-  }
-
-  .mountain-marker-value {
-    color: var(--meter-color, var(--theme-brand));
-    font-size: 23rpx;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .vertical-scale {
-    display: flex;
-    align-items: stretch;
-    height: 420rpx;
-    margin-top: 18rpx;
-  }
-
-  .vertical-ticks {
-    display: flex;
-    justify-content: space-between;
-    flex-direction: column;
-    width: 92rpx;
-    padding: 4rpx 16rpx 4rpx 0;
-    color: var(--theme-text-tertiary);
-    font-size: 19rpx;
-    text-align: right;
-  }
-
-  .vertical-track {
-    position: relative;
-    flex: 1;
-    overflow: hidden;
-    border: 6rpx solid var(--theme-surface);
-    border-radius: 28rpx;
-    background: var(--theme-bg);
-    box-shadow: inset 0 0 0 1rpx var(--theme-border);
-  }
-
-  .vertical-zone,
-  .vertical-progress {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-  }
-
-  .vertical-zone-normal {
-    background: var(--theme-brand);
-  }
-
-  .vertical-zone-attention {
-    background: var(--theme-warning);
-  }
-
-  .vertical-zone-high {
-    background: var(--theme-danger);
-    opacity: 0.78;
-  }
-
-  .vertical-zone-danger {
-    background: var(--theme-danger);
-  }
-
-  .vertical-progress {
-    border-radius: 22rpx;
-    background: linear-gradient(180deg, var(--meter-color-deep, var(--theme-danger)), var(--meter-color, var(--theme-brand)));
-    box-shadow: 0 0 18rpx var(--meter-color, var(--theme-brand));
-    opacity: 0.9;
-    transition: height 350ms ease;
-  }
-
-  .vertical-marker {
-    position: absolute;
-    right: 0;
-    left: 0;
-    width: auto;
-    height: 8rpx;
-    border-radius: 999rpx;
-    background: var(--theme-surface);
-    box-shadow: 0 0 0 4rpx var(--meter-color, var(--theme-brand));
-    transform: translateY(50%);
-    transition: bottom 350ms ease;
-  }
-
-  .mountain-caption {
-    display: block;
-    margin-top: 16rpx;
-    color: var(--meter-color, var(--theme-brand));
-    font-size: 23rpx;
-    line-height: 1.5;
-    text-align: center;
   }
 
   .refresh-text-button {
