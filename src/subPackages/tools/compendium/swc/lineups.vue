@@ -31,7 +31,7 @@
         </view> -->
 
         <view class="toolbar-card">
-          <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" @search="refreshList" />
+          <SearchActionRow v-model="keyword" class="search-row" placeholder="搜索阵容名称或描述" theme="amber" :show-button="false" />
 
           <view class="filter-group">
             <text class="filter-label">类型</text>
@@ -93,6 +93,9 @@
 
             <view class="filter-action-row">
               <button class="reset-btn" size="mini" :disabled="!hasResettableFilters" @click="resetFilters">重置</button>
+              <button class="search-filter-btn" size="mini" :loading="loading" :disabled="loading" @click="handleSearch">
+                {{ loading ? '搜索中' : '搜索' }}
+              </button>
             </view>
           </view>
 
@@ -304,6 +307,7 @@
       selectedCharacterFilters.value.length > 0,
   )
   const resetFilters = () => resetLineupFilters()
+  const handleSearch = () => refreshList()
   const canEditLineup = (lineup: UserLineupSummary): boolean => isAdmin.value || canManageLineup(lineup)
   const emptyScopeText = computed(() => {
     if (selectedScope.value === 'mine') return '暂无自己创建的阵容'
@@ -540,7 +544,6 @@
     if (Array.isArray(pickerResult)) {
       selectedCharacterFilters.value = pickerResult.map(item => ({ ...item }))
       removeStorageSync(CHARACTER_PICKER_RESULT_KEY)
-      refreshList()
     }
   })
 
@@ -1019,22 +1022,49 @@
     width: 100%;
   }
 
-  .reset-btn {
+  .reset-btn,
+  .search-filter-btn {
     width: auto;
-    min-width: 96rpx;
-    height: 56rpx;
+    min-width: 112rpx;
+    height: 68rpx;
     margin: 0;
-    padding: 0 12rpx;
+    padding: 0 24rpx;
+    border-radius: 999rpx;
+    font-size: 24rpx;
+    font-weight: 700;
+    line-height: 68rpx;
+    transition:
+      transform 160ms ease-out,
+      opacity 160ms ease-out,
+      box-shadow 160ms ease-out;
+  }
+
+  .reset-btn {
+    border: 1rpx solid var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text-secondary);
+  }
+
+  .search-filter-btn {
     border: 0;
-    background: transparent;
-    color: var(--theme-brand);
-    font-size: 22rpx;
-    line-height: 56rpx;
+    background: linear-gradient(135deg, #f59e0b, #c87908);
+    color: #fffaf0;
+    box-shadow: 0 6rpx 16rpx rgba(180, 83, 9, 0.24);
+  }
+
+  .search-filter-btn:not([disabled]):active {
+    transform: translateY(2rpx) scale(0.98);
+    box-shadow: 0 2rpx 8rpx rgba(180, 83, 9, 0.2);
   }
 
   .reset-btn[disabled],
+  .search-filter-btn[disabled],
   .toolbar-btn[disabled] {
-    opacity: 0.45;
+    opacity: 0.5;
+  }
+
+  .search-filter-btn[disabled] {
+    box-shadow: none;
   }
 
   .load-more-status {

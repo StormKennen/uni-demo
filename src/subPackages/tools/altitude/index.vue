@@ -6,9 +6,9 @@
     :share-timeline-query="shareTimelineQuery"
     :share-timeline-title="shareTitle"
     back-fallback="/pages/tools/index"
-    nav-bg-color="#fff"
-    nav-init-bg-color="#fff"
-    nav-title-color="#111827"
+    nav-bg-color="var(--theme-surface)"
+    nav-init-bg-color="var(--theme-surface)"
+    nav-title-color="var(--theme-text)"
     nav-divider>
     <view class="altitude-page">
       <!-- <view class="intro-card">
@@ -20,12 +20,14 @@
         </view>
       </view> -->
 
-      <view class="mode-tabs">
-        <view class="mode-tab" :class="{ active: queryMode === 'location' }" @click="handleLocationAction">
-          <text class="mode-tab-label">获取当前海拔</text>
+      <view class="mode-segmented-pill">
+        <view class="pill-item" :class="{ active: queryMode === 'location' }" @click="handleLocationAction">
+          <uni-icons type="location" size="14" :color="queryMode === 'location' ? 'var(--theme-surface)' : 'var(--theme-text-secondary)'" />
+          <text class="pill-label">当前海拔</text>
         </view>
-        <view class="mode-tab" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">
-          <text class="mode-tab-label">景区海拔</text>
+        <view class="pill-item" :class="{ active: queryMode === 'manual' }" @click="switchMode('manual')">
+          <uni-icons type="map" size="14" :color="queryMode === 'manual' ? 'var(--theme-surface)' : 'var(--theme-text-secondary)'" />
+          <text class="pill-label">景区查询</text>
         </view>
       </view>
 
@@ -47,7 +49,7 @@
         </view>
 
         <view v-else-if="loading" class="state-box">
-          <uni-icons type="spinner-cycle" size="32" color="var(--theme-brand)" />
+          <uni-icons class="spinner-anim" type="spinner-cycle" size="32" color="var(--theme-brand)" />
           <text class="state-title">正在获取当前海拔…</text>
         </view>
 
@@ -61,55 +63,31 @@
         </view>
 
         <view v-else-if="result" class="reading-box">
-          <view class="reading-header">
-            <text class="result-label">当前海拔</text>
-          </view>
-
           <view class="elevation-dashboard">
-            <view class="dashboard-overline">
-              <view class="dashboard-status">
-                <view class="dashboard-live-dot" />
-                <text class="dashboard-status-label">{{ altitudeStatus.label }}</text>
-              </view>
-              <text class="dashboard-range">MAX {{ gaugeScale.max }}m</text>
-            </view>
-
-            <view class="dial-wrap">
-              <view class="dial-bezel" />
-              <view class="dial-inner-ring" />
-              <view v-for="segment in gaugeSegments" :key="segment.index" class="dial-segment" :style="segment.style" />
-              <view class="dial-scan" />
-              <view class="dial-needle" :style="{ transform: `translateX(-50%) rotate(${gaugeNeedleAngle}deg)` }" />
-              <view class="dial-hub">
-                <view class="dial-hub-dot" />
-              </view>
-              <view class="dial-readout">
-                <text class="dial-readout-caption">当前海拔</text>
-                <view class="dial-value-row">
-                  <text class="dial-value">{{ result.altitudeMeters.toFixed(1) }}</text>
-                  <text class="dial-unit">m</text>
+            <view class="dial-wrap" :class="{ 'dial-wrap--dark': themeStore.isDark }">
+              <view class="dial-track" />
+              <view class="dial-arc" :style="dialArcStyle" />
+              <view class="dial-tick-layer">
+                <view v-for="marker in gaugeMarkers" :key="marker.value" class="dial-tick-anchor" :style="marker.anchorStyle">
+                  <view class="dial-tick" :class="{ 'dial-tick--major': marker.major }" />
+                  <text class="dial-mark-label" :style="marker.labelStyle">{{ marker.label }}</text>
                 </view>
               </view>
-              <view v-for="marker in gaugeMarkers" :key="marker.value" class="dial-marker" :style="marker.style">
-                <view class="dial-marker-tick" :style="{ backgroundColor: marker.color }" />
-                <text class="dial-marker-label" :style="{ color: marker.color }">{{ marker.label }}</text>
+              <view class="dial-readout">
+                <text class="dial-readout-caption">ALTITUDE</text>
+                <view class="dial-value-row">
+                  <text class="dial-value">{{ Math.round(result.altitudeMeters).toLocaleString() }}<text class="dial-unit">米</text></text>
+                </view>
+                <!-- <text class="dial-unit">米 · 当前海拔</text> -->
               </view>
-            </view>
-
-            <view class="dashboard-notice">
-              <text class="dashboard-notice-label">高度状态</text>
-              <text class="dashboard-notice-text">{{ altitudeStatus.notice }}</text>
-            </view>
-
-            <view class="dashboard-legend">
-              <view v-for="warning in altitudeWarningConfigs" :key="warning.key" class="dashboard-legend-item">
-                <view class="dashboard-legend-dot" :style="{ backgroundColor: warning.color }" />
-                <text>{{ warning.legendLabel }}</text>
+              <view class="dial-needle-origin" :style="gaugeNeedleStyle">
+                <view class="dial-needle" />
               </view>
+              <view class="dial-hub" />
+              <!-- <text class="dial-live">LIVE · {{ result.sourceMode === 'location' ? 'GPS' : 'PLACE' }}</text> -->
             </view>
           </view>
         </view>
-
         <view v-else class="state-box">
           <uni-icons type="location" size="32" color="var(--theme-brand)" />
           <text class="state-title">准备查询当前位置</text>
@@ -124,10 +102,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
-  import { ALTITUDE_WARNING_CONFIGS, getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
+  import { getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
   import {
     buildScenicSelectorShare,
     normalizeScenicSelectorShareFilters,
@@ -137,6 +115,7 @@
   import { buildAltitudeShare } from './share'
   import ScenicSelector from './scenic-selector.vue'
   import { reportToolVisit } from '@/utils/tracker'
+  import { useThemeStore } from '@/stores/theme'
 
   interface CurrentAltitudeViewModel {
     latitude: number
@@ -151,7 +130,8 @@
   }
 
   type QueryMode = 'location' | 'manual'
-  const GAUGE_MAX_ALTITUDE = 10000
+  const DEFAULT_GAUGE_MAX = 5000
+  const EXPANDED_GAUGE_MAX = 10000
 
   class LocationAuthorizationError extends Error {
     readonly code = 'LOCATION_AUTHORIZATION_DENIED'
@@ -162,88 +142,146 @@
     }
   }
 
+  const themeStore = useThemeStore()
   const loading = ref(false)
   const errorMessage = ref('')
   const permissionDenied = ref(false)
   const showLocationPrompt = ref(false)
   const result = ref<CurrentAltitudeViewModel | null>(null)
+  const animatedAltitude = ref(0)
+  let gaugeAnimationTimer: ReturnType<typeof setInterval> | undefined
+  let gaugeSwayTimer: ReturnType<typeof setInterval> | undefined
+  const gaugeSwayMeters = ref(0)
   const queryMode = ref<QueryMode>('location')
   const sourceMode = ref<AltitudeSourceMode>('location')
+  let altitudeRequestGeneration = 0
+
+  const isCurrentLocationRequest = (generation: number) => generation === altitudeRequestGeneration && queryMode.value === 'location'
   const shareTitle = ref('查询海拔｜查询当前位置海拔')
   const sharePath = ref('/subPackages/tools/altitude/index?mode=location')
   const shareTimelineQuery = ref('mode=location')
   const scenicFilters = ref<ScenicSelectorShareFilters>({})
-  const altitudeWarningConfigs = ALTITUDE_WARNING_CONFIGS
-  const gaugeScale = { max: GAUGE_MAX_ALTITUDE }
+  const gaugeScale = computed(() => ({
+    max: (result.value?.altitudeMeters ?? 0) > DEFAULT_GAUGE_MAX ? EXPANDED_GAUGE_MAX : DEFAULT_GAUGE_MAX,
+  }))
 
   const gaugePercent = computed(() => {
     if (!result.value) return 0
-    const percent = (Math.max(0, result.value.altitudeMeters) / gaugeScale.max) * 100
+    const percent = (Math.max(0, animatedAltitude.value + gaugeSwayMeters.value) / gaugeScale.value.max) * 100
     return Math.min(100, Math.max(0, percent))
   })
 
-  const gaugeNeedleAngle = computed(() => 225 + (gaugePercent.value / 100) * 270)
+  const gaugeNeedleAngle = computed(() => -90 + gaugePercent.value * 1.8)
+  const gaugeProgressAngle = computed(() => gaugePercent.value * 1.8)
+  const gaugeNeedleStyle = computed(() => ({
+    '--needle-angle': `${gaugeNeedleAngle.value}deg`,
+  }))
 
-  const gaugeSegments = computed(() => {
-    const segmentCount = 32
-    const progress = gaugePercent.value / 100
-    const max = gaugeScale.max
-
-    return Array.from({ length: segmentCount }, (_, index) => {
-      const ratio = index / (segmentCount - 1)
-      const angle = 135 + ratio * 270
-      const radians = (angle * Math.PI) / 180
-      const warning = getAltitudeWarningConfig(ratio * max)
-
-      return {
-        index,
-        style: {
-          left: `${50 + Math.cos(radians) * 42}%`,
-          top: `${54 + Math.sin(radians) * 42}%`,
-          transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
-          backgroundColor: warning.color,
-          boxShadow: ratio <= progress ? `0 0 10rpx ${warning.color}` : `0 0 4rpx ${warning.color}`,
-          opacity: ratio <= progress ? '1' : '0.46',
-        },
-      }
+  const dialArcStyle = computed(() => {
+    const max = gaugeScale.value.max
+    const progressStop = (gaugeProgressAngle.value / 360) * 100
+    const thresholds = [0, 1500, 2500, 3500, max]
+    const colors = ['#22c55e', '#f59e0b', '#f97316', '#ef4444']
+    const colorStops = colors.flatMap((color, index) => {
+      const start = Math.min((thresholds[index] / max) * 50, progressStop)
+      const end = Math.min((thresholds[index + 1] / max) * 50, progressStop)
+      return end > start ? [`${color} ${start}% ${end}%`] : []
     })
+    const progressGradient =
+      progressStop > 0 && colorStops.length
+        ? `conic-gradient(from 270deg, ${colorStops.join(', ')}, transparent ${progressStop}% 50%, transparent 50% 100%)`
+        : 'conic-gradient(from 270deg, transparent 0% 100%)'
+
+    return {
+      '--dial-progress-gradient': progressGradient,
+    }
   })
 
   const gaugeMarkers = computed(() => {
-    const markerValues = [0, 1500, 2500, 3500, 5000, GAUGE_MAX_ALTITUDE]
+    const markerValues = [0, 1500, 2500, 3500, DEFAULT_GAUGE_MAX]
+    const tickStartRadiusX = 50
+    const tickStartRadiusY = 80
+    const dialCenterX = 50
+    const dialCenterY = 88
 
     return markerValues.map(value => {
-      const ratio = value / gaugeScale.max
-      const angle = 135 + ratio * 270
+      const ratio = value / DEFAULT_GAUGE_MAX
+      const angle = 180 + ratio * 180
       const radians = (angle * Math.PI) / 180
-      const warning = getAltitudeWarningConfig(value)
+      const x = dialCenterX + Math.cos(radians) * tickStartRadiusX
+      const y = dialCenterY + Math.sin(radians) * tickStartRadiusY
+      const inwardAngle = angle + 90
+      const label = value === 0 ? '0' : `${value}m`
 
       return {
         value,
-        label: `${value}m`,
-        color: warning.color,
-        style: {
-          left: `${50 + Math.cos(radians) * 48}%`,
-          top: `${54 + Math.sin(radians) * 48}%`,
+        label,
+        major: value === 0 || value === DEFAULT_GAUGE_MAX || value === 2500,
+        anchorStyle: {
+          left: `${x}%`,
+          top: `${y}%`,
+          transform: `translate(-50%, -50%) rotate(${inwardAngle}deg)`,
+        },
+        labelStyle: {
+          transform: `translateX(-50%) rotate(${-inwardAngle}deg)`,
         },
       }
     })
   })
 
-  const altitudeWarning = computed(() => getAltitudeWarningConfig(result.value?.altitudeMeters))
+  const altitudeWarning = computed(() => getAltitudeWarningConfig(animatedAltitude.value || result.value?.altitudeMeters))
   const altitudeLevel = computed<AltitudeWarningLevel>(() => altitudeWarning.value.key)
+
+  watch(
+    () => result.value?.altitudeMeters,
+    targetAltitude => {
+      if (gaugeAnimationTimer) clearInterval(gaugeAnimationTimer)
+      if (targetAltitude == null) {
+        animatedAltitude.value = 0
+        gaugeSwayMeters.value = 0
+        if (gaugeSwayTimer) clearInterval(gaugeSwayTimer)
+        return
+      }
+      gaugeSwayMeters.value = 0
+      if (gaugeSwayTimer) clearInterval(gaugeSwayTimer)
+      let swayDirection = 1
+      gaugeSwayTimer = setInterval(() => {
+        swayDirection *= -1
+        const swayMagnitude = Math.min(20, Math.max(3, targetAltitude * 0.01))
+        gaugeSwayMeters.value = swayDirection * swayMagnitude
+      }, 850)
+      const startAltitude = animatedAltitude.value
+      const duration = 700
+      const startedAt = Date.now()
+      gaugeAnimationTimer = setInterval(() => {
+        const progress = Math.min(1, (Date.now() - startedAt) / duration)
+        const eased = 1 - (1 - progress) ** 3
+        animatedAltitude.value = startAltitude + (targetAltitude - startAltitude) * eased
+        if (progress >= 1) {
+          animatedAltitude.value = targetAltitude
+          if (gaugeAnimationTimer) clearInterval(gaugeAnimationTimer)
+          gaugeAnimationTimer = undefined
+        }
+      }, 16)
+    },
+    { immediate: true },
+  )
+
+  onBeforeUnmount(() => {
+    if (gaugeAnimationTimer) clearInterval(gaugeAnimationTimer)
+    if (gaugeSwayTimer) clearInterval(gaugeSwayTimer)
+  })
   const altitudeStyle = computed<Record<string, string>>(() => ({
     '--meter-color': altitudeWarning.value.color,
     '--meter-color-deep': altitudeWarning.value.colorDeep,
   }))
 
-  const altitudeStatus = computed(() => ({
-    label: altitudeWarning.value.label,
-    notice: altitudeWarning.value.notice,
-  }))
-
   const switchMode = (mode: QueryMode) => {
+    altitudeRequestGeneration += 1
     queryMode.value = mode
+    loading.value = false
+    errorMessage.value = ''
+    permissionDenied.value = false
     if (mode === 'manual') {
       result.value = null
       sourceMode.value = 'place'
@@ -292,11 +330,13 @@
     query: shareTimelineQuery.value,
   }))
 
-  const queryAltitude = async (point: AltitudePoint) => {
+  const queryAltitude = async (point: AltitudePoint, generation: number) => {
     errorMessage.value = ''
     permissionDenied.value = false
     try {
       const payload = await getElevation(point)
+      if (!isCurrentLocationRequest(generation)) return null
+
       sourceMode.value = point.source
       result.value = {
         latitude: payload.latitude,
@@ -312,6 +352,7 @@
       syncShareState()
       return result.value
     } catch (error) {
+      if (!isCurrentLocationRequest(generation)) return null
       result.value = null
       const message = typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : ''
       errorMessage.value = message || '海拔查询失败，请稍后重试'
@@ -387,18 +428,22 @@
   }
 
   const queryCurrentAltitude = async () => {
-    if (loading.value) return
-
+    const generation = ++altitudeRequestGeneration
+    queryMode.value = 'location'
     loading.value = true
     errorMessage.value = ''
     permissionDenied.value = false
 
     try {
       await ensureLocationAuthorization()
+      if (!isCurrentLocationRequest(generation)) return
+
       const location = await getCurrentLocation()
-      queryMode.value = 'location'
-      await queryAltitude(location)
+      if (!isCurrentLocationRequest(generation)) return
+
+      await queryAltitude(location, generation)
     } catch (error) {
+      if (!isCurrentLocationRequest(generation)) return
       result.value = null
       if (error instanceof LocationAuthorizationError) {
         permissionDenied.value = true
@@ -408,7 +453,7 @@
         errorMessage.value = message.includes('定位') ? message : '请检查定位权限和网络连接后重试'
       }
     } finally {
-      loading.value = false
+      if (isCurrentLocationRequest(generation)) loading.value = false
     }
   }
 
@@ -470,46 +515,39 @@
     flex-direction: column;
   }
 
-  .mode-tabs {
+  .mode-segmented-pill {
     display: flex;
-    border-bottom: 1rpx solid var(--theme-border);
-    margin-top: 24rpx;
+    padding: 6rpx;
+    margin: 16rpx 0 20rpx;
+    border-radius: 999rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
   }
 
-  .mode-tab {
-    position: relative;
+  .pill-item {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 72rpx;
+    gap: 8rpx;
     flex: 1;
-    padding: 0 12rpx;
-  }
-
-  .mode-tab.active {
-    background: transparent;
-  }
-
-  .mode-tab.active::after {
-    position: absolute;
-    right: 34rpx;
-    bottom: -1rpx;
-    left: 34rpx;
-    height: 5rpx;
+    height: 64rpx;
     border-radius: 999rpx;
-    background: var(--theme-brand);
-    content: '';
+    transition: all 250ms ease;
   }
 
-  .mode-tab-label {
+  .pill-item.active {
+    background: var(--theme-brand);
+    box-shadow: 0 4rpx 12rpx var(--theme-shadow-xs);
+  }
+
+  .pill-label {
     color: var(--theme-text-secondary);
     font-size: 24rpx;
     font-weight: 600;
-    line-height: 1;
   }
 
-  .mode-tab.active .mode-tab-label {
-    color: var(--theme-brand);
+  .pill-item.active .pill-label {
+    color: var(--theme-surface);
     font-weight: 700;
   }
 
@@ -727,10 +765,8 @@
   }
 
   .result-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 390rpx;
+    display: block;
+    min-height: 0;
     margin-top: 28rpx;
     padding: 0;
     box-sizing: border-box;
@@ -848,227 +884,269 @@
   }
 
   .elevation-dashboard {
+    position: relative;
     width: 100%;
-    margin-top: 22rpx;
+    margin-top: 0;
     padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
     box-sizing: border-box;
-  }
-
-  .dashboard-overline {
-    display: flex;
-    align-items: center;
-    color: var(--theme-text-secondary);
-    font-size: 20rpx;
-  }
-
-  .dashboard-status {
-    display: flex;
-    align-items: center;
-    gap: 8rpx;
-  }
-
-  .dashboard-status-label {
-    color: var(--meter-color, var(--theme-brand));
-    font-weight: 700;
-  }
-
-  .dashboard-live-dot {
-    width: 12rpx;
-    height: 12rpx;
-    margin-right: 8rpx;
-    border-radius: 50%;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 0 0 6rpx var(--theme-border);
-    animation: altitude-live-pulse 1.8s ease-in-out infinite;
-  }
-
-  .dashboard-range {
-    margin-left: auto;
-    color: var(--theme-text-tertiary);
-    font-size: 19rpx;
-    font-weight: 700;
-    letter-spacing: 1rpx;
   }
 
   .dial-wrap {
     position: relative;
     width: 100%;
-    max-width: 520rpx;
-    height: 440rpx;
-    margin: 12rpx auto 0;
+    max-width: 760rpx;
+    height: 400rpx;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 28rpx;
+    background: #f4f5f6;
+    color: var(--dial-panel-text);
+    --dial-panel-text: #20242a;
+    --dial-muted-text: #59616a;
+    --dial-subtle-text: #747d87;
+    --dial-track: #d0d5db;
+    --dial-tick: #59616a;
+    --dial-progress: #e6463d;
   }
 
-  .dial-bezel,
-  .dial-inner-ring {
+  .dial-wrap--dark {
+    background: #17191c;
+    --dial-panel-text: #f3f4f5;
+    --dial-muted-text: var(--theme-text-secondary);
+    --dial-subtle-text: var(--theme-text-tertiary);
+    --dial-track: #686f78;
+    --dial-tick: var(--theme-text-secondary);
+    --dial-progress: #e6463d;
+  }
+
+  .dial-track,
+  .dial-arc {
     position: absolute;
-    top: 54%;
     left: 50%;
     border-radius: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
+    pointer-events: none;
   }
 
-  .dial-bezel {
-    width: 420rpx;
-    height: 420rpx;
-    border: 2rpx solid var(--theme-border);
-    background: radial-gradient(circle, var(--theme-surface-2) 0%, var(--theme-surface) 62%, var(--theme-bg) 100%);
-    box-shadow:
-      inset 0 0 0 12rpx var(--theme-shadow-xs),
-      inset 0 0 34rpx var(--theme-shadow-sm),
-      0 10rpx 24rpx var(--theme-shadow-sm);
+  .dial-track {
+    top: 3%;
+    width: 680rpx;
+    height: 680rpx;
+    background: conic-gradient(from 270deg, var(--dial-track) 0deg 180deg, transparent 180deg 360deg);
+    -webkit-mask: radial-gradient(transparent 65%, #000 66% 79%, transparent 80%);
+    mask: radial-gradient(transparent 65%, #000 66% 79%, transparent 80%);
   }
 
-  .dial-inner-ring {
-    width: 318rpx;
-    height: 318rpx;
-    border: 1rpx solid var(--theme-border);
-    box-shadow: inset 0 0 18rpx var(--theme-shadow-xs);
+  .dial-arc {
+    top: 10.5%;
+    width: 620rpx;
+    height: 620rpx;
+    background: var(--dial-progress-gradient, conic-gradient(from 270deg, transparent 0% 100%));
+    -webkit-mask-image: radial-gradient(transparent 62%, #000 63% 79%, transparent 80%);
+    mask-image: radial-gradient(transparent 62%, #000 63% 79%, transparent 80%);
   }
 
-  .dial-segment {
+  .dial-tick-layer {
     position: absolute;
-    width: 12rpx;
-    height: 42rpx;
-    border-radius: 999rpx;
-    transition:
-      opacity 550ms ease,
-      background-color 550ms ease,
-      box-shadow 550ms ease;
+    inset: 0;
+    pointer-events: none;
   }
 
-  .dial-scan,
-  .dial-needle {
+  .dial-tick-anchor {
     position: absolute;
-    bottom: 46%;
+    width: 0;
+    height: 0;
+  }
+
+  .dial-tick {
+    position: absolute;
+    top: 0;
     left: 50%;
     width: 4rpx;
-    height: 174rpx;
-    border-radius: 999rpx;
-    transform-origin: 50% 100%;
+    height: 22rpx;
+    background: var(--dial-tick);
     transform: translateX(-50%);
   }
 
-  .dial-scan {
-    background: linear-gradient(180deg, transparent, var(--meter-color, var(--theme-brand)) 75%, transparent);
-    opacity: 0.3;
-    animation: altitude-dial-scan 4.2s ease-in-out infinite;
+  .dial-tick--major {
+    height: 28rpx;
+  }
+
+  .dial-mark-label {
+    position: absolute;
+    top: 34rpx;
+    left: 50%;
+    color: var(--dial-tick);
+    font-size: 22rpx;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .dial-needle-origin {
+    position: absolute;
+    bottom: 12%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform: rotate(var(--needle-angle, -90deg));
+    transform-origin: center;
+    transition: transform 700ms cubic-bezier(0.22, 0.8, 0.25, 1);
+    z-index: 2;
   }
 
   .dial-needle {
-    width: 6rpx;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow: 0 0 16rpx var(--meter-color, var(--theme-brand));
-    transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+    position: absolute;
+    left: -2.5rpx;
+    bottom: 0;
+    width: 5rpx;
+    height: 221rpx;
+    border-radius: 999rpx;
+    background: var(--dial-progress);
+    transform-origin: 50% 100%;
   }
 
   .dial-hub {
     position: absolute;
-    top: 54%;
+    bottom: 12%;
     left: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48rpx;
-    height: 48rpx;
-    border: 6rpx solid var(--theme-surface);
+    width: 22rpx;
+    height: 22rpx;
     border-radius: 50%;
-    background: var(--meter-color, var(--theme-brand));
-    box-shadow:
-      0 0 0 3rpx var(--meter-color, var(--theme-brand)),
-      0 8rpx 18rpx var(--theme-shadow-md);
-    transform: translate(-50%, -50%);
-    z-index: 2;
-  }
-
-  .dial-hub-dot {
-    width: 14rpx;
-    height: 14rpx;
-    border-radius: 50%;
-    background: var(--theme-text);
-    animation: altitude-hub-pulse 1.8s ease-in-out infinite;
+    background: var(--dial-progress);
+    transform: translate(-50%, 50%);
+    z-index: 3;
   }
 
   .dial-readout {
     position: absolute;
-    top: 64%;
+    top: 41%;
     left: 50%;
     display: flex;
     align-items: center;
     flex-direction: column;
     transform: translateX(-50%);
-    z-index: 3;
+    z-index: 1;
   }
 
   .dial-readout-caption {
-    color: var(--theme-text-tertiary);
-    font-size: 21rpx;
-    letter-spacing: 2rpx;
+    color: var(--dial-subtle-text);
+    font-size: 24rpx;
+    letter-spacing: 4rpx;
   }
 
   .dial-value-row {
     display: flex;
     align-items: baseline;
-    margin-top: 8rpx;
+    margin-top: 12rpx;
   }
 
   .dial-value {
-    color: var(--theme-text);
-    font-size: 88rpx;
-    font-weight: 800;
-    letter-spacing: -2rpx;
+    color: var(--dial-panel-text);
+    font-size: 108rpx;
+    font-weight: 500;
+    letter-spacing: -4rpx;
     line-height: 1;
+    font-family: Arial, sans-serif;
   }
 
   .dial-unit {
-    margin-left: 8rpx;
-    color: var(--theme-text-secondary);
-    font-size: 27rpx;
-    font-weight: 700;
+    margin-top: 8rpx;
+    color: var(--dial-muted-text);
+    font-size: 26rpx;
   }
 
-  .dial-marker {
+  .dial-live {
     position: absolute;
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    gap: 4rpx;
-    transform: translate(-50%, -50%);
-    z-index: 2;
+    bottom: 8%;
+    left: 50%;
+    color: var(--dial-subtle-text);
+    font-size: 22rpx;
+    letter-spacing: 3rpx;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 4;
   }
 
-  .dial-marker-tick {
-    width: 18rpx;
-    height: 4rpx;
-    border-radius: 999rpx;
-  }
-
-  .dial-marker-label {
+  .dial-range-note {
+    position: absolute;
+    right: 5%;
+    bottom: 8%;
+    color: var(--dial-subtle-text);
     font-size: 18rpx;
-    font-weight: 700;
+  }
+
+  .dashboard-telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12rpx;
+    margin-top: 16rpx;
+  }
+
+  .telemetry-cell {
+    flex: 1;
+    padding: 14rpx 18rpx;
+    border-radius: 12rpx;
+    border: 1rpx solid var(--theme-border);
+    background: var(--theme-surface-2);
+  }
+
+  .telemetry-cell-title {
+    display: block;
+    color: var(--theme-text-tertiary);
+    font-size: 18rpx;
+    font-weight: 600;
+    letter-spacing: 1rpx;
+  }
+
+  .telemetry-cell-val {
+    display: block;
+    margin-top: 4rpx;
+    color: var(--theme-text);
+    font-size: 24rpx;
+    font-weight: 800;
+    font-family: monospace, sans-serif;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .dashboard-notice {
     display: flex;
     align-items: center;
-    gap: 12rpx;
-    padding: 14rpx 16rpx;
-    border-radius: 16rpx;
+    gap: 14rpx;
+    margin-top: 16rpx;
+    padding: 16rpx 20rpx;
+    border-radius: 12rpx;
+    border: 1rpx solid var(--theme-border);
     background: var(--theme-surface-2);
   }
 
-  .dashboard-notice-label {
+  .dashboard-notice-indicator {
+    width: 8rpx;
+    height: 36rpx;
+    border-radius: 4rpx;
+    background: var(--meter-color, var(--theme-brand));
+    box-shadow: 0 0 10rpx var(--meter-color, var(--theme-brand));
+    animation: altitude-live-pulse 1.2s ease-in-out infinite;
     flex-shrink: 0;
+  }
+
+  .dashboard-notice-content {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .dashboard-notice-label {
+    display: block;
     color: var(--meter-color, var(--theme-brand));
-    font-size: 21rpx;
-    font-weight: 700;
+    font-size: 19rpx;
+    font-weight: 800;
+    letter-spacing: 1rpx;
   }
 
   .dashboard-notice-text {
+    display: block;
+    margin-top: 2rpx;
     overflow: hidden;
     color: var(--theme-text-secondary);
     font-size: 20rpx;
@@ -1181,5 +1259,19 @@
     margin-top: 24rpx;
     font-size: 22rpx;
     text-align: center;
+  }
+
+  @keyframes spinner-rotate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spinner-anim {
+    display: inline-block;
+    animation: spinner-rotate 0.9s linear infinite;
   }
 </style>

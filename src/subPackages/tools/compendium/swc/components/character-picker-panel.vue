@@ -35,7 +35,7 @@
           class="search-row"
           :placeholder="searchPlaceholder"
           theme="violet"
-          @search="refreshCharacterOptions" />
+          @search="handleSearchSubmit" />
 
         <view v-if="props.showQuickFilters" class="filter-shell">
           <view v-if="!filterExpanded" class="filter-collapsed" @click="filterExpanded = true">
@@ -219,6 +219,7 @@
   const ALL_VALUE = 'all'
   const RENDER_BATCH_SIZE = 50
   const INITIAL_AVATAR_PRELOAD_COUNT = 16
+  const REQUEST_THROTTLE_MS = 500
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -318,6 +319,8 @@
   const selectedStar = ref(ALL_VALUE)
   const instance = getCurrentInstance()
   let requestSequence = 0
+  let lastRequestAt = 0
+  let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
   let avatarPreloadTimer: ReturnType<typeof setTimeout> | null = null
 
   const cloneSelection = (items: CharacterOption[] = []): CharacterOption[] => items.map(item => ({ ...item }))
@@ -556,11 +559,14 @@
 
   const fetchCharacterOptions = async (reset = true) => {
     if (!props.active) return
+    const now = Date.now()
+    if (reset && now - lastRequestAt < REQUEST_THROTTLE_MS) return
     if (!reset && (memberLoading.value || memberLoadingMore.value)) return
 
     const requestId = reset ? ++requestSequence : requestSequence
 
     if (reset) {
+      lastRequestAt = now
       clearScheduledAvatarPreload()
       memberLoading.value = true
       memberLoadingMore.value = false
@@ -638,7 +644,15 @@
   }
 
   const refreshCharacterOptions = () => {
-    fetchCharacterOptions(true)
+    void fetchCharacterOptions(true)
+  }
+
+  const handleSearchSubmit = () => {
+    if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = setTimeout(() => {
+      searchDebounceTimer = null
+      refreshCharacterOptions()
+    }, 300)
   }
 
   const loadMoreCharacterOptions = () => {
@@ -701,6 +715,10 @@
     active => {
       if (!active) {
         requestSequence += 1
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer)
+          searchDebounceTimer = null
+        }
         memberLoading.value = false
         memberLoadingMore.value = false
         clearScheduledAvatarPreload()

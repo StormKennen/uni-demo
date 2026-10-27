@@ -63,7 +63,7 @@
     </view>
 
     <!-- 成员卡片列表 -->
-    <scroll-view class="member-list" scroll-y @scrolltolower="onScrollToLower" :lower-threshold="100">
+    <scroll-view class="member-list" scroll-y>
       <!-- 首次加载中 -->
       <view v-if="loading && memberList.length === 0" class="loading-tip">
         <uni-icons type="spinner-cycle" size="32" color="#667eea" />
@@ -107,16 +107,8 @@
           </view>
         </view>
 
-        <!-- 加载更多提示 -->
-        <view class="load-more-tip" v-if="memberList.length > 0">
-          <view v-if="loadingMore" class="loading-more">
-            <uni-icons type="spinner-cycle" size="20" color="#667eea" />
-            <text class="loading-more-text">加载中...</text>
-          </view>
-          <view v-else-if="hasMore" class="load-more-btn" @click="loadMoreData">
-            <text class="load-more-text">加载更多</text>
-          </view>
-          <text v-else class="no-more-text">没有更多了</text>
+        <view class="load-more-tip" v-if="memberList.length > 0 && filterGeneration === null && !searchKeyword">
+          <text class="no-more-text">谱页静态数据 · 共 {{ totalCount }} 人</text>
         </view>
       </view>
     </scroll-view>
@@ -124,7 +116,7 @@
     <!-- 统计信息 -->
     <view class="stats-bar">
       <text class="stats-text" v-if="filterGeneration">第{{ filterGeneration }}代: {{ totalCount }} 人</text>
-      <text class="stats-text" v-else>共 {{ totalCount }} 人</text>
+      <text class="stats-text" v-else>梁姓谱页静态数据：共 {{ totalCount }} 人</text>
     </view>
   </view>
 </template>
@@ -132,16 +124,27 @@
 <script setup>
   import { ref, computed, onMounted, watch } from 'vue'
   import MemberDetail from './member-detail.vue'
-  import { getFamiliesMembers } from '@/services/apifox/NODEJSDEMO/FAMILIES/apifox'
+  import { staticFamilyMembers } from './family-static-data'
 
   // 详情弹窗
   const showDetail = ref(false)
   const selectedMember = ref(null)
 
-  const emit = defineEmits(['member-click'])
+  const props = defineProps({
+    initialKeyword: {
+      type: String,
+      default: '',
+    },
+    initialGeneration: {
+      type: Number,
+      default: null,
+    },
+  })
 
-  const searchKeyword = ref('')
-  const filterGeneration = ref(null)
+  const emit = defineEmits(['member-click', 'filter-change'])
+
+  const searchKeyword = ref(props.initialKeyword)
+  const filterGeneration = ref(props.initialGeneration)
   const inputGeneration = ref('')
   const showGenerationDialog = ref(false)
   const scrollToGenId = ref('')
@@ -149,23 +152,12 @@
   const loadingMore = ref(false)
   const memberList = ref([])
 
-  // 分页相关
-  const pageSize = 10
-  const currentPage = ref(1)
-  const hasMore = ref(true)
+  // 静态谱页数据一次加载完整，不需要服务端分页。
+  const hasMore = ref(false)
   const totalCount = ref(0)
 
-  // 预置代数标签（从大到小排序）
-  const presetGenerations = [32, 31, 30, 29]
-  const generations = ref([...presetGenerations])
-
-  // 动态追加代数到标签列表
-  const addGenerationToList = gen => {
-    if (gen && !generations.value.includes(gen)) {
-      generations.value.push(gen)
-      generations.value.sort((a, b) => b - a)
-    }
-  }
+  // 根据静态谱页数据生成代数筛选标签（从大到小）
+  const generations = ref([...new Set(staticFamilyMembers.map(member => member.generation))].sort((a, b) => b - a))
 
   // 加载成员列表
   const loadMembers = async (isLoadMore = false) => {
@@ -174,73 +166,65 @@
       loadingMore.value = true
     } else {
       loading.value = true
-      currentPage.value = 1
       memberList.value = []
-      hasMore.value = true
+      hasMore.value = false
     }
 
     try {
-      const params = {
-        limit: pageSize,
-        page: currentPage.value,
-        sortBy: 'surname',
-      }
+      // 当前列表与图谱共用图片校订出的梁姓静态数据，避免分页 API 或旧缓存
+      // 显示另一份成员集；待后端入库后再统一切换数据源。
+      const rawItems = staticFamilyMembers
 
-      // 如果有代数筛选，添加 generation 参数
+      // 本地过滤（支持代数和关键字）
+      let filtered = rawItems
       if (filterGeneration.value !== null) {
-        params.generation = filterGeneration.value
+        filtered = filtered.filter(m => m.generation === filterGeneration.value)
       }
 
-      const response = await getFamiliesMembers(params)
+      const newMembers = filtered.map(member => ({
+        id: member.id,
+        name: member.nameZh?.full || `${member.surname || ''}${member.givenName || ''}` || '未知',
+        surname: member.nameZh?.surname || member.surname,
+        givenName: member.nameZh?.givenName || member.givenName,
+        gender: member.gender,
+        generation: member.generation,
+        parentName:
+          member.parents
+            ?.map(parentId => staticFamilyMembers.find(candidate => candidate.id === parentId)?.nameZh?.full)
+            .filter(Boolean)
+            .join('、') || '',
+        childrenCount: member.children?.length || 0,
+        originalData: member,
+      }))
 
-      console.log('成员列表数据:', response)
-
-      if (response?.items) {
-        const newMembers = response.items.map(member => ({
-          id: member.id,
-          name: member.nameZh?.full || `${member.surname || ''}${member.givenName || ''}` || '未知',
-          surname: member.nameZh?.surname || member.surname,
-          givenName: member.nameZh?.givenName || member.givenName,
-          gender: member.gender,
-          generation: member.generation,
-          parentName: '',
-          childrenCount: 0,
-          originalData: member,
-        }))
-
-        if (isLoadMore) {
-          memberList.value = [...memberList.value, ...newMembers]
-        } else {
-          memberList.value = newMembers
-        }
-
-        // 动态追加新发现的代数到标签列表
-        newMembers.forEach(member => {
-          if (member.generation) {
-            addGenerationToList(member.generation)
-          }
-        })
-
-        // 更新总数（从 pagination 对象获取）
-        if (response.pagination?.total !== undefined) {
-          totalCount.value = response.pagination.total
-        }
-
-        // 判断是否还有更多数据（从 pagination 对象获取）
-        hasMore.value = response.pagination?.hasNext ?? newMembers.length === pageSize
-
-        if (hasMore.value) {
-          currentPage.value++
-        }
+      if (isLoadMore) {
+        memberList.value = [...memberList.value, ...newMembers]
       } else {
-        hasMore.value = false
+        memberList.value = newMembers
       }
+
+      totalCount.value = filtered.length
+      hasMore.value = false
     } catch (error) {
       console.error('加载成员列表失败:', error)
-      uni.showToast({
-        title: '加载失败',
-        icon: 'none',
-      })
+      // 最终兜底到静态数据
+      memberList.value = staticFamilyMembers.map(member => ({
+        id: member.id,
+        name: member.nameZh?.full || `${member.surname || ''}${member.givenName || ''}` || '未知',
+        surname: member.nameZh?.surname || member.surname,
+        givenName: member.nameZh?.givenName || member.givenName,
+        gender: member.gender,
+        generation: member.generation,
+        parentName:
+          member.parents
+            ?.map(parentId => staticFamilyMembers.find(candidate => candidate.id === parentId)?.nameZh?.full)
+            .filter(Boolean)
+            .join('、') || '',
+        childrenCount: member.children?.length || 0,
+        originalData: member,
+      }))
+      totalCount.value = staticFamilyMembers.length
+      hasMore.value = false
     } finally {
       loading.value = false
       loadingMore.value = false
@@ -248,18 +232,6 @@
   }
 
   // 滚动到底部加载更多
-  const onScrollToLower = () => {
-    if (!searchKeyword.value && filterGeneration.value === null) {
-      // 只有在没有搜索和筛选时才分页加载
-      loadMembers(true)
-    }
-  }
-
-  // 点击加载更多按钮
-  const loadMoreData = () => {
-    loadMembers(true)
-  }
-
   // 刷新列表
   const refreshList = () => {
     loadMembers()
@@ -275,16 +247,23 @@
     loadMembers()
   })
 
-  // 监听代数筛选变化，重新加载数据
-  watch(filterGeneration, () => {
+  // 监听代数筛选或搜索变化，重新加载数据并发射 filter-change
+  watch([filterGeneration, searchKeyword], () => {
     loadMembers()
+    emit('filter-change', {
+      searchKeyword: searchKeyword.value,
+      filterGeneration: filterGeneration.value,
+    })
   })
 
   // 输入框确认筛选
   const onGenerationInputConfirm = () => {
     const gen = parseInt(inputGeneration.value)
     if (gen && gen > 0) {
-      addGenerationToList(gen)
+      if (!generations.value.includes(gen)) {
+        generations.value.push(gen)
+        generations.value.sort((a, b) => b - a)
+      }
       filterGeneration.value = gen
       inputGeneration.value = ''
       showGenerationDialog.value = false
@@ -317,7 +296,7 @@
   })
 
   const onSearch = () => {
-    // 搜索时自动清除代数筛选
+    // 搜索时自动触发
   }
 
   const clearSearch = () => {
@@ -325,8 +304,11 @@
   }
 
   const onMemberClick = member => {
-    selectedMember.value = member
-    showDetail.value = true
+    if (!member?.id) return
+    // 暂时屏蔽点击跳转到详情页
+    // uni.navigateTo({
+    //   url: `/subPackages/tools/family-tree/detail?id=${member.id}`,
+    // })
   }
 </script>
 

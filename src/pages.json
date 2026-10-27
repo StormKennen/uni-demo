@@ -114,6 +114,13 @@
           }
         },
         {
+          "path": "family-tree/detail",
+          "style": {
+            "navigationBarTitleText": "成员详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "family-tree/demo",
           "style": {
             "navigationBarTitleText": "族谱",

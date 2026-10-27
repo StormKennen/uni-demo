@@ -354,14 +354,12 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
   },
   'family-tree': {
     name: '族谱',
-    desc: '实时数据，支持编辑',
+    desc: '实时数据，支持查看与编辑',
     icon: 'personadd',
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     path: '/subPackages/tools/family-tree/index',
     workspace: 'record',
-    requiresAuth: true,
-    // 图谱能力升级中，暂不在工具目录展示正式入口；路由与成员数据能力保留
-    hiddenInDirectory: true,
+    isNew: true,
   },
   // ── 文本 ──
   markdown: {

@@ -7,8 +7,9 @@
       :placeholder="placeholder"
       :disabled="disabled"
       @input="handleInput"
-      @confirm="emitSearch" />
+      @confirm="showButton && emitSearch()" />
     <button
+      v-if="showButton"
       class="search-btn"
       :class="theme"
       :size="resolvedButtonSize"
@@ -21,25 +22,30 @@
 </template>
 
 <script setup lang="ts">
-  const props = withDefaults(defineProps<{
-    modelValue?: string
-    placeholder?: string
-    buttonText?: string
-    confirmType?: string
-    theme?: 'amber' | 'teal' | 'violet'
-    buttonSize?: 'default' | 'mini'
-    disabled?: boolean
-    loading?: boolean
-  }>(), {
-    modelValue: '',
-    placeholder: '请输入关键词',
-    buttonText: '搜索',
-    confirmType: 'search',
-    theme: 'violet',
-    buttonSize: 'mini',
-    disabled: false,
-    loading: false,
-  })
+  const props = withDefaults(
+    defineProps<{
+      modelValue?: string
+      placeholder?: string
+      buttonText?: string
+      confirmType?: string
+      theme?: 'amber' | 'teal' | 'violet'
+      buttonSize?: 'default' | 'mini'
+      disabled?: boolean
+      loading?: boolean
+      showButton?: boolean
+    }>(),
+    {
+      modelValue: '',
+      placeholder: '请输入关键词',
+      buttonText: '搜索',
+      confirmType: 'search',
+      theme: 'violet',
+      buttonSize: 'mini',
+      disabled: false,
+      loading: false,
+      showButton: true,
+    },
+  )
 
   const emit = defineEmits<{
     (event: 'update:modelValue', value: string): void

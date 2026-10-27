@@ -32,6 +32,8 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
   const pendingRefresh = ref(false)
   const errorMessage = ref('')
   let requestVersion = 0
+  let lastRefreshAt = 0
+  const REFRESH_THROTTLE_MS = 500
 
   const selectedTypeLabel = computed(
     () => LINEUP_FILTER_TYPE_OPTIONS.find(option => option.value === selectedType.value)?.label || selectedType.value || '全部',
@@ -153,7 +155,10 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     }
   }
 
-  const refreshList = () => {
+  const refreshList = (force = false) => {
+    const now = Date.now()
+    if (!force && (loading.value || loadingMore.value || now - lastRefreshAt < REFRESH_THROTTLE_MS)) return
+    lastRefreshAt = now
     void fetchList(true)
   }
 
@@ -163,29 +168,24 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
 
   const selectType = (value: string) => {
     selectedType.value = value
-    refreshList()
   }
 
   const selectStatus = (value: string) => {
     selectedStatus.value = value
-    refreshList()
   }
 
   const selectScope = (value: LineupScope) => {
     selectedScope.value = value
-    refreshList()
   }
 
   const removeCharacterFilter = (characterId: string) => {
     if (!isCharacterFilterSelected(characterId)) return
     selectedCharacterFilters.value = selectedCharacterFilters.value.filter(item => item.characterId !== characterId)
-    refreshList()
   }
 
   const clearCharacterFilters = () => {
     if (!selectedCharacterFilters.value.length) return
     selectedCharacterFilters.value = []
-    refreshList()
   }
 
   const resetFilters = () => {
@@ -201,7 +201,6 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     selectedStatus.value = ALL_VALUE
     selectedScope.value = 'all'
     selectedCharacterFilters.value = []
-    refreshList()
   }
 
   const decodeRouteValue = (value: string | undefined): string => {

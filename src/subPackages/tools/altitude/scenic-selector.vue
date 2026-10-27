@@ -1,26 +1,22 @@
 <template>
   <view class="scenic-selector">
-    <view class="selector-heading">
-      <view>
-        <text class="selector-title">选择景区或景点</text>
-        <text class="selector-subtitle">省、市/州、区县都可以停留，确认后加载景区</text>
+    <!-- Unified Compact Toolbar: Region Picker + Keyword Search -->
+    <view class="scenic-toolbar">
+      <view class="toolbar-region-btn" @click="openRegionPicker">
+        <uni-icons type="map-filled" size="16" color="var(--theme-brand)" />
+        <text class="toolbar-region-text">{{ filterSummary.startsWith('点击') ? '全国地区' : filterSummary }}</text>
+        <uni-icons type="bottom" size="12" color="var(--theme-text-tertiary)" />
       </view>
-    </view>
-
-    <view class="filter-card">
-      <view class="region-field" @click="openRegionPicker">
-        <view class="region-field-icon">
-          <uni-icons type="map-filled" size="26" color="var(--theme-brand)" />
-        </view>
-        <view class="region-field-copy">
-          <text class="picker-label">地区</text>
-          <text class="region-field-value">{{ filterSummary }}</text>
-        </view>
-        <view class="region-field-action">
-          <text v-if="adminLoading" class="region-loading-label">行政区加载中</text>
-          <text v-else class="region-picker-action-label">{{ hasRegionSelection ? '更换' : '请选择' }}</text>
-          <uni-icons type="right" size="16" color="var(--theme-text-tertiary)" />
-        </view>
+      <view class="toolbar-search-box">
+        <uni-icons type="search" size="16" color="var(--theme-text-tertiary)" />
+        <input
+          v-model="keyword"
+          class="toolbar-search-input"
+          :maxlength="80"
+          confirm-type="search"
+          placeholder="搜索景区名称"
+          @confirm="applyQuery" />
+        <text v-if="keyword" class="toolbar-search-clear" @click="keyword = ''; applyQuery()">×</text>
       </view>
     </view>
 
@@ -77,33 +73,22 @@
       </view>
     </view>
 
-    <view class="search-row">
-      <input
-        v-model="keyword"
-        class="search-input"
-        :maxlength="80"
-        confirm-type="search"
-        placeholder="搜索景区名称"
-        @confirm="applyQuery" />
-      <button class="search-button" :disabled="loading" @click="applyQuery">查询</button>
-    </view>
-
     <view v-if="errorMessage" class="selector-state selector-error">{{ errorMessage }}</view>
     <view v-else-if="loading && !areas.length" class="selector-state">正在加载景区…</view>
     <view v-else class="area-list">
       <view v-for="area in areas" :key="area.id" class="area-card" @click="openArea(area)">
-        <view class="area-header"
-          ><view class="area-title-wrap"
-            ><text class="area-name">{{ area.name }}</text
-            ><text v-if="area.grade" class="grade-badge">{{ area.grade }}</text></view
-          ><uni-icons type="right" size="16" color="var(--theme-text-tertiary)"
-        /></view>
+        <view class="area-header">
+          <view class="area-title-wrap">
+            <text class="area-name">{{ area.name }}</text>
+            <text v-if="area.grade" class="grade-badge">{{ area.grade }}</text>
+          </view>
+          <uni-icons type="right" size="16" color="var(--theme-text-tertiary)" />
+        </view>
         <text class="area-location">{{ area.province }} · {{ area.city }}{{ area.county ? ` · ${area.county}` : '' }}</text>
-        <view class="area-meta"
-          ><text>海拔 {{ formatAltitude(area.altitudeMeters) }}</text
-          ><text>{{ area.pointCount }} 个景点</text></view
-        >
-        <button class="area-detail-button" @click.stop="openArea(area)">查看景点海拔</button>
+        <view class="area-meta">
+          <text class="meta-tag altitude-tag">海拔 {{ formatAltitude(area.altitudeMeters) }}</text>
+          <text class="meta-tag point-tag">{{ area.pointCount }} 个景点</text>
+        </view>
       </view>
       <button v-if="hasNext" class="load-more-button" :disabled="loading" @click="loadMore">{{ loading ? '加载中…' : '加载更多' }}</button>
       <view v-if="!areas.length && !loading" class="selector-state">暂无匹配景区</view>
@@ -397,94 +382,124 @@
   .scenic-selector {
     display: flex;
     flex-direction: column;
-    gap: 18rpx;
-  }
-  .selector-heading {
-    display: flex;
-    justify-content: space-between;
-  }
-  .selector-title {
-    color: var(--theme-text-primary);
-    font-size: 30rpx;
-    font-weight: 700;
-  }
-  .selector-subtitle,
-  .filter-summary,
-  .area-location,
-  .point-area {
-    color: var(--theme-text-tertiary);
-    font-size: 22rpx;
-  }
-  .filter-card,
-  .area-card,
-  .area-detail {
-    padding: 20rpx;
-    border-radius: 20rpx;
-    background: var(--theme-surface-muted);
-  }
-
-  .region-field {
-    display: flex;
-    align-items: center;
     gap: 16rpx;
-    min-height: 116rpx;
-    padding: 14rpx 16rpx;
-    border: 2rpx solid var(--theme-border-light);
-    border-radius: 18rpx;
-    background: var(--theme-surface);
   }
 
-  .region-field:active {
-    border-color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-  }
-
-  .region-field-icon {
+  .scenic-toolbar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 68rpx;
-    height: 68rpx;
-    flex-shrink: 0;
-    border-radius: 20rpx;
-    background: var(--theme-brand-soft);
+    gap: 12rpx;
   }
 
-  .region-field-copy {
-    min-width: 0;
+  .toolbar-region-btn {
     display: flex;
-    flex: 1;
-    flex-direction: column;
+    align-items: center;
     gap: 8rpx;
+    height: 72rpx;
+    padding: 0 20rpx;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    flex-shrink: 0;
   }
 
-  .region-field-value {
-    overflow: hidden;
+  .toolbar-region-text {
     color: var(--theme-text-primary);
     font-size: 24rpx;
     font-weight: 600;
+    max-width: 160rpx;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .region-field-action {
+  .toolbar-search-box {
     display: flex;
     align-items: center;
-    gap: 8rpx;
-    margin-left: auto;
-    flex-shrink: 0;
+    flex: 1;
+    height: 72rpx;
+    padding: 0 20rpx;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    gap: 10rpx;
   }
 
-  .region-loading-label,
-  .region-picker-hint,
-  .region-picker-action-label {
+  .toolbar-search-input {
+    flex: 1;
+    height: 100%;
+    color: var(--theme-text);
+    font-size: 24rpx;
+  }
+
+  .toolbar-search-clear {
     color: var(--theme-text-tertiary);
-    font-size: 20rpx;
+    font-size: 32rpx;
+    padding: 0 8rpx;
   }
 
-  .region-picker-action-label {
+  .area-card {
+    padding: 20rpx 24rpx;
+    margin-bottom: 12rpx;
+    border-radius: 18rpx;
+    background: var(--theme-surface-2);
+    border: 1rpx solid var(--theme-border);
+    transition: all 200ms ease;
+  }
+
+  .area-card:active {
+    background: var(--theme-surface);
+    border-color: var(--theme-brand);
+  }
+
+  .area-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .area-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .area-name {
+    color: var(--theme-text-primary);
+    font-size: 28rpx;
+    font-weight: 700;
+  }
+
+  .grade-badge {
+    padding: 2rpx 10rpx;
+    border-radius: 6rpx;
+    background: var(--theme-brand-soft);
     color: var(--theme-brand);
-    font-weight: 600;
+    font-size: 18rpx;
+    font-weight: 700;
+  }
+
+  .area-location {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 22rpx;
+  }
+
+  .area-meta {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-top: 12rpx;
+    padding-top: 10rpx;
+    border-top: 1rpx dashed var(--theme-border);
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+  }
+
+  .altitude-tag {
+    color: var(--theme-brand);
+    font-weight: 700;
   }
 
   .region-picker-mask {
@@ -512,8 +527,7 @@
 
   .region-picker-header,
   .region-path,
-  .region-option,
-  .region-field-action {
+  .region-option {
     display: flex;
     align-items: center;
   }
@@ -637,209 +651,33 @@
     background: var(--theme-brand);
     font-size: 24rpx;
     line-height: 72rpx;
+    border-radius: 16rpx;
+    border: 0;
   }
-  .filter-row {
-    display: flex;
-    gap: 10rpx;
-  }
-  .picker-field {
-    display: flex;
-    align-items: center;
-    gap: 5rpx;
-    min-width: 0;
-    flex: 1;
-    padding: 12rpx;
-    border-radius: 12rpx;
-    background: var(--theme-surface);
-  }
-  .picker-label {
-    color: var(--theme-text-tertiary);
-    font-size: 19rpx;
-  }
-  .picker-value {
-    flex: 1;
-    overflow: hidden;
-    color: var(--theme-text-primary);
-    font-size: 21rpx;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .filter-footer,
-  .area-header,
-  .point-row,
-  .detail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12rpx;
-  }
-  .filter-footer {
-    margin-top: 14rpx;
-  }
-  .filter-summary {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .confirm-button,
-  .search-button {
-    margin: 0;
-    color: #fff;
-    background: var(--theme-brand);
-    font-size: 22rpx;
-    line-height: 64rpx;
-  }
-  .confirm-button {
-    padding: 0 20rpx;
-  }
-  .search-row {
-    display: flex;
-    gap: 10rpx;
-  }
-  .search-input {
-    flex: 1;
-    height: 66rpx;
-    padding: 0 16rpx;
-    border-radius: 14rpx;
-    background: var(--theme-surface);
-    color: var(--theme-text-primary);
-    font-size: 23rpx;
-  }
-  .search-button {
-    width: 120rpx;
-  }
-  .area-list,
-  .point-results,
-  .detail-points {
+
+  .area-list {
     display: flex;
     flex-direction: column;
-    gap: 12rpx;
-  }
-  .area-card {
-    background: var(--theme-surface);
-  }
-  .area-detail-button {
-    width: 100%;
-    margin: 14rpx 0 0;
-    color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-    font-size: 22rpx;
-    line-height: 62rpx;
-  }
-  .area-title-wrap {
-    display: flex;
-    align-items: center;
     gap: 8rpx;
   }
-  .area-name,
-  .point-name,
-  .detail-title {
-    color: var(--theme-text-primary);
-    font-size: 27rpx;
-    font-weight: 700;
-  }
-  .grade-badge {
-    padding: 3rpx 8rpx;
-    border-radius: 7rpx;
-    color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-    font-size: 18rpx;
-  }
-  .area-location {
-    display: block;
-    margin-top: 8rpx;
-  }
-  .area-meta {
-    display: flex;
-    gap: 20rpx;
-    margin-top: 10rpx;
-    color: var(--theme-text-secondary);
-    font-size: 21rpx;
-  }
-  .preview-scroll {
-    margin-top: 14rpx;
-    white-space: nowrap;
-  }
-  .preview-point {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 4rpx;
-    width: 155rpx;
-    margin-right: 8rpx;
-    padding: 10rpx;
-    border-radius: 12rpx;
-    background: var(--theme-surface-muted);
-  }
-  .preview-name {
-    overflow: hidden;
-    color: var(--theme-text-primary);
-    font-size: 21rpx;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .preview-altitude,
-  .point-altitude {
-    color: var(--theme-brand);
-    font-size: 20rpx;
-  }
+
   .load-more-button {
-    margin: 0;
-    color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-    font-size: 22rpx;
-    line-height: 66rpx;
-  }
-  .point-row {
-    padding: 14rpx 0;
-    border-bottom: 1rpx solid var(--theme-border-light);
-  }
-  .point-copy {
-    min-width: 0;
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 4rpx;
-  }
-  .point-area {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .detail-header {
-    margin-bottom: 14rpx;
-  }
-  .detail-subtitle {
-    display: block;
-    margin-top: 4rpx;
-    color: var(--theme-text-tertiary);
-    font-size: 21rpx;
-  }
-  .detail-tabs {
-    display: flex;
-    gap: 8rpx;
-    margin-bottom: 12rpx;
-  }
-  .detail-tab {
-    flex: 1;
-    padding: 12rpx 0;
-    border-radius: 12rpx;
+    margin: 8rpx 0;
+    border-radius: 16rpx;
+    background: var(--theme-surface-2);
     color: var(--theme-text-secondary);
-    background: var(--theme-surface);
-    font-size: 21rpx;
-    text-align: center;
+    font-size: 24rpx;
+    line-height: 72rpx;
+    border: 1rpx solid var(--theme-border);
   }
-  .detail-tab.active {
-    color: var(--theme-brand);
-    background: var(--theme-brand-soft);
-    font-weight: 700;
-  }
+
   .selector-state {
-    padding: 24rpx 0;
+    padding: 36rpx 0;
     color: var(--theme-text-tertiary);
-    font-size: 22rpx;
+    font-size: 24rpx;
     text-align: center;
   }
+
   .selector-error {
     color: var(--theme-danger);
   }
