@@ -33,6 +33,11 @@
           popup-title="选择天气地点"
           :disabled="regionLoading"
           @change="onRegionChange" />
+        <view class="place-actions">
+          <text v-if="regionLoading" class="place-action-note">正在加载地点选项…</text>
+          <text v-else-if="!regionLoaded" class="place-action-link" @click="loadPlaceOptions">重新加载地点选项</text>
+          <text class="place-action-link" @click="chooseMapLocation">{{ mapLoading ? '正在打开地图…' : '地图选点' }}</text>
+        </view>
         <view class="search-row">
           <input
             v-model="keyword"
@@ -91,6 +96,7 @@
               <text class="hero-updated">{{ formatObservedAt(weather?.current.observedAt) }} 更新</text>
             </view>
             <view class="hero-actions">
+              <view v-if="!loading && weather" class="hero-action" @click="saveWeatherToMemo">存入备忘录</view>
               <view class="hero-action" :class="{ 'hero-action--loading': loading }" @click="refreshWeather">
                 <uni-icons type="refresh" size="19" color="#fff" />
               </view>
@@ -210,6 +216,7 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
+  import { navigateToMemoEditorWithQuerySnapshot } from '../memo/query-snapshot-navigation'
   import { getWeather, type WeatherPoint, type WeatherResult, type WeatherSourceMode } from './weather-api'
   import { buildWeatherShare, parseWeatherShare } from './share'
   import { getAltitudePlaces, getAltitudePlacesOptions } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
@@ -309,6 +316,37 @@
     } finally {
       if (sequence === requestSequence) loading.value = false
     }
+  }
+
+  const saveWeatherToMemo = () => {
+    const point = lastPoint.value
+    const current = weather.value?.current
+    if (!point || !current) return
+    navigateToMemoEditorWithQuerySnapshot({
+      type: 'weather',
+      title: `${locationName.value || point.name || '天气'} 天气`,
+      capturedAt: weather.value?.metadata.queriedAt || new Date().toISOString(),
+      location: {
+        name: locationName.value || point.name || '已选地点',
+        latitude: point.latitude,
+        longitude: point.longitude,
+        coordinateSystem: point.coordinateSystem,
+        source: point.source,
+        ...(point.placeId ? { placeId: point.placeId } : {}),
+      },
+      snapshot: {
+        temperature: current.temperature,
+        apparentTemperature: current.apparentTemperature,
+        conditionText: current.conditionText,
+        humidity: current.humidity,
+        precipitation: current.precipitation,
+        windSpeed: current.windSpeed,
+        observedAt: current.observedAt,
+        hourly: weather.value?.hourly,
+        daily: weather.value?.daily,
+        provider: weather.value?.metadata.provider,
+      },
+    })
   }
 
   const refreshWeather = () => {
@@ -631,6 +669,21 @@
     color: var(--theme-text-secondary);
     font-size: 23rpx;
     line-height: 1.55;
+  }
+
+  .place-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16rpx;
+    font-size: 22rpx;
+  }
+
+  .place-action-link {
+    color: var(--theme-brand);
+  }
+
+  .place-action-note {
+    color: var(--theme-text-tertiary);
   }
 
   .search-row {

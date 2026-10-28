@@ -1,6 +1,6 @@
 <!--
   memo-v2 编辑器 —— 基于 editor-core schema 驱动架构
-  
+
   功能：
     - 复用 editor-core 的 BlockHost / SchemaDrivenPanel / ResourcePicker
      - 对接 memo API（create / get / patch）
@@ -388,14 +388,15 @@
 </template>
 
 <script setup lang="ts">
-  import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
   import BlockHost from './components/editor-core/renderers/BlockHost.vue'
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'
   import { buildMemoDetailPath } from './navigation'
   import { getAllBlockSchemas, getBlockSchema } from './schemas'
+  import { consumeQuerySnapshotDraft } from './query-snapshot-navigation'
   import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings, parseRouteNodes } from './normalizers'
+  import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { uploadWithOssSignature } from '@/hooks/use-oss-upload'
 
   // ===== 备忘录元信息 =====
@@ -689,6 +690,8 @@
   const checkAndPromptDraftRestore = () => {
     const draft = loadLocalDraft()
     if (!draft?.savedAt) return
+    const querySnapshotMode = (globalThis as any).getCurrentPages?.().slice(-1)[0]?.options?.querySnapshot === '1'
+    if (!memoId.value && querySnapshotMode) return
     const minutes = Math.max(1, Math.round((Date.now() - draft.savedAt) / 60000))
     uni.showModal({
       title: '检测到未保存的草稿',
@@ -1090,7 +1093,7 @@
 
   // ===== 页面加载 =====
   onMounted(async () => {
-    const pages = getCurrentPages()
+    const pages = (globalThis as any).getCurrentPages?.() || []
     const currentPage = pages[pages.length - 1]
     const options = (currentPage as any).options as any
 
@@ -1100,6 +1103,13 @@
     }
 
     await loadData()
+    if (!memoId.value && options?.querySnapshot === '1') {
+      const querySnapshot = consumeQuerySnapshotDraft()
+      if (querySnapshot) {
+        doc.push({ type: 'querySnapshot', version: 1, ...querySnapshot, anchor: generateNextAnchor() })
+        if (!memoName.value) memoName.value = querySnapshot.title
+      }
+    }
     checkAndPromptDraftRestore()
     undoStack.value = [JSON.stringify(captureSnapshot())]
     redoStack.value = []

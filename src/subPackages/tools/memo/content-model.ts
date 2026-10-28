@@ -90,6 +90,23 @@ export interface CalloutBlockData extends MemoBlockBase {
   content: string
 }
 
+export interface QuerySnapshotBlockData extends MemoBlockBase {
+  type: 'querySnapshot'
+  version: 1
+  queryKind: 'altitude' | 'weather'
+  title: string
+  location: {
+    name: string
+    latitude: number
+    longitude: number
+    coordinateSystem: 'wgs84' | 'gcj02'
+    source: 'location' | 'place' | 'map'
+    placeId?: string
+  }
+  capturedAt: string
+  snapshot: Record<string, unknown>
+}
+
 export interface LinkCardBlockData extends MemoBlockBase {
   type: 'linkCard'
   icon?: string
@@ -100,7 +117,7 @@ export interface LinkCardBlockData extends MemoBlockBase {
   action: ContentAction
 }
 
-export type StructuredMemoBlock = ListBlockData | TableBlockData | CalloutBlockData | LinkCardBlockData
+export type StructuredMemoBlock = ListBlockData | TableBlockData | CalloutBlockData | LinkCardBlockData | QuerySnapshotBlockData
 
 export interface MemoSettings {
   editorVersion: 2

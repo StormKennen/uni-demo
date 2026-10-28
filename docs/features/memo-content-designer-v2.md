@@ -15,7 +15,7 @@
 在现有 Schema Driven Block Editor 上补齐移动端文章、攻略、教程、清单和资料页的高频结构化表达。活动实现继续以
 `src/subPackages/tools/memo` 为唯一生产代码，本期不迁移旧 `src/subPackages/services/memo`，不合并根 `src/editor-core`，不新增路由。
 
-现有 Text、Image、Route、Attachment、Media 保持兼容，新增 List、Table、Callout、LinkCard。内容点击统一为 `ContentAction`，
+现有 Text、Image、Route、Attachment、Media 保持兼容，新增 List、Table、Callout、LinkCard 和版本化 QuerySnapshot（查询快照）。内容点击统一为 `ContentAction`，
 新数据保存为 V2 结构，旧 `interactionType`、`linkInfo`、`free` 图片布局和旧 settings 在读取时归一化。
 
 ## 2. 页面流与路由
@@ -37,6 +37,7 @@
 - List 支持 `ordered` / `priority` 两种通用模式；新建列表使用 `sortMode: 'manual'`，优先级只做标记，不改变 children 顺序。历史 bullet/number/checklist 数据继续兼容读取。Table 支持 keyValue、table；Callout 使用有限 tone；LinkCard 点击走 ContentAction。
 - Image Item 的预览及跳转、Text Item、LinkCard 共用 ContentAction。
 - Media 显式保存 `mediaType`，不再只依赖 URL 后缀；Attachment 新数据只保存文件元信息，旧腾讯文档字段继续读取。
+- QuerySnapshot 保存查询时的展示快照及可刷新地点引用；目前刷新由查询工具页面重新执行，备忘录只读展示快照，不自动定位或联网刷新。快照不包含账户凭证、游客会话凭证或分享令牌。服务端 `content` 对新类型的持久化兼容仍需用真实 API 往返验证。
 - settings 持久化包含 `editorVersion: 2`、padding、border、appearance、typography、layout、features。
 
 ## 4. 跨端说明
@@ -48,7 +49,7 @@
 
 ## 5. 验收清单
 
-- [ ] 九类 Block 可新增、编辑、排序、复制、锁定、删除
+- [ ] 十类 Block 可新增、编辑、排序、复制、锁定、删除；QuerySnapshot 不提供字段编辑，仅可移动/复制/删除
 - [ ] List/Table/Callout/LinkCard 编辑态与只读态共用 Renderer
 - [ ] URL、小程序、备忘录、内部页面、地图、锚点 Action 可降级执行
 - [ ] 图片有限布局及 Item Action 正常，旧 `free` 数据可读

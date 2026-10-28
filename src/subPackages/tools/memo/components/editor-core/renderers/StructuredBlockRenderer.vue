@@ -94,6 +94,20 @@
       </view>
     </view>
 
+    <view v-else-if="block.type === 'querySnapshot'" class="sbr-query-snapshot">
+      <text class="sbr-query-title">{{ block.title }}</text>
+      <text class="sbr-query-location">{{ block.location.name || '未命名地点' }}</text>
+      <text class="sbr-query-location">{{ block.location.latitude.toFixed(5) }}, {{ block.location.longitude.toFixed(5) }}</text>
+      <text v-if="block.queryKind === 'altitude'" class="sbr-query-value">海拔 {{ block.snapshot.altitudeMeters ?? '--' }} 米</text>
+      <template v-else>
+        <text class="sbr-query-value">{{ block.snapshot.conditionText || '天气快照' }} · {{ block.snapshot.temperature ?? '--' }}°</text>
+      </template>
+      <text class="sbr-query-time">记录于 {{ block.capturedAt || '时间未知' }}</text>
+      <text v-if="block.queryKind === 'weather' && block.snapshot.humidity != null" class="sbr-query-time"
+        >湿度 {{ block.snapshot.humidity }}%</text
+      >
+    </view>
+
     <view v-else-if="block.type === 'linkCard'" class="sbr-link-card" @click.stop="activateLinkCard">
       <image v-if="block.cover" class="sbr-link-cover" :src="block.cover" mode="aspectFill" />
       <view v-else class="sbr-link-icon">{{ block.icon || '↗' }}</view>
@@ -139,6 +153,7 @@
       table: '表格 / 信息',
       callout: '提示',
       linkCard: '链接卡片',
+      querySnapshot: '查询快照',
     }
     return labels[props.block.type]
   })
@@ -497,6 +512,29 @@
     color: var(--theme-text-secondary);
     font-size: 25rpx;
     line-height: 1.6;
+  }
+  .sbr-query-snapshot {
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+    padding: 20rpx;
+    border-radius: 12rpx;
+    background: var(--theme-surface-2);
+  }
+  .sbr-query-title {
+    color: var(--theme-text);
+    font-size: 26rpx;
+    font-weight: 700;
+  }
+  .sbr-query-location,
+  .sbr-query-time {
+    color: var(--theme-text-tertiary);
+    font-size: 20rpx;
+  }
+  .sbr-query-value {
+    color: var(--theme-brand);
+    font-size: 24rpx;
+    font-weight: 600;
   }
   .sbr-link-card {
     display: flex;

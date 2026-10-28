@@ -1,4 +1,12 @@
-import type { ContentAction, ListItem, ListPriority, MemoBlockBase, MemoSettings, StructuredMemoBlock } from './content-model'
+import type {
+  ContentAction,
+  ListItem,
+  ListPriority,
+  MemoBlockBase,
+  MemoSettings,
+  QuerySnapshotBlockData,
+  StructuredMemoBlock,
+} from './content-model'
 import type { AttachmentBlockData, ImageBlockData, MediaBlockData, RouteBlockData, RouteNode, TextBlockData } from './schemas'
 
 type UnknownRecord = Record<string, unknown>
@@ -10,6 +18,7 @@ export type NormalizedMemoBlock = (
   | AttachmentBlockData
   | MediaBlockData
   | StructuredMemoBlock
+  | QuerySnapshotBlockData
 ) &
   MemoBlockBase
 
@@ -161,6 +170,32 @@ export const normalizeBlock = (source: unknown): NormalizedMemoBlock | null => {
   }
 
   if (block.type === 'linkCard') block.action = normalizeContentAction(block.action)
+
+  if (block.type === 'querySnapshot') {
+    const location = isRecord(block.location) ? block.location : {}
+    const latitude = asNumber(location.latitude)
+    const longitude = asNumber(location.longitude)
+    if (
+      block.version !== 1 ||
+      (block.queryKind !== 'altitude' && block.queryKind !== 'weather') ||
+      latitude === undefined ||
+      longitude === undefined
+    )
+      return null
+    const coordinateSystem = location.coordinateSystem === 'gcj02' ? 'gcj02' : 'wgs84'
+    const source = location.source === 'place' || location.source === 'map' ? location.source : 'location'
+    block.location = {
+      name: asString(location.name),
+      latitude,
+      longitude,
+      coordinateSystem,
+      source,
+      ...(typeof location.placeId === 'string' ? { placeId: location.placeId } : {}),
+    }
+    block.title = asString(block.title) || (block.queryKind === 'altitude' ? '海拔查询快照' : '天气查询快照')
+    block.capturedAt = asString(block.capturedAt)
+    block.snapshot = isRecord(block.snapshot) ? block.snapshot : {}
+  }
   return block as unknown as NormalizedMemoBlock
 }
 

@@ -60,6 +60,7 @@
           <text class="state-title">暂时无法获取海拔</text>
           <text class="state-description">{{ errorMessage }}</text>
           <button v-if="permissionDenied" class="settings-button" @click="openLocationSettings">去开启定位权限</button>
+          <button v-else class="settings-button" :disabled="loading" @click="queryCurrentAltitude">重新定位并查询</button>
         </view>
 
         <view v-else-if="result" class="reading-box">
@@ -80,6 +81,11 @@
                 </view>
                 <!-- <text class="dial-unit">米 · 当前海拔</text> -->
               </view>
+              <view class="result-meta">
+                <text>{{ result.name || '当前位置' }}</text>
+                <text>{{ result.latitude.toFixed(5) }}, {{ result.longitude.toFixed(5) }}</text>
+                <text>查询时间 {{ result.queriedAt.replace('T', ' ').slice(0, 19) }}</text>
+              </view>
               <view class="dial-needle-origin" :style="gaugeNeedleStyle">
                 <view class="dial-needle" />
               </view>
@@ -94,6 +100,7 @@
           <text class="state-description">点击上方按钮开始定位</text>
         </view>
       </view>
+      <button v-if="result && !loading" class="refresh-text-button" @click="saveAltitudeToMemo">存入备忘录</button>
       <button v-if="queryMode === 'location' && result && !loading" class="refresh-text-button" @click="queryCurrentAltitude">
         重新获取当前海拔
       </button>
@@ -104,6 +111,7 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+  import { navigateToMemoEditorWithQuerySnapshot } from '../memo/query-snapshot-navigation'
   import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
   import { getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
   import {
@@ -425,6 +433,24 @@
       },
     })
     // #endif
+  }
+
+  const saveAltitudeToMemo = () => {
+    if (!result.value) return
+    navigateToMemoEditorWithQuerySnapshot({
+      type: 'altitude',
+      title: result.value.name ? `${result.value.name} 海拔` : '海拔查询',
+      capturedAt: result.value.queriedAt,
+      location: {
+        name: result.value.name || '当前位置',
+        latitude: result.value.latitude,
+        longitude: result.value.longitude,
+        coordinateSystem: 'wgs84',
+        source: result.value.sourceMode === 'place' ? 'place' : 'location',
+        ...(result.value.placeId ? { placeId: result.value.placeId } : {}),
+      },
+      snapshot: { altitudeMeters: result.value.altitudeMeters, unit: result.value.unit, source: result.value.source },
+    })
   }
 
   const queryCurrentAltitude = async () => {
@@ -1237,6 +1263,16 @@
     color: var(--theme-text);
     font-size: 26rpx;
     font-weight: 600;
+  }
+
+  .result-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+    margin-top: 18rpx;
+    color: var(--theme-text-secondary);
+    font-size: 21rpx;
+    text-align: center;
   }
 
   .refresh-text-button {

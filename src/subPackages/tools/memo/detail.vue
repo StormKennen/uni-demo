@@ -6,11 +6,7 @@
     :share-timeline-query="memoShareTimelineQuery"
     back-fallback="/pages/tools/index"
     nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
-    <view
-      id="memo-detail-root"
-      class="memo-detail-page"
-      :class="{ 'is-exporting-page': isExporting || exportMode }"
-      :style="pageStyle">
+    <view id="memo-detail-root" class="memo-detail-page" :class="{ 'is-exporting-page': isExporting || exportMode }" :style="pageStyle">
       <!-- 背景图层 -->
       <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
 
@@ -417,7 +413,7 @@
   import ImageContentRenderer from './components/editor-core/renderers/ImageContentRenderer.vue'
   import AudioContentPlayer from './components/editor-core/renderers/AudioContentPlayer.vue'
   import { executeContentAction } from './content-action'
-  import type { ContentAction, StructuredMemoBlock } from './content-model'
+  import type { ContentAction, QuerySnapshotBlockData, StructuredMemoBlock } from './content-model'
   import type { NormalizedMemoBlock } from './normalizers'
   import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
   import { getToken } from '@/utils/storage'
@@ -740,9 +736,9 @@
 
       let thStyle = `${cellStyle}font-weight:bold;`
       if (hasCustomBackground.value) {
-        thStyle += `background-color: transparent;`
+        thStyle += 'background-color: transparent;'
       } else {
-        thStyle += `background-color:#f8f9fa;`
+        thStyle += 'background-color:#f8f9fa;'
       }
 
       // 3. 强力内联注入 (绕过 WXSS 编译) - 使用边界匹配避免误伤
@@ -923,8 +919,12 @@
     openMapNavigation(Number(node.latitude), Number(node.longitude), node.name || '目的地', node.address)
   }
 
-  const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock =>
-    block.type === 'list' || block.type === 'table' || block.type === 'callout' || block.type === 'linkCard'
+  const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock | QuerySnapshotBlockData =>
+    block.type === 'list' ||
+    block.type === 'table' ||
+    block.type === 'callout' ||
+    block.type === 'linkCard' ||
+    block.type === 'querySnapshot'
 
   const waitForMemoImages = async (): Promise<void> => {
     // #ifdef H5
@@ -1926,7 +1926,7 @@
         const apiPromise = postPainterGenerateInfo({
           id: posterId,
           targetUrl: targetUrl,
-            selector: '#memo-detail-root',
+          selector: '#memo-detail-root',
           options: {
             width: 375,
             deviceScaleFactor: 2,
@@ -2374,7 +2374,6 @@
     }
   })
   // #endif
-
 </script>
 
 <style lang="scss" scoped>

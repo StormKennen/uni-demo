@@ -109,6 +109,29 @@ describe('memo V2 normalizers', () => {
     expect(normalizeMemoContent([{ type: 'list', mode: 'priority' }])[0]).toMatchObject({ children: [] })
   })
 
+  it('normalizes versioned query snapshots and rejects invalid coordinates', () => {
+    const blocks = normalizeMemoContent([
+      {
+        type: 'querySnapshot',
+        version: 1,
+        queryKind: 'altitude',
+        title: '海拔快照',
+        location: { name: '青城山', latitude: '30.9', longitude: '103.5', coordinateSystem: 'wgs84', source: 'place', placeId: 'p-1' },
+        capturedAt: '2026-10-24T10:00:00Z',
+        snapshot: { altitudeMeters: 1260 },
+      },
+      { type: 'querySnapshot', version: 1, queryKind: 'weather', location: { latitude: 'bad', longitude: 0 } },
+    ])
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0]).toMatchObject({
+      type: 'querySnapshot',
+      version: 1,
+      queryKind: 'altitude',
+      location: { name: '青城山', latitude: 30.9, longitude: 103.5, coordinateSystem: 'wgs84', source: 'place', placeId: 'p-1' },
+      snapshot: { altitudeMeters: 1260 },
+    })
+  })
+
   it('upgrades partial settings to editor version 2', () => {
     const result = normalizeMemoSettings({
       padding: { top: 8 },

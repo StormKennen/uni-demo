@@ -18,6 +18,7 @@ import type {
   TableRow,
   CalloutBlockData,
   LinkCardBlockData,
+  QuerySnapshotBlockData,
   MemoBlockStyle,
 } from './content-model'
 import type { BlockSchema as CoreBlockSchema } from '@/editor-core/schemas/block-schema'
@@ -752,6 +753,22 @@ const linkCardSchema: SchemaField[] = [
   ...createActionSchema(),
 ]
 
+export const QuerySnapshotBlockSchema: BlockSchema<QuerySnapshotBlockData> = {
+  type: 'querySnapshot',
+  label: '查询快照',
+  icon: '📍',
+  supportsChildren: false,
+  createDefault: () => ({
+    type: 'querySnapshot',
+    version: 1,
+    queryKind: 'altitude',
+    title: '查询快照',
+    location: { name: '', latitude: 0, longitude: 0, coordinateSystem: 'wgs84', source: 'location' },
+    capturedAt: '',
+    snapshot: {},
+  }),
+}
+
 export const LinkCardBlockSchema: BlockSchema<LinkCardBlockData> = {
   type: 'linkCard',
   label: '链接卡片',
@@ -772,6 +789,7 @@ const _allSchemas: BlockSchema[] = [
   TableBlockSchema,
   CalloutBlockSchema,
   LinkCardBlockSchema,
+  QuerySnapshotBlockSchema,
 ]
 
 export const getAllBlockSchemas = (): BlockSchema[] => _allSchemas
