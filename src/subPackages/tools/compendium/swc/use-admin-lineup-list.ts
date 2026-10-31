@@ -1,8 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
-import type { CharacterOption, LineupScope, PaginationState, UserLineupListResult } from '../lineup-types'
-import { normalizeUserLineupListResult } from '../lineup-normalizers'
-import { buildAnonymousRequestConfig } from '../request-options'
-import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from '../lineup-meta'
+import type { CharacterOption, LineupScope, PaginationState, UserLineupListResult } from './lineup-types'
+import { normalizeUserLineupListResult } from './lineup-normalizers'
+import { buildAnonymousRequestConfig } from './request-options'
+import { ALL_VALUE, LINEUP_FILTER_STATUS_OPTIONS, LINEUP_FILTER_TYPE_OPTIONS } from './lineup-meta'
 import { getCompendiumsLineups } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/apifox'
 import type { getCompendiumsLineupsQuery } from '@/services/apifox/NODEJSDEMO/COMPENDIUMLINEUPS/interface'
 
@@ -32,6 +32,8 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
   const pendingRefresh = ref(false)
   const errorMessage = ref('')
   let requestVersion = 0
+  let lastRefreshAt = 0
+  const REFRESH_THROTTLE_MS = 500
 
   const selectedTypeLabel = computed(
     () => LINEUP_FILTER_TYPE_OPTIONS.find(option => option.value === selectedType.value)?.label || selectedType.value || '全部',
@@ -153,7 +155,10 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     }
   }
 
-  const refreshList = () => {
+  const refreshList = (force = false) => {
+    const now = Date.now()
+    if (!force && (loading.value || loadingMore.value || now - lastRefreshAt < REFRESH_THROTTLE_MS)) return
+    lastRefreshAt = now
     void fetchList(true)
   }
 
@@ -163,29 +168,24 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
 
   const selectType = (value: string) => {
     selectedType.value = value
-    refreshList()
   }
 
   const selectStatus = (value: string) => {
     selectedStatus.value = value
-    refreshList()
   }
 
   const selectScope = (value: LineupScope) => {
     selectedScope.value = value
-    refreshList()
   }
 
   const removeCharacterFilter = (characterId: string) => {
     if (!isCharacterFilterSelected(characterId)) return
     selectedCharacterFilters.value = selectedCharacterFilters.value.filter(item => item.characterId !== characterId)
-    refreshList()
   }
 
   const clearCharacterFilters = () => {
     if (!selectedCharacterFilters.value.length) return
     selectedCharacterFilters.value = []
-    refreshList()
   }
 
   const resetFilters = () => {
@@ -201,15 +201,28 @@ export const useAdminLineupList = (params: { compendiumId: string; locale: Ref<s
     selectedStatus.value = ALL_VALUE
     selectedScope.value = 'all'
     selectedCharacterFilters.value = []
-    refreshList()
+  }
+
+  const decodeRouteValue = (value: string | undefined): string => {
+    if (!value) return ''
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
   }
 
   const applyRouteQuery = (options: Record<string, string | undefined>) => {
-    keyword.value = options.keyword || ''
-    selectedType.value = options.type || ALL_VALUE
-    selectedStatus.value = options.status || ALL_VALUE
-    selectedScope.value = options.scope === 'mine' || options.scope === 'favorites' ? options.scope : 'all'
-    selectedCharacterFilters.value = (options.characterIds || '')
+    const keywordValue = decodeRouteValue(options.keyword)
+    const typeValue = decodeRouteValue(options.type)
+    const statusValue = decodeRouteValue(options.status)
+    const scopeValue = decodeRouteValue(options.scope)
+    const characterIdsValue = decodeRouteValue(options.characterIds)
+    keyword.value = keywordValue
+    selectedType.value = typeValue || ALL_VALUE
+    selectedStatus.value = statusValue || ALL_VALUE
+    selectedScope.value = scopeValue === 'mine' || scopeValue === 'favorites' ? scopeValue : 'all'
+    selectedCharacterFilters.value = characterIdsValue
       .split(',')
       .map(item => item.trim())
       .filter(Boolean)

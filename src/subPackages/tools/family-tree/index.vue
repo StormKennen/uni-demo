@@ -6,12 +6,10 @@
       <view class="action-bar">
         <!-- 模式切换 -->
         <view class="mode-switch">
-          <!-- #ifdef H5 -->
           <view class="mode-btn" :class="{ active: viewMode === 'tree' }" @click="viewMode = 'tree'">
             <uni-icons type="staff" size="16" :color="viewMode === 'tree' ? '#fff' : '#667eea'" />
             <text class="mode-text">图谱</text>
           </view>
-          <!-- #endif -->
           <view class="mode-btn" :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'">
             <uni-icons type="bars" size="16" :color="viewMode === 'list' ? '#fff' : '#667eea'" />
             <text class="mode-text">列表</text>
@@ -28,38 +26,79 @@
       </view>
       <!-- 列表模式 -->
       <view class="content-wrapper" v-if="viewMode === 'list'">
-        <FamilyTreeList ref="listRef" />
+        <FamilyTreeList
+          ref="listRef"
+          :initialKeyword="initialKeyword"
+          :initialGeneration="initialGeneration"
+          @filter-change="handleFilterChange" />
       </view>
 
-      <!-- #ifdef H5 -->
-      <!-- 图谱面板模式（图谱升级中，保留成员新增能力） -->
+      <!-- 图谱面板模式 -->
       <view class="content-wrapper" v-if="viewMode === 'tree'">
         <FamilyTreeChart ref="chartRef" />
       </view>
-      <!-- #endif -->
     </view>
   </PageLayout>
 </template>
 
 <script setup>
   import { ref, watch, onMounted, nextTick } from 'vue'
-  import { onShow } from '@dcloudio/uni-app'
-  import { reportToolVisit } from '@/utils/tracker'
+  import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
   import FamilyTreeList from './family-tree-list.vue'
-  // #ifdef H5
   import FamilyTreeChart from './family-tree-chart.vue'
-  // #endif
-  import { useShare } from '@/utils/share'
-
-  // 启用分享
-  useShare()
+  import { reportToolVisit } from '@/utils/tracker'
 
   // 视图模式：list 列表 | tree 树形图
-  const viewMode = ref('list')
+  const viewMode = ref('tree')
 
-  // #ifdef H5
-  viewMode.value = 'tree'
-  // #endif
+  const currentKeyword = ref('')
+  const currentGeneration = ref(null)
+  const initialKeyword = ref('')
+  const initialGeneration = ref(null)
+
+  // 页面加载时解析分享携带的筛选参数
+  onLoad(options => {
+    if (options && options.viewMode) {
+      viewMode.value = options.viewMode
+    }
+    if (options && options.q) {
+      initialKeyword.value = decodeURIComponent(options.q)
+      currentKeyword.value = initialKeyword.value
+    }
+    if (options && options.generation !== undefined && options.generation !== '') {
+      initialGeneration.value = Number(options.generation)
+      currentGeneration.value = initialGeneration.value
+    }
+  })
+
+  const handleFilterChange = ({ searchKeyword, filterGeneration }) => {
+    currentKeyword.value = searchKeyword
+    currentGeneration.value = filterGeneration
+  }
+
+  const getShareQueryStr = () => {
+    let query = `viewMode=${viewMode.value}`
+    if (currentKeyword.value) {
+      query += `&q=${encodeURIComponent(currentKeyword.value)}`
+    }
+    if (currentGeneration.value !== null && currentGeneration.value !== undefined) {
+      query += `&generation=${currentGeneration.value}`
+    }
+    return query
+  }
+
+  // 微信小程序分享：朋友与朋友圈（自动携带当前视图及筛选参数）
+  onShareAppMessage(() => ({
+    title: '家族族谱 - 传承血脉，记录家族记忆',
+    path: `/subPackages/tools/family-tree/index?${getShareQueryStr()}`,
+    imageUrl: '/static/logo.png',
+  }))
+
+  onShareTimeline(() => ({
+    title: '家族族谱 - 传承血脉，记录家族记忆',
+    path: `/subPackages/tools/family-tree/index?${getShareQueryStr()}`,
+    imageUrl: '/static/logo.png',
+  }))
 
   // 组件引用
   const listRef = ref(null)
@@ -100,6 +139,7 @@
 <style scoped>
   .family-tree-page {
     height: 100vh;
+    height: 100dvh;
     background-color: var(--theme-bg);
     display: flex;
     flex-direction: column;
@@ -178,7 +218,9 @@
 
   /* 子组件宿主元素样式 - 微信小程序需要 */
   .content-wrapper :deep(family-tree-chart),
-  .content-wrapper :deep(family-tree-list) {
+  .content-wrapper :deep(family-tree-list),
+  .content-wrapper :deep(family-tree-chart > view),
+  .content-wrapper :deep(family-tree-list > view) {
     display: flex;
     flex: 1;
     flex-direction: column;

@@ -3,6 +3,12 @@ import { wechatFilePicker } from './wechat'
 import type { FilePicker } from './types'
 
 export type { FilePicker, PickFileOptions, PickImageOptions, SelectedFile } from './types'
+export { downloadFileDirect } from './download'
+export { downloadFileToLocal, isLocalFileAvailable, logFileOperationFailure, previewLocalImage, saveLocalFile } from './download'
+export { FileOperationError } from './download'
+export type { DirectDownloadOptions, FileOperationCode, LocalFile, SaveLocalFileResult } from './download'
+export { uploadFileDirect } from './upload'
+export type { DirectUploadOptions, DirectUploadResult, DirectUploadTask } from './upload'
 
 let platformFilePicker: FilePicker = webFilePicker
 

@@ -238,6 +238,33 @@
                         <switch :checked="node.type === 'transfer'" @change="toggleRouteNodeType(blockIndex, nodeIndex)" color="#667eea" />
                       </view>
                     </template>
+
+                    <view class="node-input-row">
+                      <view class="node-input-group half">
+                        <text class="input-label">时间点</text>
+                        <input class="node-input" v-model="node.startTime" placeholder="如 09:30" :maxlength="20" />
+                      </view>
+                      <view class="node-input-group half">
+                        <text class="input-label">停留/游玩时长</text>
+                        <input class="node-input" v-model="node.duration" placeholder="如 4h" :maxlength="20" />
+                      </view>
+                    </view>
+
+                    <view class="node-input-group">
+                      <text class="input-label">地址</text>
+                      <input class="node-input" v-model="node.address" placeholder="请输入详细地址" :maxlength="200" />
+                    </view>
+
+                    <view class="node-input-row">
+                      <view class="node-input-group half">
+                        <text class="input-label">纬度</text>
+                        <input class="node-input" v-model.number="node.latitude" placeholder="如 30.5728" type="number" />
+                      </view>
+                      <view class="node-input-group half">
+                        <text class="input-label">经度</text>
+                        <input class="node-input" v-model.number="node.longitude" placeholder="如 104.0668" type="number" />
+                      </view>
+                    </view>
                   </view>
                 </view>
 
@@ -984,6 +1011,11 @@
     desc?: string
     type?: 'normal' | 'transfer'
     isEnd?: boolean
+    address?: string
+    latitude?: number
+    longitude?: number
+    startTime?: string
+    duration?: string
   }
 
   // 路径块
@@ -2178,25 +2210,40 @@
         return
       }
 
-      // 自动补全缺失字段，确保格式兼容
-      const processedNodes: RouteNode[] = importedList.map((node, index) => ({
-        name: node.name || '',
-        time: node.time || '',
-        icon: node.icon || '',
-        desc: node.desc || '',
-        type: node.type || 'normal',
-        isEnd: false, // 先全部设为 false
-      }))
+      if (!importedList.every(node => node && typeof node === 'object' && typeof node.name === 'string')) {
+        throw new Error('每个节点都必须包含 name 字段')
+      }
+
+      // 只归一化编辑器依赖的字段，其余字段原样保留，兼容扩展后的攻略 JSON。
+      const processedNodes: RouteNode[] = importedList.map(node => {
+        const source = node as Record<string, unknown>
+        const toCoordinate = (value: unknown) => {
+          if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
+          if (typeof value !== 'string' || !value.trim()) return undefined
+          const parsed = Number(value)
+          return Number.isFinite(parsed) ? parsed : undefined
+        }
+        return {
+          ...source,
+          name: source.name as string,
+          time: typeof source.time === 'string' ? source.time : '',
+          icon: typeof source.icon === 'string' ? source.icon : '',
+          desc: typeof source.desc === 'string' ? source.desc : '',
+          type: source.type === 'transfer' ? 'transfer' : 'normal',
+          isEnd: source.isEnd === true,
+          address: typeof source.address === 'string' ? source.address : '',
+          latitude: toCoordinate(source.latitude),
+          longitude: toCoordinate(source.longitude),
+          startTime: typeof source.startTime === 'string' ? source.startTime : '',
+          duration: typeof source.duration === 'string' ? source.duration : '',
+        }
+      })
 
       // 确保最后一个节点是终点
       if (processedNodes.length > 0) {
         const lastNode = processedNodes[processedNodes.length - 1]
         lastNode.isEnd = true
-        // 终点不需要 time/icon/desc
-        lastNode.time = ''
-        lastNode.icon = ''
-        lastNode.desc = ''
-        lastNode.type = 'normal'
+        // 终点也保留时间、描述和地点字段，避免导入时丢失旧数据或攻略扩展信息。
       }
 
       // 更新路径块内容

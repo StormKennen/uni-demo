@@ -41,16 +41,31 @@ export interface MemoBlockStyle extends Record<string, unknown> {
   enable3DMode?: boolean
 }
 
+export type ListMode = 'ordered' | 'priority'
+export type ListPriority = 'P0' | 'P1' | 'P2' | 'P3'
+
+/** 旧版 V2 列表模式，仅用于读取历史内容。新建内容不再使用这些模式。 */
+export type LegacyListMode = 'bullet' | 'number' | 'checklist'
+
 export interface ListItem {
   text: string
+  priority?: ListPriority
+  desc?: string
+  /** @deprecated 兼容旧版 checklist 数据，不会由新建的 ListBlock 写入。 */
   checked?: boolean
+  /** @deprecated 兼容旧版列表数据，读取时优先转换为 desc。 */
   description?: string
 }
 
 export interface ListBlockData extends MemoBlockBase {
   type: 'list'
-  mode: 'bullet' | 'number' | 'checklist'
+  mode: ListMode | LegacyListMode
   children: ListItem[]
+  sortMode?: 'manual'
+  style?: MemoBlockStyle & {
+    backgroundColor?: string
+    textAlign?: 'left' | 'center' | 'right'
+  }
 }
 
 export interface TableRow {
@@ -75,6 +90,23 @@ export interface CalloutBlockData extends MemoBlockBase {
   content: string
 }
 
+export interface QuerySnapshotBlockData extends MemoBlockBase {
+  type: 'querySnapshot'
+  version: 1
+  queryKind: 'altitude' | 'weather'
+  title: string
+  location: {
+    name: string
+    latitude: number
+    longitude: number
+    coordinateSystem: 'wgs84' | 'gcj02'
+    source: 'location' | 'place' | 'map'
+    placeId?: string
+  }
+  capturedAt: string
+  snapshot: Record<string, unknown>
+}
+
 export interface LinkCardBlockData extends MemoBlockBase {
   type: 'linkCard'
   icon?: string
@@ -85,7 +117,7 @@ export interface LinkCardBlockData extends MemoBlockBase {
   action: ContentAction
 }
 
-export type StructuredMemoBlock = ListBlockData | TableBlockData | CalloutBlockData | LinkCardBlockData
+export type StructuredMemoBlock = ListBlockData | TableBlockData | CalloutBlockData | LinkCardBlockData | QuerySnapshotBlockData
 
 export interface MemoSettings {
   editorVersion: 2

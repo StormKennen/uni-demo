@@ -45,7 +45,13 @@
     @add-item="(i: number) => $emit('add-item', i)"
     @update:block="(b: any) => $emit('update:block', b)" />
   <StructuredBlockRenderer
-    v-else-if="block?.type === 'list' || block?.type === 'table' || block?.type === 'callout' || block?.type === 'linkCard'"
+    v-else-if="
+      block?.type === 'list' ||
+      block?.type === 'table' ||
+      block?.type === 'callout' ||
+      block?.type === 'linkCard' ||
+      block?.type === 'querySnapshot'
+    "
     :block="block"
     :block-index="blockIndex"
     :selected="selected"

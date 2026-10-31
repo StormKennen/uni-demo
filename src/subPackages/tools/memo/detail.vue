@@ -1,6 +1,12 @@
 <template>
-  <PageLayout :title="memoTitle" back-fallback="/pages/tools/index" nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
-    <view class="memo-detail-page" :style="pageStyle">
+  <PageLayout
+    :title="memoTitle"
+    :share-title="memoTitle"
+    :share-path="memoSharePath"
+    :share-timeline-query="memoShareTimelineQuery"
+    back-fallback="/pages/tools/index"
+    nav-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+    <view id="memo-detail-root" class="memo-detail-page" :class="{ 'is-exporting-page': isExporting || exportMode }" :style="pageStyle">
       <!-- 背景图层 -->
       <view v-if="backgroundLayerStyle" class="background-layer" :style="backgroundLayerStyle"></view>
 
@@ -20,6 +26,9 @@
         <!-- 分享按钮 -->
         <view class="action-btn ghost" @click="shareMemo" v-if="memoData && canShareDetail">
           <text class="icon">分享</text>
+        </view>
+        <view class="action-btn ghost" @click="sendMemoWithQuickShip" v-if="memoData">
+          <text class="icon">用飞船</text>
         </view>
         <!-- 编辑按钮（仅创建者；分享/管理员/只读视角隐藏） -->
         <view class="action-btn primary" @click="goToEdit" v-if="isLoggedIn && memoData && canEditDetail">
@@ -49,7 +58,12 @@
         class="memo-content"
         :class="[
           'theme-' + currentSmartTheme,
-          { 'is-ready': isRendered, 'has-custom-bg': hasCustomBackground, 'is-narrow': settings.layout.contentWidth === 'narrow' },
+          {
+            'is-ready': isRendered,
+            'has-custom-bg': hasCustomBackground,
+            'is-narrow': settings.layout.contentWidth === 'narrow',
+            'is-exporting': isExporting || exportMode,
+          },
         ]"
         :style="memoBodyStyle">
         <!-- 标题 -->
@@ -208,19 +222,28 @@
                   </view>
 
                   <!-- 右侧内容 -->
-                  <view class="route-content">
-                    <!-- 站点名称 -->
-                    <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                  <view
+                    class="route-content"
+                    :class="{ 'route-content-navigable': hasRouteCoordinates(node) }"
+                    @click="navigateToRouteNode(node)">
+                    <!-- 时间点与站点名称 -->
+                    <text v-if="node.startTime" class="route-start-time">{{ node.startTime }}</text>
+                    <view class="route-name-row">
+                      <text class="route-name">{{ node.name || '未命名站点' }}</text>
+                      <text v-if="hasRouteCoordinates(node)" class="route-nav-icon" @click.stop="navigateToRouteNode(node)">📍</text>
+                    </view>
 
-                    <!-- 信息胶囊（非终点显示） -->
-                    <view v-if="!node.isEnd && (node.time || node.icon)" class="route-info-tag">
+                    <!-- 信息胶囊 -->
+                    <view v-if="node.time || node.duration || node.icon" class="route-info-tag">
                       <text v-if="node.time" class="tag-time">🕒 {{ node.time }}</text>
-                      <text v-if="node.time && node.icon" class="tag-divider">·</text>
+                      <text v-if="node.time && (node.duration || node.icon)" class="tag-divider">·</text>
+                      <text v-if="node.duration" class="tag-duration">停留：{{ node.duration }}</text>
+                      <text v-if="node.duration && node.icon" class="tag-divider">·</text>
                       <text v-if="node.icon" class="tag-icon">{{ node.icon }}</text>
                     </view>
 
-                    <!-- 描述（非终点显示） -->
-                    <text v-if="!node.isEnd && node.desc" class="route-desc">{{ node.desc }}</text>
+                    <text v-if="node.desc" class="route-desc">{{ node.desc }}</text>
+                    <text v-if="node.address" class="route-address">{{ node.address }}</text>
                   </view>
                 </view>
               </view>
@@ -384,17 +407,18 @@
 <script setup lang="ts">
   import { ref, reactive, computed, nextTick, getCurrentInstance } from 'vue'
   import { marked } from 'marked'
-  import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import { buildMemoDetailPath } from './navigation'
+  import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+  import { buildMemoDetailPath, buildMemoDetailQuery, buildMemoShareUrl, parseMemoDetailParams } from './navigation'
   import StructuredBlockRenderer from './components/editor-core/renderers/StructuredBlockRenderer.vue'
   import ImageContentRenderer from './components/editor-core/renderers/ImageContentRenderer.vue'
   import AudioContentPlayer from './components/editor-core/renderers/AudioContentPlayer.vue'
   import { executeContentAction } from './content-action'
-  import type { ContentAction, StructuredMemoBlock } from './content-model'
+  import type { ContentAction, QuerySnapshotBlockData, StructuredMemoBlock } from './content-model'
   import type { NormalizedMemoBlock } from './normalizers'
   import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
   import { getToken } from '@/utils/storage'
   import { openMapNavigation, openExternalLink } from '@/utils/map'
+  import { openQuickShipWithReference } from '@/features/quick-transfer/reference/registry'
   import { postPainterGenerateInfo } from '@/services/apifox/NODEJSDEMO/PAINTER/apifox'
   import {
     getMemosPublicDetail,
@@ -418,6 +442,7 @@
   // 后端返回的访问角色标识
   const accessRole = ref<'owner' | 'shared' | 'admin' | 'guest' | ''>('')
   const activeShareToken = ref('')
+  let shareTokenRequest: Promise<string> | null = null
 
   interface ShareResponse {
     memoId?: string
@@ -430,6 +455,10 @@
       shareEnabled?: boolean
       canShare?: boolean
     }
+  }
+
+  interface MemoPageWithOptions {
+    options?: Record<string, unknown>
   }
 
   // 设置（从 memoData 中读取）
@@ -546,12 +575,13 @@
   // 检查块是否已翻开（用于导出时强制翻开）
   const isBlockFlipped = (blockIndex: number, forExport = false): boolean => {
     // 导出模式下强制显示已翻开状态
-    if (forExport || isExporting.value) return true
+    if (forExport || isExporting.value || exportMode.value) return true
     return !!flippedBlocks[blockIndex]
   }
 
   // 导出状态标记
   const isExporting = ref(false)
+  const exportMode = ref(false)
 
   // 字号映射
   const fontSizeMap: Record<string, string> = {
@@ -706,9 +736,9 @@
 
       let thStyle = `${cellStyle}font-weight:bold;`
       if (hasCustomBackground.value) {
-        thStyle += `background-color: transparent;`
+        thStyle += 'background-color: transparent;'
       } else {
-        thStyle += `background-color:#f8f9fa;`
+        thStyle += 'background-color:#f8f9fa;'
       }
 
       // 3. 强力内联注入 (绕过 WXSS 编译) - 使用边界匹配避免误伤
@@ -844,10 +874,32 @@
     return detailSource.value === 'public' && Boolean(activeShareToken.value)
   })
 
+  const sendMemoWithQuickShip = () => {
+    if (!memoData.value || !memoId.value) return
+    openQuickShipWithReference({
+      localId: `memo-${memoId.value}`,
+      type: 'memoDetail',
+      resourceId: memoId.value,
+      title: memoData.value.name || '未命名备忘录',
+      subtitle: '备忘录',
+    })
+  }
+
   // 备忘录标题
   const memoTitle = computed(() => {
     if (!memoData.value) return '备忘录详情'
     return memoData.value.name || '未命名备忘录'
+  })
+
+  // PageLayout 负责注册微信分享；路径必须通过 props 透传，否则会被其默认当前路由覆盖并丢失 id。
+  const memoSharePath = computed(() => {
+    const id = memoId.value || String(memoData.value?.id || '')
+    return id ? buildMemoDetailPath({ id, shareToken: activeShareToken.value }) : ''
+  })
+
+  const memoShareTimelineQuery = computed(() => {
+    const id = memoId.value || String(memoData.value?.id || '')
+    return id ? buildMemoDetailQuery({ id, shareToken: activeShareToken.value }) : ''
   })
 
   // 解析内容 - content 已经是数组，无需再次解析
@@ -856,24 +908,88 @@
     return normalizeMemoContent(memoData.value.content)
   })
 
-  const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock =>
-    block.type === 'list' || block.type === 'table' || block.type === 'callout' || block.type === 'linkCard'
+  const hasRouteCoordinates = (node: { latitude?: unknown; longitude?: unknown }) => {
+    const hasValue = (value: unknown) =>
+      (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && Number.isFinite(Number(value))
+    return hasValue(node.latitude) && hasValue(node.longitude)
+  }
 
-  // 页面加载
-  onLoad((options: any) => {
-    if (options.mode === 'admin' || options.mode === 'private') {
-      detailSource.value = options.mode
+  const navigateToRouteNode = (node: { name?: string; address?: string; latitude?: unknown; longitude?: unknown }) => {
+    if (!hasRouteCoordinates(node)) return
+    openMapNavigation(Number(node.latitude), Number(node.longitude), node.name || '目的地', node.address)
+  }
+
+  const isStructuredBlock = (block: NormalizedMemoBlock): block is StructuredMemoBlock | QuerySnapshotBlockData =>
+    block.type === 'list' ||
+    block.type === 'table' ||
+    block.type === 'callout' ||
+    block.type === 'linkCard' ||
+    block.type === 'querySnapshot'
+
+  const waitForMemoImages = async (): Promise<void> => {
+    // #ifdef H5
+    const root = document.getElementById('poster-wrapper')
+    if (!root) return
+
+    const images = Array.from(root.querySelectorAll('img'))
+    await Promise.all(
+      images.map(
+        image =>
+          new Promise<void>(resolve => {
+            if (image.complete) {
+              resolve()
+              return
+            }
+            const finish = () => {
+              image.removeEventListener('load', finish)
+              image.removeEventListener('error', finish)
+              resolve()
+            }
+            image.addEventListener('load', finish, { once: true })
+            image.addEventListener('error', finish, { once: true })
+            setTimeout(finish, 15000)
+          }),
+      ),
+    )
+    // #endif
+  }
+
+  let initialRouteOptions: Record<string, unknown> = {}
+
+  const applyRouteParams = (options: unknown): boolean => {
+    const routeParams = parseMemoDetailParams(options)
+    if (!routeParams?.id) return false
+
+    if (routeParams?.mode === 'admin' || routeParams?.mode === 'private') {
+      detailSource.value = routeParams.mode
     }
-    if (options.readonly === '1' || options.readonly === 'true') {
+    if (routeParams?.readonly) {
       forceReadonly.value = true
     }
-    activeShareToken.value = options.shareToken || ''
-    if (options.id) {
-      memoId.value = options.id
+    exportMode.value = routeParams?.exportMode === true
+    activeShareToken.value = routeParams?.shareToken || ''
+    if (routeParams?.id) {
+      memoId.value = routeParams.id
       loadMemoData()
-    } else {
-      error.value = '缺少备忘录ID'
-      loading.value = false
+    }
+    return true
+  }
+
+  // 页面加载：H5 初次进入 hash 路由时，onLoad 可能早于浏览器地址栏同步完成，额外在 nextTick/onShow 再解析一次。
+  onLoad((options: Record<string, unknown>) => {
+    initialRouteOptions = options || {}
+    if (applyRouteParams(initialRouteOptions)) return
+
+    error.value = '缺少备忘录ID'
+    loading.value = false
+    void nextTick(() => {
+      if (!memoId.value && applyRouteParams(initialRouteOptions)) error.value = ''
+    })
+  })
+
+  onShow(() => {
+    if (!memoId.value) {
+      applyRouteParams(initialRouteOptions)
     }
   })
 
@@ -896,6 +1012,7 @@
       }
       if (res) {
         memoData.value = res
+        if (!memoId.value && res.id) memoId.value = String(res.id)
         accessRole.value = res.accessRole || ''
 
         // 同步导航栏标题
@@ -914,6 +1031,16 @@
         Object.assign(settings.globalAttachment, normalizedSettings.globalAttachment)
         settings.showBackToTop = normalizedSettings.showBackToTop
         settings.hideNavActions = normalizedSettings.hideNavActions
+
+        // 右上角微信分享回调是同步读取配置，Owner 进入详情后提前准备凭证，避免分享面板打开时 token 尚未返回。
+        if (activeShareToken.value || accessRole.value === 'owner' || res.canEdit === true || res.canShare === true) {
+          void ensureShareToken().catch(shareError => {
+            console.warn('预热备忘录分享凭证失败:', shareError)
+          })
+        }
+        await nextTick()
+        await waitForMemoImages()
+        isRendered.value = true
       } else {
         error.value = '备忘录不存在'
       }
@@ -1144,7 +1271,7 @@
       // 内部链接类型：区分「笔记」与「备忘录」
       const targetUrl =
         linkInfo.internalScene === 'memo' && linkInfo.internalId
-          ? `/subPackages/tools/memo/detail?id=${linkInfo.internalId}`
+          ? buildMemoDetailPath({ id: linkInfo.internalId })
           : linkInfo.internalScene === 'chat' && linkInfo.internalPath
             ? linkInfo.internalPath
             : linkInfo.internalPath || null
@@ -1765,15 +1892,23 @@
       console.log('当前平台:', process.env.UNI_PLATFORM || 'unknown')
       console.log('memoId:', memoId.value)
 
-      // 构建目标URL（去除可能的引号）
-      const baseUrl = String(import.meta.env.VITE_PUBLIC_THIS_H5_URL || '').replace(/['"]/g, '')
-      const targetUrl = `${baseUrl}/subPackages/tools/memo/detail?id=${memoId.value}`
-      const posterId = `memo_${memoId.value}_${Date.now()}`
+      // 小程序由 Painter 打开同一份 H5 详情页；必须复用分享 URL，不能再次手写会丢 hash/token 的地址。
+      const exportMemoId = getActiveMemoId()
+      if (!exportMemoId) throw new Error('当前备忘录缺少ID，无法导出')
+      let exportShareToken = activeShareToken.value
+      if (!exportShareToken) {
+        try {
+          exportShareToken = await ensureShareToken()
+        } catch (shareError) {
+          console.warn('准备导出分享凭证失败，将尝试使用公开详情:', shareError)
+        }
+      }
+      const targetUrl = buildMemoShareUrl({ id: exportMemoId, shareToken: exportShareToken, exportMode: true })
+      const posterId = `memo_${exportMemoId}_${Date.now()}`
 
       console.log('步骤1: 准备参数')
       console.log('- posterId:', posterId)
       console.log('- targetUrl:', targetUrl)
-      console.log('- baseUrl:', baseUrl)
       console.log('- VITE_APP_BASE_URL:', import.meta.env.VITE_APP_BASE_URL)
 
       // 第一步：调用接口生成海报
@@ -1791,13 +1926,14 @@
         const apiPromise = postPainterGenerateInfo({
           id: posterId,
           targetUrl: targetUrl,
-          selector: '.memo-content',
+          selector: '#memo-detail-root',
           options: {
             width: 375,
             deviceScaleFactor: 2,
+            forceRefresh: true,
             readySelector: '.is-ready',
             timeout: 90000, // 任务四：增加后端超时时间
-            waitTime: 1000, // 任务四：显式延时截图参数
+            extraWaitTime: 1500,
           },
         })
 
@@ -2120,6 +2256,20 @@
   }
 
   // 分享备忘录
+  const getActiveMemoId = (): string => {
+    if (memoId.value) return memoId.value
+    if (memoData.value?.id) {
+      memoId.value = String(memoData.value.id)
+      return memoId.value
+    }
+
+    const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : [] // eslint-disable-line no-undef
+    const currentPage = pages[pages.length - 1] as MemoPageWithOptions | undefined
+    const routeParams = parseMemoDetailParams(currentPage?.options, undefined)
+    if (routeParams?.id) memoId.value = routeParams.id
+    return memoId.value
+  }
+
   const readShareResponse = (response: unknown): ShareResponse => {
     if (!response || typeof response !== 'object') return {}
     const value = response as ShareResponse
@@ -2130,14 +2280,29 @@
     if (activeShareToken.value) return activeShareToken.value
     if (memoData.value?.canShare === false) return ''
     if (accessRole.value !== 'owner' && memoData.value?.canEdit !== true && memoData.value?.canShare !== true) return ''
-    const response = await postMemosMemoIdShare(memoId.value)
-    const share = readShareResponse(response)
-    if (!share.shareToken) throw new Error('后端未返回分享凭证')
-    activeShareToken.value = share.shareToken
-    return share.shareToken
+    if (shareTokenRequest) return shareTokenRequest
+
+    shareTokenRequest = postMemosMemoIdShare(memoId.value)
+      .then(response => {
+        const share = readShareResponse(response)
+        if (!share.shareToken) throw new Error('后端未返回分享凭证')
+        activeShareToken.value = share.shareToken
+        return share.shareToken
+      })
+      .finally(() => {
+        shareTokenRequest = null
+      })
+
+    return shareTokenRequest
   }
 
   const shareMemo = async () => {
+    const shareMemoId = getActiveMemoId()
+    if (!shareMemoId) {
+      uni.showToast({ title: '当前备忘录缺少ID，无法分享', icon: 'none' })
+      return
+    }
+
     let shareToken = ''
     try {
       shareToken = await ensureShareToken()
@@ -2161,8 +2326,7 @@
 
     // #ifdef H5
     // H5使用复制链接
-    const sharePath = buildMemoDetailPath({ id: memoId.value, shareToken })
-    const shareUrl = `${window.location.origin}${sharePath}`
+    const shareUrl = buildMemoShareUrl({ id: shareMemoId, shareToken })
     // @ts-ignore
     if (navigator.clipboard) {
       // @ts-ignore
@@ -2191,20 +2355,22 @@
     // #endif
   }
 
-  // 微信小程序分享配置
+  // 微信小程序页面级分享必须保留；PageLayout 的组件级分享仅作为统一参数透传兜底。
   // #ifdef MP-WEIXIN
   onShareAppMessage(() => {
+    const shareMemoId = getActiveMemoId()
     return {
       title: memoTitle.value,
-      path: buildMemoDetailPath({ id: memoId.value, shareToken: activeShareToken.value }),
+      path: shareMemoId ? buildMemoDetailPath({ id: shareMemoId, shareToken: activeShareToken.value }) : '/subPackages/tools/memo/detail',
       imageUrl: '',
     }
   })
 
   onShareTimeline(() => {
+    const shareMemoId = getActiveMemoId()
     return {
       title: memoTitle.value,
-      query: `id=${encodeURIComponent(memoId.value)}&shareToken=${encodeURIComponent(activeShareToken.value)}`,
+      query: shareMemoId ? buildMemoDetailQuery({ id: shareMemoId, shareToken: activeShareToken.value }) : '',
     }
   })
   // #endif
@@ -2218,6 +2384,34 @@
     // 移除 overflow: hidden，否则 sticky 定位会失效
     overflow-x: hidden;
     overflow-y: visible;
+  }
+
+  // 导出详情页时保留主题背景和完整正文，隐藏只属于页面交互的控件。
+  .memo-detail-page.is-exporting-page {
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .memo-detail-page.is-exporting-page .nav-actions,
+  .memo-detail-page.is-exporting-page .login-tip,
+  .memo-detail-page.is-exporting-page .back-to-top-btn,
+  .memo-detail-page.is-exporting-page .global-attachment-bar,
+  .memo-detail-page.is-exporting-page .glass-modal,
+  .memo-detail-page.is-exporting-page .anchor-popup-overlay,
+  .memo-detail-page.is-exporting-page .error-container,
+  .memo-detail-page.is-exporting-page .loading-container {
+    display: none !important;
+  }
+
+  .memo-detail-page.is-exporting-page .background-layer,
+  .memo-detail-page.is-exporting-page .blob-container,
+  .memo-detail-page.is-exporting-page .cyber-grid {
+    position: absolute;
+    top: 0;
+    bottom: auto;
+    height: 100%;
+    min-height: 100%;
   }
 
   // 背景图层 - 确保不干扰导航栏
@@ -2436,6 +2630,34 @@
     background: transparent;
     position: relative;
     z-index: 1;
+  }
+
+  // 完整长图导出：取消正文区域可能存在的滚动、裁剪和动画限制。
+  .memo-content.is-exporting {
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .memo-content.is-exporting .content-block,
+  .memo-content.is-exporting .poker-card-inner,
+  .memo-content.is-exporting .card-shine,
+  .memo-content.is-exporting .blob-circle,
+  .memo-content.is-exporting .romantic-content {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .memo-content.is-exporting .content-blocks,
+  .memo-content.is-exporting .content-block,
+  .memo-content.is-exporting .text-block,
+  .memo-content.is-exporting .markdown-body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .memo-header {
@@ -2886,6 +3108,29 @@
     line-height: 1.4;
   }
 
+  .route-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+  }
+
+  .route-content-navigable {
+    cursor: pointer;
+  }
+
+  .route-start-time {
+    display: block;
+    margin-bottom: 4rpx;
+    color: #667eea;
+    font-size: 24rpx;
+    font-weight: 600;
+  }
+
+  .route-nav-icon {
+    flex-shrink: 0;
+    font-size: 26rpx;
+  }
+
   // 信息胶囊标签
   .route-info-tag {
     display: inline-flex;
@@ -2908,6 +3153,11 @@
       color: var(--theme-text-tertiary);
     }
 
+    .tag-duration {
+      font-size: 24rpx;
+      color: var(--theme-text-secondary);
+    }
+
     .tag-icon {
       font-size: 24rpx;
     }
@@ -2919,6 +3169,14 @@
     font-size: 26rpx;
     color: var(--theme-text-tertiary);
     line-height: 1.5;
+  }
+
+  .route-address {
+    display: block;
+    margin-top: 6rpx;
+    color: var(--theme-text-tertiary);
+    font-size: 23rpx;
+    line-height: 1.45;
   }
 
   // 回到顶部按钮

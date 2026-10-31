@@ -1,5 +1,13 @@
-import type { ContentAction, MemoBlockBase, MemoSettings, StructuredMemoBlock } from './content-model'
-import type { AttachmentBlockData, ImageBlockData, MediaBlockData, RouteBlockData, TextBlockData } from './schemas'
+import type {
+  ContentAction,
+  ListItem,
+  ListPriority,
+  MemoBlockBase,
+  MemoSettings,
+  QuerySnapshotBlockData,
+  StructuredMemoBlock,
+} from './content-model'
+import type { AttachmentBlockData, ImageBlockData, MediaBlockData, RouteBlockData, RouteNode, TextBlockData } from './schemas'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -10,6 +18,7 @@ export type NormalizedMemoBlock = (
   | AttachmentBlockData
   | MediaBlockData
   | StructuredMemoBlock
+  | QuerySnapshotBlockData
 ) &
   MemoBlockBase
 
@@ -18,6 +27,42 @@ const asString = (value: unknown): string => (typeof value === 'string' ? value 
 const asNumber = (value: unknown): number | undefined => {
   const result = typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : Number.NaN
   return Number.isFinite(result) ? result : undefined
+}
+const isListPriority = (value: unknown): value is ListPriority => value === 'P0' || value === 'P1' || value === 'P2' || value === 'P3'
+
+const normalizeListItem = (source: UnknownRecord): ListItem => {
+  const item = { ...source, text: asString(source.text) } as ListItem
+  if (isListPriority(source.priority)) item.priority = source.priority
+  else delete item.priority
+  if (typeof source.desc === 'string') item.desc = source.desc
+  else if (typeof source.description === 'string') item.desc = source.description
+  delete item.description
+  return item
+}
+
+export const normalizeRouteNode = (source: UnknownRecord): RouteNode => {
+  const node = { ...source, name: asString(source.name) } as RouteNode
+  if (typeof source.time === 'string') node.time = source.time
+  if (typeof source.icon === 'string') node.icon = source.icon
+  if (typeof source.desc === 'string') node.desc = source.desc
+  if (source.type === 'normal' || source.type === 'transfer') node.type = source.type
+  if (typeof source.isEnd === 'boolean') node.isEnd = source.isEnd
+  if (typeof source.address === 'string') node.address = source.address
+  const latitude = asNumber(source.latitude)
+  const longitude = asNumber(source.longitude)
+  if (latitude !== undefined) node.latitude = latitude
+  if (longitude !== undefined) node.longitude = longitude
+  if (typeof source.startTime === 'string') node.startTime = source.startTime
+  if (typeof source.duration === 'string') node.duration = source.duration
+  return node
+}
+
+export const parseRouteNodes = (source: unknown): RouteNode[] => {
+  if (!Array.isArray(source)) throw new Error('需要 RouteNode[] 格式')
+  return source.map((value, index) => {
+    if (!isRecord(value) || typeof value.name !== 'string') throw new Error(`第 ${index + 1} 个节点需要 name 字段`)
+    return normalizeRouteNode(value)
+  })
 }
 
 export const normalizeContentAction = (source: unknown, legacyInteractionType?: unknown): ContentAction => {
@@ -83,6 +128,13 @@ export const normalizeBlock = (source: unknown): NormalizedMemoBlock | null => {
 
   if (block.type === 'text' && Array.isArray(block.children)) block.children = block.children.filter(isRecord).map(normalizeTextItem)
 
+  if (block.type === 'list') {
+    const supportedModes = ['ordered', 'priority', 'bullet', 'number', 'checklist']
+    block.mode = supportedModes.includes(asString(block.mode)) ? block.mode : 'ordered'
+    block.sortMode = 'manual'
+    block.children = Array.isArray(block.children) ? block.children.filter(isRecord).map(normalizeListItem) : []
+  }
+
   if (block.type === 'image') {
     const layout = isRecord(block.layout) ? block.layout : {}
     const legacyLayout = layout.type === 'free' ? 'single' : layout.type
@@ -105,6 +157,10 @@ export const normalizeBlock = (source: unknown): NormalizedMemoBlock | null => {
     })
   }
 
+  if (block.type === 'route' && Array.isArray(block.content)) {
+    block.content = block.content.filter(isRecord).map(normalizeRouteNode)
+  }
+
   if (block.type === 'attachment' && Array.isArray(block.children)) {
     block.children = block.children.filter(isRecord).map(item => ({
       ...item,
@@ -114,6 +170,32 @@ export const normalizeBlock = (source: unknown): NormalizedMemoBlock | null => {
   }
 
   if (block.type === 'linkCard') block.action = normalizeContentAction(block.action)
+
+  if (block.type === 'querySnapshot') {
+    const location = isRecord(block.location) ? block.location : {}
+    const latitude = asNumber(location.latitude)
+    const longitude = asNumber(location.longitude)
+    if (
+      block.version !== 1 ||
+      (block.queryKind !== 'altitude' && block.queryKind !== 'weather') ||
+      latitude === undefined ||
+      longitude === undefined
+    )
+      return null
+    const coordinateSystem = location.coordinateSystem === 'gcj02' ? 'gcj02' : 'wgs84'
+    const source = location.source === 'place' || location.source === 'map' ? location.source : 'location'
+    block.location = {
+      name: asString(location.name),
+      latitude,
+      longitude,
+      coordinateSystem,
+      source,
+      ...(typeof location.placeId === 'string' ? { placeId: location.placeId } : {}),
+    }
+    block.title = asString(block.title) || (block.queryKind === 'altitude' ? '海拔查询快照' : '天气查询快照')
+    block.capturedAt = asString(block.capturedAt)
+    block.snapshot = isRecord(block.snapshot) ? block.snapshot : {}
+  }
   return block as unknown as NormalizedMemoBlock
 }
 

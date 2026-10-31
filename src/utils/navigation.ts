@@ -1,6 +1,6 @@
 import { TabsRoutes } from './const'
 
-export const DEFAULT_BACK_FALLBACK = '/pages/tools/index'
+export const DEFAULT_BACK_FALLBACK = '/pages/index/index'
 
 export interface SafeBackOptions {
   /** 页面栈不足时替换当前页的业务父页面。 */
@@ -32,7 +32,7 @@ const getCurrentRoute = (): string => {
 
 export const isTabBarRoute = (url: string): boolean => TabsRoutes.includes(routePath(url))
 
-const relaunchTools = (): void => {
+const relaunchHome = (): void => {
   if (getCurrentRoute() === DEFAULT_BACK_FALLBACK) return
   uni.reLaunch({ url: DEFAULT_BACK_FALLBACK })
 }
@@ -45,7 +45,7 @@ const navigateToFallback = (fallbackUrl: string, isRecovery = false): void => {
 
   const recover = (): void => {
     if (isRecovery || targetRoute === DEFAULT_BACK_FALLBACK) {
-      relaunchTools()
+      relaunchHome()
       return
     }
     navigateToFallback(DEFAULT_BACK_FALLBACK, true)

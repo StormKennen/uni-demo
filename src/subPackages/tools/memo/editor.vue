@@ -1,6 +1,6 @@
 <!--
   memo-v2 编辑器 —— 基于 editor-core schema 驱动架构
-  
+
   功能：
     - 复用 editor-core 的 BlockHost / SchemaDrivenPanel / ResourcePicker
      - 对接 memo API（create / get / patch）
@@ -388,13 +388,15 @@
 </template>
 
 <script setup lang="ts">
-  import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
   import BlockHost from './components/editor-core/renderers/BlockHost.vue'
   import SchemaDrivenPanel from './components/editor-core/panels/SchemaDrivenPanel.vue'
   import PosterPanel from './components/PosterPanel.vue'
+  import { buildMemoDetailPath } from './navigation'
   import { getAllBlockSchemas, getBlockSchema } from './schemas'
-  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings } from './normalizers'
+  import { consumeQuerySnapshotDraft } from './query-snapshot-navigation'
+  import { createDefaultMemoSettings, normalizeMemoContent, normalizeMemoSettings, parseRouteNodes } from './normalizers'
+  import { postMemos, getMemosMemoId, patchMemosMemoId } from '@/services/apifox/NODEJSDEMO/MEMOS/apifox'
   import { uploadWithOssSignature } from '@/hooks/use-oss-upload'
 
   // ===== 备忘录元信息 =====
@@ -688,6 +690,8 @@
   const checkAndPromptDraftRestore = () => {
     const draft = loadLocalDraft()
     if (!draft?.savedAt) return
+    const querySnapshotMode = (globalThis as any).getCurrentPages?.().slice(-1)[0]?.options?.querySnapshot === '1'
+    if (!memoId.value && querySnapshotMode) return
     const minutes = Math.max(1, Math.round((Date.now() - draft.savedAt) / 60000))
     uni.showModal({
       title: '检测到未保存的草稿',
@@ -770,17 +774,17 @@
       return
     }
     try {
-      const parsed = JSON.parse(raw)
-      const nodes: any[] = Array.isArray(parsed) ? parsed : Array.isArray(parsed.content) ? parsed.content : null
-      if (!nodes) throw new Error('需要 RouteNode[] 或 { content: RouteNode[] } 格式')
-      if (!nodes.every(n => typeof n.name === 'string')) throw new Error('每个节点需要 name 字段')
-      const block = doc[jsonImportBlockIdx.value] as any
+      const parsed: unknown = JSON.parse(raw)
+      const source = Array.isArray(parsed) ? parsed : parsed && typeof parsed === 'object' && 'content' in parsed ? parsed.content : null
+      const nodes = parseRouteNodes(source)
+      const block = doc[jsonImportBlockIdx.value] as { content?: unknown[] } | undefined
       if (!block) throw new Error('块不存在')
       block.content = nodes
       jsonImportVisible.value = false
       uni.showToast({ title: `已导入 ${nodes.length} 个节点`, icon: 'success' })
-    } catch (e: any) {
-      uni.showToast({ title: `JSON 错误: ${e.message}`, icon: 'none' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '格式不正确'
+      uni.showToast({ title: `JSON 错误: ${message}`, icon: 'none' })
     }
   }
 
@@ -1017,7 +1021,7 @@
           uni.showToast({ title: '该备忘录为只读，仅可查看', icon: 'none' })
           const mode = memo.accessRole === 'admin' ? 'admin' : 'private'
           setTimeout(() => {
-            uni.redirectTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}&mode=${mode}&readonly=1` })
+            uni.redirectTo({ url: buildMemoDetailPath({ id: memoId.value, mode, readonly: true }) })
           }, 800)
           return
         }
@@ -1046,9 +1050,10 @@
     try {
       uni.showLoading({ title: '保存中...', mask: true })
 
+      const normalizedContent = normalizeMemoContent(doc)
       const memoData: any = {
         name: memoName.value,
-        content: JSON.parse(JSON.stringify(doc)),
+        content: JSON.parse(JSON.stringify(normalizedContent)),
         tags: tags.value,
         settings: JSON.parse(JSON.stringify(normalizeMemoSettings(settings))),
       }
@@ -1082,13 +1087,13 @@
   const saveAndGoToDetail = async () => {
     const saved = await saveData()
     if (saved && memoId.value) {
-      uni.navigateTo({ url: `/subPackages/tools/memo/detail?id=${memoId.value}` })
+      uni.navigateTo({ url: buildMemoDetailPath({ id: memoId.value }) })
     }
   }
 
   // ===== 页面加载 =====
   onMounted(async () => {
-    const pages = getCurrentPages()
+    const pages = (globalThis as any).getCurrentPages?.() || []
     const currentPage = pages[pages.length - 1]
     const options = (currentPage as any).options as any
 
@@ -1098,6 +1103,13 @@
     }
 
     await loadData()
+    if (!memoId.value && options?.querySnapshot === '1') {
+      const querySnapshot = consumeQuerySnapshotDraft()
+      if (querySnapshot) {
+        doc.push({ type: 'querySnapshot', version: 1, ...querySnapshot, anchor: generateNextAnchor() })
+        if (!memoName.value) memoName.value = querySnapshot.title
+      }
+    }
     checkAndPromptDraftRestore()
     undoStack.value = [JSON.stringify(captureSnapshot())]
     redoStack.value = []

@@ -6,6 +6,7 @@
   interface Props {
     initBgColor?: string
     bgColor?: string
+    overlay?: boolean
 
     title?: string
     alwaysTitle?: boolean
@@ -23,6 +24,7 @@
   const props = withDefaults(defineProps<Props>(), {
     initBgColor: 'transparent',
     bgColor: 'var(--theme-surface)',
+    overlay: false,
     navBack: true,
     alwaysTitle: false,
     customGoBack: false,
@@ -53,6 +55,7 @@
 
 <template>
   <NavBarBase
+    :overlay="props.overlay"
     :bg-color="navBgColor"
     :title="navTitle"
     :custom-class="props.customClass"

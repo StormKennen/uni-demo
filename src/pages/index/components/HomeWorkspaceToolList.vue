@@ -19,7 +19,8 @@
       :class="{ 'workspace-tool-card--disabled': item.tool.disabled }"
       @click="emit('select', item)">
       <view class="workspace-tool-icon" :style="{ background: item.tool.gradient }">
-        <uni-icons :type="item.tool.icon as any" size="21" color="#fff" />
+        <image v-if="item.tool.image" class="workspace-tool-image" :src="item.tool.image" mode="aspectFit" />
+        <uni-icons v-else-if="item.tool.icon" :type="item.tool.icon as any" size="21" color="#fff" />
       </view>
       <view class="workspace-tool-main">
         <view class="workspace-tool-title-row">
@@ -70,6 +71,11 @@
     justify-content: center;
     flex-shrink: 0;
     border-radius: 19rpx;
+  }
+
+  .workspace-tool-image {
+    width: 96rpx;
+    height: 68rpx;
   }
 
   .workspace-tool-main {

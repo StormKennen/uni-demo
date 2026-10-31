@@ -15,6 +15,11 @@ export interface RouteNode {
   desc?: string
   type?: 'normal' | 'transfer'
   isEnd?: boolean
+  address?: string
+  latitude?: number
+  longitude?: number
+  startTime?: string
+  duration?: string
 }
 
 export interface RouteBlockData {
@@ -94,6 +99,39 @@ const itemSchema: SchemaField[] = [
     default: '',
     placeholder: '如 接机、换乘等',
     visible: (d) => !d?.isEnd,
+  },
+  {
+    key: 'startTime',
+    label: '时间点',
+    type: 'input',
+    default: '',
+    placeholder: '如 09:30',
+  },
+  {
+    key: 'duration',
+    label: '停留/游玩时长',
+    type: 'input',
+    default: '',
+    placeholder: '如 4h',
+  },
+  {
+    key: 'address',
+    label: '地址',
+    type: 'input',
+    default: '',
+    placeholder: '请输入详细地址',
+  },
+  {
+    key: 'latitude',
+    label: '纬度',
+    type: 'input',
+    placeholder: '如 30.5728',
+  },
+  {
+    key: 'longitude',
+    label: '经度',
+    type: 'input',
+    placeholder: '如 104.0668',
   },
   {
     key: 'type',

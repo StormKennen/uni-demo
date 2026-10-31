@@ -114,6 +114,13 @@
           }
         },
         {
+          "path": "family-tree/detail",
+          "style": {
+            "navigationBarTitleText": "成员详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "family-tree/demo",
           "style": {
             "navigationBarTitleText": "族谱",
@@ -141,6 +148,127 @@
           "style": {
             "navigationBarTitleText": "图片压缩",
             "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "image-compliance/index",
+          "style": {
+            "navigationBarTitleText": "图片达标助手",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/index",
+          "style": {
+            "navigationBarTitleText": "飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/send/create",
+          "style": {
+            "navigationBarTitleText": "发送飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/send/result",
+          "style": {
+            "navigationBarTitleText": "飞船票据",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/receive/index",
+          "style": {
+            "navigationBarTitleText": "接收飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/receipt/list",
+          "style": {
+            "navigationBarTitleText": "已收飞船",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 50
+          }
+        },
+        {
+          "path": "quick-transfer/receipt/detail",
+          "style": {
+            "navigationBarTitleText": "已收飞船",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "quick-transfer/sent/list",
+          "style": {
+            "navigationBarTitleText": "我发送的",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 50
+          }
+        },
+        {
+          "path": "quick-transfer/sent/detail",
+          "style": {
+            "navigationBarTitleText": "我发送的",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "relay/index",
+          "style": {
+            "navigationBarTitleText": "接龙",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 80
+          }
+        },
+        {
+          "path": "relay/create",
+          "style": {
+            "navigationBarTitleText": "创建接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "relay/detail",
+          "style": {
+            "navigationBarTitleText": "接龙详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 80
+          }
+        },
+        {
+          "path": "relay/submit",
+          "style": {
+            "navigationBarTitleText": "参与接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "relay/manage",
+          "style": {
+            "navigationBarTitleText": "管理接龙",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "vote/create",
+          "style": {
+            "navigationBarTitleText": "创建投票",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "vote/detail",
+          "style": {
+            "navigationBarTitleText": "投票详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
           }
         },
         {
@@ -235,6 +363,31 @@
           }
         },
         {
+          "path": "altitude/index",
+          "style": {
+            "navigationBarTitleText": "查询海拔",
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "altitude/scenic-detail",
+          "style": {
+            "navigationBarTitleText": "景区海拔",
+            "navigationStyle": "custom",
+            "enableShareAppMessage": true,
+            "enableShareTimeline": true
+          }
+        },
+        {
+          "path": "weather/index",
+          "style": {
+            "navigationBarTitleText": "天气",
+            "navigationStyle": "custom"
+          }
+        },
+        {
           "path": "video-compress/index",
           "style": {
             "navigationBarTitleText": "视频压缩神器",
@@ -301,6 +454,23 @@
           "path": "compendium/swc/rta/index",
           "style": {
             "navigationBarTitleText": "RTA排行榜",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 120,
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "compendium/swc/tier-ranking/index",
+          "style": {
+            "navigationBarTitleText": "魔灵强度榜",
+            "enablePullDownRefresh": true,
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "compendium/swc/rta/score-forecast",
+          "style": {
+            "navigationBarTitleText": "RTA分数预测",
             "enablePullDownRefresh": true,
             "onReachBottomDistance": 120,
             "navigationStyle": "custom"
@@ -433,6 +603,13 @@
           "path": "game-coupons/index",
           "style": {
             "navigationBarTitleText": "游戏兑换券",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "game-coupons/detail",
+          "style": {
+            "navigationBarTitleText": "兑换券详情",
             "navigationStyle": "custom"
           }
         }

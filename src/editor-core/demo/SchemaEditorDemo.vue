@@ -30,7 +30,8 @@
             :selected="selectedIndex === idx"
             @select="selectedIndex = idx"
             @select-item="onSelectItem"
-            @add-item="onAddItem" />
+            @add-item="onAddItem"
+            @update:block="doc.splice(idx, 1, $event)" />
           <!-- 块级操作按钮 -->
           <view class="sed-row-actions">
             <view v-if="idx > 0" class="sed-row-btn" @click="moveBlock(idx, -1)">↑</view>

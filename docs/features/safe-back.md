@@ -12,11 +12,11 @@
 
 ## 1. 业务上下文与页面流
 
-分享、二维码、小程序码和冷启动可直接打开详情页，此时 `getCurrentPages()` 可能仅包含当前页面。项目左上角返回按钮必须在正常页面栈下保持 `uni.navigateBack()`，在单页栈下进入业务父页面，未配置父页面时进入工具 Tab。
+分享、二维码、小程序码和冷启动可直接打开详情页，此时 `getCurrentPages()` 可能仅包含当前页面。项目左上角返回按钮必须在正常页面栈下保持 `uni.navigateBack()`，在单页栈下进入业务父页面，未配置父页面时进入首页 Tab。
 
 | 页面类型 | 页面栈存在上一页 | 页面栈不存在上一页 |
 | -------- | ---------------- | ------------------ |
-| 默认业务页 | `navigateBack` | `/pages/tools/index` |
+| 默认业务页 | `navigateBack` | `/pages/index/index` |
 | 详情页 | `navigateBack` | 配置的直接父页面 |
 | TabBar | 不额外导航 | 不重复跳转当前页 |
 
@@ -27,7 +27,7 @@
 - 新增 `src/utils/navigation.ts`，集中导出 `safeBack()`、`DEFAULT_BACK_FALLBACK` 与 TabBar 判断。
 - `PageLayout` 使用 `backFallback` prop；模板使用 `back-fallback`。
 - 返回优先级必须是 `beforeBack`、`customGoBack/@back`、`safeBack`。
-- 普通 fallback 使用 `redirectTo`，TabBar fallback 使用 `switchTab`；跳转失败后才回退工具 Tab，最后以 `reLaunch` 容错。
+- 普通 fallback 使用 `redirectTo`，TabBar fallback 使用 `switchTab`；跳转失败后最终回退首页，使用 `reLaunch` 容错。
 - Picker、保存完成、流程取消等依赖调用方回传的 `uni.navigateBack()` 保持原状。
 - 没有项目自定义返回按钮的协议/WebView 页面不强制迁移至 `PageLayout`。
 

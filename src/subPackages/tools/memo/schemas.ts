@@ -18,6 +18,7 @@ import type {
   TableRow,
   CalloutBlockData,
   LinkCardBlockData,
+  QuerySnapshotBlockData,
   MemoBlockStyle,
 } from './content-model'
 import type { BlockSchema as CoreBlockSchema } from '@/editor-core/schemas/block-schema'
@@ -267,7 +268,7 @@ const imageItemSchema: SchemaField[] = [
   },
   {
     key: 'style.width',
-    label: '宽度 (px)',
+    label: '宽度 (rpx)',
     type: 'slider',
     group: 'layout',
     default: 300,
@@ -278,7 +279,7 @@ const imageItemSchema: SchemaField[] = [
   },
   {
     key: 'style.height',
-    label: '高度 (px)',
+    label: '高度 (rpx)',
     type: 'slider',
     group: 'layout',
     default: 300,
@@ -367,6 +368,11 @@ export interface RouteNode {
   desc?: string
   type?: 'normal' | 'transfer'
   isEnd?: boolean
+  address?: string
+  latitude?: number
+  longitude?: number
+  startTime?: string
+  duration?: string
 }
 
 export interface RouteBlockData {
@@ -414,6 +420,11 @@ const routeItemSchema: SchemaField[] = [
   { key: 'time', label: '耗时', type: 'input', default: '', placeholder: '如 1h', visible: d => !d?.isEnd },
   { key: 'icon', label: '交通图标', type: 'input', default: '', placeholder: '如 🚗', visible: d => !d?.isEnd },
   { key: 'desc', label: '描述', type: 'input', default: '', placeholder: '如 接机、换乘等', visible: d => !d?.isEnd },
+  { key: 'startTime', label: '时间点', type: 'input', default: '', placeholder: '如 09:30' },
+  { key: 'duration', label: '停留/游玩时长', type: 'input', group: 'content', default: '', placeholder: '如 4h' },
+  { key: 'address', label: '地址', type: 'input', group: 'content', default: '', placeholder: '请输入详细地址' },
+  { key: 'latitude', label: '纬度', type: 'input', group: 'content', placeholder: '如 30.5728' },
+  { key: 'longitude', label: '经度', type: 'input', group: 'content', placeholder: '如 104.0668' },
   {
     key: 'type',
     label: '站点类型',
@@ -591,30 +602,70 @@ const listBlockSchema: SchemaField[] = [
     label: '列表类型',
     type: 'radio',
     group: 'content',
-    default: 'bullet',
+    default: 'ordered',
     options: [
-      { label: '项目符号', value: 'bullet' },
-      { label: '编号', value: 'number' },
-      { label: '清单', value: 'checklist' },
+      { label: '有序列表', value: 'ordered' },
+      { label: '优先级列表', value: 'priority' },
+    ],
+  },
+]
+
+const listStyleSchema: SchemaField[] = [
+  {
+    key: 'style.textAlign',
+    label: '对齐方式',
+    type: 'radio',
+    group: 'layout',
+    default: 'left',
+    options: [
+      { label: '左', value: 'left' },
+      { label: '中', value: 'center' },
+      { label: '右', value: 'right' },
+    ],
+  },
+  {
+    key: 'style.backgroundColor',
+    label: '背景色',
+    type: 'color',
+    group: 'style',
+    default: '',
+    options: [
+      { label: '无', value: '' },
+      { label: '浅灰', value: '#f5f5f5' },
+      { label: '米黄', value: '#fff8e1' },
+      { label: '浅蓝', value: '#e3f2fd' },
     ],
   },
 ]
 
 const listItemSchema: SchemaField[] = [
-  { key: 'text', label: '内容', type: 'textarea', group: 'content', default: '', placeholder: '输入列表内容' },
-  { key: 'description', label: '补充说明', type: 'textarea', group: 'content', default: '', placeholder: '可选' },
-  { key: 'checked', label: '已完成', type: 'switch', group: 'interaction', default: false },
+  { key: 'text', label: '内容', type: 'textarea', group: 'content', default: '', placeholder: '请输入列表内容' },
+  { key: 'desc', label: '补充说明', type: 'textarea', group: 'content', default: '', placeholder: '可选' },
+  {
+    key: 'priority',
+    label: '优先级',
+    type: 'select',
+    group: 'content',
+    options: [
+      { label: 'P0 最高', value: 'P0' },
+      { label: 'P1 高', value: 'P1' },
+      { label: 'P2 普通', value: 'P2' },
+      { label: 'P3 低', value: 'P3' },
+    ],
+    visible: draft => draft?.__listMode === 'priority',
+  },
 ]
 
 export const ListBlockSchema: BlockSchema<ListBlockData> = {
   type: 'list',
-  label: '列表 / 清单',
-  icon: '☑️',
+  label: '列表',
+  icon: '☷',
   supportsChildren: true,
-  createDefault: () => ({ type: 'list', mode: 'bullet', children: [{ text: '', checked: false }] }),
+  createDefault: () => ({ type: 'list', mode: 'ordered', sortMode: 'manual', children: [{ text: '新列表项' }], style: {} }),
   businessSchema: listBlockSchema,
+  styleSchema: listStyleSchema,
   itemSchema: listItemSchema,
-  createDefaultItem: (): ListItem => ({ text: '', checked: false }),
+  createDefaultItem: (): ListItem => ({ text: '' }),
 }
 
 const tableBlockSchema: SchemaField[] = [
@@ -702,6 +753,22 @@ const linkCardSchema: SchemaField[] = [
   ...createActionSchema(),
 ]
 
+export const QuerySnapshotBlockSchema: BlockSchema<QuerySnapshotBlockData> = {
+  type: 'querySnapshot',
+  label: '查询快照',
+  icon: '📍',
+  supportsChildren: false,
+  createDefault: () => ({
+    type: 'querySnapshot',
+    version: 1,
+    queryKind: 'altitude',
+    title: '查询快照',
+    location: { name: '', latitude: 0, longitude: 0, coordinateSystem: 'wgs84', source: 'location' },
+    capturedAt: '',
+    snapshot: {},
+  }),
+}
+
 export const LinkCardBlockSchema: BlockSchema<LinkCardBlockData> = {
   type: 'linkCard',
   label: '链接卡片',
@@ -722,6 +789,7 @@ const _allSchemas: BlockSchema[] = [
   TableBlockSchema,
   CalloutBlockSchema,
   LinkCardBlockSchema,
+  QuerySnapshotBlockSchema,
 ]
 
 export const getAllBlockSchemas = (): BlockSchema[] => _allSchemas

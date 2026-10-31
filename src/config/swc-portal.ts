@@ -1,8 +1,11 @@
+import { SWC_LOGO_IMAGE_URL } from './tool-assets'
+
 export interface SwcPortalEntry {
   id: string
   title: string
   desc: string
   icon: string
+  image?: string
   accent: string
   accentSoft: string
   path: string
@@ -14,6 +17,7 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     title: '魔灵图鉴',
     desc: '检索人物、筛选属性、查看详情',
     icon: 'star',
+    image: SWC_LOGO_IMAGE_URL,
     accent: '#f97316',
     accentSoft: 'rgba(249, 115, 22, 0.14)',
     path: '/subPackages/tools/compendium/swc/list',
@@ -26,6 +30,24 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     accent: '#2563eb',
     accentSoft: 'rgba(37, 99, 235, 0.13)',
     path: '/subPackages/tools/compendium/swc/rta/index',
+  },
+  {
+    id: 'tier-ranking',
+    title: '魔灵强度榜',
+    desc: '魔灵强度评级',
+    icon: 'star',
+    accent: '#0f766e',
+    accentSoft: 'rgba(15, 118, 110, 0.13)',
+    path: '/subPackages/tools/compendium/swc/tier-ranking/index',
+  },
+  {
+    id: 'rta-score-forecast',
+    title: 'RTA分数预测',
+    desc: '查看赛季分数线与结算前趋势',
+    icon: 'bars',
+    accent: '#7c3aed',
+    accentSoft: 'rgba(124, 58, 237, 0.14)',
+    path: '/subPackages/tools/compendium/swc/rta/score-forecast',
   },
   {
     id: 'coupons',

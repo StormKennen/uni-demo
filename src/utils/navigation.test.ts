@@ -43,11 +43,12 @@ describe('safeBack', () => {
 
     safeBack()
 
+    expect(DEFAULT_BACK_FALLBACK).toBe('/pages/index/index')
     expect(switchTab).toHaveBeenCalledWith(expect.objectContaining({ url: DEFAULT_BACK_FALLBACK }))
     expect(redirectTo).not.toHaveBeenCalled()
   })
 
-  it('recovers from a normal fallback failure through the tools tab', () => {
+  it('recovers from a normal fallback failure through the home tab', () => {
     setPageStack(['subPackages/tools/calendar/detail'])
     redirectTo.mockImplementationOnce(({ fail }: { fail: () => void }) => fail())
 
@@ -56,7 +57,7 @@ describe('safeBack', () => {
     expect(switchTab).toHaveBeenCalledWith(expect.objectContaining({ url: DEFAULT_BACK_FALLBACK }))
   })
 
-  it('uses reLaunch only when the tools tab fallback also fails', () => {
+  it('uses reLaunch only when the home tab fallback also fails', () => {
     setPageStack(['subPackages/tools/calendar/detail'])
     redirectTo.mockImplementationOnce(({ fail }: { fail: () => void }) => fail())
     switchTab.mockImplementationOnce(({ fail }: { fail: () => void }) => fail())
@@ -67,7 +68,7 @@ describe('safeBack', () => {
   })
 
   it('does not navigate to the route that is already current', () => {
-    setPageStack(['pages/tools/index'])
+    setPageStack(['pages/index/index'])
 
     safeBack()
 
@@ -80,6 +81,7 @@ describe('safeBack', () => {
 
 describe('isTabBarRoute', () => {
   it('matches the registered tabBar routes without query parameters', () => {
+    expect(isTabBarRoute('/pages/index/index?from=share')).toBe(true)
     expect(isTabBarRoute('/pages/tools/index?from=share')).toBe(true)
     expect(isTabBarRoute('/subPackages/tools/calendar/index')).toBe(false)
   })

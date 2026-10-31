@@ -19,8 +19,14 @@
     shareImageUrl?: string
     /** 自定义朋友圈分享 query */
     shareTimelineQuery?: string
+    /** 自定义朋友圈分享标题；不传时复用分享标题 */
+    shareTimelineTitle?: string
+    /** 自定义朋友圈分享图片；不传时复用好友消息卡片图片 */
+    shareTimelineImageUrl?: string
     /** 是否显示自定义导航栏 */
     showNav?: boolean
+    /** 导航栏是否覆盖在页面内容上方；开启后不占用页面内容高度 */
+    navOverlay?: boolean
     /** 导航栏渐变背景（设置后自动应用 light class） */
     navGradient?: string
     /** 导航栏 class；不传时若有 navGradient 则自动 'light' */
@@ -51,6 +57,7 @@
 
   const props = withDefaults(defineProps<Props>(), {
     showNav: true,
+    navOverlay: false,
     navBack: true,
     alwaysTitle: true,
     navDivider: false,
@@ -79,8 +86,8 @@
   })
 
   onShareTimeline(() => {
-    const shareTitle = props.shareTitle || `${props.title} · 凉白开工具箱`
-    return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareImageUrl }
+    const shareTitle = props.shareTimelineTitle || props.shareTitle || `${props.title} · 凉白开工具箱`
+    return { title: shareTitle, query: props.shareTimelineQuery || '', imageUrl: props.shareTimelineImageUrl || props.shareImageUrl }
   })
   // #endif
 
@@ -116,6 +123,7 @@
   <view class="page-layout" :style="layoutStyle">
     <NavBar
       v-if="showNav"
+      :overlay="navOverlay"
       :always-title="alwaysTitle"
       :title="title"
       :custom-class="effectiveNavClass"
@@ -152,7 +160,10 @@
     box-sizing: border-box;
 
     &__body {
+      display: flex;
+      flex-direction: column;
       flex: 1;
+      min-height: 0;
     }
 
     &__footer {

@@ -1,3 +1,4 @@
+import mime from 'mime'
 import type { SelectedFile } from './types'
 
 export interface RawSelectedFile {
@@ -6,6 +7,7 @@ export interface RawSelectedFile {
   size?: number
   tempFilePath?: string
   type?: string
+  raw?: unknown
 }
 
 export interface RawImageSelection {
@@ -19,16 +21,25 @@ const fileNameFromPath = (path: string, fallback: string) => {
   return name ? decodeURIComponent(name) : fallback
 }
 
+const isStandardMimeType = (value: string): boolean => /^[^/\s]+\/[^/\s]+$/.test(value)
+
+export const normalizeSelectedFileMimeType = (fileName: string, selectedType?: string): string => {
+  const normalizedType = selectedType?.trim().toLowerCase() || ''
+  if (isStandardMimeType(normalizedType)) return normalizedType
+  return mime.getType(fileName) || 'application/octet-stream'
+}
+
 export const normalizeFiles = (files: RawSelectedFile[], fallbackPrefix: string): SelectedFile[] =>
   files.reduce<SelectedFile[]>((selectedFiles, file, index) => {
     const path = file.path || file.tempFilePath || ''
-    if (!path) return selectedFiles
+    if (!path && !file.raw) return selectedFiles
 
     selectedFiles.push({
       name: file.name || fileNameFromPath(path, `${fallbackPrefix}_${index + 1}`),
       path,
       size: file.size,
-      type: file.type,
+      type: normalizeSelectedFileMimeType(file.name || fileNameFromPath(path, `${fallbackPrefix}_${index + 1}`), file.type),
+      raw: file.raw,
     })
     return selectedFiles
   }, [])

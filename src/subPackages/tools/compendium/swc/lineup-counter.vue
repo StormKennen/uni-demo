@@ -1,6 +1,12 @@
 <template>
   <PageLayout
     title="阵容克制"
+    :share-title="shareResult.app.title"
+    :share-path="shareResult.app.path"
+    :share-image-url="shareResult.app.imageUrl"
+    :share-timeline-title="shareResult.timeline.title"
+    :share-timeline-query="shareResult.timeline.query"
+    :share-timeline-image-url="shareResult.timeline.imageUrl"
     back-fallback="/subPackages/tools/compendium/swc/lineups"
     nav-init-bg-color="var(--theme-surface)"
     nav-divider>
@@ -178,7 +184,7 @@
   import LineupInteractionBar from './components/lineup-interaction-bar.vue'
   import { getLineupTypeLabel } from './lineup-meta'
   import { toSwcCharacterView } from './utils'
-  import { useLineupRelationQuery } from './composables/use-lineup-relation-query'
+  import { useLineupRelationQuery } from './use-lineup-relation-query'
   import { buildSwcLineupCounterShare } from './share'
   import type {
     CharacterOption,
@@ -367,6 +373,8 @@
     characterIds: selectedCharacterIds.value.length ? selectedCharacterIds.value.join(',') : undefined,
   })
 
+  const shareResult = computed(() => buildSwcLineupCounterShare(buildShareQuery()))
+
   const openCharacterPicker = () => {
     setStorageSync(
       CHARACTER_PICKER_CACHE_KEY,
@@ -429,8 +437,8 @@
   })
 
   // #ifdef MP-WEIXIN
-  onShareAppMessage(() => buildSwcLineupCounterShare(buildShareQuery()).app)
-  onShareTimeline(() => buildSwcLineupCounterShare(buildShareQuery()).timeline)
+  onShareAppMessage(() => shareResult.value.app)
+  onShareTimeline(() => shareResult.value.timeline)
   // #endif
 </script>
 

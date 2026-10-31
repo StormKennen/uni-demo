@@ -214,6 +214,7 @@
   const DEFAULT_LOCALE = 'zh-CN'
   const DEFAULT_COMPENDIUM_ID = 'swc'
   const SEARCH_DEBOUNCE_MS = 300
+  const REQUEST_THROTTLE_MS = 500
 
   const elementOptions: FilterOption[] = [
     { label: '全部', value: ALL_VALUE },
@@ -274,6 +275,7 @@
   let requestSequence = 0
   let avatarPreloadTimer: ReturnType<typeof setTimeout> | null = null
   let searchTimer: ReturnType<typeof setTimeout> | null = null
+  let lastRequestAt = 0
   let suppressKeywordWatch = false
   const hasBufferedCharacters = computed(() => characters.value.length < allCharacters.value.length)
   const canLoadMore = computed(() => hasBufferedCharacters.value || hasNext.value)
@@ -600,12 +602,15 @@
   }
 
   const fetchCharacters = async (reset = false) => {
+    const now = Date.now()
+    if (reset && now - lastRequestAt < REQUEST_THROTTLE_MS) return
     if (loading.value && !reset) return
     if (loadingMore.value && !reset) return
     if (!reset && !hasNext.value) return
 
     const requestId = reset ? ++requestSequence : requestSequence
     if (reset) {
+      lastRequestAt = now
       clearScheduledAvatarPreload()
       loading.value = true
       loadingMore.value = false
@@ -685,7 +690,11 @@
     if (key === 'star') selectedStar.value = value
     if (key === 'type') selectedType.value = value
     if (key === 'awaken') selectedAwaken.value = value
-    refreshCharacters()
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      searchTimer = null
+      refreshCharacters()
+    }, SEARCH_DEBOUNCE_MS)
   }
 
   const resetFilters = () => {
@@ -698,7 +707,11 @@
     selectedSort.value = DEFAULT_SORT_FIELD
     selectedSortOrder.value = DEFAULT_SORT_ORDER
     suppressKeywordWatch = false
-    refreshCharacters()
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      searchTimer = null
+      refreshCharacters()
+    }, SEARCH_DEBOUNCE_MS)
   }
 
   const onSearchSubmit = () => {

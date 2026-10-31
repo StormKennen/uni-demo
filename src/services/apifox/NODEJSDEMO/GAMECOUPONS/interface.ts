@@ -26,10 +26,28 @@ export interface getGameCouponsGameIdCodesRes {
 export interface getGameCouponsGameIdCodesResCodes {
   /** 券码字符串（大写） */
   code?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 过期时间 */
+  expiresAt?: any
+  /** 游戏标识 */
+  gameId?: string
+  /** 兑换券记录 ID（MongoDB ObjectId） */
+  id?: string
+  /** 开放时间 */
+  publishedAt?: any
+  /** 当前是否允许兑换 */
+  redeemable?: boolean
   /** 奖励描述 */
   reward?: string
-  /** 券码来源：preset=预置 | upstream=社区同步 | manual=手动 | admin=后台 | swgt=官方 */
-  source?: 'preset' | 'upstream' | 'manual' | 'admin' | 'swgt'
+  /** 适用区服；空数组表示全部区服 */
+  serverScope?: string[]
+  /** 券码来源：preset=预置 | upstream=社区同步 | manual=手动 | admin=后台 | swgt=官方渠道 | official=官方预置 */
+  source?: 'preset' | 'upstream' | 'manual' | 'admin' | 'swgt' | 'official'
+  /** 动态可用状态：active=可兑换 | upcoming=未开放 | expired=已过期 | disabled=已停用 */
+  status?: 'active' | 'upcoming' | 'expired' | 'disabled'
+  /** 游戏兑换券标题 */
+  title?: string
 }
 
 /**
@@ -69,6 +87,8 @@ export interface getGameCouponsGameIdProfileQuery {
   account_id: string
   /** 区服：global=全球服 | korea=韩国服 | japan=日本服 | china=中国服 | asia=亚洲服 | europe=欧洲服 */
   server: string
+  /** 兑换券记录 ID；传入后使用后端真实券码调用官方 checkUser，不传则保持旧默认券码逻辑 */
+  coupon_id?: string
   /** 图鉴 ID（可选） */
   compendium_id?: string
 }
@@ -82,6 +102,8 @@ export interface getGameCouponsGameIdProfileRes {
   accountId?: string
   /** 是否查询成功（true=Hive ID 有效且获取到昵称） */
   available?: boolean
+  /** 游戏账号头像 URL；当前官方数据源无法提供时为空字符串 */
+  avatarUrl?: string
   compendiumId?: string
   gameId?: string
   /** 结果描述信息 */
@@ -130,8 +152,10 @@ export interface postGameCouponsGameIdRedeemBodyAccountsItem {
 
 /** 要兑换的券码列表（至少 1 个） */
 export interface postGameCouponsGameIdRedeemBodyCodesItem {
-  /** 券码字符串 */
-  code: string
+  /** 券码字符串（旧版兼容字段；与 couponId 二选一） */
+  code?: string
+  /** 兑换券记录 ID；与 code 二选一，传入后以后端数据为准 */
+  couponId?: string
   /** 奖励描述（可选） */
   reward?: string
 }
@@ -165,6 +189,13 @@ export interface postGameCouponsGameIdRedeemResAccountResultsResults {
   code?: string
   /** 官方返回消息 */
   message?: string
+  /** 失败原因（如 expired、upcoming、server_not_supported） */
+  reason?:
+    | 'not_found'
+    | 'expired'
+    | 'upcoming'
+    | 'disabled'
+    | 'server_not_supported'
   /** 奖励描述 */
   reward?: string
   /** 兑换结果：success | already_used | invalid_coupon | invalid_id | failed */
@@ -209,12 +240,20 @@ export interface getGameCouponsGameIdAccountsRes {
 
 /** 托管账号对象 */
 export interface getGameCouponsGameIdAccountsResAccounts {
+  /** Hive ID 明文，仅返回给账号归属者 */
+  accountId?: string
   /** Hive ID 脱敏值（如 123****789），用于前端展示 */
   accountIdMasked?: string
   /** 用户自定义账号备注名 */
   accountLabel?: string
   /** 是否开启自动兑换托管 */
   autoRedeemEnabled?: boolean
+  /** 游戏账号头像 URL；当前官方 checkUser 无可靠头像字段时为空字符串 */
+  avatarUrl?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 游戏标识 */
+  gameId?: string
   /** 账号记录 ID（MongoDB ObjectId） */
   id?: string
   /** 是否为默认账号 */
@@ -225,7 +264,7 @@ export interface getGameCouponsGameIdAccountsResAccounts {
   lastVerifiedAt?: any
   /** 游戏内昵称（wizard_name），通过官方 checkUser 接口获取 */
   nickname?: string
-  /** 昵称是否可用（true=已通过官方验证获取到昵称） */
+  /** 是否已通过官方验证获取账号资料（头像为空不影响该状态） */
   profileAvailable?: boolean
   /** 区服：global | korea | japan | china | asia | europe */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
@@ -279,12 +318,20 @@ export interface getGameIdAccountsAccountIdPathQuery {
  * @url GET /game-coupons/{gameId}/accounts/{accountId}
  */
 export interface getGameIdAccountsAccountIdRes {
+  /** Hive ID 明文，仅返回给账号归属者 */
+  accountId?: string
   /** Hive ID 脱敏值（如 123****789），用于前端展示 */
   accountIdMasked?: string
   /** 用户自定义账号备注名 */
   accountLabel?: string
   /** 是否开启自动兑换托管 */
   autoRedeemEnabled?: boolean
+  /** 游戏账号头像 URL；当前官方 checkUser 无可靠头像字段时为空字符串 */
+  avatarUrl?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 游戏标识 */
+  gameId?: string
   /** 账号记录 ID（MongoDB ObjectId） */
   id?: string
   /** 是否为默认账号 */
@@ -295,7 +342,7 @@ export interface getGameIdAccountsAccountIdRes {
   lastVerifiedAt?: any
   /** 游戏内昵称（wizard_name），通过官方 checkUser 接口获取 */
   nickname?: string
-  /** 昵称是否可用（true=已通过官方验证获取到昵称） */
+  /** 是否已通过官方验证获取账号资料（头像为空不影响该状态） */
   profileAvailable?: boolean
   /** 区服：global | korea | japan | china | asia | europe */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
@@ -338,12 +385,20 @@ export interface patchGameIdAccountsAccountIdBody {
  * @url PATCH /game-coupons/{gameId}/accounts/{accountId}
  */
 export interface patchGameIdAccountsAccountIdRes {
+  /** Hive ID 明文，仅返回给账号归属者 */
+  accountId?: string
   /** Hive ID 脱敏值（如 123****789），用于前端展示 */
   accountIdMasked?: string
   /** 用户自定义账号备注名 */
   accountLabel?: string
   /** 是否开启自动兑换托管 */
   autoRedeemEnabled?: boolean
+  /** 游戏账号头像 URL；当前官方 checkUser 无可靠头像字段时为空字符串 */
+  avatarUrl?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 游戏标识 */
+  gameId?: string
   /** 账号记录 ID（MongoDB ObjectId） */
   id?: string
   /** 是否为默认账号 */
@@ -354,7 +409,7 @@ export interface patchGameIdAccountsAccountIdRes {
   lastVerifiedAt?: any
   /** 游戏内昵称（wizard_name），通过官方 checkUser 接口获取 */
   nickname?: string
-  /** 昵称是否可用（true=已通过官方验证获取到昵称） */
+  /** 是否已通过官方验证获取账号资料（头像为空不影响该状态） */
   profileAvailable?: boolean
   /** 区服：global | korea | japan | china | asia | europe */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
@@ -394,7 +449,27 @@ export interface postAccountsAccountIdVerifyPathQuery {
  * @description GameCoupons/验证托管账号有效性--接口返回值
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/verify
  */
-export type postAccountsAccountIdVerifyRes = string
+export interface postAccountsAccountIdVerifyRes {
+  accountId?: string
+  accountLabel?: string
+  autoRedeemEnabled?: boolean
+  /** 官方头像 URL；当前数据源无法提供时为空字符串 */
+  avatarUrl?: string
+  compendiumId?: string
+  gameId?: string
+  id?: string
+  isDefault?: boolean
+  lastRedeemAt?: any
+  lastVerifiedAt?: any
+  /** 验证结果说明 */
+  message?: string
+  nickname?: string
+  profileAvailable?: boolean
+  server?: string
+  status?: 'active' | 'invalid' | 'pending' | 'disabled'
+  /** 本次是否验证通过 */
+  verified?: boolean
+}
 
 /**
  * @description GameCoupons/设置自动兑换开关--接口路径参数
@@ -421,12 +496,20 @@ export interface postAccountsAccountIdAutoRedeemBody {
  * @url POST /game-coupons/{gameId}/accounts/{accountId}/auto-redeem
  */
 export interface postAccountsAccountIdAutoRedeemRes {
+  /** Hive ID 明文，仅返回给账号归属者 */
+  accountId?: string
   /** Hive ID 脱敏值（如 123****789），用于前端展示 */
   accountIdMasked?: string
   /** 用户自定义账号备注名 */
   accountLabel?: string
   /** 是否开启自动兑换托管 */
   autoRedeemEnabled?: boolean
+  /** 游戏账号头像 URL；当前官方 checkUser 无可靠头像字段时为空字符串 */
+  avatarUrl?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 游戏标识 */
+  gameId?: string
   /** 账号记录 ID（MongoDB ObjectId） */
   id?: string
   /** 是否为默认账号 */
@@ -437,7 +520,7 @@ export interface postAccountsAccountIdAutoRedeemRes {
   lastVerifiedAt?: any
   /** 游戏内昵称（wizard_name），通过官方 checkUser 接口获取 */
   nickname?: string
-  /** 昵称是否可用（true=已通过官方验证获取到昵称） */
+  /** 是否已通过官方验证获取账号资料（头像为空不影响该状态） */
   profileAvailable?: boolean
   /** 区服：global | korea | japan | china | asia | europe */
   server?: 'global' | 'korea' | 'japan' | 'china' | 'asia' | 'europe'
@@ -570,3 +653,47 @@ export interface postGameIdAccountsClaimGuestBodyAccountsItem {
  * @url POST /game-coupons/{gameId}/accounts/claim-guest
  */
 export type postGameIdAccountsClaimGuestRes = object
+
+/**
+ * @description GameCoupons/获取单个兑换券详情--接口请求Query参数
+ * @url GET /game-coupons/codes/detail
+ */
+export interface getGameCouponsCodesDetailQuery {
+  /** 游戏标识。当前支持：swc=魔灵召唤 */
+  gameId: string
+  /** 兑换券记录 ID（MongoDB ObjectId） */
+  couponId: string
+  /** 图鉴 ID（可选） */
+  compendium_id?: string
+}
+
+/**
+ * @description GameCoupons/获取单个兑换券详情--接口返回值
+ * @url GET /game-coupons/codes/detail
+ */
+export interface getGameCouponsCodesDetailRes {
+  /** 券码字符串（大写） */
+  code?: string
+  /** 图鉴标识 */
+  compendiumId?: string
+  /** 过期时间 */
+  expiresAt?: any
+  /** 游戏标识 */
+  gameId?: string
+  /** 兑换券记录 ID（MongoDB ObjectId） */
+  id?: string
+  /** 开放时间 */
+  publishedAt?: any
+  /** 当前是否允许兑换 */
+  redeemable?: boolean
+  /** 奖励描述 */
+  reward?: string
+  /** 适用区服；空数组表示全部区服 */
+  serverScope?: string[]
+  /** 券码来源：preset=预置 | upstream=社区同步 | manual=手动 | admin=后台 | swgt=官方渠道 | official=官方预置 */
+  source?: 'preset' | 'upstream' | 'manual' | 'admin' | 'swgt' | 'official'
+  /** 动态可用状态：active=可兑换 | upcoming=未开放 | expired=已过期 | disabled=已停用 */
+  status?: 'active' | 'upcoming' | 'expired' | 'disabled'
+  /** 游戏兑换券标题 */
+  title?: string
+}

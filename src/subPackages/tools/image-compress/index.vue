@@ -60,7 +60,7 @@
             <!-- 输入框控制 -->
             <view class="input-control">
               <text class="input-label">质量百分比:</text>
-              <input class="quality-input" type="number" :value="quality" @input="onQualityInput" placeholder="10-100" />
+              <input class="quality-input" type="number" :value="qualityInputValue" @input="onQualityInput" placeholder="10-100" />
               <text class="input-unit">%</text>
             </view>
           </view>
@@ -113,6 +113,7 @@
 
   // 声明uni全局对象
   declare const uni: any
+  declare const wx: any
 
   // 响应式数据
   const originalImage = ref<string>('')
@@ -121,9 +122,11 @@
   const compressedSize = ref<number>(0)
   const originalDimensions = ref<string>('')
   const quality = ref<number>(80)
+  const qualityInputValue = computed(() => String(quality.value))
   const isCompressing = ref<boolean>(false)
   const isCheckingSecurity = ref<boolean>(false)
   const originalFile = ref<File | null>(null)
+  const MAX_SECURITY_CHECK_SIZE = 1024 * 1024
 
   // 计算属性
   const compressionRatio = computed(() => {
@@ -292,14 +295,14 @@
   }
 
   const validateSelectedImageSecurity = async (filePath: string): Promise<boolean> => {
-    // #ifndef MP-WEIXIN
-    return true
-    // #endif
+    if (typeof wx === 'undefined') {
+      return true
+    }
 
-    // #ifdef MP-WEIXIN
     isCheckingSecurity.value = true
     try {
-      const result = await checkMediaSecurity(filePath)
+      const securityFilePath = await prepareSecurityCheckImage(filePath)
+      const result = await checkMediaSecurity(securityFilePath)
       if (result.safe && result.suggestion === 'pass') {
         return true
       }
@@ -308,12 +311,53 @@
       return false
     } catch (error) {
       console.error('图片内容安全校验失败:', error)
-      uni.showToast({ title: '所发布内容含违规信息', icon: 'none' })
+      uni.showToast({ title: '内容安全检查暂不可用，请稍后重试', icon: 'none' })
       return false
     } finally {
       isCheckingSecurity.value = false
     }
-    // #endif
+  }
+
+  const getFileSize = (filePath: string): Promise<number> =>
+    new Promise((resolve, reject) => {
+      uni.getFileInfo({
+        filePath,
+        success: (fileInfo: { size?: number }) => resolve(fileInfo.size || 0),
+        fail: reject,
+      })
+    })
+
+  const compressForSecurityCheck = (filePath: string, quality: number): Promise<string> =>
+    new Promise((resolve, reject) => {
+      uni.compressImage({
+        src: filePath,
+        quality,
+        success: (result: { tempFilePath?: string }) => {
+          if (result.tempFilePath) {
+            resolve(result.tempFilePath)
+            return
+          }
+          reject(new Error('安全校验图片生成失败'))
+        },
+        fail: reject,
+      })
+    })
+
+  /** 微信图片内容安全接口限制约 1MB，送检副本不能影响用户后续处理的原图。 */
+  const prepareSecurityCheckImage = async (filePath: string): Promise<string> => {
+    const sourceSize = await getFileSize(filePath)
+    if (sourceSize <= MAX_SECURITY_CHECK_SIZE) {
+      return filePath
+    }
+
+    for (const compressionQuality of [70, 50, 30, 10]) {
+      const compressedPath = await compressForSecurityCheck(filePath, compressionQuality)
+      if ((await getFileSize(compressedPath)) <= MAX_SECURITY_CHECK_SIZE) {
+        return compressedPath
+      }
+    }
+
+    throw new Error('安全校验图片超过接口大小限制')
   }
 
   const convertToFile = (filePath: string) => {

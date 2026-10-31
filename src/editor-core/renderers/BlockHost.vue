@@ -49,6 +49,16 @@
     @add-item="(i: number) => $emit('add-item', i)"
     @update:block="(b: any) => $emit('update:block', b)"
   />
+  <ListBlockRenderer
+    v-else-if="block?.type === 'list'"
+    :block="block"
+    :block-index="blockIndex"
+    :selected="selected"
+    @select="(i: number) => $emit('select', i)"
+    @select-item="(i: number, j: number) => $emit('select-item', i, j)"
+    @add-item="(i: number) => $emit('add-item', i)"
+    @update:block="(b: any) => $emit('update:block', b)"
+  />
   <view v-else class="bh-unknown">
     <text>⚠️ 未注册的 Block 类型：{{ block?.type }}</text>
   </view>
@@ -60,6 +70,7 @@ import ImageBlockRenderer from './ImageBlockRenderer.vue'
 import RouteBlockRenderer from './RouteBlockRenderer.vue'
 import AttachmentBlockRenderer from './AttachmentBlockRenderer.vue'
 import MediaBlockRenderer from './MediaBlockRenderer.vue'
+import ListBlockRenderer from './ListBlockRenderer.vue'
 
 interface Props {
   block: any

@@ -1,0 +1,279 @@
+<script setup lang="ts">
+  import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
+  import { computed, ref } from 'vue'
+  import QuickShipSendResult from '../components/QuickShipSendResult.vue'
+  import QuickShipTransition from '../components/QuickShipTransition.vue'
+  import PageLayout from '@/components/PageLayout.vue'
+  import { buildQuickTransferPublicReceiveUrl } from '@/features/quick-transfer/public-url'
+  import { buildQuickTransferBrowserShareUrl } from '@/utilsH5/quick-transfer-share'
+  import { resolveQuickTransferConfiguredPublicH5BaseUrl } from '@/utils/quick-transfer-public-url'
+  import {
+    getQuickTransferToolSharePayload,
+    getQuickTransferTransferSharePayload,
+    QUICK_TRANSFER_TOOL_SHARE_TITLE,
+  } from '@/features/quick-transfer/share'
+  import { QUICK_TRANSFER_SEND_CREATE_ROUTE, QUICK_TRANSFER_SENT_RECORDS_ROUTE } from '@/features/quick-transfer/constants'
+  import {
+    getQuickTransferSenderClaimLabel,
+    getQuickTransferSenderDescription,
+    getQuickTransferSenderTitle,
+  } from '@/features/quick-transfer/presentation'
+  import { clearQuickTransferSendResultContext, getQuickTransferSendResultContext } from '@/features/quick-transfer/sendResultContext'
+  import { useQuickTransfer } from '@/features/quick-transfer/useQuickTransfer'
+  import type { QuickTransferSendResultContext } from '@/features/quick-transfer/types'
+  import { getQuickShipAnimationForSendResultEntry, type QuickShipAnimationType } from '@/features/quick-transfer/visual'
+
+  const quickTransfer = useQuickTransfer()
+  const resultContext = ref<QuickTransferSendResultContext | null>(null)
+  const shipAnimation = ref<QuickShipAnimationType | null>(null)
+
+  const hasContext = computed(() => Boolean(resultContext.value))
+  const senderClaimCount = computed(() => quickTransfer.senderStatus.value?.claimCount ?? resultContext.value?.claimCount ?? 0)
+  const senderMaxClaims = computed(() => quickTransfer.senderStatus.value?.maxClaims ?? resultContext.value?.maxClaims ?? 1)
+  const senderStatusTitle = computed(() => getQuickTransferSenderTitle(quickTransfer.sendState.value))
+  const senderStatusDescription = computed(() => getQuickTransferSenderDescription(quickTransfer.sendState.value))
+  const senderClaimLabel = computed(() =>
+    getQuickTransferSenderClaimLabel(quickTransfer.sendState.value, senderClaimCount.value, senderMaxClaims.value),
+  )
+  const canonicalTitle = computed(() => quickTransfer.resolvedTitle.value || resultContext.value?.title || '飞船')
+  const sharePayload = computed(() => {
+    if (quickTransfer.sendState.value !== 'ready') return getQuickTransferToolSharePayload()
+    return getQuickTransferTransferSharePayload(quickTransfer.shareToken.value, quickTransfer.expiresAt.value, canonicalTitle.value)
+  })
+  const shareUrl = computed(() => {
+    if (sharePayload.value.kind !== 'transfer') return ''
+    let url = ''
+    // #ifdef H5
+    url = buildQuickTransferBrowserShareUrl(quickTransfer.shareToken.value)
+    // #endif
+    // #ifdef MP-WEIXIN
+    url = buildQuickTransferPublicReceiveUrl({
+      baseUrl: resolveQuickTransferConfiguredPublicH5BaseUrl(),
+      shareToken: quickTransfer.shareToken.value,
+    })
+    // #endif
+    return url
+  })
+  const showShareLinkWarning = computed(() => import.meta.env.PROD && quickTransfer.sendState.value === 'ready' && !shareUrl.value)
+  const shareTimelineQuery = computed(() =>
+    sharePayload.value.kind === 'transfer' ? `shareToken=${encodeURIComponent(quickTransfer.shareToken.value)}` : '',
+  )
+  // #ifdef MP-WEIXIN
+  uni.showShareMenu({ withShareTicket: true })
+  onShareAppMessage(() => {
+    const payload = sharePayload.value
+    return {
+      title: payload.title,
+      path: payload.path,
+      imageUrl: payload.imageUrl,
+    }
+  })
+
+  onShareTimeline(() => {
+    const payload = sharePayload.value
+    return {
+      title: payload.title,
+      query: shareTimelineQuery.value,
+      imageUrl: payload.imageUrl,
+    }
+  })
+  // #endif
+
+  const copyText = (value: string, successMessage: string) => {
+    if (!value) return
+    uni.setClipboardData({ data: value, success: () => uni.showToast({ title: successMessage, icon: 'none' }) })
+  }
+
+  const copyCode = () => copyText(`飞船码：${quickTransfer.code.value}`, '飞船码已复制')
+  const copyShareUrl = () => {
+    // #ifdef MP-WEIXIN
+    copyText(shareUrl.value, '网页链接已复制')
+    // #endif
+    // #ifdef H5
+    copyText(shareUrl.value, '分享链接已复制')
+    // #endif
+  }
+  const cancelSend = () => {
+    if (quickTransfer.transferId.value) void quickTransfer.cancel()
+  }
+
+  const openHistory = () => uni.redirectTo({ url: QUICK_TRANSFER_SENT_RECORDS_ROUTE })
+  const openCreate = () => uni.redirectTo({ url: QUICK_TRANSFER_SEND_CREATE_ROUTE })
+
+  onLoad(() => {
+    const context = getQuickTransferSendResultContext()
+    clearQuickTransferSendResultContext()
+    if (!context) return
+    resultContext.value = context
+    quickTransfer.initializeSendResult(context)
+    shipAnimation.value = getQuickShipAnimationForSendResultEntry()
+  })
+
+  onShow(() => quickTransfer.resumeTimers())
+  onHide(() => quickTransfer.pauseTimers())
+  onUnload(() => quickTransfer.pauseTimers())
+</script>
+
+<template>
+  <PageLayout
+    title="飞船码"
+    :share-title="sharePayload.title"
+    :share-path="sharePayload.path"
+    :share-image-url="sharePayload.imageUrl"
+    :share-timeline-query="shareTimelineQuery"
+    :share-timeline-title="sharePayload.title || QUICK_TRANSFER_TOOL_SHARE_TITLE"
+    :back-fallback="QUICK_TRANSFER_SENT_RECORDS_ROUTE"
+    nav-gradient="linear-gradient(135deg, #2563eb, #14b8a6)">
+    <view class="send-result-page" :class="{ 'send-result-page--docking': Boolean(shipAnimation) }">
+      <template v-if="hasContext">
+        <!-- <view class="page-heading">
+          <text class="page-kicker">QUICK TRANSFER</text>
+          <text class="page-title">飞船码</text>
+          <text class="page-description">用飞船码或网页链接，把内容交给另一端。</text>
+        </view> -->
+        <view class="result-stage">
+          <QuickShipSendResult
+            :state="quickTransfer.sendState.value"
+            :ship-title="resultContext?.title || ''"
+            :title="senderStatusTitle"
+            :description="senderStatusDescription"
+            :code="quickTransfer.code.value"
+            :countdown="quickTransfer.countdown.value"
+            :claim-label="senderClaimLabel"
+            :show-share-link="Boolean(shareUrl)"
+            :show-share-link-warning="showShareLinkWarning"
+            @copy-code="copyCode"
+            @copy-share-url="copyShareUrl"
+            @cancel="cancelSend"
+            @reset="openCreate"
+            @view-history="openHistory" />
+        </view>
+      </template>
+      <view v-else class="missing-context-panel">
+        <view class="missing-context-mark">⌁</view>
+        <text class="missing-context-title">这艘飞船已经离开本次会话</text>
+        <text class="missing-context-description">你仍可以在「我发送的」查看发送记录。</text>
+        <button class="quick-ship-button primary-button full-button" @click="openHistory">查看我发送的</button>
+        <button class="quick-ship-button text-button full-button" @click="openCreate">返回飞船</button>
+      </view>
+    </view>
+    <QuickShipTransition v-if="shipAnimation" :type="shipAnimation" @finished="shipAnimation = null" />
+  </PageLayout>
+</template>
+
+<style lang="scss">
+  .send-result-page {
+    min-height: 100vh;
+    padding: 28rpx 28rpx calc(72rpx + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    color: var(--theme-text);
+  }
+
+  .page-heading,
+  .result-stage {
+    transition:
+      opacity 280ms ease,
+      transform 280ms ease;
+  }
+
+  .send-result-page--docking .page-heading,
+  .send-result-page--docking .result-stage {
+    opacity: 0.7;
+    transform: translateY(10rpx);
+  }
+
+  .page-heading {
+    padding: 18rpx 4rpx 28rpx;
+    text-align: center;
+  }
+
+  .page-kicker {
+    display: block;
+    color: var(--theme-brand);
+    font-size: 19rpx;
+    font-weight: 700;
+    letter-spacing: 3rpx;
+  }
+
+  .page-title {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-text);
+    font-size: 38rpx;
+    font-weight: 800;
+  }
+
+  .page-description,
+  .missing-context-description {
+    display: block;
+    margin-top: 10rpx;
+    color: var(--theme-text-secondary);
+    font-size: 24rpx;
+    line-height: 1.6;
+  }
+
+  .missing-context-panel {
+    padding: 110rpx 18rpx;
+    text-align: center;
+  }
+
+  .missing-context-mark {
+    color: var(--theme-brand);
+    font-size: 80rpx;
+    font-weight: 800;
+  }
+
+  .missing-context-title {
+    display: block;
+    margin-top: 20rpx;
+    color: var(--theme-text);
+    font-size: 30rpx;
+    font-weight: 700;
+  }
+
+  .full-button {
+    width: 100%;
+    margin-top: 20rpx;
+  }
+
+  .quick-ship-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 14rpx;
+    font-size: 25rpx;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .quick-ship-button::after {
+    border: 0;
+  }
+
+  .primary-button {
+    min-height: 82rpx;
+    padding: 0 24rpx;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+  }
+
+  .text-button {
+    min-height: 58rpx;
+    padding: 0 18rpx;
+    color: var(--theme-brand);
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-heading,
+    .result-stage,
+    .send-result-page--docking .page-heading,
+    .send-result-page--docking .result-stage {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

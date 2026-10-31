@@ -1,11 +1,344 @@
 # Changelog
 
+- 2026-10-24 [altitude/weather/memo] 补齐海拔查询失败重试及坐标/时间结果信息，接通天气地图选点与地点树重试；新增版本化查询快照备忘录块，可由天气或海拔结果创建，保存历史快照与地点引用。
+- 2026-10-23 [tools/family-tree] 将 Canvas 树图调整为自上而下的支系布局，按可见子树分配横向空间，父节点居中对齐子代范围；同步连线、展开命中与适屏坐标。
+- 2026-10-22 [altitude/query] 修复定位/海拔请求进行中切换到景区后，旧异步请求回填结果并覆盖景区界面的问题；增加请求代次校验，旧请求不再改写当前模式、结果、错误及加载状态。
+- 2026-10-22 [tools/compendium-swc/lineups] 阵容筛选区统一保留“重置/搜索”操作，移除输入框旁的重复搜索按钮；主搜索按钮增加加载态与按压反馈。筛选提交仍由显式点击触发。
+
+- 2026-10-20 [altitude/ui] 增加海拔表盘进度弧与指针同步缓动；外环关键刻度调整为 0/1500/2500/3500/4500m，刻线沿半径指向圆心。
+- 2026-10-18 [tools/family-tree] 修正梁姓静态族谱关系：焕成、立成改为金耀之弟，与金耀同为叶合之子。
+- 2026-10-18 [tools/family-tree] 修复 Canvas 树图点击展开失效：节点触摸命中前扣除 Canvas 实际视口偏移，统一屏幕触点与布局局部坐标；更新尺寸时同步测量画布边界。
+- 2026-10-18 [tools/family-tree] 将族谱树图改为 uni-app Canvas 绘制节点与父子连线，支持支系展开/收起、触摸拖动/缩放及适配屏幕；新增需求规格 `docs/features/family-tree-canvas.md`。
+- 2026-10-18 [tools/family-tree] 静态成员姓名自动规范为“梁姓 + 名字”，已有梁姓前缀时不重复添加。
+- 2026-10-18 [tools/family-tree] 补充第三十二世君泽，父节点为第三十一世智云。
+- 2026-10-18 [tools/family-tree] 修复微信小程序树形图仅显示根节点的兼容性：显式命名递归组件，启用 scroll-view flex 布局并补齐滚动区高度约束与页面容器高度链。
+- 2026-10-18 [tools/family-tree] 重做微信小程序血缘树为明确父子连线的树状节点图：子女横向分支、节点姓名纵向排布、支持折叠后代，并按性别使用淡蓝/淡粉节点底色。
+- 2026-10-18 [tools/family-tree] 将图片识别的梁姓第24至31世谱系整理为静态成员数据，供图谱、代际泳道与列表模式共享；明确以该静态数据作为当前查询基线，避免旧缓存覆盖。
+
+- 2026-10-17 [tools/entry & altitude] 恢复**族谱**工具在工具目录/工作台中的正式入口（取消 `hiddenInDirectory` 并标记 `isNew`）；为**海拔查询**界面的加载中状态（`spinner-cycle`）新增平滑顺时针匀速旋转动画（`.spinner-anim`），提升动效质感（Codex）
+
+- 2026-10-17 [family-tree/feature] 完整实现**家族族谱图谱功能（Generational Swimlane Tree）**：采用代际纵向分层泳道设计，支持各代折叠/展开（Accordion）；引入**性别色彩视觉规范**（男性淡蓝色渐变+蓝头像、女性柔粉色渐变+粉头像、未知中性灰）；完美打通后端 API（`getFamiliesMembers`, `postFamiliesMembers`, `linkFamilyRelationship`, `updateFamilyMember`），实现图谱查看、成员详情弹窗与底部快捷 CRUD 闭环（Codex）
+- 2026-10-17 [family-tree/architecture] 重新规划家族族谱（Family Tree）功能架构：采用“图谱/树形展示与列表管理双模联动 + 递归折叠树组件 + 底部抽屉快速 CRUD”方案，兼顾 uni-app 多端性能与折叠展开交互体验（Codex）
+- 2026-10-16 [altitude/ui] 打造**酷炫的跑车科技风仪表盘 (GT-SPORT Tech Tachometer)**：融合超级跑车转速表视觉与赛博朋克科技 HUD 元素，加入战术四角定位框、霓虹发光外圈、动态镭射扫描光束（`dial-scan`）、全透明大字号等宽数值与动态响应警告色带（Codex）
+
+- 2026-10-16 [altitude/ui] 优化跑车转速表风格海拔仪表盘：将中央当前海拔数值的背景色调整为全透明，去除白色/面板底色，使盘面读数更加通透自然（Codex）
+- 2026-10-16 [altitude/ui] 将海拔仪表盘从航空 HUD 风格重构为更直观、易懂的**跑车转速表/速度表风格仪表盘 (Sports Car Speedometer Gauge)**：采用运动感金属/碳纤维渐变外圈、高清晰分段阈值刻度、红色警戒区（Redline）色带、精致中央数值徽章与大字号等宽数字，兼顾科技感与极佳的日常可读性（Codex）
+
+- 2026-10-16 [altitude/ui] 升级航空 HUD 遥测仪表盘：新增 2x2 战术遥测数据矩阵（支持定位源、经纬度坐标、标准大气压 hPa 估算及大气环境状态分级），优化 CSS Grid 布局与航空 MFD 视觉质感（Codex）
+- 2026-10-16 [altitude/ui] 优化海拔查询顶部切换 Tab，将其重构为轻量现代的浮动分段胶囊 Tab 控件（`mode-segmented-pill`），大幅节省纵向空间；精简优化景区查询页面，移除冗余标题与独立查询按钮，改用“地区选择 + 关键词搜索”一体化紧凑工具栏（`scenic-toolbar`），并精简景区卡片布局与交互（Codex）
+- 2026-10-16 [altitude/ui] 将海拔驾驶仪表盘全面深度重构为真正的科技风航空驾驶舱 / HUD 遥测仪表盘 (Sci-Fi Aviation Cockpit HUD)：搭载48段高精航空刻度矩阵、十字准星与地平线俯仰指示线、战术HUD四角定位框、镭射扫描光束、等宽遥测数字字体以及双栏遥测数据卡片与战术高度警示台（Codex）
+- 2026-10-15 [altitude/ui] 将海拔仪表盘手动展开量程从 9000m 调整为 10000m，保留默认 5000m 和超过 5000m 自动扩展逻辑（Codex）
+- 2026-10-15 [altitude/ui] 简化海拔区域刻度，仅保留放大的彩色文字标签，移除额外横线和标签阴影（Codex）
+- 2026-10-15 [altitude/ui] 将海拔仪表盘默认量程调整为 0–5000m，支持手动展开至 9000m，并在当前海拔超过 5000m 时自动扩展量程（Codex）
+- 2026-10-15 [altitude/ui] 优化驾驶仪表盘区域刻度：将海拔分界值改为外侧旋转主刻线与独立标签牌，改善 0m/2500m 等刻度的对齐和可读性（Codex）
+- 2026-10-14 [altitude/ui] 去掉海拔结果外层容器和仪表盘上级卡片的边框、圆角与阴影，改用无卡片驾驶仪表盘布局并优化顶部文字 Tab（Codex）
+- 2026-10-14 [altitude/ui] 将查询方式切换简化为纯文字 Tab，并在圆弧仪表盘增加 1500/2500/3500m 警告区间刻度和对应色值标识（Codex）
+- 2026-10-12 [altitude/ui] 移除浅色主题主海拔数值的警告色文字光晕，避免中央读数出现绿色背景感（Codex）
+- 2026-10-12 [altitude/ui] 移除浅色仪表盘的绿色中心光晕，提高未激活警告分段的颜色亮度，让绿色/黄色/橙色/红色区间在整圈仪表上更清晰（Codex）
+- 2026-10-12 [altitude/ui] 让跑车式海拔仪表盘跟随主题切换：白天使用白色浅灰面板，夜间保留深色驾驶舱风格（Codex）
+- 2026-10-12 [altitude/ui] 参考跑车仪表盘优化海拔展示：增加深色驾驶舱面板、内外双层环、分段独立发光、发光指针与中点刻度（Codex）
+- 2026-10-12 [altitude/ui] 将动态圆弧仪表盘固定为 0–10000m 量程，按绝对海拔区间显示绿色、黄色、橙色和红色警告分段（Codex）
+- 2026-10-12 [altitude/ui] 将当前海拔展示改为分段动态圆弧仪表盘，增加指针与扫描动画；将获取当前海拔/景区海拔入口改为明显的双 Tab 切换样式（Codex）
+- 2026-10-10 [altitude/scenic-filter] 强化地区选择入口的可点击提示与级联路径选中态，并增大省市区底部选择弹窗高度和选项区域（Codex）
+- 2026-10-10 [altitude/lineup-sharing,ui] 修复阵容分享参数二次编码导致的接收乱码；海拔页默认自动获取当前海拔并增加重新获取入口；修正景区柱状图从 0 基线按比例绘制（Codex）
+- 2026-10-09 [altitude/ui] 精简海拔查询文案与结果信息，查询按钮立即进入加载态；新增获取海拔/选择景区大操作入口，将横向仪表改为竖向递增警告色和山峰轮廓仪表，并固定海拔页导航栏白色背景（Codex）
+- 2026-10-07 [altitude/sharing,scenic-filter] 将景区省市区筛选改为地区入口级联面板；修复省级预置覆盖接口行政树导致市区县为空的问题，增加行政树本地缓存与异步刷新、省市区变更自动查询，并在海拔页面显式注册微信好友/朋友圈原生分享（Codex）
+- 2026-10-07 [altitude/scenic-sharing] 景区点击改为独立海拔快照详情页，支持景区 ID 分享直达；景区筛选页分享携带省市区和关键词并在接收端恢复筛选（Codex）
+- 2026-10-06 [scenic/frontend] 景区模式和海拔景区选择器改用前端内置省市区 JSON，省市区本地联动不再依赖远程行政筛选接口；景区列表、景点搜索仍按最终行政编码请求后端（Codex）
+- 2026-10-06 [scenic/frontend] 清理微信小程序景区筛选请求中的 undefined/空查询参数，确保只选择省份时只发送 provinceCode，避免小程序端序列化空 cityCode/countyCode 导致无结果（Codex）
+- 2026-10-06 [scenic/frontend] 将省市区本地树压缩为紧凑数组并运行时还原，降低微信小程序 tools 分包体积，保留本地离线联动（Codex）
+- 2026-10-06 [scenic/frontend] 因微信小程序 tools 分包仍超出 2MB 上限，将行政树改为启动时远程请求一次，保留前端省市区联动与有效参数清洗（Codex）
+- 2026-10-06 [scenic/frontend] 合并景区筛选/搜索入口，景区卡片新增明确的景点海拔详情入口，点击后自动滚动到景点列表并支持列表、折线图和柱状图展示，补充详情加载失败和空数据状态（Codex）
+- 2026-10-07 [scenic/frontend] 将景区详情模式统一为数据列表/图表，详情面板前置到筛选结果上方，移除景点和景区代表点跳转单点海拔的交互，保留景区容器内景点海拔展示（Codex）
+- 2026-10-07 [scenic/frontend] 图表模式统一改为海拔柱状图，按当前景区景点海拔从绿色、橙色到红色渐变，并增加低/中/高海拔图例（Codex）
+- 2026-10-07 [altitude/scenic] 将海拔警告阈值与颜色集中到 altitude-warning 配置，当前海拔仪表盘和景区柱状图统一使用 1500/2500/3500m 区段；柱状图纵轴从 0 起算（Codex）
+- 2026-10-03 [tools/memo/sharing] 统一备忘录详情路径、H5 分享 URL 与参数解析，兼容 hash/history、完整 href 和延迟同步场景；恢复详情页页面级微信好友/朋友圈分享，同时将带 memoId/shareToken 的路径与 query 透传给 PageLayout，避免分享入口丢失或参数被默认路由覆盖（Codex）
+- 2026-10-04 [tools/memo/image,poster] 修复微信小程序详情页图片尺寸模式失效：自动/百分比宽度统一应用，固定高度使用可见容器高度与裁切模式；导出时让 H5 详情页进入完整长内容模式，等待图片加载后由 Painter 截取整个备忘录内容体（Codex）
+- 2026-10-04 [tools/memo/poster] 收口后端 H5 海报截图参数：导出 URL 显式进入完整内容模式，Painter 强制刷新页面缓存并等待资源加载完成后再截取 `#poster-wrapper`，确保生成结果与 H5 详情页内容一致（Codex）
+- 2026-10-04 [tools/memo/build] 修复微信小程序 WXSS 不支持导出态嵌套通配选择器导致的编译错误，将长图导出样式改为扁平显式选择器（Codex）
+- 2026-10-04 [tools/memo/poster] 将 Painter 截图目标提升为备忘录详情页根节点，导出时保留页面主题背景和完整正文，同时隐藏导航、登录提示及其他交互控件，生成真正的详情页长图（Codex）
+- 2026-10-02 [weather] 接入 Apifox 天气接口并完善定位、地点、地图选点、响应归一化与竞品风格天气展示（Codex）
+- 2026-10-01 [weather] 新增天气工具前端页面，归入记录分类，支持当前定位/地点/地图选点和动态天气分享（Codex）
+- 2026-10-01 [tools/altitude/v2] 接入统一坐标海拔 Adapter，准备收口当前定位、地点选择和地图选点三种入口（Codex）
+- 2026-10-01 [tools/altitude/accuracy] 自动海拔定位改用 WGS84 高精度坐标，修正 GCJ02 坐标直接请求 WGS84 高程模型造成的结果偏差（Codex）
+- 2026-10-01 [tools/altitude/ui,sharing] 重做自动定位海拔仪表盘，增加分段动态色带、读数动画、来源摘要，并保留微信右上角原生分享入口（Codex）
+- 2026-10-01 [tools/altitude/apifox] 地点枚举树和地点级海拔回退切换为最新 Apifox 生成方法，删除临时 API 模块（Codex）
+- 2026-10-01 [tools/altitude/manual] 景区节点支持默认参考点和多景点列表，具体景点查询切换为后端地点级数据库优先/实时兜底接口（Codex）
+- 2026-10-01 [tools/altitude/manual] 修正手动选择器省市名称重复，增加路径回填和“确认选择”按钮（Codex）
+- 2026-09-28 [tools/altitude/apifox] 手动地点查询切换为 Apifox 生成的 `getAltitudePlaces`，删除临时接口模块并保留页面 ViewModel 归一化（Codex）
+- 2026-09-28 [tools/altitude/manual] 新增手动地点搜索与预采集参考海拔展示，定位失败或电脑微信场景可选择四川省行政区/景点查询（Codex）
+- 2026-09-28 [tools/altitude/ui] 为温度计式海拔仪表增加按海拔分段的蓝/黄/橙/红提示色和对应说明（Codex）
+- 2026-09-28 [tools/altitude/ui] 将查询海拔结果改为简易温度计式纵向仪表，大号显示海拔数值并收起坐标/时间信息（Codex）
+- 2026-09-27 [tools/altitude,sharing] 为“查询海拔”补充微信好友和朋友圈分享标题及固定入口路径，不分享用户坐标和查询结果（Codex）
+- 2026-09-27 [tools/altitude] 将前端工具名称从“当前海拔”统一调整为“查询海拔”，保留内部路由、工具 key 和 API 契约不变（Codex）
+- 2026-09-27 [tools/altitude,privacy] 补充当前海拔位置信息使用说明、微信定位授权前提示及拒绝后的设置恢复入口；隐私政策明确经纬度仅用于查询海拔且不保存位置历史（Codex）
+- 2026-09-27 [tools/altitude] 切换当前海拔页面使用 Apifox 生成的 `getAltitudeCurrent` 接口，删除临时请求模块并保留页面层响应归一化（Codex）
+- 2026-09-27 [tools/altitude] 新增 H5/微信小程序当前海拔工具的页面规格，支持定位查询和失败重试（Codex）
+
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 新增 LA 人物自定义筛选：复用幻神人物选择器交互生成前端 mock 的 LA 分段，固定展示在 F 分段下方；LA 不进入筛选摘要标题，但会随分享恢复并纳入导出海报（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 为 LA 人物筛选行增加自定义分段标题输入框，默认标题为 LA；标题随分享参数恢复并用于榜单/海报分段标题，但不影响筛选摘要和导出文件标题（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 幻神筛选同步支持自定义分段标题；幻神与 LA 选择的人物会从接口其他评级分段中过滤，幻神固定置顶、LA 固定置底，避免同一人物重复展示（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 将幻神自定义分段标题的默认展示值调整为 `SSS`，输入框仍保持空值以显示 placeholder（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking] 将筛选面板中的“幻神人物”行统一命名为“SSS人物”，明确其为 SSS mock 分段交互；SSS/LA 仍不进入筛选摘要和导出标题，但会进入分享参数及导出内容（Codex）
+- 2026-09-23 [tools/compendium-swc/tier-ranking,sharing] 更新微信好友消息卡片动态分享：SSS人物优先使用“魔灵｜${标题}居然是TA”及 SSS 首个魔灵头像，未选择 SSS 时再使用 LA 标题和头像；未选择 mock 分组时恢复普通魔灵强度榜标题与默认封面（Codex）
+- 2026-09-23 [tools/compendium-swc/lineups,sharing] 修复阵容页微信分享未稳定携带人物筛选参数的问题：将带筛选 query 的分享路径、标题和封面同步传入 PageLayout，并让页面级分享回调复用同一份分享结果，接收方可按人物筛选直接加载阵容（Codex）
+- 2026-09-23 [tools/compendium-swc/lineup-counter,sharing] 修复阵容克制页微信分享可能被 PageLayout 默认路径覆盖的问题：同步传递带模式和人物筛选参数的分享路径，接收方可恢复当前克制查询条件（Codex）
+- 2026-09-23 [tools/compendium-swc/build/mp-weixin] 修复魔灵阵容与阵容克制页面在微信小程序中因分包内 composable 模块未注册而报 `use-admin-lineup-list.js is not defined`：将页面专用查询 composable 放到页面同级目录并更新引用，避免运行时解析 `./composables/*.js`（Codex）
+- 2026-09-21 [components/PageLayout,tools/compendium-swc/tier-ranking,sharing] 修复微信好友消息卡片动态封面未生效的问题：将幻神或 SSS 首个魔灵头像显式传入 PageLayout，朋友圈继续使用默认强度榜封面（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 为幻神筛选或可见 SSS 分段定制微信好友消息卡片：标题显示“幻神居然是TA”，封面优先使用幻神首个魔灵或 SSS 分段首个魔灵头像；朋友圈与其他状态保持原逻辑（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 分享标题按当前可见状态生成：出现 SSS 分段或选择幻神筛选时显示“这是幻神”，否则显示“魔灵强度榜”；导出图片标题直接复用筛选容器标题且不包含幻神 mock 筛选文案（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 将幻神/神级人物筛选视为前端 mock 分段，移除“这就是幻神”“真神出炉”等特殊标题，分享与导出统一使用当前榜单内容和普通标题（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 修复幻神筛选导出复用旧海报缓存的问题，海报模式不再使用“这就是幻神”等特殊标题，并提升海报渲染版本确保导出与当前页面所见状态一致（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 导出图片完成后先关闭生成 loading，再显示“导出成功”提示，确保成功反馈可见（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 暂时注释神级人物筛选；幻神筛选结果在当前不存在 SSS 分段时将展示容器标签调整为 `SSS`（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 移除“真神出炉”“这就是幻神”等隐藏人物文案在筛选摘要和导出标题中的展示，保留隐藏分段内容与分享标题逻辑（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 将“幻神人物”和“神级人物”筛选收进筛选面板折叠内容，收起时仅保留顶部筛选摘要（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,build/mp-weixin] 修复 Ω 评级筛选项生成 Unicode CSS 类名导致微信开发者工具 WXSS 报 `unexpected '\\'`：统一复用 ASCII 品级类名 `chip-omega`，确保小程序样式可编译（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking] 评级榜公开接口跳过游客会话初始化，修复微信开发者工具因 guest-session 不可用导致强度榜首屏报错的问题（Codex）
+- 2026-09-21 [tools/compendium-swc/tier-ranking,sharing] 统一分享链接与导出海报的所见状态参数编码，补齐筛选面板展开状态，确保筛选条件、展示模式和数量/属性/评分开关在分享与导出中保持一致（Codex）
+- 2026-09-20 [tools/compendium-swc/tier-ranking,sharing] 新增纯前端幻神 EX 与神级 Ω 隐藏分段：支持两组有序多选人物、删除、分享恢复和海报导出，并将历史 Other 兜底档位统一显示为 F；微信分享标题按隐藏分段动态使用“这就是幻神/真神出炉”等标题党文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 将筛选区“显示”控制改为文字按钮，明确标识数量、属性、评分、卡片/列表模式与导出操作（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 修复属性筛选组件默认显示元素文案的问题，强制使用仅图标模式（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 强度榜筛选区的五行属性与人物类型改为仅展示图标，“全部”选项保留文字（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 精简魔灵强度榜入口描述为“魔灵强度评级”，统一魔灵召唤入口与工具目录文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking,sharing] 修复魔灵强度榜被 PageLayout 默认分享回调覆盖的问题，显式传入 OSS 封面并统一好友/朋友圈分享标题为“魔灵强度榜”（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 评级榜前端复用精准人物选择器，支持多人物组合筛选并同步请求、分享和导出参数；移除海报“魔灵强度榜 · 当前筛选”行，单个品级标题简化为 `SS`，多品级标题使用 `金区 SS/S` 形式（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 优化列表模式人物信息：名称下方由五行属性改为体力型/防御型/攻击型/辅助型展示，复用人物类型图标；评分保留数值但移除“AI评分”说明文案（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking,sharing] 新增默认关闭的统一评分显示开关：卡片聚合模式在头像左上角展示低调评分角标，列表模式按开关展示评分并在关闭时收缩评级徽标；数量展示去掉“只”，分享与导出海报同步评分状态（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 保留导出海报中的 Other 评级英文文案，并确保该标签单行完整展示；顶部筛选摘要继续使用居中卡片样式（Codex）
+- 2026-09-19 [tools/compendium-swc/tier-ranking] 将卡片聚合头像五行图标再向头像底边贴近；H5 页面在空闲时后台预热当前海报，导出复用预热结果且不阻塞页面交互（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 头像右下角五行图标取消背景和内边距，直接贴齐右下边缘；卡片聚合单行分段移除最小高度，与多行分段共用网格上下内边距（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 将显示区的数量、头像属性、模式和导出统一为图标按钮；属性角标改为直接使用五行图标并提升可见层级；列表/卡片模式切换增加短暂加载与禁用状态，防止连续点击触发重复渲染（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 统一“显示”行的 Tab 与模式切换按钮高度；两种模式的五行信息均使用既有图标组件且列表不显示属性中文文案；海报渲染保留当前展示模式并携带全部筛选、数量和头像属性图标状态，实现所见即所得导出（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking,services/apifox] 通过 AAG 从 Apifox 重新生成 TierRanking 契约，正式补齐 `tiers` 多档位查询字段；评级榜请求适配层会省略空的属性/品级参数，避免产生 `elements=undefined`、`tiers=undefined`（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 修复卡片聚合模式单行头像在被品级标签最小高度撑开的分段内靠上显示的问题，统一沿竖轴居中（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 清理导出海报中已注释说明行对应的无效状态与样式代码（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 精简评级榜导出海报，仅保留筛选标题和评级内容，隐藏包含“本项目 AI”、日期、赛季与版本的说明行（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 精简评级榜筛选区：默认折叠并展示当前筛选摘要，展开后区域改为单行选择；搜索输入暂时隐藏，数量默认关闭；模式切换与导出收进“显示”行，导出在两种展示模式下均可触发卡片聚合海报（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking,sharing] 将品级数量与头像属性图标改为筛选栏标签控制；头像右下角的五行图标默认关闭且仅显示图标，列表正文复用同一图标组件；分享和 H5 海报同步筛选与显示状态，海报标题仅展示简化筛选条件（Codex）
+- 2026-09-18 [tools/compendium-swc/tier-ranking] 新增通用 `useDeployedH5PosterExport` Hook；评级榜导出改用已部署 H5 页面的专用海报渲染态，经 Painter 服务截图后下载或保存；小程序不再本地 Canvas 绘制，部署最新 H5 成为导出前置条件（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 卡片聚合模式调整为首段上圆角、末段下圆角、中间分段无圆角，并新增按当前区域/属性筛选导出全部评级分段长图的功能（H5 下载、微信小程序保存到相册）（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 修正列表与卡片模式语义：头像聚合网格归为卡片聚合模式并取消评级组间距，单人物列表恢复星级、名称和编码信息并保留评级组间距（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 排行榜卡片模式收窄人物展示，仅保留头像与属性角标，移除人物名称和编码文本（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking,sharing] 将功能名称统一为“魔灵强度榜”，微信好友与朋友圈分享统一使用通用 OSS 封面 `https://lzk-web.oss-cn-beijing.aliyuncs.com/img/share/swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 取消排行榜卡片模式不同评级分组之间的纵向间距，使各级别连续衔接展示（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking] 新增 AI评级榜列表展示模式，按评级分组展示人物头像网格，并保留排行榜卡片模式可切换（Codex）
+- 2026-09-17 [tools/vote] 暂时屏蔽投票功能入口，保留投票路由以兼容已有分享链接（Codex）
+- 2026-09-17 [tools/compendium-swc/rta,sharing] RTA分数预测页微信分享封面改用 `swc-rta.jpg`，与 RTA排行榜保持一致，AI评级榜继续使用 `swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/rta,sharing] 区分 RTA排行榜与 AI评级榜微信分享封面：分别使用 `swc-rta.jpg` 和 `swc.jpg`（Codex）
+- 2026-09-17 [tools/compendium-swc/tier-ranking,sharing] 为魔灵召唤 AI评级榜接入微信好友与朋友圈分享封面，先复用 RTA排行榜的 OSS 图片地址并保留当前筛选参数（Codex）
+- 2026-09-16 [tools/family-tree] 修复 H5 构建因 Apifox 生成层移除关系接口导出而失败的问题，将已有父子关系请求接入族谱手写适配层并保留新增成员后的关系建立流程（Codex）
+- 2026-09-16 [tools/compendium-swc/rta] 公共 RTA 分数查询跳过游客会话初始化，避免首屏被无关的 guest-session 请求阻塞（Codex）
+- 2026-09-15 [swc-rta] 趋势查询改为批量加载，活动赛季跳过无用的阶段历史请求，并将配置请求移出首屏关键路径，减少页面打开等待时间（Codex）
+
 > Harness 变更日志。每次修改 `src/` 核心代码的提交必须在此追加一条记录（pre-commit 强制校验）。
 
 - 2026-07-31 [common/webview] 增强协议页标题识别逻辑，支持“小程序服务”“协议”“政策”等常见标题，避免微信平台配置的隐私/服务URL打开时显示空白（Codex）
   > 格式：`- YYYY-MM-DD [模块] 变更意图简述（作者/Agent）`
 
 ## Unreleased
+
+- 2026-09-15 [tools/vote/ui] 简化投票创建页：将必填截止时间移出折叠容器并默认展示，其他参与、隐私和结果设置收纳为可选的“更多设置”（Codex）
+- 2026-09-15 [tools/vote,sharing] 分享标题改为根据创建页投票标题、详情页投票标题及当前状态动态生成，并统一复用到好友和朋友圈分享（Codex）
+- 2026-09-15 [tools/vote,sharing] 统一使用 `vote-share.jpg` 作为投票创建页和详情页的微信好友、朋友圈分享封面（Codex）
+- 2026-09-15 [tools/vote,sharing] 将投票入口与接龙并列归入「记录」工作间，并为创建页、详情页统一补齐微信右上角、好友和朋友圈分享能力（Codex）
+- 2026-09-15 [tools/vote] 新增 Vote V1 前端 Mock 阶段：Domain Contract、Mock Repository、创建/详情/结果/创建者管理 UI、游客登录回跳骨架与 H5/mp-weixin 分享路径；暂不接入真实 Vote API（Codex）
+- 2026-09-15 [tools/vote,services/apifox] 接入已导入的 VOTES Apifox 方法：新增 ApiVoteRepository 与业务响应 Adapter，完成创建、详情、参与者、提交/修改、更新、关闭和公布结果链路；创建页截止时间与后端 endAt 必填契约对齐，移除生产 Mock 演示入口并保留 Mock 单元测试数据源（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 微信分享标题根据当前赛季结束时间动态展示倒计时，格式为“RTA分数预测｜距离赛季结算，还剩XX天”（Codex）
+- 2026-09-14 [tools/quick-transfer/file,ui] 将 `image/*` 从普通文件列表提升为内嵌内容，复用受保护预览链路并支持图片加载队列、失败重试、全屏预览和独立保存；非图片继续归入附件（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 调整阶段明细分数列顺序为“三红、二红、一红、三绿、二绿、一绿”，便于按高段位到低段位查看分界线（Codex）
+- 2026-09-14 [tools/compendium-swc/rta,build/mp-weixin] RTA 分享封面改用已有 OSS 地址，移除主包内本地大图依赖，降低微信小程序主包体积（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 阶段趋势折线图横轴顺序，按剩余天数升序展示“剩1天、剩2天……”，并将“结算”放在末尾（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 修复阶段趋势折线在横轴倒计时升序后只显示数据点的问题，连线前按阶段索引重新排序，恢复完整曲线（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 统一分段星星颜色：银区、金区、绿区、红区内的一二三星分别使用同一区域的统一颜色，不再按星级使用渐变色（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 阶段明细改用“剩 N 天/结算”中文文案，表头仅展示对应的星星组件（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 统一 RTA 分数展示顺序：顶部列表、阶段明细和趋势筛选均按红区在前、绿区在后排列（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 为趋势图增加段位筛选和可点击图例，可查看单个分段或隐藏/恢复指定曲线（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 更新微信分享封面文案与角色构图：`魔灵召唤` 与同一行的 `RTA` 分行展示，替换为巨龙 Boss、光属性方舟天使和暗属性龙骑士（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 调整 RTA 趋势图段位配色：绿区、红区分别按一/二/三档由浅到深显示，数据点改为无描边实心小圆点（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 适配 RTA 相对结算阶段数据：当前赛季优先展示完整 `10D`～`FINAL` 多目标趋势、按绿/红分区着色，并新增中文星级分数列表与可复用 RTA 星星组件；历史赛季继续展示 `FINAL` 分数线（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 缓存历史赛季相对曲线，避免切换筛选或返回页面时重复请求同一目标数据；刷新时统一清理各层缓存（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 重新优化 RTA 分数页读链路：首屏并行加载 options/config，按筛选缓存 config/current/history，current 返回后同步目标可用性，趋势图继续异步加载（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 筛选切换复用已加载的 options，避免重复请求筛选枚举；补齐 season-history 的 provider 请求类型，减少筛选切换首屏等待（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数线页面增加筛选栏与内容区加载骨架动画，避免首屏接口串行加载和筛选切换时出现白屏、空态闪烁（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 普通用户默认使用后端综合来源，隐藏来源筛选；阶段历史接口无数据时仍正常完成请求，并按当前赛季状态决定是否回退日趋势（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页补充微信好友与朋友圈页面级分享回调，使用用户提供的 `swc.jpg` OSS 封面（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 将分数线数据时间移动到卡片标题右侧，并改为“生成于”格式展示（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 收紧 RTA 分数线筛选栏顶部间距，暂不启用吸顶以避免被自定义导航栏遮挡（Codex）
+- 2026-09-14 [tools/compendium-swc/rta] 新增适配微信分享卡片的中文 RTA 分享封面，使用本地静态资源替换原英文远程封面（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 支持切换已落库的历史赛季并展示 `FINAL` 分数线；历史赛季不展示无法按绝对日期对齐的趋势图，当前赛季继续展示日趋势（Codex）
+
+- 2026-09-13 [config/compendium-swc] 将用户提供的魔灵召唤 PNG logo 接入“魔灵图鉴”综合入口和工具目录入口，保留其他入口的 uni-icons 图标方案（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 将 RTA 分数预测微信分享封面切换为项目 OSS 地址，避免生产环境依赖官网图片直链（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 为 RTA 分数预测页面接入微信好友与朋友圈分享，并使用《魔灵召唤》官网公开分享图作为封面（后续可替换为项目 OSS 地址）（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 修复 RTA 分数筛选后选项逐步收窄的问题：按当前赛季/来源读取目标数据时保留完整的区服、赛季、分区和来源筛选项，避免筛选切换后页面无法继续加载（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 优化 RTA 分数页赛季与目标文案：仅为当前赛季添加“当前”标识，C/P/G 段位转换为一绿/一金/一红等中文名称，并新增当前赛季分段分界线面板及无快照空状态（Codex）
+- 2026-09-13 [tools/compendium-swc/rta] 将 RTA 分数页收敛为采集数据展示：复用 Apifox season-history 接口动态加载历史序列，支持区服/赛季/分区/目标筛选、选定赛季阶段走势与多赛季阶段对比；当前 Snapshot/预测不可用时仍可展示历史数据（Codex）
+- 2026-09-12 [tools/compendium-swc-rta-score] 修复线上暂无 RTA 快照时的前端空筛选兜底，显示完整暂无数据状态并支持重试，同时允许无筛选项时读取 config 能力状态（Codex）
+
+- 2026-09-11 [tools/compendium-swc-rta-score] 通过 AAG 生成 RTASCORE 五个公开接口调用层，新增 RTA 分数预测页面与动态服务器/赛季/联赛/目标筛选、当前分数线、历史趋势、结算前预测、数据质量状态及魔灵召唤综合页同级入口（Codex）
+
+- 2026-09-11 [tools/memo/list-block] 新增通用 ListBlock 的有序列表与 P0-P3 优先级列表能力，支持描述、手动上下移、背景色/对齐配置及旧列表模式兼容读取；序号按数组下标渲染，不改变 Memo API 与后端结构（Codex）
+
+- 2026-09-10 [memo/route] 扩展 RouteNode 的时间点、停留时长、地址与经纬度字段；同步增强两套备忘录编辑器的字段编辑与 JSON 导入、详情页按坐标复用现有地图导航，并保持旧 time 字段兼容（Codex）
+
+- 2026-09-09 [tools/quick-transfer/ui] 重构发送结果页信息层级，将飞船状态、飞船内容、飞船码、有效期与领取进度、操作区拆分为独立容器（Codex）
+
+- 2026-09-06 [tools/quick-transfer/history] 修复管理首页内嵌历史列表滚动容器在微信小程序中高度为零导致发送记录和接收记录不可见的问题（Codex）
+
+- 2026-09-06 [tools/quick-transfer/file] 微信端视频改用保存到相册 API，校验临时文件有效性并在普通文件保存后清除已消费缓存；收船页有 Receipt 时优先申请 Receipt 文件访问地址（Codex）
+
+- 2026-09-06 [tools/quick-transfer/history] 首页历史记录复用跨端登录权限判断：H5 未登录不再误请求发送/接收记录接口，微信游客仍可正常查看历史（Codex）
+
+- 2026-09-05 [tools/quick-transfer/file] 接收页文件 Access 显式使用 `purpose=download` 并兼容 `data.url` 响应；已收/已发送详情图片预览补齐下载进行态，统一复用临时 URL 下载链路（Codex）
+
+- 2026-09-05 [tools/quick-transfer/file] 分离接收页图片预览与保存链路：预览使用 `purpose=preview`，保存始终重新获取 `purpose=download` 的临时 URL，不复用预览缓存，并区分两类失败提示（Codex）
+
+- 2026-09-05 [tools/quick-transfer/ui] 统一飞船模块所有按钮、历史 Tab、引用弹窗和文件操作按钮的 flex 垂直居中与行高，修复微信小程序原生按钮文案偏移（Codex）
+
+- 2026-09-05 [tools/quick-transfer/receipt] 精简已收飞船详情页，移除与内容标题重复的空头部，仅保留内容展示区（Codex）
+
+- 2026-09-05 [tools/quick-transfer/sent] 发送记录详情轮询改为静默刷新：不再清空当前详情或切换到“正在读取发送记录”，终态后停止轮询（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual] 修复 iOS 微信真机飞船动画瞬间结束：延迟一帧后再挂播放类，关键帧位移改为 rpx，并忽略过早的 animationend（Codex）
+
+- 2026-09-04 [tools/relay/share] 移除接龙详情页自定义分享按钮，仅保留微信原生右上角分享能力（Codex）
+
+- 2026-09-04 [tools/quick-transfer/share, tools/relay/share] 飞船与接龙全部页面统一使用微信小程序右上角原生分享菜单，移除页面内分享按钮并保留好友、朋友圈分享回调、路径和封面配置（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual, tools/relay] 固定飞船关键帧时长并隔离图片加载失败，兼容 iOS 真机动画；接龙创建和参与成功后复用通用飞船出发动画（Codex）
+
+- 2026-09-04 [tools/quick-transfer/visual] 接收页同时保留两份到达视觉：一艘飞入后淡出，另一艘飞入后停靠并持续悬浮（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 将飞船 depart/arrive 动画进一步延长至约 2.4 秒，避免飞入和离场过程一闪而过（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 延长飞船 depart/arrive 动画至约 1.8 秒，让飞入、减速和停靠过程更连贯可见（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 接收页 arrive 改为飞入后停靠在页面中：分享进入与收船成功后飞船不再淡出卸载，停稳后转为轻量悬浮（Codex）
+
+- 2026-09-03 [tools/quick-transfer/visual] 升级飞船 depart/arrive 动画并新增 standby 悬浮态：发送请求与离场动画并行，跳转等待动画完成；飞船码页入场只播一次，分享收船不再重复到达动画（Codex）
+
+- 2026-09-03 [tools/quick-transfer/file] 收船附件按图片预览、图片保存和文件下载拆分动作；补充微信本地文件缓存复用、H5 图片遮罩预览、历史详情微信图片预览及开发态下载/预览/保存错误分类（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 将发送结果收敛为普通飞船码结果卡片，移除票据穿孔装饰；历史滚动容器补齐可收缩布局，并在生产网页链接不可用时给出明确提示（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 收口三种使用场景：首页突出内容快速送达另一端，发送结果页统一使用“飞船码”并保留飞船码/网页链接/微信分享三种交付方式（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页移除大尺寸分享封面背景，改为参考接龙页的轻量文字页头，避免首屏加载和展示不必要的封面内容（Codex）
+
+- 2026-09-02 [tools/relay] 接龙首页工作台、工具目录及记录工作间入口统一使用 Relay 图标 `relay-icon.jpg`（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页 Hero 改为将 `QUICK_SHIP_SHARE_COVER_URL` 作为整块背景图使用，移除单独的图片标签展示（Codex）
+
+- 2026-09-02 [tools/quick-transfer/visual] 拆分飞船展示图与动画图：管理首页 Hero 及分享封面改用 `quick-ship-share.jpg`，飞船动画和工具目录入口继续使用 `quick-ship.png`（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页 Hero 图片改为直接使用 `QUICK_SHIP_SHARE_COVER_URL`，避免页面视觉资源仅通过分享 payload 间接引用（Codex）
+
+- 2026-09-02 [tools/quick-transfer] 管理首页历史记录页签改为与接龙页一致的按钮式 Tabs，并将历史列表限制在独立竖向滚动容器内，保持上方 Hero、操作区、历史标题和页签固定（Codex）
+
+- 2026-09-02 [tools/quick-transfer/share] 将飞船管理、发送、票据、接收及历史页面的微信分享生命周期提升到页面组件，显式开启右上角分享菜单，并统一使用飞船专用封面（Codex）
+
+- 2026-09-02 [tools/relay] 新增通用接龙 Relay V1：支持创建、分享、动态字段、参与/修改/撤回、统计、图片上传和创建者管理（Codex）
+
+- 2026-09-02 [tools/relay] 为首页、创建、详情、参与和管理页面统一增加微信右上角分享，并使用 Relay 专用分享封面图（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 管理首页 Hero 改为展示分享使用的飞船封面图，并将副标题优化为突出分享给好友的使用场景（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 将管理首页的发送记录与接收记录改为同页 Tab，默认加载发送记录，切换历史类型时复用当前页面并保留下拉刷新与分页加载（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 接入飞船标题与附件业务展示名：标题改为可选并统一使用后端 canonical title；附件生成稳定的本地日期序号默认名，支持主体编辑、清空恢复和扩展名锁定，Create/接收/历史/下载链路优先使用 `displayName`（Codex）
+
+- 2026-09-01 [tools/quick-transfer,home/workspaces,sharing] 飞船品牌图片统一迁移至 `/img/share/quick-ship.png`：工具配置新增图片型入口能力，首页工作台、工作间列表和完整工具目录均优先使用 `image` + `aspectFit`，飞船动画与微信分享封面同步复用同一资源并移除旧地址（Codex）
+
+- 2026-09-01 [tools/quick-transfer] 放开空内容飞船发送：仅校验标题必填，移除“请至少添加一项内容”的发送拦截与表单提示，保留文件及其他参数校验（Codex）
+
+- 2026-09-01 [tools/quick-transfer/share] 修复“飞船票据”页微信分享生命周期未被编译器识别的问题，直接注册页面分享并沿用统一飞船封面（Codex）
+
+- 2026-09-01 [tools/quick-transfer,home/workspaces] 将飞船入口归入「记录」分类，并在发送页新增场景化备忘录引用选择面板，复用现有 memoDetail Reference 与 owned/shared 数据范围（Codex）
+
+- 2026-09-01 [tools/quick-transfer,tools/game-coupons] 完成 Quick Transfer V3.x 收口：新增必填飞船标题，精简历史卡片并支持按记录删除与二次确认；魔灵兑换券好友/朋友圈分享标题追加券码并保留无券码回退（Codex）
+
+- 2026-09-01 [tools/quick-transfer/share] 收口飞船码复制与跨端分享体验：支持整段粘贴自动识别，票据复制固定带飞船码标签，小程序复制完整 H5 Receiver URL，并在无有效公网配置时隐藏链接入口（Codex）
+
+- 2026-08-31 [tools/quick-transfer/v3.2] 重构飞船首页入口层级：突出发船/收船主操作，历史记录收纳为独立次级导航区并优化间距（Codex）
+
+- 2026-08-31 [tools/quick-transfer/v3.2] 收敛飞船首页为发船/收船与独立历史入口，兼容旧 tab 路由，并优化发送页添加按钮、空内容提示与稳定主按钮文案（Codex）
+
+- 2026-08-31 [tools/quick-transfer/share] 管理首页新增微信小程序显式「分享」入口，固定分享飞船功能首页，不携带收船码或 shareToken（Codex）
+
+- 2026-08-31 [tools/quick-transfer/history] 完成 V3.1 管理与历史卡片 UX：精简操作入口，接入 primaryType/imageCount/otherFileCount，统一 Sent/Receipt 卡片并屏蔽图片随机文件名（Codex）
+
+- 2026-08-31 [tools/quick-transfer/share] 将分享生命周期注册提升到页面层，覆盖管理首页、发送/接收及历史场景；接收页无票据时分享接收入口，有票据时保留当前飞船分享（Codex）
+
+- 2026-08-26 [tools/quick-transfer/release] 完成 V2.1 发布前硬化：补齐 claimRequestId 未知结果重试与输入切换测试、Receipt 分页去重/失败重试、历史详情异常入口和文件访问状态收口；保留生成 API 边界并记录现有基线问题（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 优化发送按钮禁用态：直接展示“请先添加内容”等不可发送原因，并提高禁用按钮的文字与背景对比度（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 按 UI V3 重构飞船页面：沉浸式 CSS Hero 与上浮操作舱、发送/接收玻璃切换、紧凑内容卡、原生 Picker 设置、航行凭证结果和接收内容展示；将常驻 QuickShipVisual 改为 depart/arrive 一次性 Transition Overlay，保留现有发送/接收业务状态机（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 完成 UI V3 Stabilization：修正 Arrive 飞船方向翻转，统一首次领取与手工码 retry 的成功动画入口，执行中锁定发送/接收切换，弱化空文件数量提示并将“打开飞船”改为“查看内容”；保留图片失败兜底、Reduced Motion 和用户主动重试原则（Codex）
+
+- 2026-08-26 [tools/quick-transfer/receipt] 接入 V2.1 Receipt：领取请求使用内存级 claimRequestId 并在未知结果重试时复用，保留 claimId/receiptId/available，新增已收飞船列表、详情、删除与历史附件访问；微信游客/登录用户可查看历史，H5 未登录隐藏入口，历史查看不重复 Resolve（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 兼容后端嵌套错误响应并明确提示 QUICK_TRANSFER_NOT_CONFIGURED；该错误仍需后端补齐独立飞船密钥与专用 OSS Bucket 配置（Codex）
+
+- 2026-08-26 [tools/quick-transfer/visual] 新增统一 QuickShipVisual 飞船视觉层：复用单张 OSS PNG，覆盖送船、装船、出发、航行、到达、返航和召回状态，支持 CSS 动画、reduced-motion 与图片加载失败兜底，不改变飞船业务状态机（Codex）
+
+- 2026-08-26 [tools/quick-transfer] 收口 V2 多文件失败恢复与逐文件 Complete：失败队列继续上传、批量重传失败文件、隔离未上传文件、兼容 Inspect 摘要新字段、允许无附件 Resolve 缺少 Claim Token，并完善抢先领取/凭证失效/有效期及 RTA 引用展示（Codex）
+
+- 2026-08-25 [tools/quick-transfer,reference] 将飞船前端从 V1 单类型发送器重构为 V2 固定内容包：支持留言、多个链接、多个文件和业务引用；接入 share inspect、逐文件上传/Complete/Policy/Access、多文件队列、Claim Token 内存会话与 Reference Registry，并更新 Sender/Receiver 页面流程（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页微信好友与朋友圈分享使用顶部魔灵召唤主视觉作为分享卡片封面（Codex）
+
+- 2026-08-25 [tools/quick-transfer,file] 收口飞船 V1 稳定性：规范微信文件 MIME 与空文件校验，补齐上传失败/Complete 重试和放弃恢复、兼容多层错误码与 content 返回结构，修复 H5 未登录 Gate、Timer 清理及微信分享按钮（Codex）
+
+- 2026-08-25 [tools/quick-transfer] 将用户侧“跨设备快传”产品化为“飞船”：统一送船/收船文案与分享标题，收口发送结果态，增加“船来了→打开飞船”领取流程，移除文件自动下载并细分收船错误提示（Codex）
+
+- 2026-08-25 [navigation/safe-back] 将无上一页且无业务 `backFallback` 时的全局兜底从工具大全调整为首页，并将最终 `relaunch` 恢复函数改为 `relaunchHome`；保留已有业务父级返回关系（Codex）
+
+- 2026-08-25 [tools/image-compress,security] 修复图片压缩小程序选图时大于 1MB 的正常图片因微信安全接口超限被误判为“含违规信息”：先生成不超过 1MB 的临时送检副本，原图仍用于后续压缩；同时兼容旧版 `pass/reason` 结果及 HTTP 200 未包装响应，检查异常改为提示检查暂不可用并继续阻断处理（Codex）
+
+- 2026-08-21 [tools/image-compliance,http,security] 新增“图片达标助手”：提供常用/自定义/最近使用规格、10MB 原图预检、逐项合规分析、必要时启用的固定比例 normalized crop、游客/JWT multipart 合规处理、H5 Blob 与微信临时文件结果适配、保持原图尺寸在内的前端二次达标校验、跨端保存及相同规则处理下一张；公共 `http.upload` 同步复用 Guest Session、身份请求头和 401 恢复机制，媒体安全检查接入同一身份通道并区分明确拦截与检查异常，避免将接口故障误报为违规（Codex）
+
+- 2026-08-22 [tools/quick-transfer] 新增跨设备快传 V1：微信 Guest/User 与 H5 登录用户可发送文本、链接、单文件，H5/微信均可匿名领取；接入 Quick Transfer Apifox 生成接口、文件平台层 OSS 直传/下载、六位提取码、shareToken 二次确认、动态过期倒计时、发送状态轮询、取消及 Complete 重试，并保留凭证仅在页面内存（Codex）
+
+- 2026-08-22 [tools/quick-transfer,http] 修复微信小程序直出响应被公共 `code=200` 解包规则误判导致的“接口不可用”，改为 Quick Transfer Apifox 调用显式声明直出响应格式，普通请求继续遵循公共响应解包规范；补充安全的开发态请求摘要和分层错误文案；统一普通工具分享与 Sender Ready Transfer 分享，Receiver、终态和无效凭证均降级为工具分享，朋友圈固定为工具分享，显式分享按钮与右上角分享共用同一规则（Codex）
+
+- 2026-08-23 [tools/quick-transfer] 后端已统一 Quick Transfer 为公共响应包装；前端移除直出响应特判、统一请求底层扩展和专用请求日志，五个 Apifox 接口恢复遵循公共 `{ code: 200, data }` 响应规范（Codex）
+
+- 2026-08-23 [tools/quick-transfer] 支持发送方设置 1～10 次领取次数（默认 1），text/url/file 创建请求统一透传 `maxClaims`；Sender 读取并轮询 `claimCount/maxClaims`，达到后端 `consumed` 前保持 ready 和 Transfer 分享，更新领取进度、有效期及接收文案；继续归属 `text` workspace，不新增 workspace（Codex）
+
+- 2026-08-24 [tools/quick-transfer] 微信小程序文件发送先展示底部文件来源浮窗；“选择文件”使用图库选图，“选择聊天记录”使用微信聊天文件选择，H5 继续使用本地文件选择器（Codex）
+
+- 2026-08-24 [tools/game-coupons] 新增魔灵召唤兑换券单券详情与分享领取页：按 couponId 加载券详情，支持游客/登录账号复用、昵称验证、单账号单券领取、成功/已领取/失败状态、区服限制与微信分享；详情分享标题改为“昵称分享了魔灵召唤兑换券给你”，无昵称时回退为“好友分享了魔灵召唤兑换券给你”（Codex）
+
+- 2026-08-24 [tools/game-coupons] 兑换券详情页接入 OSS 海报资源：顶部展示魔灵召唤官方礼品主视觉，兑换券背景图叠加券码、奖励、有效期、区服与状态；微信好友/朋友圈分享卡片使用官方礼品主视觉（Codex）
+
+- 2026-08-24 [tools/game-coupons] 精简兑换券详情页账号领取区：区服选择器、Hive ID 输入框和验证按钮统一紧凑高度，确认与分享操作减少纵向占用（Codex）
+
+- 2026-08-24 [tools/game-coupons] 增强兑换券详情页禁用领取按钮的中性灰背景和边框对比，明确不可点击状态（Codex）
+
+- 2026-08-24 [tools/game-coupons] 合并详情页校验与领取流程：仅保留常亮“领取”按钮，缺少必填账号时在固定位置显示红色提示，填写完整后自动先校验再领取（Codex）
+
+- 2026-08-24 [tools/game-coupons] 将兑换券详情账号与领取交互整合进海报容器；新增 Hive ID 输入防抖/节流自动校验、固定高度昵称展示，并在兑换券过期时禁用领取按钮（Codex）
+
+- 2026-08-24 [tools/game-coupons] 将兑换券背景图按原始券面比例铺设并拉伸覆盖账号交互容器，保持券面信息布局稳定（Codex）
+
+- 2026-08-24 [tools/game-coupons] 优化兑换券海报详情视觉：券码改用黄橙色，移除页面外层留白，导航栏保持透明并隐藏标题（Codex）
+
+- 2026-08-24 [tools/game-coupons] 详情页返回按钮继续复用统一安全返回逻辑，并将页面栈不足时的 fallback 动态指向当前游戏的兑换券管理页（Codex）
+
+- 2026-08-25 [components/PageLayout,tools/game-coupons] 新增导航栏覆盖内容模式；兑换券详情页让顶部海报从页面最顶端开始、使用白色返回图标，并以海报深色主调填充底部空白（Codex）
+
+- 2026-08-25 [tools/game-coupons] 让兑换券第二张海报容器至少填满图一之后的剩余视口高度，确保图二背景延伸到页面底部而不露出页面底色（Codex）
+
+- 2026-08-25 [tools/game-coupons] 优化兑换券海报信息层级：主标题改为更醒目的“魔灵召唤活动兑换券”，放大兑换码标签和值，并将分享与查看其他兑换券改为高对比操作按钮组（Codex）
+
+- 2026-08-25 [tools/game-coupons] 精简海报二标题与游客模式文案，放大奖励信息并统一券码、账号、奖励和操作区的左右对齐；加载阶段预先展示两张海报并在海报二内显示深色加载状态（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页无券码时增加可用券码加载动画；详情页将券码容器下移并预留海报二顶部视觉间距（Codex）
+
+- 2026-08-25 [tools/game-coupons] 管理页导航栏改为透明覆盖模式并隐藏标题，顶部接入 OSS 主视觉；券码列表行改为选中/反选，新增独立蓝色“查看”按钮进入详情（Codex）
 
 - 2026-08-20 [tools/memo] 完善备忘录内容设计器 V2：建立旧内容与 settings 归一化、统一 ContentAction、结构化 Block 与复用 Renderer，并治理 Block 操作、图片布局/点击、多媒体类型、附件职责和 V2 持久化（Codex）
 
@@ -288,3 +621,15 @@
 - 2026-07-03 [swc/admin-list] 放开平台限制，管理员在小程序可见；图鉴管理页改为行级编辑模式，默认只读、点编辑才展开中英双语名称/五行/星级/别名/描述/技能表单（Devin）
 - 2026-07-03 [config/tools] 魔灵召唤图鉴管理入口改为管理员可见并移除 H5 平台限制（Devin）
 - 2026-07-03 [theme] 新增全局日间/夜间主题（CSS 变量 tokens + Pinia 持久化，H5 通过 :root[data-theme] 切换、小程序通过 page-meta 注入），mine 页「设置」同级新增夜间模式开关（Devin）
+- 2026-08-27 [sharing/game-coupons,sharing/quick-transfer] 修复微信分享消息卡片封面：魔灵兑换券管理页明确使用页面顶部栏背景图 `top.jpg`，飞船工具的工具分享与具体收船分享统一使用飞船图片 `quick-ship.png`（Codex）
+- 2026-08-27 [quick-transfer/v2.2] 新增“我发送的”历史闭环：接入 SentRecord Generated API，增加发送历史列表/详情、分页去重、领取进度轮询、后端 `canRecall` 驱动的召回、历史附件访问与删除记录；召回复用现有 `cancelQuickTransfer`，删除历史与召回严格隔离，微信游客可见、H5 未登录隐藏（Codex）
+- 2026-08-27 [tools/quick-transfer] 完成 V2.3 页面职责拆分：管理页改为操作/我发送的/我收到的三 Tab，新增发送创建页、飞船票据页和独立 Receiver 页面；抽取历史列表组件，拆分工具分享与当前飞船分享路径，增加内存结果上下文并统一 Quick Transfer 按钮视觉（Codex）
+- 2026-09-15 [tools/compendium-swc/rta] 兼容旧版趋势接口：当后端未返回可用未来估算点时，基于历史真实点与赛季结束时间生成前端展示用的趋势估算，确保折线图显示未来日期、虚线和空心点（Codex）
+- 2026-09-15 [tools/compendium-swc/rta] 趋势估算开启时自动定位折线图的最新日期区域，避免未来估算点位于横向滚动区域外而造成“没有估算”的误解（Codex）
+- 2026-09-15 [tools/compendium-swc/rta] 修正微信小程序折线图估算定位：将 scroll-left 的 rpx 位置转换为 px，并等待图表布局完成后再定位，避免估算曲线被滚出可视区域（Codex）
+- 2026-09-17 [swc-tier-ranking] 在魔灵召唤统一入口增加 AI评级榜页面，接入已发布评级榜 API，支持来源/区域/属性/评级/关键词筛选、人物详情跳转和分享恢复筛选（Codex）
+- 2026-09-18 [swc-tier-ranking] 评级榜支持多属性/多品级筛选，“全部”清空对应条件；将品级数量显示和列表/卡片聚合模式开关整合进筛选栏，并同步分享参数（Codex）
+- 2026-09-19 [swc-tier-ranking] 新增星级与攻击型/防御型/体力型/辅助型多选筛选；筛选栏属性改用五行图标组件，列表 Other 标题缩小，补充后端 SSS 空数据来源说明与筛选回归测试（Codex）
+- 2026-10-05 [scenic-frontend] 新增景区模式 uni-app 页面，支持可选省市区筛选、景区分页、景点搜索、海拔折线图和景点天气入口（Codex）
+- 2026-10-06 [scenic-frontend] 简化海拔/天气工具交互，定位改为可选操作，打开页面后可直接进入地点、景区或地图选择流程（Codex）
+- 2026-10-06 [scenic-frontend] 景区功能收回海拔查询的选择地点模式，隐藏地图选点入口，增加筛选确认和景点列表/折线图/柱状图切换（Codex）

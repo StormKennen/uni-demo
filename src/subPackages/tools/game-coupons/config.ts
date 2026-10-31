@@ -4,6 +4,11 @@ export interface GameCouponServerOption {
   shortLabel: string
 }
 
+export interface GameCouponDetailPoster {
+  heroImage: string
+  contentBackground: string
+}
+
 export interface GameCouponConfig {
   gameId: string
   compendiumId: string
@@ -17,7 +22,9 @@ export interface GameCouponConfig {
   storageKey: string
   backendDocPath: string
   defaultServer: string
+  managementHeroImage: string
   servers: GameCouponServerOption[]
+  detailPoster: GameCouponDetailPoster
 }
 
 export const SWC_GAME_COUPON_CONFIG: GameCouponConfig = {
@@ -33,6 +40,11 @@ export const SWC_GAME_COUPON_CONFIG: GameCouponConfig = {
   storageKey: 'GAME_COUPON_ACCOUNTS_swc',
   backendDocPath: 'docs/summoners-war-coupon-backend.md',
   defaultServer: 'china',
+  managementHeroImage: 'https://lzk-web.oss-cn-beijing.aliyuncs.com/swc/game-coupons/detail/top.jpg',
+  detailPoster: {
+    heroImage: 'https://lzk-web.oss-cn-beijing.aliyuncs.com/swc/game-coupons/detail/poster01.jpeg',
+    contentBackground: 'https://lzk-web.oss-cn-beijing.aliyuncs.com/swc/game-coupons/detail/poster02.jpeg',
+  },
   servers: [
     { value: 'china', label: '国服', shortLabel: '国服' },
     { value: 'global', label: '国际服', shortLabel: '国际服' },

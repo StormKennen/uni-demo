@@ -1,10 +1,12 @@
+import { QUICK_SHIP_IMAGE_URL, RELAY_ICON_URL, SWC_LOGO_IMAGE_URL } from './tool-assets'
 import type { ToolWorkspaceKey } from '@/config/workspaces'
 
 /** 工具节点（不含 key，key 作为字典的键） */
 export interface ToolItem {
   name: string
   desc: string
-  icon: string
+  icon?: string
+  image?: string
   gradient: string
   path: string
   workspace: ToolWorkspaceKey
@@ -45,6 +47,7 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     name: '魔灵图鉴',
     desc: '检索人物、筛选属性、查看详情',
     icon: 'star',
+    image: SWC_LOGO_IMAGE_URL,
     gradient: 'linear-gradient(135deg, #f97316 0%, #fbbf24 100%)',
     path: '/subPackages/tools/compendium/swc/list',
     workspace: 'swc',
@@ -59,6 +62,28 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/compendium/swc/rta/index',
     workspace: 'swc',
     isNew: true,
+    recentAliasKey: 'compendium-swc',
+  },
+  'compendium-swc-tier-ranking': {
+    name: '魔灵强度榜',
+    desc: '魔灵强度评级',
+    icon: 'star',
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/compendium/swc/tier-ranking/index',
+    workspace: 'swc',
+    isNew: true,
+    hiddenInDirectory: true,
+    recentAliasKey: 'compendium-swc',
+  },
+  'compendium-swc-rta-score-forecast': {
+    name: 'RTA分数预测',
+    desc: '赛季分数线与结算前趋势',
+    icon: 'bars',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+    path: '/subPackages/tools/compendium/swc/rta/score-forecast',
+    workspace: 'swc',
+    isNew: true,
+    hiddenInDirectory: true,
     recentAliasKey: 'compendium-swc',
   },
   'compendium-swc-admin': {
@@ -120,6 +145,15 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
     path: '/subPackages/tools/oss-upload/index',
     workspace: 'image',
+  },
+  'image-compliance': {
+    name: '图片达标',
+    desc: '按尺寸、格式和文件大小一键处理',
+    icon: 'checkbox-filled',
+    gradient: 'linear-gradient(135deg, #16845b 0%, #4a86e8 100%)',
+    path: '/subPackages/tools/image-compliance/index',
+    workspace: 'image',
+    isNew: true,
   },
   'image-stitch': {
     name: '图片拼接',
@@ -253,6 +287,24 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     path: '/subPackages/tools/calendar/index',
     workspace: 'record',
   },
+  'current-altitude': {
+    name: '查询海拔',
+    desc: '定位查询当前位置海拔',
+    icon: 'location',
+    gradient: 'linear-gradient(135deg, #2563eb 0%, #38bdf8 100%)',
+    path: '/subPackages/tools/altitude/index',
+    workspace: 'record',
+    isNew: true,
+  },
+  weather: {
+    name: '天气',
+    desc: '当前位置与景区实时天气',
+    icon: 'cloud-upload',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/weather/index',
+    workspace: 'record',
+    isNew: true,
+  },
   chat: {
     name: '笔记收藏',
     desc: '个人笔记随手记',
@@ -270,16 +322,44 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'record',
     requiresAuth: true,
   },
+  'quick-transfer': {
+    name: '飞船',
+    desc: '文本、链接、图片、文件，快速送达另一端',
+    image: QUICK_SHIP_IMAGE_URL,
+    gradient: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/quick-transfer/index',
+    workspace: 'record',
+    isNew: true,
+  },
+  relay: {
+    name: '接龙',
+    desc: '报名、统计、晒图与多人收集',
+    image: RELAY_ICON_URL,
+    gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+    path: '/subPackages/tools/relay/index',
+    workspace: 'record',
+    isNew: true,
+  },
+  vote: {
+    name: '投票',
+    desc: '单选、多选与匿名结果展示',
+    icon: 'checkbox-filled',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+    path: '/subPackages/tools/vote/create',
+    workspace: 'record',
+    isNew: true,
+    requiresAuth: true,
+    // 投票功能暂时下线，保留路由以兼容已有分享链接
+    hiddenInDirectory: true,
+  },
   'family-tree': {
     name: '族谱',
-    desc: '实时数据，支持编辑',
+    desc: '实时数据，支持查看与编辑',
     icon: 'personadd',
     gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
     path: '/subPackages/tools/family-tree/index',
     workspace: 'record',
-    requiresAuth: true,
-    // 图谱能力升级中，暂不在工具目录展示正式入口；路由与成员数据能力保留
-    hiddenInDirectory: true,
+    isNew: true,
   },
   // ── 文本 ──
   markdown: {
