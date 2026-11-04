@@ -18,6 +18,7 @@ coverage/
 .cache/
 .temp/
 tmp/
+.pnpm-store/
 
 # Local environment overrides (shared mode files remain trackable)
 .env.local
