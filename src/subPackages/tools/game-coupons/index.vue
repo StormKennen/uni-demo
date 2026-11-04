@@ -346,32 +346,13 @@
   import { buildSwcCouponsShare } from '@/subPackages/tools/compendium/swc/share'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
-<<<<<<< HEAD
-  type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
-  interface AccountVM extends GameCouponAccount {
-=======
   type CouponCodeVM = getGameCouponsGameIdCodesResCodes & {
     createdAt?: string
     redeemedAccountIds?: string[]
   }
   type CouponCodesQuery = getGameCouponsGameIdCodesQuery & { accountIds?: string[] }
-  type AccountStatus = 'active' | 'invalid' | 'pending' | 'disabled'
   type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
-  interface AccountVM {
-    /** 托管账号为后端 ObjectId，游客为本地临时 ID */
-    id: string
-    /** 是否后端托管账号 */
-    managed: boolean
-    server: string
-    /** 游客模式存明文 Hive ID，托管模式为空 */
-    accountId: string
-    /** 托管模式的脱敏展示值 */
-    accountIdMasked?: string
-    accountLabel?: string
-    isDefault?: boolean
-    nickname?: string
-    status?: AccountStatus
->>>>>>> 0dab161 (feat: 图鉴人物)
+  interface AccountVM extends GameCouponAccount {
     autoRedeemEnabled?: boolean
     verifying?: boolean
     syncing?: boolean
