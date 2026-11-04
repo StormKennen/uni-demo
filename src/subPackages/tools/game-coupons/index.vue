@@ -51,18 +51,20 @@
           <view v-else class="current-account-wrap">
             <view class="current-account" @click="showAccountManager = !showAccountManager">
               <view class="current-account-main">
-                <text class="current-account-name">{{ getAccountDisplayName(primaryAccount) }}</text>
+                <text class="current-account-name">
+                  {{ selectedAccounts.length ? getAccountDisplayName(primaryAccount) : '未选择账号' }}
+                </text>
                 <text class="current-account-meta">
-                  {{ getServerShortLabel(primaryAccount?.server || '') }}
+                  {{ selectedAccounts.length ? getServerShortLabel(primaryAccount?.server || '') : '请先选择兑换账号' }}
                   <text v-if="selectedAccounts.length > 1"> · 已选 {{ selectedAccounts.length }} 个账号</text>
-                  <text v-else> · 点管理可多选账号</text>
+                  <text v-else-if="selectedAccounts.length === 1"> · 当前目标，可管理更多</text>
                 </text>
               </view>
               <text class="current-account-action">{{ showAccountManager ? '收起' : validAccounts.length > 1 ? '切换' : '管理' }}</text>
             </view>
 
             <view v-if="showAccountManager" class="account-manager">
-              <view class="manager-tip">点选账号作为兑换目标，可多选批量兑换</view>
+              <view class="manager-tip">默认只选一个账号；点选其他账号可批量兑换</view>
               <view class="account-list">
                 <view
                   v-for="(account, index) in accounts"
@@ -180,8 +182,16 @@
                   <text v-if="isCodeSelected(item)" class="selection-check-mark">✓</text>
                 </view>
                 <view class="quick-chip-main">
-                  <text class="quick-code">{{ item.code }}</text>
-                  <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
+                  <view class="quick-code-details">
+                    <text class="quick-code">{{ item.code }}</text>
+                    <text v-if="formatCodeDate(item.createdAt)" class="quick-created-at">收录于 {{ formatCodeDate(item.createdAt) }}</text>
+                  </view>
+                  <view class="quick-chip-meta">
+                    <text v-if="isLoggedIn" class="redeemed-badge" :class="getCodeRedeemState(item).className">
+                      {{ getCodeRedeemState(item).label }}
+                    </text>
+                    <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
+                  </view>
                 </view>
                 <view class="quick-view-btn" @click.stop="openCouponDetail(item)">查看</view>
               </view>
@@ -208,7 +218,7 @@
               >成功 {{ resultSummary.success }} · 已用 {{ resultSummary.alreadyUsed }} · 失败 {{ resultSummary.failed }}</text
             >
           </view>
-          <view v-if="failedPreviewItems.length" class="failed-preview">
+          <view v-if="failedPreviewItems.length && !showAllResults" class="failed-preview">
             <view v-for="item in failedPreviewItems" :key="item.key" class="result-row">
               <view class="result-main">
                 <text class="result-code">{{ item.code }}</text>
@@ -217,8 +227,14 @@
               <text class="result-status" :class="item.status">{{ item.statusLabel }}</text>
             </view>
           </view>
-          <text v-if="failedResultItems.length > failedPreviewLimit" class="result-more" @click="showAllResults = !showAllResults">
-            {{ showAllResults ? '收起明细' : `查看全部失败 ${failedResultItems.length} 条` }}
+          <text v-if="resultGroups.length" class="result-more" @click="showAllResults = !showAllResults">
+            {{
+              showAllResults
+                ? '收起兑换明细'
+                : failedResultItems.length > failedPreviewLimit
+                  ? `查看全部失败 ${failedResultItems.length} 条`
+                  : `查看兑换明细（${resultSummary.total}）`
+            }}
           </text>
           <view v-if="showAllResults" class="result-list">
             <view v-for="(group, gi) in resultGroups" :key="group.account?.id || gi" class="result-group">
@@ -315,6 +331,7 @@
   } from '@/services/apifox/NODEJSDEMO/GAMECOUPONS/apifox'
   import type {
     getGameCouponsGameIdAccountsResAccounts,
+    getGameCouponsGameIdCodesQuery,
     getGameCouponsGameIdCodesResCodes,
     getGameCouponsGameIdProfileRes,
     getGameCouponsGameIdRedeemRecordsResResults,
@@ -329,6 +346,11 @@
   import { buildSwcCouponsShare } from '@/subPackages/tools/compendium/swc/share'
 
   type ServerValue = NonNullable<postGameCouponsGameIdRedeemBodyAccountsItem['server']>
+  type CouponCodeVM = getGameCouponsGameIdCodesResCodes & {
+    createdAt?: string
+    redeemedAccountIds?: string[]
+  }
+  type CouponCodesQuery = getGameCouponsGameIdCodesQuery & { accountIds?: string[] }
   type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
   interface AccountVM extends GameCouponAccount {
     autoRedeemEnabled?: boolean
@@ -357,6 +379,7 @@
   }
 
   const maxAccounts = 5
+  const batchConfirmThreshold = 6
   const gameConfig = ref<GameCouponConfig>(getGameCouponConfig())
   const accounts = ref<AccountVM[]>([])
   const newAccount = ref<{ server: string; accountId: string }>({ server: 'china', accountId: '' })
@@ -364,7 +387,7 @@
   const showAccountManager = ref(false)
   const showRecords = ref(false)
 
-  const remoteCodes = ref<getGameCouponsGameIdCodesResCodes[]>([])
+  const remoteCodes = ref<CouponCodeVM[]>([])
   const codeInput = ref('')
   const selectedAccountIds = ref<string[]>([])
   const selectedCodeKeys = ref<string[]>([])
@@ -375,6 +398,7 @@
   const codePreviewLimit = 5
 
   const redeeming = ref(false)
+  const confirmingRedeem = ref(false)
   const redeemError = ref('')
   const redeemSummary = ref<getGameIdRedeemRecordsSummaryRes | null>(null)
   const resultGroups = ref<postGameCouponsGameIdRedeemResAccountResults[]>([])
@@ -397,7 +421,7 @@
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
   const combinedCodes = computed(() => {
-    const map = new Map<string, getGameCouponsGameIdCodesResCodes>()
+    const map = new Map<string, CouponCodeVM>()
     remoteCodes.value.forEach(item => {
       const key = String(item.code || '')
         .trim()
@@ -416,20 +440,29 @@
 
   const selectedCodes = computed(() => combinedCodes.value.filter(item => selectedCodeKeys.value.includes(getCodeKey(item))))
 
+  const redeemableCodeCount = computed(() => {
+    const input = codeInput.value.trim().toUpperCase()
+    const isAdditionalInput = Boolean(input && !selectedCodes.value.some(item => getCodeKey(item) === input))
+    return selectedCodes.value.length + (isAdditionalInput ? 1 : 0)
+  })
+
+  const redeemCombinationCount = computed(() => selectedAccounts.value.length * redeemableCodeCount.value)
+
   const visibleCodes = computed(() => (showAllCodes.value ? combinedCodes.value : combinedCodes.value.slice(0, codePreviewLimit)))
 
   const hasRedeemableCodes = computed(() => selectedCodes.value.length > 0 || Boolean(codeInput.value.trim()))
 
   const cashierRedeemDisabled = computed(() => {
-    if (redeeming.value) return true
+    if (redeeming.value || confirmingRedeem.value) return true
     if (!selectedAccounts.value.length) return true
     return !hasRedeemableCodes.value
   })
 
   const accountStepDesc = computed(() => {
     if (!validAccounts.value.length) return '新用户先添加一个账号'
+    if (!selectedAccounts.value.length) return '请在账号管理中选择兑换账号'
     if (selectedAccounts.value.length > 1) return `将批量兑到 ${selectedAccounts.value.length} 个账号`
-    return '默认当前账号；管理里可多选批量兑'
+    return '默认选中一个账号；管理里可多选批量兑换'
   })
 
   const codeStepDesc = computed(() => {
@@ -461,6 +494,7 @@
     success: redeemSummary.value?.success || 0,
     alreadyUsed: redeemSummary.value?.alreadyUsed || 0,
     failed: redeemSummary.value?.failed || 0,
+    total: redeemSummary.value?.total || 0,
   }))
 
   const failedResultItems = computed(() =>
@@ -480,6 +514,7 @@
   const failedPreviewItems = computed(() => failedResultItems.value.slice(0, failedPreviewLimit))
 
   const redeemActionText = computed(() => {
+    if (confirmingRedeem.value) return '确认中…'
     if (redeeming.value) return '兑换中…'
     if (!validAccounts.value.length) return '先添加账号'
     if (!hasRedeemableCodes.value) return '选择券码'
@@ -489,19 +524,18 @@
   const redeemDockTitle = computed(() => {
     if (!validAccounts.value.length) return '添加账号后开始'
     if (!selectedAccounts.value.length) return '请选择账号'
-    const codeCount = Math.max(selectedCodes.value.length, codeInput.value.trim() ? 1 : 0)
-    // 若有输入且未在已选列表中，总数按合并后估算
-    const input = codeInput.value.trim().toUpperCase()
-    const mergedCount = selectedCodes.value.length + (input && !selectedCodes.value.some(item => getCodeKey(item) === input) ? 1 : 0)
-    if (!mergedCount) return '请选择或添加券码'
-    return `${selectedAccounts.value.length} 个账号 · ${mergedCount} 个券码`
+    if (!redeemableCodeCount.value) return '请选择或添加券码'
+    return `${selectedAccounts.value.length} 个账号 × ${redeemableCodeCount.value} 个券码`
   })
 
   const redeemHintText = computed(() => {
     if (!validAccounts.value.length) return '新用户请先完成账号添加'
     if (!selectedAccounts.value.length) return '在账号管理里点选目标账号'
     if (!hasRedeemableCodes.value) return '可用券码默认全选，也可粘贴添加'
-    return '将按「账号 × 券码」批量提交兑换'
+    if (redeemCombinationCount.value >= batchConfirmThreshold) {
+      return `共 ${redeemCombinationCount.value} 组兑换；提交前会再次确认`
+    }
+    return redeemCombinationCount.value > 1 ? `将按账号 × 券码提交 ${redeemCombinationCount.value} 组` : '核对范围后即可提交兑换'
   })
 
   /* ----------------------------- 工具 ----------------------------- */
@@ -565,9 +599,37 @@
       .toUpperCase()
   }
 
+  function getPreferredAccount() {
+    return (
+      validAccounts.value.find(account => account.managed && account.isDefault) ||
+      validAccounts.value.find(account => account.managed) ||
+      validAccounts.value[0] ||
+      null
+    )
+  }
+
   function selectDefaultAccounts() {
-    // 批量兑换场景：默认全选账号
-    selectedAccountIds.value = validAccounts.value.map(account => account.id)
+    const preferredAccount = getPreferredAccount()
+    selectedAccountIds.value = preferredAccount ? [preferredAccount.id] : []
+  }
+
+  function getCodeRedeemState(item: CouponCodeVM) {
+    const selectedManagedIds = selectedAccounts.value.filter(account => account.managed).map(account => account.id)
+    const redeemedIds = new Set(item.redeemedAccountIds || [])
+    const redeemedCount = selectedManagedIds.filter(id => redeemedIds.has(id)).length
+    if (redeemedCount === selectedManagedIds.length && selectedManagedIds.length > 0) {
+      return { label: '已兑换', className: 'redeemed' }
+    }
+    if (redeemedCount > 0) return { label: '部分已兑换', className: 'partial' }
+    return { label: '未兑换', className: 'not-redeemed' }
+  }
+
+  function formatCodeDate(value?: string) {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    const pad = (part: number) => String(part).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
   }
 
   function selectAllCodes() {
@@ -592,13 +654,15 @@
     if (selected.has(account.id)) selected.delete(account.id)
     else selected.add(account.id)
     selectedAccountIds.value = validAccounts.value.map(item => item.id).filter(id => selected.has(id))
+    if (isLoggedIn.value) loadCodes()
   }
 
   function normalizeAccountSelections() {
     const ids = validAccounts.value.map(account => account.id)
     selectedAccountIds.value = ids.filter(id => selectedAccountIds.value.includes(id))
     if (ids.length && !selectedAccountIds.value.length) {
-      selectedAccountIds.value = [...ids]
+      const preferredAccount = getPreferredAccount()
+      selectedAccountIds.value = preferredAccount ? [preferredAccount.id] : []
     }
   }
 
@@ -756,11 +820,20 @@
         }
       })
       // 保留登录前的本地缓存；与托管账号重复时只隐藏本地副本，退出登录后仍可继续使用。
+      const hadAccounts = accounts.value.length > 0
+      const selectedBeforeRefresh = [...selectedAccountIds.value]
       const locals = parseStoredAccounts().filter(item => item.accountId.trim().length > 0)
       const managedKeys = new Set(managed.flatMap(getAccountMatchKeys))
       const visibleLocals = locals.filter(local => !getAccountMatchKeys(local).some(key => managedKeys.has(key)))
       accounts.value = [...managed, ...visibleLocals]
-      selectDefaultAccounts()
+      const availableIds = new Set(validAccounts.value.map(account => account.id))
+      const preservedSelection = selectedBeforeRefresh.filter(id => availableIds.has(id))
+      if (preservedSelection.length) {
+        selectedAccountIds.value = preservedSelection
+      } else if (!hadAccounts || selectedBeforeRefresh.length) {
+        selectDefaultAccounts()
+      }
+      if (isLoggedIn.value) void loadCodes()
       return managed
     } catch (err) {
       toast(errMsg(err, '获取托管账号失败'))
@@ -952,7 +1025,7 @@
       } else {
         const account: AccountVM = { id: localId(), managed: false, server, accountId, nickname, status: 'active' }
         accounts.value.push(account)
-        selectedAccountIds.value = Array.from(new Set([...selectedAccountIds.value, account.id]))
+        selectedAccountIds.value = [account.id]
         saveLocalAccounts()
       }
       newAccount.value.accountId = ''
@@ -1096,20 +1169,37 @@
 
   /* ----------------------------- 券码 ----------------------------- */
 
+  let codeLoadRequestId = 0
+
   async function loadCodes() {
-    if (loadingCodes.value) return
+    const requestId = ++codeLoadRequestId
     loadingCodes.value = true
     codeLoadError.value = ''
+    const accountIds = isLoggedIn.value
+      ? selectedAccounts.value
+          .filter(account => account.managed)
+          .map(account => account.id)
+          .filter(Boolean)
+      : undefined
+    const params: CouponCodesQuery = {
+      compendium_id: gameConfig.value.compendiumId,
+      ...(isLoggedIn.value ? { accountIds: accountIds || [] } : {}),
+    }
     try {
-      const res = await getGameCouponsGameIdCodes(gameConfig.value.gameId, {
-        compendium_id: gameConfig.value.compendiumId,
-      })
+      const res = (await getGameCouponsGameIdCodes(gameConfig.value.gameId, params)) as { codes?: CouponCodeVM[] }
+      if (requestId !== codeLoadRequestId) return
+      const hadLoadedCodes = remoteCodes.value.length > 0
+      const previouslySelected = new Set(selectedCodeKeys.value)
       remoteCodes.value = res.codes || []
-      selectAllCodes()
+      if (hadLoadedCodes) {
+        selectedCodeKeys.value = combinedCodes.value.map(item => getCodeKey(item)).filter(key => previouslySelected.has(key))
+      } else {
+        selectAllCodes()
+      }
     } catch (err) {
-      codeLoadError.value = errMsg(err, '获取券码失败')
+      if (requestId === codeLoadRequestId) codeLoadError.value = errMsg(err, '获取券码失败')
     } finally {
-      loadingCodes.value = false
+      if (requestId === codeLoadRequestId) loadingCodes.value = false
     }
   }
 
@@ -1160,8 +1250,22 @@
     }
   }
 
+  function confirmBatchRedeem(accountCount: number, codeCount: number): Promise<boolean> {
+    const combinationCount = accountCount * codeCount
+    return new Promise(resolve => {
+      uni.showModal({
+        title: '确认批量兑换',
+        content: `将提交 ${accountCount} 个账号 × ${codeCount} 个券码，共 ${combinationCount} 组兑换。已兑换组合会由后端跳过，是否继续？`,
+        confirmText: '继续兑换',
+        cancelText: '返回检查',
+        success: result => resolve(result.confirm),
+        fail: () => resolve(false),
+      })
+    })
+  }
+
   async function startCashierRedeem() {
-    if (redeeming.value) return
+    if (redeeming.value || confirmingRedeem.value) return
     if (!validAccounts.value.length) {
       showAccountManager.value = true
       redeemError.value = `请先添加一个${gameConfig.value.accountIdLabel}`
@@ -1181,10 +1285,19 @@
       return
     }
 
+    const accountsToRedeem = [...selectedAccounts.value]
+    const combinationCount = accountsToRedeem.length * codesToRedeem.length
+    if (combinationCount >= batchConfirmThreshold) {
+      confirmingRedeem.value = true
+      const confirmed = await confirmBatchRedeem(accountsToRedeem.length, codesToRedeem.length)
+      confirmingRedeem.value = false
+      if (!confirmed) return
+    }
+
     redeeming.value = true
     redeemError.value = ''
     try {
-      const result = await redeemAccountsAndCodes(selectedAccounts.value, codesToRedeem)
+      const result = await redeemAccountsAndCodes(accountsToRedeem, codesToRedeem)
       if (result.failed === 0) {
         codeInput.value = ''
       }
@@ -1231,12 +1344,15 @@
         loadRecords(true)
       }
       uni.hideLoading()
-      uni.showModal({
-        title: successCount > 0 ? '兑换成功' : '兑换完成',
-        content: `成功兑换 ${successCount} 个礼包码\n已使用 ${alreadyUsedCount} 个 · 失败 ${failedCount} 个`,
-        showCancel: false,
-        confirmText: '知道了',
-      })
+      if (failedCount > 0) {
+        toast(`兑换完成，失败 ${failedCount} 个，请查看页面明细`)
+      } else if (successCount > 0) {
+        toast(`兑换成功 ${successCount} 个礼包码`)
+      } else if (alreadyUsedCount > 0) {
+        toast('所选券码均已使用，无需重复兑换')
+      } else {
+        toast('兑换完成')
+      }
       return { success: successCount, alreadyUsed: alreadyUsedCount, failed: failedCount }
     } catch (err) {
       uni.hideLoading()
@@ -1376,11 +1492,11 @@
     if (initialized.value) return
     initialized.value = true
     refreshLoginState()
-    loadCodes()
     if (isLoggedIn.value) {
       enterLoggedInMode()
     } else {
       loadLocalAccounts()
+      loadCodes()
     }
   }
 
@@ -1396,7 +1512,6 @@
     if (!initialized.value) return
     if (isLoggedIn.value && !wasLoggedIn) {
       enterLoggedInMode()
-      loadCodes()
     }
   })
 
@@ -1815,10 +1930,56 @@
     }
   }
 
+  .quick-code-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 4rpx;
+  }
+
   .quick-code {
     font-size: 26rpx;
     font-weight: 700;
     color: $text-primary;
+  }
+
+  .quick-created-at {
+    font-size: 20rpx;
+    color: $text-secondary;
+    line-height: 1.4;
+  }
+
+  .quick-chip-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8rpx;
+    min-width: 0;
+  }
+
+  .redeemed-badge {
+    flex-shrink: 0;
+    padding: 4rpx 10rpx;
+    border-radius: 999rpx;
+    font-size: 20rpx;
+    line-height: 1.4;
+    white-space: nowrap;
+
+    &.redeemed {
+      color: $success;
+      background: rgba(22, 163, 74, 0.1);
+    }
+
+    &.partial {
+      color: $warning;
+      background: rgba(217, 119, 6, 0.12);
+    }
+
+    &.not-redeemed {
+      color: $text-secondary;
+      background: $field-bg;
+    }
   }
 
   .quick-reward {
