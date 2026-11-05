@@ -187,7 +187,7 @@
                     <text v-if="formatCodeDate(item.createdAt)" class="quick-created-at">收录于 {{ formatCodeDate(item.createdAt) }}</text>
                   </view>
                   <view class="quick-chip-meta">
-                    <text v-if="isLoggedIn" class="redeemed-badge" :class="getCodeRedeemState(item).className">
+                    <text v-if="hasCodeRedeemState(item)" class="redeemed-badge" :class="getCodeRedeemState(item).className">
                       {{ getCodeRedeemState(item).label }}
                     </text>
                     <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
@@ -350,7 +350,6 @@
     createdAt?: string
     redeemedAccountIds?: string[]
   }
-  type CouponCodesQuery = getGameCouponsGameIdCodesQuery & { accountIds?: string[] }
   type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
   interface AccountVM extends GameCouponAccount {
     autoRedeemEnabled?: boolean
@@ -611,6 +610,10 @@
   function selectDefaultAccounts() {
     const preferredAccount = getPreferredAccount()
     selectedAccountIds.value = preferredAccount ? [preferredAccount.id] : []
+  }
+
+  function hasCodeRedeemState(item: CouponCodeVM) {
+    return isLoggedIn.value && selectedAccounts.value.some(account => account.managed) && Array.isArray(item.redeemedAccountIds)
   }
 
   function getCodeRedeemState(item: CouponCodeVM) {
@@ -1175,15 +1178,8 @@
     const requestId = ++codeLoadRequestId
     loadingCodes.value = true
     codeLoadError.value = ''
-    const accountIds = isLoggedIn.value
-      ? selectedAccounts.value
-          .filter(account => account.managed)
-          .map(account => account.id)
-          .filter(Boolean)
-      : undefined
-    const params: CouponCodesQuery = {
+    const params: getGameCouponsGameIdCodesQuery = {
       compendium_id: gameConfig.value.compendiumId,
-      ...(isLoggedIn.value ? { accountIds: accountIds || [] } : {}),
     }
     try {
       const res = (await getGameCouponsGameIdCodes(gameConfig.value.gameId, params)) as { codes?: CouponCodeVM[] }
