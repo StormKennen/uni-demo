@@ -612,6 +612,23 @@
             "navigationBarTitleText": "兑换券详情",
             "navigationStyle": "custom"
           }
+        },
+        {
+          "path": "animal-sounds/index",
+          "style": {
+            "navigationBarTitleText": "动物叫声大全",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true,
+            "onReachBottomDistance": 80
+          }
+        },
+        {
+          "path": "animal-sounds/detail",
+          "style": {
+            "navigationBarTitleText": "动物详情",
+            "navigationStyle": "custom",
+            "onReachBottomDistance": 80
+          }
         }
       ]
     },

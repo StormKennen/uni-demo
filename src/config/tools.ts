@@ -398,4 +398,14 @@ export const ALL_TOOLS: Record<string, ToolItem> = {
     workspace: 'entertainment',
     isNew: true,
   },
+  'animal-sounds': {
+    name: '动物叫声大全',
+    desc: '听动物叫声，查看样本与来源许可',
+    icon: 'sound',
+    gradient: 'linear-gradient(135deg, #147a54 0%, #28b779 100%)',
+    path: '/subPackages/tools/animal-sounds/index',
+    workspace: 'entertainment',
+    requiresAuth: false,
+    isNew: true,
+  },
 }
