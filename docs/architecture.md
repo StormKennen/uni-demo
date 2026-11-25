@@ -12,8 +12,10 @@ uni-app 3 + Vue 3.5（`<script setup lang="ts">`）+ TypeScript + Pinia（persis
 src/
 ├── pages/                     主包页面（仅核心页：index 首页、tools 全部工具、mine 我的、mine/login 登录）
 ├── subPackages/               分包（新页面一律走分包）
-│   ├── tools/<tool-name>/     工具页（memo、calendar、compendium、family-tree、game-coupons、
-│   │                          image-*、video-*、qr-*、magnet-link、markdown、oss-upload、watermark…）
+│   ├── tools/<tool-name>/     通用工具页（calendar、compendium、game-coupons、qr-*、
+│   │                          magnet-link、markdown、oss-upload、watermark…）
+│   ├── record-tools/          记录域页面（memo、family-tree）
+│   ├── media-tools/           图片/视频处理页面（image-*、video-*）
 │   ├── user/                  用户域页面（设置等）
 │   ├── common/                通用页面（webview）
 │   └── services/              分包内服务模块

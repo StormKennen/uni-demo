@@ -5,7 +5,7 @@
 | 项 | 内容 |
 | --- | --- |
 | 功能名称 | 备忘录内容设计器 V2 |
-| 所属域 | `subPackages/tools/memo` |
+| 所属域 | `subPackages/record-tools/memo` |
 | 发布端 | H5 + mp-weixin |
 | 状态 | 开发中 |
 | 关联文档 | 用户提供的《备忘录内容设计器 V2 前端完善》任务编排 |
@@ -13,20 +13,20 @@
 ## 1. 目标与边界
 
 在现有 Schema Driven Block Editor 上补齐移动端文章、攻略、教程、清单和资料页的高频结构化表达。活动实现继续以
-`src/subPackages/tools/memo` 为唯一生产代码，本期不迁移旧 `src/subPackages/services/memo`，不合并根 `src/editor-core`，不新增路由。
+`src/subPackages/record-tools/memo` 为正式生产代码，`src/subPackages/tools/memo` 保留旧路由跳转页。本次只调整分包归属和路由，编辑器/分享/Guest 行为不变；不迁移旧 `src/subPackages/services/memo`，不合并根 `src/editor-core`。
 
 现有 Text、Image、Route、Attachment、Media 保持兼容，新增 List、Table、Callout、LinkCard 和版本化 QuerySnapshot（查询快照）。内容点击统一为 `ContentAction`，
 新数据保存为 V2 结构，旧 `interactionType`、`linkInfo`、`free` 图片布局和旧 settings 在读取时归一化。
 
 ## 2. 页面流与路由
 
-| 页面 | 现有路由 | 说明 |
+| 页面 | canonical 路由 | 兼容路由 |
 | --- | --- | --- |
-| 列表 | `/subPackages/tools/memo/list` | 不改 |
-| 编辑 | `/subPackages/tools/memo/editor?id=...` | 不改 |
-| 详情 | `/subPackages/tools/memo/detail?id=...` | 不改 |
+| 列表 | `/subPackages/record-tools/memo/list` | `/subPackages/tools/memo/list`（透传查询参数） |
+| 编辑 | `/subPackages/record-tools/memo/editor?id=...` | `/subPackages/tools/memo/editor?id=...`（透传查询参数） |
+| 详情 | `/subPackages/record-tools/memo/detail?id=...` | `/subPackages/tools/memo/detail?id=...`（透传查询参数） |
 
-- 本期不修改 `src/pages.json` 或 `src/config/tools.ts`。
+- 本次包体积修复更新 `src/pages.json` 和 `src/config/tools.ts` 的 canonical 路由注册，保留旧路径入口。
 - API 继续直接使用现有 MEMOS Apifox 方法；请求契约不变，仅补齐已由详情读取的 `settings` 字段。
 
 ## 3. 数据与交互约束
@@ -37,7 +37,7 @@
 - List 支持 `ordered` / `priority` 两种通用模式；新建列表使用 `sortMode: 'manual'`，优先级只做标记，不改变 children 顺序。历史 bullet/number/checklist 数据继续兼容读取。Table 支持 keyValue、table；Callout 使用有限 tone；LinkCard 点击走 ContentAction。
 - Image Item 的预览及跳转、Text Item、LinkCard 共用 ContentAction。
 - Media 显式保存 `mediaType`，不再只依赖 URL 后缀；Attachment 新数据只保存文件元信息，旧腾讯文档字段继续读取。
-- QuerySnapshot 保存查询时的展示快照及可刷新地点引用；目前刷新由查询工具页面重新执行，备忘录只读展示快照，不自动定位或联网刷新。快照不包含账户凭证、游客会话凭证或分享令牌。服务端 `content` 对新类型的持久化兼容仍需用真实 API 往返验证。
+- QuerySnapshot 保存查询时的展示快照及可刷新地点引用；天气/海拔到备忘录的轻量跨分包桥接放在 `src/features/memo/query-snapshot-navigation.ts`，避免 tools 反向导入 record-tools。刷新由查询工具页面重新执行，备忘录只读展示快照，不自动定位或联网刷新。快照不包含账户凭证、游客会话凭证或分享令牌。服务端 `content` 对新类型的持久化兼容仍需用真实 API 往返验证。
 - settings 持久化包含 `editorVersion: 2`、padding、border、appearance、typography、layout、features。
 
 ## 4. 跨端说明

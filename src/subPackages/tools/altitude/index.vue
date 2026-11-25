@@ -111,7 +111,6 @@
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-  import { navigateToMemoEditorWithQuerySnapshot } from '../memo/query-snapshot-navigation'
   import { getElevation, type AltitudePoint, type AltitudeSourceMode } from './altitude-api'
   import { getAltitudeWarningConfig, type AltitudeWarningLevel } from './altitude-warning'
   import {
@@ -122,6 +121,7 @@
   } from './scenic-share'
   import { buildAltitudeShare } from './share'
   import ScenicSelector from './scenic-selector.vue'
+  import { navigateToMemoEditorWithQuerySnapshot } from '@/features/memo/query-snapshot-navigation'
   import { reportToolVisit } from '@/utils/tracker'
   import { useThemeStore } from '@/stores/theme'
 
@@ -438,7 +438,7 @@
   const saveAltitudeToMemo = () => {
     if (!result.value) return
     navigateToMemoEditorWithQuerySnapshot({
-      type: 'altitude',
+      queryKind: 'altitude',
       title: result.value.name ? `${result.value.name} 海拔` : '海拔查询',
       capturedAt: result.value.queriedAt,
       location: {

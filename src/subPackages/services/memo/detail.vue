@@ -1718,7 +1718,7 @@
   // 去编辑
   const goToEdit = () => {
     uni.navigateTo({
-      url: `/subPackages/tools/memo/editor?id=${memoId.value}`,
+      url: `/subPackages/record-tools/memo/editor?id=${memoId.value}`,
     })
   }
 

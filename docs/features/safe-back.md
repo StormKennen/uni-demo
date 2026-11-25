@@ -39,7 +39,7 @@
 | `compendium/swc/rta/detail` | RTA 排行榜 |
 | `compendium/swc/lineup-mapping-detail` | 阵容映射列表 |
 | `calendar/detail` | 万年历首页 |
-| `tools/memo/detail` | 工具列表 |
+| `record-tools/memo/detail` | 工具列表 |
 
 ## 4. 验收清单
 

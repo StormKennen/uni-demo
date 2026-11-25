@@ -30,6 +30,6 @@ cp .env.example .env.local
 
 ## Apifox 插件配置
 
-Apifox 自动生成插件当前使用本地 `.vscode/autoApiGen.json`，不使用 Vite 环境变量。配置方法见 `docs/development/APIFOX_CODE_GENERATION.md`。该文件包含本地凭证，已被 Git 精确忽略；不要把凭证转写到 `.env.example`。
+Apifox 自动生成插件当前使用本地 `.vscode/autoApiGen.json`，不使用 Vite 环境变量。配置方法见 `docs/development/APIFOX_CODE_GENERATION.md`。该文件预期为本地私有配置，但 2026-11-09 审计发现它仍被 Git 跟踪且精确忽略规则被注释；在维护者完成凭据轮换与索引清理前，不得视为已隔离。不要把凭证转写到 `.env.example`。
 
 普通微信小程序和 H5 构建不读取 Apifox 本地配置，也不应依赖 Apifox 令牌。

@@ -216,9 +216,9 @@
 <script setup lang="ts">
   import { computed, ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { navigateToMemoEditorWithQuerySnapshot } from '../memo/query-snapshot-navigation'
   import { getWeather, type WeatherPoint, type WeatherResult, type WeatherSourceMode } from './weather-api'
   import { buildWeatherShare, parseWeatherShare } from './share'
+  import { navigateToMemoEditorWithQuerySnapshot } from '@/features/memo/query-snapshot-navigation'
   import { getAltitudePlaces, getAltitudePlacesOptions } from '@/services/apifox/NODEJSDEMO/ALTITUDE/apifox'
 
   interface AltitudeRegionNode {
@@ -323,7 +323,7 @@
     const current = weather.value?.current
     if (!point || !current) return
     navigateToMemoEditorWithQuerySnapshot({
-      type: 'weather',
+      queryKind: 'weather',
       title: `${locationName.value || point.name || '天气'} 天气`,
       capturedAt: weather.value?.metadata.queriedAt || new Date().toISOString(),
       location: {

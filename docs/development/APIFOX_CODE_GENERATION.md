@@ -10,7 +10,7 @@
 4. 运行生成前确认输出目录仍为 `/src/services`。
 5. 生成后使用 `pnpm check:generated-boundary` 检查架构任务是否意外触碰生成区。
 
-`.vscode/autoApiGen.json` 已加入 `.gitignore`，只能作为本地私有配置存在。不得把真实令牌粘贴到示例文件、Issue、构建日志、提交信息或 AI 会话中。`.vscode/autoApiGen.example.json` 是唯一可提交的插件配置模板，其中敏感字段必须保持为空。
+`.vscode/autoApiGen.json` 应仅作为本地私有配置使用；但 2026-11-09 的 Git 元数据审计发现该文件仍在索引中，且 `.gitignore` 的精确忽略规则被注释，不能假定它已忽略。维护者须先轮换可能暴露的凭据、确认本地未提交改动归属，再从索引移除并启用精确 ignore。具体处置见 `docs/development/APIFOX_CLI_FEASIBILITY.md`。不得把真实令牌粘贴到示例文件、Issue、构建日志、提交信息或 AI 会话中。`.vscode/autoApiGen.example.json` 是唯一可提交的插件配置模板，其中敏感字段必须保持为空。
 
 当前无法确认该 VS Code 插件支持环境变量替换或 Secret Storage，因此本阶段不改变插件配置格式。若插件后续明确支持安全存储，应优先迁移并更新本文档。
 

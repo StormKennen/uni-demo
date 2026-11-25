@@ -23,6 +23,15 @@ export const SWC_PORTAL_ENTRIES: SwcPortalEntry[] = [
     path: '/subPackages/tools/compendium/swc/list',
   },
   {
+    id: 'rune-score',
+    title: '符文智能评分',
+    desc: '拍照识别符文，查看评分与适用魔灵',
+    icon: 'camera',
+    accent: '#b7791f',
+    accentSoft: 'rgba(183, 121, 31, 0.14)',
+    path: '/subPackages/swc-rune-score/index',
+  },
+  {
     id: 'rta-ranking',
     title: 'RTA排行榜',
     desc: '查看赛季排行与人物 RTA 数据',

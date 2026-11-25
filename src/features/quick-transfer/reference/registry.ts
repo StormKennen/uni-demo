@@ -35,7 +35,7 @@ const REGISTRY: Record<string, QuickTransferReferenceHandler> = {
     label: '备忘录',
     buildRoute: reference => {
       const id = getReferenceId(reference)
-      return id ? `/subPackages/tools/memo/detail?id=${encodeURIComponent(id)}` : null
+      return id ? `/subPackages/record-tools/memo/detail?id=${encodeURIComponent(id)}` : null
     },
   },
   summonersWarCharacter: {

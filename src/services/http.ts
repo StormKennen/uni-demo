@@ -35,6 +35,7 @@ export interface UploadFileOptions {
   filePath: string
   name: string
   formData?: Record<string, string>
+  onTask?: (task: { abort: () => void }) => void
 }
 
 interface InternalUploadConfig extends InternalRequestConfig {
@@ -525,7 +526,7 @@ export class Request {
     }
 
     return new Promise<T>((resolve, reject) => {
-      uni.uploadFile({
+      const uploadTask = uni.uploadFile({
         filePath: options.filePath,
         name: options.name,
         formData: options.formData || {},
@@ -578,6 +579,7 @@ export class Request {
           reject({ code: -1, message: error.errMsg || '文件上传失败', error })
         },
       })
+      options.onTask?.(uploadTask)
     })
   }
   // 只实现post和get，这么做了原因是 只有这两个没有兼容问题

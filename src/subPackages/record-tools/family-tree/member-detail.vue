@@ -123,6 +123,10 @@
       type: String,
       default: '',
     },
+    loadRemote: {
+      type: Boolean,
+      default: true,
+    },
     showEditBtn: {
       type: Boolean,
       default: false,
@@ -151,15 +155,13 @@
     }
   }
 
-  // 监听弹窗打开，加载详情
+  // 弹窗打开或成员变化时，仅对真实后端成员加载远端详情。
   watch(
-    () => props.visible,
-    newVal => {
-      console.log('弹窗状态变化:', newVal, 'memberData:', props.memberData)
-      if (newVal && props.memberData?.id) {
-        console.log('加载成员详情, memberId:', props.memberData.id)
-        loadMemberDetail(props.memberData.id)
-      } else if (!newVal) {
+    () => [props.visible, props.memberData?.id, props.loadRemote],
+    ([visible, memberId, loadRemote]) => {
+      if (visible && memberId && loadRemote) {
+        loadMemberDetail(memberId)
+      } else if (!visible || !loadRemote) {
         detailData.value = null
       }
     },

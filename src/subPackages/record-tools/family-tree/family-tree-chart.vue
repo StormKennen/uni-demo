@@ -4,7 +4,7 @@
     <view class="chart-toolbar">
       <view class="toolbar-info">
         <text class="toolbar-title">家族图谱全景</text>
-        <text class="toolbar-subtitle">梁姓第24至31世 · 共 {{ allMembers.length }} 位成员</text>
+        <text class="toolbar-subtitle">梁姓第24至32世 · 共 {{ allMembers.length }} 位成员</text>
       </view>
 
       <!-- 视图样式切换：树形血缘分支 vs 代际泳道 -->
@@ -43,12 +43,16 @@
       <view class="tree-branch-root-wrap" v-else-if="chartDisplayMode === 'tree'">
         <view class="tree-root-notice">
           <text class="notice-text">
-            梁姓第24至31世 · {{ treeMemberCount }} 位成员 · 首屏仅展开根节点，点击子女数按支系逐层查看；男女节点以淡蓝/淡粉区分，
-            子女较多时可横向滑动。
+            梁姓第24至32世 · {{ treeMemberCount }} 位成员 · 首屏展开根节点及子女；点击成员查看详情，点击节点底部操作区展开或收起后代；
+            未知性别以中性色显示，树图可上下、左右滚动查看。
           </text>
         </view>
         <view class="lineage-tree">
-          <FamilyTreeCanvas :roots="rootTreeNodes" :selectedId="selectedMember?.id || ''" @select="onMemberCardClick" />
+          <FamilyTreeGraph
+            :roots="rootTreeNodes"
+            :selectedId="selectedMember?.id || ''"
+            :panelExpanded="panelExpanded"
+            @select="onMemberCardClick" />
         </view>
       </view>
 
@@ -102,7 +106,8 @@
       :visible="showMemberDetail"
       :memberData="selectedNode"
       :parentName="selectedNodeParentName"
-      :showEditBtn="isLoggedIn"
+      :loadRemote="!isStaticFamilyMemberId(selectedNode?.id)"
+      :showEditBtn="isLoggedIn && !isStaticFamilyMemberId(selectedNode?.id)"
       @close="showMemberDetail = false"
       @edit="startEdit" />
 
@@ -113,7 +118,7 @@
           <text class="toggle-text" v-if="selectedMember">
             <text class="status-indicator">🎯</text> 已选中: {{ selectedMember.fullName }}
           </text>
-          <text class="toggle-text" v-else> <text class="status-indicator">👆</text> 点击成员或展开面板新增/编辑家族成员 </text>
+          <text class="toggle-text" v-else> <text class="status-indicator">👆</text> 点击图谱成员查看详情 </text>
         </view>
         <text class="toggle-icon">{{ panelExpanded ? '▼' : '▲' }}</text>
       </view>
@@ -121,7 +126,12 @@
       <view class="panel-content-wrapper" v-if="panelExpanded">
         <view class="no-selection-tip" v-if="!isLoggedIn">
           <uni-icons type="info" size="48" color="#ccc" />
-          <text class="tip-text">登录后可新增与管理家族成员</text>
+          <text class="tip-text">登录后可管理后端成员；当前静态谱页仅供查看</text>
+        </view>
+
+        <view class="no-selection-tip" v-else-if="!hasRemoteMembers">
+          <uni-icons type="info" size="48" color="#ccc" />
+          <text class="tip-text">当前展示的是静态谱页资料，接入后端成员数据后才能新增或编辑。</text>
         </view>
 
         <view class="panel-content edit-content" v-else>
@@ -140,7 +150,12 @@
             </picker>
             <view v-if="selectedMember" class="member-actions">
               <button class="action-btn secondary-btn" @click="showSelectedMemberDetail">查看详情</button>
-              <button class="action-btn secondary-btn" @click="startEdit(selectedMember.originalData)">编辑成员</button>
+              <button
+                v-if="!isStaticFamilyMemberId(selectedMember.id)"
+                class="action-btn secondary-btn"
+                @click="startEdit(selectedMember.originalData)">
+                编辑成员
+              </button>
             </view>
           </view>
 
@@ -208,7 +223,7 @@
 <script setup>
   import { ref, computed } from 'vue'
   import MemberDetail from './member-detail.vue'
-  import FamilyTreeCanvas from './family-tree-canvas.vue'
+  import FamilyTreeGraph from './family-tree-graph.vue'
   import { staticFamilyMembers } from './family-static-data'
   import { linkFamilyRelationship, updateFamilyMember } from '@/api/family-tree'
   import { getToken } from '@/utils/storage'
@@ -237,6 +252,35 @@
     if (selectedMemberIndex.value < 0) return null
     return memberOptions.value[selectedMemberIndex.value] || null
   })
+
+  const isStaticFamilyMemberId = memberId => typeof memberId === 'string' && /^liang-g\d+-\d+$/.test(memberId)
+  const hasRemoteMembers = computed(() => allMembers.value.some(member => member?.id && !isStaticFamilyMemberId(String(member.id))))
+
+  const getMemberFullName = member => member?.nameZh?.full || `${member?.surname || ''}${member?.givenName || ''}` || '未知'
+
+  const getMemberParentName = member => {
+    if (member?.parentName) return member.parentName
+    const parentIds = Array.isArray(member?.parents) ? member.parents : []
+    return parentIds
+      .map(parentId => allMembers.value.find(candidate => String(candidate.id) === String(parentId)))
+      .filter(Boolean)
+      .map(getMemberFullName)
+      .join('、')
+  }
+
+  const getMemberDetailData = member => {
+    const source = member?.originalData || member
+    if (!source) return null
+    const children = Array.isArray(source.children) ? source.children : []
+    return {
+      ...source,
+      children: children.map(child => {
+        if (typeof child !== 'string') return child
+        const childMember = allMembers.value.find(candidate => String(candidate.id) === child)
+        return childMember ? { name: getMemberFullName(childMember) } : { name: child }
+      }),
+    }
+  }
 
   // 构建真实的树形血缘根节点数据
   const rootTreeNodes = computed(() => {
@@ -407,10 +451,14 @@
 
   const onMemberCardClick = member => {
     if (!member?.id) return
-    // 暂时屏蔽点击跳转到详情页
-    // uni.navigateTo({
-    //   url: `/subPackages/tools/family-tree/detail?id=${member.id}`,
-    // })
+
+    const memberId = String(member.id)
+    const optionIndex = memberOptions.value.findIndex(option => String(option.id) === memberId)
+    selectedMemberIndex.value = optionIndex
+    editingMember.value = null
+    selectedNode.value = getMemberDetailData(optionIndex >= 0 ? memberOptions.value[optionIndex] : member)
+    selectedNodeParentName.value = getMemberParentName(member)
+    showMemberDetail.value = true
   }
 
   const newNode = ref({
@@ -441,9 +489,7 @@
 
   const showSelectedMemberDetail = () => {
     if (!selectedMember.value) return
-    selectedNode.value = selectedMember.value.originalData
-    selectedNodeParentName.value = ''
-    showMemberDetail.value = true
+    onMemberCardClick(selectedMember.value.originalData)
   }
 
   const startEdit = member => {
@@ -560,6 +606,14 @@
     if (!parentMember) {
       uni.showToast({
         title: '请先选择父节点成员',
+        icon: 'none',
+      })
+      return
+    }
+
+    if (isStaticFamilyMemberId(parentMember.id)) {
+      uni.showToast({
+        title: '当前展示的是静态谱页数据，暂不支持新增关系',
         icon: 'none',
       })
       return
@@ -745,26 +799,38 @@
   }
 
   .tree-branch-root-wrap {
-    width: max-content;
-    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100%;
     padding: 0 0 40rpx;
     box-sizing: border-box;
   }
 
   .lineage-tree {
     display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 40rpx;
-    width: max-content;
-    min-width: 100%;
-    padding: 20rpx 24rpx 48rpx;
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    min-height: 320px;
+    padding: 12rpx 0 48rpx;
     box-sizing: border-box;
   }
 
+  .lineage-tree :deep(family-tree-graph) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 320px;
+  }
+
   .tree-root-notice {
+    width: calc(100vw - 40rpx);
     padding: 16rpx 24rpx;
     margin-bottom: 20rpx;
+    box-sizing: border-box;
     border-radius: 12rpx;
     background: rgba(102, 126, 234, 0.08);
     border: 1rpx solid rgba(102, 126, 234, 0.2);

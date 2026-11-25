@@ -6,17 +6,14 @@
         <!-- 1. 账号 -->
         <view class="card checkout-card">
           <view class="step-head">
-            <text class="step-index">1</text>
             <view class="step-copy">
-              <text class="step-title">兑换到账号</text>
-              <text class="step-desc">{{ accountStepDesc }}</text>
+              <text class="step-title">兑换账号</text>
             </view>
           </view>
 
           <view v-if="!isLoggedIn" class="local-mode-tip">
             <view class="local-mode-tip__copy">
-              <text class="local-mode-tip__title">当前为游客模式</text>
-              <text class="local-mode-tip__desc">验证后的账号信息仅保存在本设备；登录后可同步账号、查看兑换记录并开启自动兑换。</text>
+              <text class="local-mode-tip__title">游客模式 · 账号仅保存在本机</text>
             </view>
             <button class="local-mode-login" @click="goLogin">登录</button>
           </view>
@@ -128,33 +125,33 @@
                   {{ addingAccount ? '验证中' : '验证并添加' }}
                 </view>
               </view>
-
-              <view v-if="managedAccounts.length" class="auto-row">
-                <text class="auto-row-label">自动兑换托管</text>
-                <switch
-                  class="auto-switch compact"
-                  :checked="isLoggedIn && allAutoOn"
-                  color="var(--theme-brand)"
-                  @change="handleAutoSwitchChange" />
-              </view>
             </view>
+          </view>
+          <view v-if="managedAccounts.length" class="auto-row">
+            <view class="auto-row-copy">
+              <text class="auto-row-label">自动托管</text>
+              <text class="auto-row-hint">统一控制全部托管账号</text>
+            </view>
+            <switch class="auto-switch" :checked="isLoggedIn && allAutoOn" color="var(--theme-brand)" @change="handleAutoSwitchChange" />
           </view>
         </view>
 
         <!-- 2. 券码（默认全选，支持多选批量兑换） -->
         <view class="card checkout-card">
           <view class="step-head">
-            <text class="step-index">2</text>
             <view class="step-copy">
-              <text class="step-title">选择券码</text>
-              <text class="step-desc">{{ codeStepDesc }}</text>
+              <text class="step-title">可用礼包码</text>
             </view>
           </view>
 
-          <view class="code-add-row">
-            <input class="code-input-lg compact" type="text" placeholder="粘贴新券码并添加" :value="codeInput" @input="updateCodeInput" />
-            <view class="add-btn code-add-btn" :class="{ disabled: addingPublicCode || redeeming }" @click="addPublicCode">
-              {{ addingPublicCode ? '...' : '添加' }}
+          <view class="manual-code-entry">
+            <view v-if="!showManualCodeEntry" class="manual-code-trigger" @click="showManualCodeEntry = true">＋ 手动添加券码</view>
+            <view v-else class="code-add-row">
+              <input class="code-input-lg compact" type="text" placeholder="粘贴券码" :value="codeInput" @input="updateCodeInput" />
+              <view class="add-btn code-add-btn" :class="{ disabled: addingPublicCode || redeeming }" @click="addPublicCode">
+                {{ addingPublicCode ? '添加中' : '添加' }}
+              </view>
+              <view class="manual-code-cancel" @click="showManualCodeEntry = false">收起</view>
             </view>
           </view>
 
@@ -162,10 +159,11 @@
 
           <view v-if="combinedCodes.length" class="quick-codes">
             <view class="quick-head">
-              <text class="quick-title">已选 {{ selectedCodes.length }}/{{ combinedCodes.length }}</text>
+              <text class="quick-title">已选 {{ selectedCodes.length }} 个券码</text>
               <view class="quick-actions">
-                <text class="quick-link" @click="selectAllCodesByUser">全选</text>
-                <text class="quick-link" @click="clearSelectedCodes">清空</text>
+                <text class="quick-link" @click="toggleAllCodesByUser">
+                  {{ selectedCodes.length === combinedCodes.length ? '取消全选' : '全选' }}
+                </text>
                 <text class="quick-refresh" :class="{ disabled: loadingCodes }" @click="loadCodes">
                   {{ loadingCodes ? '刷新中' : '刷新' }}
                 </text>
@@ -183,14 +181,14 @@
                 </view>
                 <view class="quick-chip-main">
                   <view class="quick-code-details">
-                    <text class="quick-code">{{ item.code }}</text>
+                    <view class="quick-code-heading">
+                      <text class="quick-code">{{ item.code }}</text>
+                      <text v-if="hasCodeRedeemState(item)" class="redeemed-badge" :class="getCodeRedeemState(item).className">
+                        {{ getCodeRedeemState(item).label }}
+                      </text>
+                    </view>
+                    <text v-if="item.reward" class="quick-reward">奖励：{{ item.reward }}</text>
                     <text v-if="formatCodeDate(item.createdAt)" class="quick-created-at">收录于 {{ formatCodeDate(item.createdAt) }}</text>
-                  </view>
-                  <view class="quick-chip-meta">
-                    <text v-if="isLoggedIn" class="redeemed-badge" :class="getCodeRedeemState(item).className">
-                      {{ getCodeRedeemState(item).label }}
-                    </text>
-                    <text v-if="item.reward" class="quick-reward">{{ item.reward }}</text>
                   </view>
                 </view>
                 <view class="quick-view-btn" @click.stop="openCouponDetail(item)">查看</view>
@@ -288,7 +286,6 @@
         <view class="redeem-dock">
           <view class="redeem-dock-copy">
             <text class="redeem-dock-title">{{ redeemDockTitle }}</text>
-            <text class="redeem-dock-hint">{{ redeemHintText }}</text>
           </view>
           <button class="redeem-btn dock-btn" :disabled="cashierRedeemDisabled" @click="startCashierRedeem">
             {{ redeemActionText }}
@@ -301,7 +298,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue'
-  import { onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+  import { onHide, onLoad, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
   import { getGameCouponConfig } from './config'
   import type { GameCouponConfig } from './config'
   import {
@@ -350,7 +347,8 @@
     createdAt?: string
     redeemedAccountIds?: string[]
   }
-  type CouponCodesQuery = getGameCouponsGameIdCodesQuery & { accountIds?: string[] }
+  // Apifox 定义尚未同步 accountIds；按单账号请求，避免 uni.request 把数组 JSON 序列化。
+  type CouponCodesQuery = getGameCouponsGameIdCodesQuery & { accountIds?: string }
   type ManagedAccountApiItem = getGameCouponsGameIdAccountsResAccounts & { accountId?: string }
   interface AccountVM extends GameCouponAccount {
     autoRedeemEnabled?: boolean
@@ -395,6 +393,7 @@
   const addingPublicCode = ref(false)
   const codeLoadError = ref('')
   const showAllCodes = ref(false)
+  const showManualCodeEntry = ref(false)
   const codePreviewLimit = 5
 
   const redeeming = ref(false)
@@ -417,6 +416,7 @@
   const initialized = ref(false)
   const claimingGuestAccounts = ref(false)
   let guestClaimPrompted = false
+  let refreshCodesOnShow = false
 
   const serverLabels = computed(() => gameConfig.value.servers.map(item => item.label))
 
@@ -446,8 +446,6 @@
     return selectedCodes.value.length + (isAdditionalInput ? 1 : 0)
   })
 
-  const redeemCombinationCount = computed(() => selectedAccounts.value.length * redeemableCodeCount.value)
-
   const visibleCodes = computed(() => (showAllCodes.value ? combinedCodes.value : combinedCodes.value.slice(0, codePreviewLimit)))
 
   const hasRedeemableCodes = computed(() => selectedCodes.value.length > 0 || Boolean(codeInput.value.trim()))
@@ -456,18 +454,6 @@
     if (redeeming.value || confirmingRedeem.value) return true
     if (!selectedAccounts.value.length) return true
     return !hasRedeemableCodes.value
-  })
-
-  const accountStepDesc = computed(() => {
-    if (!validAccounts.value.length) return '新用户先添加一个账号'
-    if (!selectedAccounts.value.length) return '请在账号管理中选择兑换账号'
-    if (selectedAccounts.value.length > 1) return `将批量兑到 ${selectedAccounts.value.length} 个账号`
-    return '默认选中一个账号；管理里可多选批量兑换'
-  })
-
-  const codeStepDesc = computed(() => {
-    if (!combinedCodes.value.length) return '可用券码加载后会默认全选'
-    return `可用券码默认全选，可取消勾选 · 已选 ${selectedCodes.value.length} 个`
   })
 
   const managedAccounts = computed(() => accounts.value.filter(account => account.managed))
@@ -517,8 +503,9 @@
     if (confirmingRedeem.value) return '确认中…'
     if (redeeming.value) return '兑换中…'
     if (!validAccounts.value.length) return '先添加账号'
+    if (!selectedAccounts.value.length) return '选择账号'
     if (!hasRedeemableCodes.value) return '选择券码'
-    return '兑换'
+    return '一键兑换'
   })
 
   const redeemDockTitle = computed(() => {
@@ -526,16 +513,6 @@
     if (!selectedAccounts.value.length) return '请选择账号'
     if (!redeemableCodeCount.value) return '请选择或添加券码'
     return `${selectedAccounts.value.length} 个账号 × ${redeemableCodeCount.value} 个券码`
-  })
-
-  const redeemHintText = computed(() => {
-    if (!validAccounts.value.length) return '新用户请先完成账号添加'
-    if (!selectedAccounts.value.length) return '在账号管理里点选目标账号'
-    if (!hasRedeemableCodes.value) return '可用券码默认全选，也可粘贴添加'
-    if (redeemCombinationCount.value >= batchConfirmThreshold) {
-      return `共 ${redeemCombinationCount.value} 组兑换；提交前会再次确认`
-    }
-    return redeemCombinationCount.value > 1 ? `将按账号 × 券码提交 ${redeemCombinationCount.value} 组` : '核对范围后即可提交兑换'
   })
 
   /* ----------------------------- 工具 ----------------------------- */
@@ -613,6 +590,10 @@
     selectedAccountIds.value = preferredAccount ? [preferredAccount.id] : []
   }
 
+  function hasCodeRedeemState(item: CouponCodeVM) {
+    return isLoggedIn.value && selectedAccounts.value.some(account => account.managed) && Array.isArray(item.redeemedAccountIds)
+  }
+
   function getCodeRedeemState(item: CouponCodeVM) {
     const selectedManagedIds = selectedAccounts.value.filter(account => account.managed).map(account => account.id)
     const redeemedIds = new Set(item.redeemedAccountIds || [])
@@ -636,7 +617,11 @@
     selectedCodeKeys.value = combinedCodes.value.map(item => getCodeKey(item))
   }
 
-  function selectAllCodesByUser() {
+  function toggleAllCodesByUser() {
+    if (selectedCodes.value.length === combinedCodes.value.length) {
+      clearSelectedCodes()
+      return
+    }
     selectAllCodes()
   }
 
@@ -1175,22 +1160,54 @@
     const requestId = ++codeLoadRequestId
     loadingCodes.value = true
     codeLoadError.value = ''
-    const accountIds = isLoggedIn.value
+    const selectedManagedIds = isLoggedIn.value
       ? selectedAccounts.value
           .filter(account => account.managed)
           .map(account => account.id)
           .filter(Boolean)
-      : undefined
-    const params: CouponCodesQuery = {
-      compendium_id: gameConfig.value.compendiumId,
-      ...(isLoggedIn.value ? { accountIds: accountIds || [] } : {}),
-    }
+      : []
+    const accountIdsToQuery: Array<string | undefined> = selectedManagedIds.length ? selectedManagedIds : [undefined]
     try {
-      const res = (await getGameCouponsGameIdCodes(gameConfig.value.gameId, params)) as { codes?: CouponCodeVM[] }
+      const responses = await Promise.all(
+        accountIdsToQuery.map(accountId => {
+          const params: CouponCodesQuery = {
+            compendium_id: gameConfig.value.compendiumId,
+            ...(accountId ? { accountIds: accountId } : {}),
+          }
+          return getGameCouponsGameIdCodes(gameConfig.value.gameId, params) as Promise<{ codes?: CouponCodeVM[] }>
+        }),
+      )
       if (requestId !== codeLoadRequestId) return
       const hadLoadedCodes = remoteCodes.value.length > 0
       const previouslySelected = new Set(selectedCodeKeys.value)
-      remoteCodes.value = res.codes || []
+      const responseCodes = responses[0]?.codes || []
+
+      if (!selectedManagedIds.length) {
+        remoteCodes.value = responseCodes
+      } else {
+        const codesByResponse = responses.map(response => {
+          const map = new Map<string, CouponCodeVM>()
+          const responseCodes = response.codes || []
+          responseCodes.forEach(item => {
+            const key = getCodeKey(item)
+            if (key) map.set(key, item)
+          })
+          return map
+        })
+        remoteCodes.value = responseCodes.map(item => {
+          const key = getCodeKey(item)
+          const scopedCodes = codesByResponse.map(codes => codes.get(key))
+          const hasAllAccountStates = scopedCodes.every(code => Array.isArray(code?.redeemedAccountIds))
+          return {
+            ...item,
+            code: key,
+            redeemedAccountIds: hasAllAccountStates
+              ? Array.from(new Set(scopedCodes.flatMap(code => code?.redeemedAccountIds || [])))
+              : undefined,
+          }
+        })
+      }
+
       if (hadLoadedCodes) {
         selectedCodeKeys.value = combinedCodes.value.map(item => getCodeKey(item)).filter(key => previouslySelected.has(key))
       } else {
@@ -1213,6 +1230,8 @@
     }
     if (combinedCodes.value.some(item => getCodeKey(item) === code)) {
       selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
+      codeInput.value = ''
+      showManualCodeEntry.value = false
       toast('券码已存在，已帮你勾选')
       return
     }
@@ -1223,6 +1242,7 @@
       selectedCodeKeys.value = Array.from(new Set([...selectedCodeKeys.value, code]))
       codeInput.value = ''
       showAllCodes.value = true
+      showManualCodeEntry.value = false
       toast('已加入本次兑换列表')
       return
     }
@@ -1232,6 +1252,7 @@
     try {
       await postGameIdCodesManual(gameConfig.value.gameId, { compendium_id: gameConfig.value.compendiumId }, { code, source: 'manual' })
       codeInput.value = ''
+      showManualCodeEntry.value = false
       try {
         await loadCodes()
       } catch {
@@ -1342,6 +1363,7 @@
       }
       if (isLoggedIn.value) {
         loadRecords(true)
+        void loadCodes()
       }
       uni.hideLoading()
       if (failedCount > 0) {
@@ -1505,6 +1527,10 @@
     initializePage()
   })
 
+  onHide(() => {
+    refreshCodesOnShow = initialized.value && isLoggedIn.value
+  })
+
   onShow(() => {
     reportToolVisit('summoners-war-coupons')
     const wasLoggedIn = isLoggedIn.value
@@ -1512,6 +1538,11 @@
     if (!initialized.value) return
     if (isLoggedIn.value && !wasLoggedIn) {
       enterLoggedInMode()
+      return
+    }
+    if (refreshCodesOnShow && isLoggedIn.value) {
+      refreshCodesOnShow = false
+      void loadCodes()
     }
   })
 
@@ -1564,19 +1595,6 @@
     margin-bottom: 20rpx;
   }
 
-  .step-index {
-    width: 40rpx;
-    height: 40rpx;
-    border-radius: 12rpx;
-    background: rgba(79, 110, 242, 0.12);
-    color: $accent;
-    font-size: 24rpx;
-    font-weight: 700;
-    line-height: 40rpx;
-    text-align: center;
-    flex-shrink: 0;
-  }
-
   .step-copy {
     min-width: 0;
     flex: 1;
@@ -1588,14 +1606,6 @@
     font-weight: 700;
     color: $text-primary;
     line-height: 1.3;
-  }
-
-  .step-desc {
-    display: block;
-    margin-top: 4rpx;
-    font-size: 22rpx;
-    color: $text-hint;
-    line-height: 1.4;
   }
 
   .local-mode-tip {
@@ -1617,8 +1627,7 @@
     flex: 1;
   }
 
-  .local-mode-tip__title,
-  .local-mode-tip__desc {
+  .local-mode-tip__title {
     display: block;
   }
 
@@ -1626,13 +1635,6 @@
     color: $text-primary;
     font-size: 24rpx;
     font-weight: 600;
-  }
-
-  .local-mode-tip__desc {
-    margin-top: 4rpx;
-    color: $text-secondary;
-    font-size: 22rpx;
-    line-height: 1.45;
   }
 
   .local-mode-login {
@@ -1742,9 +1744,41 @@
     border-top: 1rpx solid $border;
   }
 
+  .auto-row-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
   .auto-row-label {
+    display: block;
+    color: $text-primary;
     font-size: 24rpx;
-    color: $text-secondary;
+    font-weight: 600;
+  }
+
+  .auto-row-hint {
+    display: block;
+    margin-top: 4rpx;
+    color: $text-hint;
+    font-size: 20rpx;
+  }
+
+  .manual-code-entry {
+    margin-top: 8rpx;
+  }
+
+  .manual-code-trigger,
+  .manual-code-cancel {
+    display: flex;
+    align-items: center;
+    min-height: 64rpx;
+    color: $accent;
+    font-size: 24rpx;
+  }
+
+  .manual-code-cancel {
+    flex-shrink: 0;
+    padding: 0 8rpx;
   }
 
   .code-add-row {
@@ -1804,10 +1838,6 @@
   .quick-chip-main {
     min-width: 0;
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12rpx;
   }
 
   .quick-view-btn {
@@ -1933,29 +1963,32 @@
   .quick-code-details {
     display: flex;
     flex-direction: column;
+    width: 100%;
     min-width: 0;
-    gap: 4rpx;
+    gap: 6rpx;
+  }
+
+  .quick-code-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+    min-width: 0;
   }
 
   .quick-code {
+    min-width: 0;
+    flex: 1;
     font-size: 26rpx;
     font-weight: 700;
     color: $text-primary;
+    word-break: break-all;
   }
 
   .quick-created-at {
     font-size: 20rpx;
     color: $text-secondary;
     line-height: 1.4;
-  }
-
-  .quick-chip-meta {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8rpx;
-    min-width: 0;
   }
 
   .redeemed-badge {
@@ -1983,12 +2016,13 @@
   }
 
   .quick-reward {
-    max-width: 45%;
+    display: block;
+    width: 100%;
     font-size: 22rpx;
-    color: $text-hint;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.45;
+    color: $text-secondary;
+    white-space: normal;
+    word-break: break-all;
   }
 
   .empty-tip.soft {
@@ -2107,11 +2141,6 @@
   .auto-inline-label {
     font-size: 22rpx;
     color: $text-secondary;
-  }
-
-  .auto-switch.compact {
-    transform: scale(0.72);
-    transform-origin: right center;
   }
 
   .account-chip-scroll {
@@ -2736,16 +2765,6 @@
     font-size: 26rpx;
     font-weight: 600;
     color: $text-primary;
-  }
-
-  .redeem-dock-hint {
-    display: block;
-    margin-top: 4rpx;
-    font-size: 22rpx;
-    color: $text-hint;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
   }
 
   .dock-btn {

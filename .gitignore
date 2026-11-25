@@ -16,6 +16,7 @@ unpackage/
 coverage/
 .vite/
 .cache/
+.pnpm-store/
 .temp/
 tmp/
 

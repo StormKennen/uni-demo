@@ -2,13 +2,13 @@
 
 ## 目标
 
-完成备忘录分享链接、微信小程序 Guest Session、游客收到列表和 Guest → User 登录迁移的前端闭环。当前正式页面继续使用：
+完成备忘录分享链接、微信小程序 Guest Session、游客收到列表和 Guest → User 登录迁移的前端闭环。正式页面迁入记录分包，当前 canonical 路由为：
 
-- `/subPackages/tools/memo/list`
-- `/subPackages/tools/memo/detail`
-- `/subPackages/tools/memo/editor`
+- `/subPackages/record-tools/memo/list`
+- `/subPackages/record-tools/memo/detail`
+- `/subPackages/record-tools/memo/editor`
 
-本期不新增页面、不改动旧的 `src/subPackages/services/memo/*` 页面，也不手工修改 Apifox 生成目录。
+旧 `/subPackages/tools/memo/*` 路由保留轻量跳转并透传查询参数；不改动旧的 `src/subPackages/services/memo/*` 页面，也不手工修改 Apifox 生成目录。
 
 ## 接口契约
 

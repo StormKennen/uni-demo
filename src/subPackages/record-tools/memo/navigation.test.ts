@@ -4,7 +4,7 @@ import { buildMemoDetailPath, buildMemoShareUrl, parseMemoDetailParams } from '.
 describe('memo navigation', () => {
   it('builds an internal detail path with encoded parameters', () => {
     expect(buildMemoDetailPath({ id: 'memo/1', shareToken: 'token+a/b', mode: 'private', readonly: true })).toBe(
-      '/subPackages/tools/memo/detail?id=memo%2F1&shareToken=token%2Ba%2Fb&mode=private&readonly=1',
+      '/subPackages/record-tools/memo/detail?id=memo%2F1&shareToken=token%2Ba%2Fb&mode=private&readonly=1',
     )
   })
 
@@ -20,7 +20,7 @@ describe('memo navigation', () => {
           hash: '#/pages/index/index',
         },
       }),
-    ).toBe('https://example.com/superAppBridge.html#/subPackages/tools/memo/detail?id=memo-1&shareToken=token%2F1')
+    ).toBe('https://example.com/superAppBridge.html#/subPackages/record-tools/memo/detail?id=memo-1&shareToken=token%2F1')
   })
 
   it('builds a history-router H5 share URL from the current route base', () => {
@@ -29,12 +29,12 @@ describe('memo navigation', () => {
         id: 'memo-1',
         location: {
           origin: 'https://example.com',
-          pathname: '/app/subPackages/tools/memo/detail',
+          pathname: '/app/subPackages/record-tools/memo/detail',
           search: '?old=1',
           hash: '',
         },
       }),
-    ).toBe('https://example.com/app/subPackages/tools/memo/detail?id=memo-1')
+    ).toBe('https://example.com/app/subPackages/record-tools/memo/detail?id=memo-1')
   })
 
   it('uses a configured H5 hash base when called from a mini program', () => {
@@ -44,7 +44,7 @@ describe('memo navigation', () => {
         shareToken: 'token-1',
         baseUrl: 'https://example.com/app/#',
       }),
-    ).toBe('https://example.com/app/#/subPackages/tools/memo/detail?id=memo-1&shareToken=token-1')
+    ).toBe('https://example.com/app/#/subPackages/record-tools/memo/detail?id=memo-1&shareToken=token-1')
   })
 
   it('parses id and token from uni options before H5 search/hash parameters', () => {
@@ -55,7 +55,7 @@ describe('memo navigation', () => {
           origin: 'https://example.com',
           pathname: '/',
           search: '?id=from-search&shareToken=from-search',
-          hash: '#/subPackages/tools/memo/detail?id=from-hash&shareToken=from-hash',
+          hash: '#/subPackages/record-tools/memo/detail?id=from-hash&shareToken=from-hash',
         },
       ),
     ).toEqual({ id: 'from-options', shareToken: 'from-hash', readonly: true })
@@ -67,7 +67,7 @@ describe('memo navigation', () => {
         origin: 'https://example.com',
         pathname: '/',
         search: '',
-        hash: '#/subPackages/tools/memo/detail?id=memo-1&shareToken=token-1&mode=admin',
+        hash: '#/subPackages/record-tools/memo/detail?id=memo-1&shareToken=token-1&mode=admin',
       }),
     ).toEqual({ id: 'memo-1', shareToken: 'token-1', mode: 'admin' })
     expect(parseMemoDetailParams({ shareToken: 'token-only' }, undefined)).toBeNull()
@@ -79,8 +79,8 @@ describe('memo navigation', () => {
         origin: 'https://example.com',
         pathname: '/index.html',
         search: '?source=share',
-        hash: '#/subPackages/tools/memo/detail?memoId=memo-2&share_token=token-2',
-        href: 'https://example.com/index.html?source=share#/subPackages/tools/memo/detail?memoId=memo-2&share_token=token-2',
+        hash: '#/subPackages/record-tools/memo/detail?memoId=memo-2&share_token=token-2',
+        href: 'https://example.com/index.html?source=share#/subPackages/record-tools/memo/detail?memoId=memo-2&share_token=token-2',
       }),
     ).toEqual({ id: 'memo-2', shareToken: 'token-2' })
   })

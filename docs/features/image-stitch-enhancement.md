@@ -20,7 +20,7 @@
 
 ### 1.2 页面流与路由
 
-沿用现有页面 `subPackages/tools/image-stitch/index`，不新增路由。
+页面现位于独立分包 `subPackages/media-tools/image-stitch/index`；旧 `subPackages/tools/image-stitch/index` 路由保留轻量跳转并转发查询参数，以兼容历史链接。
 
 ## 2. API 契约（TypeScript，真实类型来自 IMAGETOOLS/interface.ts）
 

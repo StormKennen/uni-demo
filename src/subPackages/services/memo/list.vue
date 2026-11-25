@@ -447,7 +447,7 @@
   // 创建新备忘录
   const createNewMemo = () => {
     uni.navigateTo({
-      url: '/subPackages/tools/memo/editor',
+      url: '/subPackages/record-tools/memo/editor',
     })
   }
 
@@ -461,7 +461,7 @@
   // 编辑备忘录
   const editMemo = (id: string) => {
     uni.navigateTo({
-      url: `/subPackages/tools/memo/editor?id=${id}`,
+      url: `/subPackages/record-tools/memo/editor?id=${id}`,
     })
   }
 

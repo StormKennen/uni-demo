@@ -92,7 +92,7 @@ export const PAGE_SHARE_CONFIGS = {
   // 族谱工具
   familyTree: {
     title: '族谱工具 - 记录家族传承',
-    path: '/subPackages/tools/family-tree/index',
+    path: '/subPackages/record-tools/family-tree/index',
     imageUrl: '/static/logo.png',
   },
 

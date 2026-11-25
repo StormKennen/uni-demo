@@ -22,7 +22,7 @@ export interface MemoH5LocationLike {
   href?: string
 }
 
-const MEMO_DETAIL_ROUTE = '/subPackages/tools/memo/detail'
+const MEMO_DETAIL_ROUTE = '/subPackages/record-tools/memo/detail'
 
 const buildMemoQuery = ({ id, shareToken, mode, readonly, exportMode }: MemoDetailPathOptions): string => {
   const query: string[] = [`id=${encodeURIComponent(id)}`]

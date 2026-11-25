@@ -5,6 +5,7 @@
       :visible="showDetail"
       :memberData="selectedMember?.originalData"
       :parentName="selectedMember?.parentName"
+      :loadRemote="false"
       :showEditBtn="false"
       @close="showDetail = false" />
 
@@ -307,7 +308,7 @@
     if (!member?.id) return
     // 暂时屏蔽点击跳转到详情页
     // uni.navigateTo({
-    //   url: `/subPackages/tools/family-tree/detail?id=${member.id}`,
+    //   url: `/subPackages/record-tools/family-tree/detail?id=${member.id}`,
     // })
   }
 </script>

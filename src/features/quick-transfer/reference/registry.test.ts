@@ -6,7 +6,7 @@ describe('quick transfer reference registry', () => {
     const handler = getQuickTransferReferenceHandler('memoDetail')
     expect(handler).toBeDefined()
     expect(handler?.buildRoute({ type: 'memoDetail', resourceId: 'memo/1', title: '旅行计划' })).toBe(
-      '/subPackages/tools/memo/detail?id=memo%2F1',
+      '/subPackages/record-tools/memo/detail?id=memo%2F1',
     )
     expect(
       getQuickTransferReferenceHandler('rtaRanking')?.buildRoute({
