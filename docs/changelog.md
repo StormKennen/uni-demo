@@ -1,6 +1,6 @@
 # Changelog
 
-- 2026-11-26 [animal-sound-library] 播放器按音轨及签名重试销毁旧 AudioContext 并创建新上下文，结合会话/上下文代次校验隔离旧响应和迟到事件；暂停/停止态由播放器操作显式更新，新增旧上下文 stop/pause/ended/error/timeupdate 事件回归测试。
+- 2026-11-26 [animal-sound-library] 播放器按音轨及签名重试销毁旧 AudioContext 并创建新上下文，结合会话/上下文代次校验隔离旧响应和迟到事件；暂停/停止态由播放器操作显式更新，新增旧上下文 stop/pause/ended/error/timeupdate 及同上下文恢复后的迟到 pause 事件回归测试。
 - 2026-11-26 [animal-sound-library] 第二轮同步真实素材状态：系统代理已在后端采集进程内生效并成功发现候选；H5 与 MP-Weixin 构建通过，`pnpm test:run` 通过 162 files/910 tests（Vitest 包含 .agents/worktrees 与 .pnpm-store 重复副本），源码树 Vitest 34 files/200 tests 且动物播放器单测 6/6 通过；type-check 因 memo/editor、calendar、OSS 等无关模块错误失败；真实媒体播放、Apifox 同步与真实 OSS/Mongo 仍未验收，P1 保持门禁关闭。
 - 2026-11-26 [animal-sound-library] 详情补充叫声释义免责声明：叫声含义随个体与情境变化，趣味标题不代表可靠或逐字翻译。
 - 2026-11-26 [animal-sound-library] 新增 H5/微信小程序动物叫声目录与详情页，接入临时本地 API 契约、声音来源许可展示及共享单实例播放器；Apifox 同步仍待处理。

@@ -102,7 +102,7 @@ describe('animal sound player sessions', () => {
     createInnerAudioContext.mockClear()
   })
 
-  it('uses one instance and toggles pause/resume from real player events', async () => {
+  it('reuses one context and ignores delayed pause events after resuming', async () => {
     getPlayUrl.mockResolvedValue({
       soundId: 'cat-sound',
       playUrl: 'https://media.example.test/cat',
@@ -117,6 +117,8 @@ describe('animal sound player sessions', () => {
     await playSound('cat-sound', 'cat')
     expect(playerState.status).toBe('paused')
     await playSound('cat-sound', 'cat')
+    expect(playerState.status).toBe('playing')
+    contexts[0].emit('pause')
     expect(playerState.status).toBe('playing')
     expect(contexts[0].loop).toBe(false)
   })
