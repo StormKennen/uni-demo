@@ -3,8 +3,6 @@ import { getPlayUrl, type SignedPlayUrl } from './api'
 
 type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped' | 'ended' | 'error'
 type AudioContext = ReturnType<typeof uni.createInnerAudioContext>
-type PlayListener = Parameters<AudioContext['onPlay']>[0]
-type PauseListener = Parameters<AudioContext['onPause']>[0]
 type EndedListener = Parameters<AudioContext['onEnded']>[0]
 type ErrorListener = Parameters<AudioContext['onError']>[0]
 type TimeUpdateListener = Parameters<AudioContext['onTimeUpdate']>[0]
@@ -23,12 +21,11 @@ export const playerState = reactive({
 let audioContext: AudioContext | null = null
 let requestSequence = 0
 let activeSession = 0
+let activeContextGeneration = 0
 let retryUsed = false
 const signedUrlCache = new Map<string, SignedPlayUrl>()
 const EARLY_REFRESH_MS = 30_000
 let listeners: {
-  play?: PlayListener
-  pause?: PauseListener
   ended?: EndedListener
   error?: ErrorListener
   timeUpdate?: TimeUpdateListener
@@ -37,6 +34,7 @@ let listeners: {
 const ensureContext = () => {
   if (!audioContext) {
     audioContext = uni.createInnerAudioContext()
+    activeContextGeneration += 1
     audioContext.loop = false
     // #ifdef MP-WEIXIN
     audioContext.obeyMuteSwitch = true
@@ -46,12 +44,18 @@ const ensureContext = () => {
 }
 
 const detachSessionEvents = (context: AudioContext) => {
-  if (listeners.play) context.offPlay(listeners.play)
-  if (listeners.pause) context.offPause(listeners.pause)
   if (listeners.ended) context.offEnded(listeners.ended)
   if (listeners.error) context.offError(listeners.error)
   if (listeners.timeUpdate) context.offTimeUpdate(listeners.timeUpdate)
   listeners = {}
+}
+
+const releaseContext = (context: AudioContext) => {
+  detachSessionEvents(context)
+  activeContextGeneration += 1
+  context.stop()
+  context.destroy()
+  if (audioContext === context) audioContext = null
 }
 
 const resetVisibleState = (status: PlayerStatus) => {
@@ -84,18 +88,24 @@ const getSignedPlayUrl = async (soundId: string, forceRefresh: boolean): Promise
   return signed
 }
 
-const requestAndPlay = async (soundId: string, animalId: string, session: number, forceRefresh: boolean) => {
+const requestAndPlay = async (
+  soundId: string,
+  animalId: string,
+  session: number,
+  forceRefresh: boolean,
+  contextGeneration = activeContextGeneration,
+) => {
   try {
     const signed = await getSignedPlayUrl(soundId, forceRefresh)
     const context = audioContext
-    if (session !== activeSession || session !== requestSequence || !context) return
+    if (session !== activeSession || session !== requestSequence || contextGeneration !== activeContextGeneration || !context) return
     if (!signed.playUrl) throw new Error('播放地址暂不可用')
     const expiresAt = Date.parse(signed.expiresAt)
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now() + EARLY_REFRESH_MS) {
       signedUrlCache.delete(soundId)
       if (!retryUsed) {
         retryUsed = true
-        await requestAndPlay(soundId, animalId, session, true)
+        await requestAndPlay(soundId, animalId, session, true, contextGeneration)
         return
       }
       throw new Error('播放地址已过期')
@@ -105,22 +115,61 @@ const requestAndPlay = async (soundId: string, animalId: string, session: number
     playerState.expiresAt = signed.expiresAt
     context.src = signed.playUrl
     context.play()
+    playerState.status = 'playing'
   } catch {
-    if (session !== activeSession || session !== requestSequence) return
+    if (session !== activeSession || session !== requestSequence || contextGeneration !== activeContextGeneration) return
     playerState.status = 'error'
     playerState.errorMessage = forceRefresh ? '播放地址已失效，请稍后重试' : '声音暂时无法播放，请重试'
   }
 }
 
+const attachSessionEvents = (context: AudioContext, soundId: string, animalId: string, session: number) => {
+  const contextGeneration = activeContextGeneration
+  const isCurrentSession = () =>
+    session === activeSession && session === requestSequence && contextGeneration === activeContextGeneration && context === audioContext
+
+  listeners.ended = () => {
+    if (isCurrentSession()) playerState.status = 'ended'
+  }
+  listeners.error = () => {
+    if (!isCurrentSession()) return
+    if (!retryUsed) {
+      retryUsed = true
+      signedUrlCache.delete(soundId)
+      playerState.currentPlayUrl = ''
+      playerState.expiresAt = ''
+      playerState.status = 'loading'
+      releaseContext(context)
+      const retryContext = ensureContext()
+      attachSessionEvents(retryContext, soundId, animalId, session)
+      void requestAndPlay(soundId, animalId, session, true, activeContextGeneration)
+      return
+    }
+    playerState.status = 'error'
+    playerState.errorMessage = '声音暂时无法播放，请稍后重试'
+  }
+  listeners.timeUpdate = () => {
+    if (!isCurrentSession()) return
+    const currentTime = context.currentTime
+    const duration = context.duration
+    if (Number.isFinite(currentTime) && currentTime >= 0) playerState.currentTime = currentTime
+    if (Number.isFinite(duration) && duration > 0) playerState.duration = duration
+  }
+  context.onEnded(listeners.ended)
+  context.onError(listeners.error)
+  context.onTimeUpdate(listeners.timeUpdate)
+}
+
 export const playSound = async (soundId: string, animalId: string): Promise<void> => {
-  const context = ensureContext()
   if (playerState.soundId === soundId && playerState.status === 'loading') return
-  if (playerState.soundId === soundId && playerState.status === 'playing') {
-    context.pause()
+  if (playerState.soundId === soundId && playerState.status === 'playing' && audioContext) {
+    audioContext.pause()
+    playerState.status = 'paused'
     return
   }
-  if (playerState.soundId === soundId && playerState.status === 'paused') {
-    context.play()
+  if (playerState.soundId === soundId && playerState.status === 'paused' && audioContext) {
+    audioContext.play()
+    playerState.status = 'playing'
     return
   }
 
@@ -135,67 +184,24 @@ export const playSound = async (soundId: string, animalId: string): Promise<void
   playerState.currentPlayUrl = ''
   playerState.expiresAt = ''
   playerState.errorMessage = ''
-  detachSessionEvents(context)
-  context.stop()
 
-  listeners.play = () => {
-    if (session === activeSession) playerState.status = 'playing'
-  }
-  listeners.pause = () => {
-    if (session === activeSession) playerState.status = 'paused'
-  }
-  listeners.ended = () => {
-    if (session === activeSession) playerState.status = 'ended'
-  }
-  listeners.error = () => {
-    if (session !== activeSession) return
-    if (!retryUsed) {
-      retryUsed = true
-      signedUrlCache.delete(soundId)
-      playerState.currentPlayUrl = ''
-      playerState.expiresAt = ''
-      playerState.status = 'loading'
-      void requestAndPlay(soundId, animalId, session, true)
-      return
-    }
-    playerState.status = 'error'
-    playerState.errorMessage = '声音暂时无法播放，请稍后重试'
-  }
-  context.onPlay(listeners.play)
-  context.onPause(listeners.pause)
-  context.onEnded(listeners.ended)
-  context.onError(listeners.error)
-  listeners.timeUpdate = () => {
-    if (session !== activeSession) return
-    const currentTime = context.currentTime
-    const duration = context.duration
-    if (Number.isFinite(currentTime) && currentTime >= 0) playerState.currentTime = currentTime
-    if (Number.isFinite(duration) && duration > 0) playerState.duration = duration
-  }
-  context.onTimeUpdate(listeners.timeUpdate)
-
-  await requestAndPlay(soundId, animalId, session, false)
+  if (audioContext) releaseContext(audioContext)
+  const context = ensureContext()
+  attachSessionEvents(context, soundId, animalId, session)
+  await requestAndPlay(soundId, animalId, session, false, activeContextGeneration)
 }
 
 export const stopPlayer = (): void => {
   ++requestSequence
   activeSession = requestSequence
-  if (audioContext) {
-    detachSessionEvents(audioContext)
-    audioContext.stop()
-  }
+  if (audioContext) releaseContext(audioContext)
   resetVisibleState('stopped')
 }
 
 export const destroyPlayer = (): void => {
   ++requestSequence
   activeSession = requestSequence
-  if (audioContext) {
-    detachSessionEvents(audioContext)
-    audioContext.stop()
-    audioContext.destroy()
-    audioContext = null
-  }
+  if (audioContext) releaseContext(audioContext)
   signedUrlCache.clear()
   resetVisibleState('idle')
 }

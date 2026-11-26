@@ -158,10 +158,12 @@ describe('animal sound player sessions', () => {
     })
     await first
     expect(playerState.soundId).toBe('dog-sound')
-    expect(contexts[0].src).toBe('https://media.example.test/dog')
+    expect(contexts).toHaveLength(2)
+    expect(contexts[0].destroy).toHaveBeenCalledTimes(1)
+    expect(contexts[1].src).toBe('https://media.example.test/dog')
   })
 
-  it('does not let a delayed stop event from the previous sound stop the new session', async () => {
+  it('ignores delayed events from a destroyed context after switching sounds', async () => {
     getPlayUrl.mockImplementation((soundId: string) =>
       Promise.resolve({
         soundId,
@@ -174,10 +176,20 @@ describe('animal sound player sessions', () => {
     )
     await playSound('cat-sound', 'cat')
     await playSound('dog-sound', 'dog')
+    expect(contexts).toHaveLength(2)
+    expect(contexts[0].destroy).toHaveBeenCalledTimes(1)
     expect(playerState.status).toBe('playing')
+    contexts[0].currentTime = 99
+    contexts[0].duration = 100
     contexts[0].emit('stop')
+    contexts[0].emit('pause')
+    contexts[0].emit('ended')
+    contexts[0].emit('error')
+    contexts[0].emit('timeUpdate')
     expect(playerState.soundId).toBe('dog-sound')
     expect(playerState.status).toBe('playing')
+    expect(playerState.currentTime).toBe(0)
+    expect(getPlayUrl).toHaveBeenCalledTimes(2)
   })
 
   it('reuses an unexpired URL and refreshes once after a media error', async () => {
@@ -203,7 +215,9 @@ describe('animal sound player sessions', () => {
     await playSound('cat-sound', 'cat')
     expect(getPlayUrl).toHaveBeenCalledTimes(1)
     contexts[0].emit('error')
-    await vi.waitFor(() => expect(contexts[0].src).toBe('https://media.example.test/cat-new'))
+    await vi.waitFor(() => expect(contexts[1].src).toBe('https://media.example.test/cat-new'))
+    expect(contexts).toHaveLength(2)
+    expect(contexts[0].destroy).toHaveBeenCalledTimes(1)
     expect(getPlayUrl).toHaveBeenCalledTimes(2)
   })
 

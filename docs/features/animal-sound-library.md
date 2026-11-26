@@ -36,7 +36,7 @@
 
 列表初载骨架、空态、错误/重试、图片占位、无更多；下拉刷新和触底分页。声音筛选匹配一条声音同时满足所有 tag/type。双列卡片有封面、中文英文名、声音数量、可点播放；切到 swiper 显示大封面、名称、序号、代表播放、声音入口；点击非操作区正反面切换，背面显示介绍、科学名、分类、声类入口及详情跳转。详情分组列样本名称、类型、标签、时长、播放状态、版权来源。
 
-共享播放器 uni.createInnerAudioContext()：idle/loading/playing/paused/stopped/ended/error，存当前 sound/animal、时间、url expires、请求序号。任一时刻一个实例；每次播放先增序号、停旧，再取有效 URL，旧响应/事件不得更新当前态；播放事件确认状态；地址错误至多刷新签名一次；页面隐藏停播；卸载销毁；不设循环/后台模式/麦克风。
+共享播放器 uni.createInnerAudioContext()：idle/loading/playing/paused/stopped/ended/error，存当前 sound/animal、时间、url expires、请求序号。任一时刻最多一个实例；切换声音或签名刷新时先销毁旧 context，再创建新 context，并以会话/上下文代次阻止迟到响应或事件污染当前态；播放/暂停状态由播放器操作同步更新，ended/error/timeupdate 由当前 context 监听；地址错误至多刷新签名一次；页面隐藏停播；卸载销毁；不设循环/后台模式/麦克风。
 
 ## 4. 视觉与多端
 
