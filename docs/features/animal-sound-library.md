@@ -44,7 +44,7 @@
 
 ## 5. 测试/验收
 
-测试列表/错误/搜索 debounce/请求序号/分页/模式与位置保持/翻牌/播放状态机/过期签名一次刷新/卸载清理。当前验证：`pnpm build:h5`、`pnpm build:mp-weixin` 均 PASS；`pnpm test:run` PASS（162 files/910 tests，Vitest 同时扫描 `.agents/worktrees` 和 `.pnpm-store` 副本，存在重复项）；另用 `pnpm exec vitest run --root src --config ../vitest.config.ts` 只跑当前源树，PASS（34 files/200 tests，未包含这些副本），其中播放器 6/6 PASS。`pnpm type-check` FAIL，错误集中在 memo/editor、calendar、OSS 等与本功能无关的模块，扫描输出未发现 animal-sound 路径错误。真机 iOS/Android、小程序域名、H5/MP-Weixin 真实媒体播放及弱网仍 NOT_RUN，不能把构建通过当作播放验收。docs/changelog.md 同步源改动。
+测试列表/错误/搜索 debounce/请求序号/分页/模式与位置保持/翻牌/播放状态机/过期签名一次刷新/卸载清理。当前验证：`pnpm build:h5`、`pnpm build:mp-weixin` 均 PASS；`pnpm test:run` PASS（162 files/910 tests，Vitest 同时扫描 `.agents/worktrees` 和 `.pnpm-store` 副本，存在重复项）；另用 `pnpm exec vitest run --root src --config ../vitest.config.ts` 只跑当前源树，PASS（34 files/200 tests，未包含这些副本），其中播放器 6/6 PASS。`pnpm type-check` FAIL，错误集中在 memo/editor、calendar、OSS 等与本功能无关的模块，扫描输出未发现 animal-sound 路径错误。真机 iOS/Android、小程序域名、H5/MP-Weixin 真实媒体播放及弱网仍 NOT_RUN，不能把构建通过当作播放验收。docs/changelog.md 同步源改动。附加检查：`pnpm check:routes` PASS（94 注册页/40 工具路径/39 分享路径/143 导航调用，动态路径警告仅记录）；`pnpm check:generated-boundary` PASS；`pnpm check:repo` FAIL（仓库跟踪本地 Apifox 凭证配置，未读取或修改）。
 
 ## 6. 第二轮验收状态（2026-11-26）
 
