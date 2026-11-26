@@ -48,4 +48,4 @@
 
 ## 6. 第二轮验收状态（2026-11-26）
 
-Wikimedia 访问阻塞已定位为 macOS 系统 HTTPS 代理未传入 Node 进程；后端 CLI 现可用 --system-proxy 在单进程使用现有系统代理，且真实 Commons 查询已成功。前端功能仍使用上述临时 API 适配层，Apifox 远端同步/客户端生成尚未完成。后端 source-manifest 当前有 59 条真实来源记录、覆盖 18/30 种动物；candidate/eligible 都不代表人工审核或已发布。当前只有一条原始猫嘶声 WAV 在临时目录完成下载/hash，未转码、未上传 OSS、未写入持久 MongoDB，也未在 H5/微信小程序实际播放。P0 GATE-B 未通过，收藏/最近/随机等 P1 继续 NOT_RUN；iOS/Android 真机及正式域名仍 NOT_RUN。
+Wikimedia 访问阻塞已定位为 macOS 系统 HTTPS 代理未传入 Node 进程；后端 CLI 现可用 --system-proxy 在单进程使用现有系统代理，且真实 Commons 查询已成功。前端功能仍使用上述临时 API 适配层，Apifox 远端同步/客户端生成尚未完成。后端 source-manifest 当前有 59 条真实来源记录、覆盖 19/30 种动物；candidate/eligible 都不代表人工审核或已发布。当前只有一条原始猫嘶声 WAV 在临时目录完成下载/hash，未转码、未上传 OSS、未写入持久 MongoDB，也未在 H5/微信小程序实际播放。P0 GATE-B 未通过，收藏/最近/随机等 P1 继续 NOT_RUN；iOS/Android 真机及正式域名仍 NOT_RUN。
