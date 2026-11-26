@@ -161,6 +161,25 @@ describe('animal sound player sessions', () => {
     expect(contexts[0].src).toBe('https://media.example.test/dog')
   })
 
+  it('does not let a delayed stop event from the previous sound stop the new session', async () => {
+    getPlayUrl.mockImplementation((soundId: string) =>
+      Promise.resolve({
+        soundId,
+        playUrl: 'https://media.example.test/' + soundId,
+        expiresAt: expiresAfter(120),
+        durationMs: 3000,
+        mimeType: 'audio/mpeg',
+        mediaVersion: 'v1',
+      }),
+    )
+    await playSound('cat-sound', 'cat')
+    await playSound('dog-sound', 'dog')
+    expect(playerState.status).toBe('playing')
+    contexts[0].emit('stop')
+    expect(playerState.soundId).toBe('dog-sound')
+    expect(playerState.status).toBe('playing')
+  })
+
   it('reuses an unexpired URL and refreshes once after a media error', async () => {
     getPlayUrl
       .mockResolvedValueOnce({

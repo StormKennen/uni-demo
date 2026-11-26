@@ -5,7 +5,6 @@ type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped' | 'end
 type AudioContext = ReturnType<typeof uni.createInnerAudioContext>
 type PlayListener = Parameters<AudioContext['onPlay']>[0]
 type PauseListener = Parameters<AudioContext['onPause']>[0]
-type StopListener = Parameters<AudioContext['onStop']>[0]
 type EndedListener = Parameters<AudioContext['onEnded']>[0]
 type ErrorListener = Parameters<AudioContext['onError']>[0]
 type TimeUpdateListener = Parameters<AudioContext['onTimeUpdate']>[0]
@@ -30,7 +29,6 @@ const EARLY_REFRESH_MS = 30_000
 let listeners: {
   play?: PlayListener
   pause?: PauseListener
-  stop?: StopListener
   ended?: EndedListener
   error?: ErrorListener
   timeUpdate?: TimeUpdateListener
@@ -50,7 +48,6 @@ const ensureContext = () => {
 const detachSessionEvents = (context: AudioContext) => {
   if (listeners.play) context.offPlay(listeners.play)
   if (listeners.pause) context.offPause(listeners.pause)
-  if (listeners.stop) context.offStop(listeners.stop)
   if (listeners.ended) context.offEnded(listeners.ended)
   if (listeners.error) context.offError(listeners.error)
   if (listeners.timeUpdate) context.offTimeUpdate(listeners.timeUpdate)
@@ -147,9 +144,6 @@ export const playSound = async (soundId: string, animalId: string): Promise<void
   listeners.pause = () => {
     if (session === activeSession) playerState.status = 'paused'
   }
-  listeners.stop = () => {
-    if (session === activeSession) playerState.status = 'stopped'
-  }
   listeners.ended = () => {
     if (session === activeSession) playerState.status = 'ended'
   }
@@ -169,7 +163,6 @@ export const playSound = async (soundId: string, animalId: string): Promise<void
   }
   context.onPlay(listeners.play)
   context.onPause(listeners.pause)
-  context.onStop(listeners.stop)
   context.onEnded(listeners.ended)
   context.onError(listeners.error)
   listeners.timeUpdate = () => {
